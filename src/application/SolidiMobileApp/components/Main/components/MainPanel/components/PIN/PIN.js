@@ -16,6 +16,10 @@ import _ from 'lodash';
 // Internal imports
 import { screenWidth, screenHeight } from 'src/util/dimensions';
 
+import Icon from 'react-native-vector-icons/FontAwesome';
+
+
+
 
 
 let PIN = () => {
@@ -23,7 +27,10 @@ let PIN = () => {
   let [displayPIN, setDisplayPIN] = useState(false);
 
   return (
+    <View>
     <Text>foo</Text>
+    <Icon name="rocket" size={30} color="#900" />
+    </View>
   )
 
 }
