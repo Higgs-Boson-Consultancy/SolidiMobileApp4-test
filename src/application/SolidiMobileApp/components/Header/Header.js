@@ -9,7 +9,7 @@ import {
 // Internal imports
 import { AppStateContext } from 'src/application/data';
 import { mainPanelStates } from 'src/constants';
-import { Button } from 'src/components/atomic';
+import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 
@@ -52,7 +52,8 @@ const Header = (props) => {
             {includeBackButton ? backButton : blankBackButton}
           </View>
           <View style={styles.buttonWrapper}>
-            <Button title='SOLIDI' styles={styleLogoButton}
+            <ImageButton imageName='solidi'
+              styles={styleLogoButton}
               onPress={ () => { context.setMainPanelState({mainPanelState:mainPanelStates.TEST}) } }
             />
           </View>
@@ -98,14 +99,8 @@ const styleBackButton = StyleSheet.create({
 
 
 const styleLogoButton = StyleSheet.create({
-  text: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: normaliseFont(18),
-    fontStyle: 'italic',
-  },
-  view: {
-    backgroundColor: 'black',
+  image: {
+    width: '60%',
   },
 })
 
