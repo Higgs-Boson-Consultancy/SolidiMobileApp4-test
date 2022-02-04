@@ -40,7 +40,7 @@ const ImageButton = ({
 
   // Defaults:
   let iconSize = _.isNil(rest.iconSize) ? 30 : rest.iconSize;
-  let iconColor = _.isNil(rest.iconColor) ? '#555' : rest.iconColor;
+  let iconColor = _.isNil(rest.iconColor) ? '#333' : rest.iconColor;
 
   return (
     <Touchable

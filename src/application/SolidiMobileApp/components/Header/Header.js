@@ -67,7 +67,6 @@ const Header = (props) => {
           </View>
           <View style={styles.buttonWrapper}>
             <ImageButton imageName='bars' imageType='icon'
-              iconColor="#555"
               styles={styleMenuButton}
               onPress={ () => { context.setMainPanelState({mainPanelState:mainPanelStates.SETTINGS}) } }
             />
