@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import SplashScreen from 'react-native-splash-screen';
 
 // Internal imports
 import { colours } from 'src/constants';
@@ -37,6 +38,7 @@ let App = () => {
 
   useEffect(() => {
     helloWorld();
+    setTimeout(SplashScreen.hide, 500);
   }, []);
 
 
