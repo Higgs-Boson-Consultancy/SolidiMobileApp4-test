@@ -77,7 +77,43 @@ class AppStateProvider extends Component {
           this.setState({stateHistoryList});
         }
       }
-      this.setState({mainPanelState, pageName});
+      // Check if we need to authenticate prior to moving to this new state.
+      let makeFinalSwitch = true;
+      if (! this.state.user.isAuthenticated) {
+        let authRequired = [
+          mainPanelStates.HISTORY,
+        ]
+        if (authRequired.includes(mainPanelState)) {
+          makeFinalSwitch = false;
+          // Stash the new state for later retrieval.
+          this.state.stashState(newState);
+          this.state.authenticateUser();
+        }
+      }
+      // Finally, change to new state.
+      if (makeFinalSwitch) {
+        this.setState({mainPanelState, pageName});
+      }
+    }
+
+    this.authenticateUser = () => {
+      if (! this.state.user.pin) {
+        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
+      } else {
+        this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN});
+      }
+    }
+
+    this.stashState = (stateX) => {
+      let msg = `Stashing state: ${JSON.stringify(stateX)}`
+      log(msg);
+      this.state.stashedState = stateX;
+    }
+
+    this.loadStashedState = () => {
+      let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
+      log(msg);
+      this.state.setMainPanelState(this.state.stashedState, stashed=true);
     }
 
     this.decrementStateHistory = () => {
@@ -131,6 +167,9 @@ class AppStateProvider extends Component {
       setMainPanelState: this.setMainPanelState,
       stashedState: {},
       stateHistoryList: [],
+      authenticateUser: this.authenticateUser,
+      stashState: this.stashState,
+      loadStashedState: this.loadStashedState,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
@@ -167,16 +206,16 @@ class AppStateProvider extends Component {
       }];
     }
 
-    // Create a non-authenticated API client that can call public methods.
-    this.state.apiClient = new SolidiRestAPIClientLibrary({
-      userAgent: this.state.userAgent, apiKey:'', apiSecret:'',
-      domain: this.state.domain
-    });
-
-
+    // Tweak app state for dev work.
     if (tier === 'dev') {
       this.state.domain = 't3.solidi.co';
     }
+
+    // Create a non-authenticated API client that can call public methods.
+    this.state.apiClient = new SolidiRestAPIClientLibrary({
+      userAgent: this.state.userAgent, apiKey:'', apiSecret:'',
+      domain: this.state.domain,
+    });
 
   }
 
