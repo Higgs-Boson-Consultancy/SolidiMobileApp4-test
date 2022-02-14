@@ -69,20 +69,31 @@ let Buy = () => {
     {label: 'ETH (Ethereum)', value: 'ETH'},
   ]);
 
+  let loadPriceData = async () => {
+    let fxmarket = symbolBA + '/' + symbolQA;
+    let data = await appState.apiClient.publicMethod({
+      httpMethod: 'GET',
+      apiMethod: 'ticker',
+      params: {},
+    });
+    // Future: log the data, extract relevant bits, calculate volumeBA that can be bought for default 100 GBP, and use setVolumeBA to change the volumeBA value.
+  }
+
+  // By default, load price data.
+  if (appState.pageName === 'default') {
+    //loadPriceData(); // API call isn't working atm.
+  }
+
   let submitBuyRequest = async () => {
     // If the user isn't authenticated, push them into the auth sequence.
 
     if (! appState.user.isAuthenticated) {
+      // This happens here, rather than in setMainPanelState, because we want the user to make the choice to buy prior to having to authenticate.
       // Save the order details in the global state.
       _.assign(appState.buyPanel, {volumeQA, symbolQA, volumeBA, symbolBA});
       // Stash the BUY state for later retrieval.
-      appState.stashedState = {mainPanelState: mainPanelStates.BUY, pageName: 'continue'};
-      // Choose auth sequence entry point.
-      if (! appState.user.pin) {
-        appState.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
-      } else {
-        appState.setMainPanelState({mainPanelState: mainPanelStates.PIN});
-      }
+      appState.stashState({mainPanelState: mainPanelStates.BUY, pageName: 'continue'});
+      appState.authenticateUser();
       return;
     }
 
@@ -170,12 +181,26 @@ let Buy = () => {
       }
 
       { orderSubmitted &&
-        <View style={styles.orderSubmittedMessage}>
-          <Text style={styles.boldText}>Order submitted:{'\n'}</Text>
-          <Text>Description: Spend {volumeQA} {symbolQA} to buy {volumeBA} {symbolBA}.</Text>
+        <View>
+          <View style={styles.orderSubmittedMessage}>
+            <Text style={styles.boldText}>Order submitted.{'\n'}</Text>
+            <Text>Order description: Spend {volumeQA} {symbolQA} to buy {volumeBA} {symbolBA}.</Text>
+          </View>
+          <View style={styles.buttonWrapper}>
+            <StandardButton title="Buy another asset" onPress={
+              () => {
+                appState.setMainPanelState({mainPanelState: mainPanelStates.BUY, pageName: 'default'});
+                setOrderSubmitted(false);
+              }
+            } />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <StandardButton title="View orders" onPress={
+              () => appState.setMainPanelState({mainPanelState: mainPanelStates.HISTORY, pageName: 'orders'})
+            } />
+          </View>
         </View>
       }
-
 
     </View>
   
