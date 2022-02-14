@@ -8,6 +8,4 @@ let ImageLookup = {
   solidi,
 }
 
-log(ImageLookup)
-
 export default ImageLookup;
