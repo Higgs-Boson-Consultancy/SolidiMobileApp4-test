@@ -42,8 +42,7 @@ let Login = () => {
         return;
       }
       // Load API Key and Secret from server.
-      let {userAgent, domain} = appState;
-      let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
+      let apiClient = appState.apiClient;
       let apiMethod = 'login_mobile' + `/${email}`;
       let params = {password};
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiMethod, params});
