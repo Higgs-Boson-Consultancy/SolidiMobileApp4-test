@@ -79,8 +79,7 @@ let PIN = () => {
       appState.setMainPanelState({mainPanelState: mainPanelStates.BUY});
       return;
     } else {
-      // Reload stashed state.
-      appState.setMainPanelState(appState.stashedState, stashed=true);
+      appState.loadStashedState();
     }
   }
   
