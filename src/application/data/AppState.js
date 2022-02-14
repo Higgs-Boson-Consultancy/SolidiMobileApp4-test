@@ -24,13 +24,6 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 // Misc
 let lj = (x) => console.log(JSON.stringify(x));
 
-// Dev:
-/*
-import access from 'src/access';
-let {domain, userAgent, apiKey, apiSecret} = access;
-let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey, apiSecret, domain});
-*/
-
 // Dev
 let tier = 'dev';
 
@@ -173,6 +166,13 @@ class AppStateProvider extends Component {
         pageName: this.initialPageName,
       }];
     }
+
+    // Create a non-authenticated API client that can call public methods.
+    this.state.apiClient = new SolidiRestAPIClientLibrary({
+      userAgent: this.state.userAgent, apiKey:'', apiSecret:'',
+      domain: this.state.domain
+    });
+
 
     if (tier === 'dev') {
       this.state.domain = 't3.solidi.co';
