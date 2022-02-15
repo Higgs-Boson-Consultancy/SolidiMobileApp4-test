@@ -1,5 +1,5 @@
 // React imports
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { StandardButton } from 'src/components/atomic';
 
@@ -13,7 +13,17 @@ let Test = () => {
 
   let appState = useContext(AppStateContext);
 
-  //appState.loadPIN();
+  appState.loadPIN();
+
+  let switchPanel = async () => {
+    setTimeout( () => {
+      appState.setMainPanelState({mainPanelState: mainPanelStates.HISTORY});
+    }, 500);
+  }
+
+  useEffect(() => {
+    switchPanel();
+  }, []);
 
   return (
     <View style={styles.panelContainer}>
