@@ -39,7 +39,7 @@ const Footer = (props) => {
   let leftButton = (
     <View style={styles.leftButtonWrapper}>
       <ImageButton imageName='angle-left' imageType='icon'
-        styles={stylesLeftButton}
+        styles={styleLeftButton}
         onPress={ () => { appState.setFooterIndex(newFooterIndexLeft) } }
       />
     </View>
@@ -51,7 +51,7 @@ const Footer = (props) => {
   let rightButton = (
     <View style={styles.rightButtonWrapper}>
       <ImageButton imageName='angle-right' imageType='icon'
-        styles={stylesRightButton}
+        styles={styleRightButton}
         onPress={ () => { appState.setFooterIndex(newFooterIndexRight) } }
       />
     </View>
@@ -66,7 +66,7 @@ const Footer = (props) => {
 
   let renderPanelButton = ({ item }) => {
     let isSelected = item === appState.mainPanelState;
-    let _style = isSelected ? stylesPanelButtonSelected : stylesPanelButton;
+    let _style = isSelected ? stylePanelButtonSelected : stylePanelButton;
     return (
       <AppStateContext.Consumer>
       {(context) =>
@@ -107,7 +107,7 @@ const Footer = (props) => {
 };
 
 
-const styles = StyleSheet.create({
+let styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent : 'space-between',
@@ -144,7 +144,7 @@ let styleEmptyFooter = StyleSheet.create({
   borderRightWidth: 1,
 });
 
-const stylesLeftButton = StyleSheet.create({
+let styleLeftButton = StyleSheet.create({
   text: {
     fontSize: normaliseFont(22),
     fontWeight: 'bold',
@@ -154,9 +154,9 @@ const stylesLeftButton = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
   }
-})
+});
 
-const stylesRightButton = StyleSheet.create({
+let styleRightButton = StyleSheet.create({
   text: {
     fontSize: normaliseFont(22),
     fontWeight: 'bold',
@@ -165,9 +165,9 @@ const stylesRightButton = StyleSheet.create({
     height: '100%',
     borderWidth: 1,
   }
-})
+});
 
-const stylesPanelButton = StyleSheet.create({
+let stylePanelButton = StyleSheet.create({
   text: {
     fontSize: normaliseFont(18),
   },
@@ -177,9 +177,9 @@ const stylesPanelButton = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
   }
-})
+});
 
-const stylesPanelButtonSelected = StyleSheet.create({
+let stylePanelButtonSelected = StyleSheet.create({
   text: {
     fontSize: normaliseFont(18),
     color: 'black',
@@ -191,7 +191,7 @@ const stylesPanelButtonSelected = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
   }
-})
+});
 
 
 export default Footer;
