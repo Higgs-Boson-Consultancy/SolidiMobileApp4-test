@@ -18,12 +18,18 @@ export const assets = {
     displaySymbol: 'EUR',
     displayString: 'EUR (Euro)',
   },
+  'GBP': {
+    name: 'British Pound',
+    decimalPlaces: 2,
+    displaySymbol: 'GBP',
+    displayString: 'GBP (British Pound)',
+  },
   'GBPX': {
     name: 'British Pound',
     decimalPlaces: 2,
     displaySymbol: 'GBP', // different
     displayString: 'GBP (British Pound)',
-  }
+  },
 }
 
 export default assets;

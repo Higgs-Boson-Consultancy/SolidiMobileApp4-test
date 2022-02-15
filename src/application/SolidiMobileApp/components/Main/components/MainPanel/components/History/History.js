@@ -97,8 +97,8 @@ let History = () => {
 
   let codeToType = (code) => {
     let convert = {
-      'PI': 'Transfer In',
-      'PO': 'Transfer Out',
+      'PI': 'Deposit',
+      'PO': 'Withdrawal',
       'FI': 'Fees',
       'FO': 'Fees',
       'BY': 'Buy',
@@ -109,12 +109,14 @@ let History = () => {
   }
 
   let renderTransactionItem = ({ item }) => {
+    let asset = item.cur1;
+    let volumeDP = assets[asset].decimalPlaces;
+    let volume = Big(item.cur1amt).toFixed(volumeDP);
     return (
       <View style={styles.flatListItem}>
         <Text>{item.txn_date} {item.txn_time}</Text>
         <Text style={styles.typeField}>{codeToType(item.txn_code)}</Text>
-        <Text>Currency: {item.cur1}</Text>
-        <Text>Amount: {item.cur1amt}</Text>
+        <Text>{volume} {assets[asset].displayString}</Text>
         <Text>Reference: {item.ref}</Text>
       </View>
     );
@@ -179,7 +181,6 @@ let History = () => {
       <View style={styles.history}>
         <View style={styles.historyInternalBox}>
           {isLoading && displayLoadingMsg()}
-          {/* {! isLoading && displayHistoryControls()} */}
           {! isLoading && displayHistoryControls()}
           {! isLoading && category === 'transactions' &&
             renderTransactions()}
