@@ -80,10 +80,7 @@ class AppStateProvider extends Component {
       // Check if we need to authenticate prior to moving to this new state.
       let makeFinalSwitch = true;
       if (! this.state.user.isAuthenticated) {
-        let authRequired = [
-          mainPanelStates.HISTORY,
-        ]
-        if (authRequired.includes(mainPanelState)) {
+        if (this.state.authRequired.includes(mainPanelState)) {
           makeFinalSwitch = false;
           // Stash the new state for later retrieval.
           this.state.stashState(newState);
@@ -112,7 +109,6 @@ class AppStateProvider extends Component {
       let stateHistoryList = this.state.stateHistoryList;
       let prevState = stateHistoryList[stateHistoryList.length - 2];
       let {mainPanelState, pageName} = prevState;
-      this.setState({mainPanelState, pageName});
       if (stateHistoryList.length > 1) {
         stateHistoryList.pop();
         this.setState({stateHistoryList});
@@ -126,6 +122,20 @@ class AppStateProvider extends Component {
         let newFooterIndex = steps * this.numberOfFooterButtonsToDisplay;
         log(JSON.stringify({newFooterIndex}))
         this.setFooterIndex(newFooterIndex);
+      }
+      // Check if we need to authenticate prior to moving to this previous state.
+      let makeFinalSwitch = true;
+      if (! this.state.user.isAuthenticated) {
+        if (this.state.authRequired.includes(mainPanelState)) {
+          makeFinalSwitch = false;
+          // Stash the previous state for later retrieval.
+          this.state.stashState(prevState);
+          this.state.authenticateUser();
+        }
+      }
+      // Finally, change to previous state.
+      if (makeFinalSwitch) {
+        this.setState({mainPanelState, pageName});
       }
     }
 
@@ -218,6 +228,9 @@ class AppStateProvider extends Component {
         userInfo: {},
         pin: '',
       },
+      authRequired: [
+        mainPanelStates.HISTORY,
+      ],
       apiClient: null,
       appName: this.appName,
       buyPanel: {
