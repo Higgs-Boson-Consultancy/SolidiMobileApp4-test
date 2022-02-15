@@ -10,7 +10,7 @@ import _ from 'lodash';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { colours, mainPanelStates } from 'src/constants';
+import { assets, mainPanelStates } from 'src/constants';
 import { StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
@@ -31,7 +31,7 @@ let Buy = () => {
     if (credentials) {
       let pin = credentials.password;
       appState.user.pin = pin;
-      log(`PIN loaded: ${pin}`);
+      //log(`PIN loaded: ${pin}`);
     }
   });
 
@@ -51,23 +51,26 @@ let Buy = () => {
   }
 
   // QA = Quote Asset
-  // Future: Load the items from the server.
   let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
   let [openQA, setOpenQA] = useState(false);
   let [symbolQA, setSymbolQA] = useState(selectedSymbolQA);
-  let [itemsQA, setItemsQA] = useState([
-    {label: 'GBP (British Pound)', value: 'GBPX'},
-    {label: 'EUR (Euro)', value: 'EUR'},
-  ]);
+  let quoteAssets = 'GBPX EUR'.split(' ');
+  let quoteAssetItems = quoteAssets.map(x => {
+    let a = assets[x];
+    return {label: a.displayString, value: a.displaySymbol};
+  });
+  let [itemsQA, setItemsQA] = useState(quoteAssetItems);
 
   // BA = Base Asset
   let [volumeBA, setVolumeBA] = useState(selectedVolumeBA);
   let [openBA, setOpenBA] = useState(false);
   let [symbolBA, setSymbolBA] = useState(selectedSymbolBA);
-  let [itemsBA, setItemsBA] = useState([
-    {label: 'BTC (Bitcoin)', value: 'BTC'},
-    {label: 'ETH (Ethereum)', value: 'ETH'},
-  ]);
+  let baseAssets = 'BTC ETH'.split(' ');
+  let baseAssetItems = baseAssets.map(x => {
+    let a = assets[x];
+    return {label: a.displayString, value: a.displaySymbol};
+  });
+  let [itemsBA, setItemsBA] = useState(baseAssetItems);
 
   let loadPriceData = async () => {
     let fxmarket = symbolBA + '/' + symbolQA;
@@ -142,7 +145,7 @@ let Buy = () => {
             value={volumeQA}
           />
           <DropDownPicker
-            placeholder="BTC (Bitcoin)"
+            placeholder={assets[selectedSymbolQA].displayString}
             style={styles.quoteAsset}
             open={openQA}
             value={symbolQA}
@@ -162,7 +165,7 @@ let Buy = () => {
             value={volumeBA}
           />
           <DropDownPicker
-            placeholder="BTC (Bitcoin)"
+            placeholder={assets[selectedSymbolBA].displayString}
             style={styles.baseAsset}
             open={openBA}
             value={symbolBA}
