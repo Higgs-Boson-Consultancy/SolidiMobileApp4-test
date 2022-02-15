@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useState } from 'react';
-import { FlatList, Text, TextInput, StyleSheet, View } from 'react-native';
+import { Text, TextInput, StyleSheet, View } from 'react-native';
 import * as Keychain from 'react-native-keychain';
 import { hasUserSetPinCode } from '@haskkor/react-native-pincode';
 import DropDownPicker from 'react-native-dropdown-picker';
