@@ -147,6 +147,7 @@ let Buy = () => {
           <DropDownPicker
             placeholder={assets[selectedSymbolQA].displayString}
             style={styles.quoteAsset}
+            containerStyle={styles.quoteAssetContainer}
             open={openQA}
             value={symbolQA}
             items={itemsQA}
@@ -167,6 +168,7 @@ let Buy = () => {
           <DropDownPicker
             placeholder={assets[selectedSymbolBA].displayString}
             style={styles.baseAsset}
+            containerStyle={styles.baseAssetContainer}
             open={openBA}
             value={symbolBA}
             items={itemsBA}
@@ -248,6 +250,9 @@ let styles = StyleSheet.create({
     height: 40,
     width: scaledWidth(220),
   },
+  quoteAssetContainer: {
+    width: scaledWidth(220),
+  },
   baseAssetWrapper: {
     paddingVertical: scaledHeight(20),
     width: '80%',
@@ -266,6 +271,9 @@ let styles = StyleSheet.create({
   },
   baseAsset: {
     height: 40,
+    width: scaledWidth(220),
+  },
+  baseAssetContainer: {
     width: scaledWidth(220),
   },
   buttonWrapper: {
