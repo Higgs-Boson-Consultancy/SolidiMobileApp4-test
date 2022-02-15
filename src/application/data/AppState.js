@@ -96,14 +96,6 @@ class AppStateProvider extends Component {
       }
     }
 
-    this.authenticateUser = () => {
-      if (! this.state.user.pin) {
-        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
-      } else {
-        this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN});
-      }
-    }
-
     this.stashState = (stateX) => {
       let msg = `Stashing state: ${JSON.stringify(stateX)}`
       log(msg);
@@ -159,6 +151,25 @@ class AppStateProvider extends Component {
       this.setState({history});
     }
 
+    this.authenticateUser = () => {
+      if (! this.state.user.pin) {
+        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
+      } else {
+        this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN});
+      }
+    }
+
+    this.choosePIN = () => {
+      log(this.state.user)
+      // If user hasn't logged in, they need to do so first.
+      if (! this.state.user.isAuthenticated) {
+        // We send them to the login page, which will ask them to choose a PIN afterwards.
+        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
+        return;
+      }
+      this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN, pageName: 'choose'});
+    }
+
     this.loadPIN = () => {
       /*
       - We load the PIN from the keychain if it exists.
@@ -184,12 +195,13 @@ class AppStateProvider extends Component {
       setMainPanelState: this.setMainPanelState,
       stashedState: {},
       stateHistoryList: [],
-      authenticateUser: this.authenticateUser,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
+      authenticateUser: this.authenticateUser,
+      choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
       history: {
         orders: [],
