@@ -8,7 +8,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assets, mainPanelStates } from 'src/constants';
+import { assetInfo, mainPanelStates } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
@@ -108,13 +108,13 @@ let History = () => {
 
   let renderTransactionItem = ({ item }) => {
     let asset = item.cur1;
-    let volumeDP = assets[asset].decimalPlaces;
+    let volumeDP = assetInfo[asset].decimalPlaces;
     let volume = Big(item.cur1amt).toFixed(volumeDP);
     return (
       <View style={styles.flatListItem}>
         <Text>{item.txn_date} {item.txn_time}</Text>
         <Text style={styles.typeField}>{codeToType(item.txn_code)}</Text>
-        <Text>{volume} {assets[asset].displayString}</Text>
+        <Text>{volume} {assetInfo[asset].displayString}</Text>
         <Text>Reference: {item.ref}</Text>
       </View>
     );
@@ -137,7 +137,7 @@ let History = () => {
   }
   let renderOrderItem = ({ item }) => {
     let [baseAsset, quoteAsset] = item['fxmarket'].split('/');
-    let priceDP = assets[quoteAsset].decimalPlaces;
+    let priceDP = assetInfo[quoteAsset].decimalPlaces;
     let price = Big(item.price).toFixed(priceDP);
     let orderStatus = item.status;
     return (
@@ -152,7 +152,7 @@ let History = () => {
           }
         </View>
         <Text style={styles.typeField}>{item.side} Order</Text>
-        <Text>Spent {price} {assets[quoteAsset].displaySymbol} to get {item.qty} {assets[baseAsset].displaySymbol}.</Text>
+        <Text>Spent {price} {assetInfo[quoteAsset].displaySymbol} to get {item.qty} {assetInfo[baseAsset].displaySymbol}.</Text>
       </View>
     );
   }
