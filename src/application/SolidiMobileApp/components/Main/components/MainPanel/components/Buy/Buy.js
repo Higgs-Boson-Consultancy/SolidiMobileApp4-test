@@ -25,20 +25,20 @@ let Buy = () => {
   let [orderSubmitted, setOrderSubmitted] = useState(selectedOrderSubmitted);
 
   let selectedVolumeQA = '100';
-  let selectedSymbolQA = 'GBPX';
+  let selectedAssetQA = 'GBPX';
   let selectedVolumeBA = '0.05'; // Future: Set this to "Loading..." on start.
-  let selectedSymbolBA = 'BTC';
+  let selectedAssetBA = 'BTC';
 
   // If we're reloading an existing order, load its details from the global state.
   if (appState.pageName === 'continue') {
-    ({volumeQA: selectedVolumeQA, symbolQA: selectedSymbolQA} = appState.buyPanel);
-    ({volumeBA: selectedVolumeBA, symbolBA: selectedSymbolBA} = appState.buyPanel);
+    ({volumeQA: selectedVolumeQA, assetQA: selectedAssetQA} = appState.buyPanel);
+    ({volumeBA: selectedVolumeBA, assetBA: selectedAssetBA} = appState.buyPanel);
   }
 
   // QA = Quote Asset
   let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
   let [openQA, setOpenQA] = useState(false);
-  let [symbolQA, setSymbolQA] = useState(selectedSymbolQA);
+  let [assetQA, setAssetQA] = useState(selectedAssetQA);
   let quoteAssets = 'GBPX EUR'.split(' ');
   let quoteAssetItems = quoteAssets.map(x => {
     let a = assetInfo[x];
@@ -49,7 +49,7 @@ let Buy = () => {
   // BA = Base Asset
   let [volumeBA, setVolumeBA] = useState(selectedVolumeBA);
   let [openBA, setOpenBA] = useState(false);
-  let [symbolBA, setSymbolBA] = useState(selectedSymbolBA);
+  let [assetBA, setAssetBA] = useState(selectedAssetBA);
   let baseAssets = 'BTC ETH'.split(' ');
   let baseAssetItems = baseAssets.map(x => {
     let a = assetInfo[x];
@@ -58,7 +58,7 @@ let Buy = () => {
   let [itemsBA, setItemsBA] = useState(baseAssetItems);
 
   let loadPriceData = async () => {
-    let fxmarket = symbolBA + '/' + symbolQA;
+    let fxmarket = assetBA + '/' + assetQA;
     let data = await appState.apiClient.publicMethod({
       httpMethod: 'GET',
       apiMethod: 'ticker',
@@ -78,7 +78,7 @@ let Buy = () => {
     if (! appState.user.isAuthenticated) {
       // This happens here, rather than in setMainPanelState, because we want the user to make the choice to buy prior to having to authenticate.
       // Save the order details in the global state.
-      _.assign(appState.buyPanel, {volumeQA, symbolQA, volumeBA, symbolBA});
+      _.assign(appState.buyPanel, {volumeQA, assetQA, volumeBA, assetBA});
       // Stash the BUY state for later retrieval.
       appState.stashState({mainPanelState: mainPanelStates.BUY, pageName: 'continue'});
       appState.authenticateUser();
@@ -86,7 +86,7 @@ let Buy = () => {
     }
 
     // To continue, we are either already authed, or we have returned from the auth sequence.
-    let fxmarket = symbolBA + '/' + symbolQA;
+    let fxmarket = assetBA + '/' + assetQA;
     let data = await appState.apiClient.privateMethod({
       httpMethod: 'POST',
       apiMethod: 'buy',
@@ -130,14 +130,14 @@ let Buy = () => {
             value={volumeQA}
           />
           <DropDownPicker
-            placeholder={assetInfo[selectedSymbolQA].displayString}
+            placeholder={assetInfo[selectedAssetQA].displayString}
             style={styles.quoteAsset}
             containerStyle={styles.quoteAssetContainer}
             open={openQA}
-            value={symbolQA}
+            value={assetQA}
             items={itemsQA}
             setOpen={setOpenQA}
-            setValue={setSymbolQA}
+            setValue={setAssetQA}
             setItems={setItemsQA}
           />
         </View>
@@ -151,14 +151,14 @@ let Buy = () => {
             value={volumeBA}
           />
           <DropDownPicker
-            placeholder={assetInfo[selectedSymbolBA].displayString}
+            placeholder={assetInfo[selectedAssetBA].displayString}
             style={styles.baseAsset}
             containerStyle={styles.baseAssetContainer}
             open={openBA}
-            value={symbolBA}
+            value={assetBA}
             items={itemsBA}
             setOpen={setOpenBA}
-            setValue={setSymbolBA}
+            setValue={setAssetBA}
             setItems={setItemsBA}
           />
         </View>
@@ -174,7 +174,7 @@ let Buy = () => {
         <View>
           <View style={styles.orderSubmittedMessage}>
             <Text style={styles.boldText}>Order submitted.{'\n'}</Text>
-            <Text>Order description: Spend {volumeQA} {symbolQA} to buy {volumeBA} {symbolBA}.</Text>
+            <Text>Order description: Spend {volumeQA} {assetQA} to buy {volumeBA} {assetBA}.</Text>
           </View>
           <View style={styles.buttonWrapper}>
             <StandardButton title="Buy another asset" onPress={
