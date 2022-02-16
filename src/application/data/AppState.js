@@ -162,6 +162,14 @@ class AppStateProvider extends Component {
       this.setState({history});
     }
 
+    this.setAPIData = ({key, data}) => {
+      let msg = `setAPIData: set state.apiData.${key} to hold: ${JSON.stringify(data, null, 2)}`;
+      log('setAPIData: ' + key)
+      let apiData = {...this.state.apiData}
+      apiData[key] = data;
+      this.setState({apiData});
+    }
+
     this.authenticateUser = () => {
       if (! this.state.user.pin) {
         this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
@@ -228,6 +236,8 @@ class AppStateProvider extends Component {
       },
       setHistoryOrders: this.setHistoryOrders,
       setHistoryTransactions: this.setHistoryTransactions,
+      setAPIData: this.setAPIData,
+      apiData: {},
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 3",
       user: {
