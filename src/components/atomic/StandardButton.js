@@ -1,11 +1,15 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Button from './Button/Button';
 import { colours } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 let StandardButton = (props) => {
-  return <Button {...props} styles={styles} />
+  return (
+    <View style={styleButtonWrapper}>
+      <Button {...props} styles={styles} />
+    </View>
+  )
 };
 
 let styles = StyleSheet.create({
@@ -22,6 +26,11 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normaliseFont(16),
   },
+});
+
+// This wrapper view prevents the button expanding to fill the width of the parent view.
+let styleButtonWrapper = StyleSheet.create({
+  alignSelf: 'flex-start',
 });
 
 export default StandardButton;
