@@ -216,12 +216,7 @@ let styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
-    /* 
-    - quoteAssetWrapper needs to have a higher zIndex than baseAssetWrapper,
-    so that the quoteAsset dropdown is overlaid "above" the baseAsset dropdown.
-    - For some reason, this only works if the index values are negative.
-    */
-    zIndex: -1,
+    zIndex: 2,
   },
   volumeQA: {
     height: 40,
@@ -244,7 +239,7 @@ let styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: -5,
+    zIndex: 1,
   },
   volumeBA: {
     height: 40,
