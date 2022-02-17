@@ -1,10 +1,10 @@
-import assetInfo from './assetInfo';
+import assetsInfo from './assetsInfo';
 import colours from './colours';
 import footerButtonList from './footerButtonList';
 import mainPanelStates from './mainPanelStates';
 
 export {
-  assetInfo,
+  assetsInfo,
   colours,
   footerButtonList,
   mainPanelStates,

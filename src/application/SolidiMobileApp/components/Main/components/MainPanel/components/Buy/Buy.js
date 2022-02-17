@@ -9,7 +9,7 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetInfo, mainPanelStates } from 'src/constants';
+import { assetsInfo, mainPanelStates } from 'src/constants';
 import { StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
@@ -45,7 +45,7 @@ let Buy = () => {
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
   let quoteAssets = 'GBPX EUR'.split(' ');
   let quoteAssetItems = quoteAssets.map(x => {
-    let a = assetInfo[x];
+    let a = assetsInfo[x];
     return {label: a.displayString, value: a.displaySymbol};
   });
   let [itemsQA, setItemsQA] = useState(quoteAssetItems);
@@ -56,7 +56,7 @@ let Buy = () => {
   let [assetBA, setAssetBA] = useState(selectedAssetBA);
   let baseAssets = 'BTC ETH'.split(' ');
   let baseAssetItems = baseAssets.map(x => {
-    let a = assetInfo[x];
+    let a = assetsInfo[x];
     return {label: a.displayString, value: a.displaySymbol};
   });
   let [itemsBA, setItemsBA] = useState(baseAssetItems);
@@ -103,7 +103,7 @@ let Buy = () => {
       if (_.isEmpty(volumeBA)) volumeBA = '0';
       let market = assetBA + '/' + assetQA;
       let price = appState.apiData.prices[market];
-      let baseDP = assetInfo[assetBA].decimalPlaces;
+      let baseDP = assetsInfo[assetBA].decimalPlaces;
       let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
       // If new value of volumeBA is different, update it.
       if (Big(newVolumeBA) !== Big(volumeBA)) {
@@ -124,7 +124,7 @@ let Buy = () => {
       if (_.isEmpty(volumeQA)) volumeQA = '0';
       let market = assetBA + '/' + assetQA;
       let price = appState.apiData.prices[market];
-      let quoteDP = assetInfo[assetQA].decimalPlaces;
+      let quoteDP = assetsInfo[assetQA].decimalPlaces;
       let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
       if (newVolumeQA !== volumeQA) {
         log("New quote asset volume: " + newVolumeQA)
@@ -135,7 +135,7 @@ let Buy = () => {
 
   let validateAndSetVolumeBA = (newVolumeBA) => {
     setLastUserInput('volumeBA');
-    let baseDP = assetInfo[assetBA].decimalPlaces;
+    let baseDP = assetsInfo[assetBA].decimalPlaces;
     // This matches a digit sequence + optional period + optional digit sequence.
     // The second digit sequence can only be as long as the baseAsset's decimalPlaces.
     let regexString = `^\\d+(\\.\\d{0,${baseDP}})?$`;
@@ -156,7 +156,7 @@ let Buy = () => {
 
   let validateAndSetVolumeQA = (newVolumeQA) => {
     setLastUserInput('volumeQA');
-    let quoteDP = assetInfo[assetQA].decimalPlaces;
+    let quoteDP = assetsInfo[assetQA].decimalPlaces;
     // This matches a digit sequence + optional period + optional digit sequence.
     // The second digit sequence can only be as long as the quoteAsset's decimalPlaces.
     let regexString = `^\\d+(\\.\\d{0,${quoteDP}})?$`;
@@ -233,7 +233,7 @@ let Buy = () => {
             value={volumeQA}
           />
           <DropDownPicker
-            placeholder={assetInfo[selectedAssetQA].displayString}
+            placeholder={assetsInfo[selectedAssetQA].displayString}
             style={styles.quoteAsset}
             containerStyle={styles.quoteAssetContainer}
             open={openQA}
@@ -254,7 +254,7 @@ let Buy = () => {
             value={volumeBA}
           />
           <DropDownPicker
-            placeholder={assetInfo[selectedAssetBA].displayString}
+            placeholder={assetsInfo[selectedAssetBA].displayString}
             style={styles.baseAsset}
             containerStyle={styles.baseAssetContainer}
             open={openBA}

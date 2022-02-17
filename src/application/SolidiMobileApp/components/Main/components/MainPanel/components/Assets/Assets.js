@@ -8,7 +8,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assetInfo, mainPanelStates } from 'src/constants';
+import { assetsInfo, mainPanelStates } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
@@ -135,9 +135,9 @@ let Assets = () => {
     // {"asset": "XRP", "balance": "0.00000000", "confirms": 20, "deposit_enabled": 0, "deposit_msg": null, "dp": 6, "free_fee": "-1.00000000", "high_fee": "-1.00000000", "immed_fee": "0.02000000", "shortname": "Ripple", "withdraw_enabled": 0, "withdraw_msg": null}
     let asset = item.asset;
     let volume = item.balance;
-    let assetDP = assetInfo[asset].decimalPlaces;
+    let assetDP = assetsInfo[asset].decimalPlaces;
     let displayVolume = Big(volume).toFixed(assetDP);
-    let displayString = assetInfo[asset].displayString;
+    let displayString = assetsInfo[asset].displayString;
     return (
       <View style={styles.flatListItem}>
         <Text style={[styles.assetText]}>{displayVolume}</Text>
@@ -157,7 +157,7 @@ let Assets = () => {
       return item;
     });
     // Filter depending on dropdown category.
-    let data3 = data2.filter(item => assetInfo[item.asset].type == category);
+    let data3 = data2.filter(item => assetsInfo[item.asset].type == category);
     return (
       <View style={styles.flatListWrapper}>
         <FlatList
