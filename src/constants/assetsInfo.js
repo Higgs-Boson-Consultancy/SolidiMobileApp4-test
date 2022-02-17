@@ -1,5 +1,5 @@
 
-export const assetInfo = {
+export const assetsInfo = {
   'BTC': {
     name: 'Bitcoin',
     type: 'crypto',
@@ -51,4 +51,4 @@ export const assetInfo = {
   }
 }
 
-export default assetInfo;
+export default assetsInfo;
