@@ -5,6 +5,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 
 // Other imports
 import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
@@ -24,9 +25,12 @@ let Buy = () => {
   let selectedOrderSubmitted = (appState.pageName === 'continue') ? true : false;
   let [orderSubmitted, setOrderSubmitted] = useState(selectedOrderSubmitted);
 
+  let [priceLoadCount, setPriceLoadCount] = useState(0);
+  let [lastUserInput, setLastUserInput] = useState('');
+
   let selectedVolumeQA = '100';
   let selectedAssetQA = 'GBPX';
-  let selectedVolumeBA = '0.05'; // Future: Set this to "Loading..." on start.
+  let selectedVolumeBA = ''; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetBA = 'BTC';
 
   // If we're reloading an existing order, load its details from the global state.
@@ -73,13 +77,102 @@ let Buy = () => {
   }
 
   useEffect(() => {
-    log('Recalculate volume');
-    // Can't tell which volume value the user changed. Can only know that one of them did change.
-    // So: Track previous values of both, compare with new values, find out which changed.
-    // Then, use stored price for this market to recalculate the non-changed value.
-    // Store the new values into the previous value holders.
-    // Update the value that the user didn't manually change. This will trigger a re-render.
-  }, [volumeQA, volumeBA]);
+    // Tmp: Set market prices here.
+    // Future: Load them from the API.
+    let prices = {
+      'BTC/GBPX': '2000',
+      'ETH/GBPX': '100',
+      'BTC/EUR': '3000',
+      'ETH/EUR': '150',
+    }
+    appState.setAPIData({key: 'prices', data: prices});
+    // Trigger a recalculation of volumeBA that uses the stored price data.
+    setPriceLoadCount(priceLoadCount+1);
+  }, []); // Pass empty array to only run once on mount.
+
+  useEffect(() => {
+    // Use stored price for this market to recalculate the value of volumeBA.
+    if (_.isEmpty(volumeQA)) {
+      // pass
+    } else if (lastUserInput == 'volumeBA') {
+      // If the last action the user did was to change volumeBA, don't recalculate it. This will just be annoying.
+      // - Note: Without this clause, the two recalculation events would trigger each other.
+    } else if (appState.apiData.prices) {
+      log('Recalculate base asset volume')
+      if (_.isEmpty(volumeBA)) volumeBA = '0';
+      let market = assetBA + '/' + assetQA;
+      let price = appState.apiData.prices[market];
+      let baseDP = assetInfo[assetBA].decimalPlaces;
+      let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
+      // If new value of volumeBA is different, update it.
+      if (Big(newVolumeBA) !== Big(volumeBA)) {
+        log("New base asset volume: " + newVolumeBA);
+        setVolumeBA(newVolumeBA);
+      }
+    }
+  }, [volumeQA, priceLoadCount]);
+
+  useEffect(() => {
+    if (_.isEmpty(volumeBA)) {
+      // pass
+    } else if (lastUserInput == 'volumeQA') {
+      // If the last action the user did was to change volumeQA, don't recalculate it. This will just be annoying.
+      // - Note: Without this clause, the two recalculation events would trigger each other.
+    } else if (appState.apiData.prices) {
+      log('Recalculate quote asset volume');
+      if (_.isEmpty(volumeQA)) volumeQA = '0';
+      let market = assetBA + '/' + assetQA;
+      let price = appState.apiData.prices[market];
+      let quoteDP = assetInfo[assetQA].decimalPlaces;
+      let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
+      if (newVolumeQA !== volumeQA) {
+        log("New quote asset volume: " + newVolumeQA)
+        setVolumeQA(newVolumeQA);
+      }
+    }
+  }, [volumeBA]);
+
+  let validateAndSetVolumeBA = (newVolumeBA) => {
+    setLastUserInput('volumeBA');
+    let baseDP = assetInfo[assetBA].decimalPlaces;
+    // This matches a digit sequence + optional period + optional digit sequence.
+    // The second digit sequence can only be as long as the baseAsset's decimalPlaces.
+    let regexString = `^\\d+(\\.\\d{0,${baseDP}})?$`;
+    let regex = new RegExp(regexString);
+    if (! _.isString(newVolumeBA)) {
+      // Not sure if this could actually happen.
+    } else if (_.isEmpty(newVolumeBA)) {
+      // We permit the user to completely empty the input box. It feels better.
+      setVolumeBA(newVolumeBA);
+    } else if (! regex.test(newVolumeBA)) {
+      // No need to do anything. The input simply won't accept any non decimal-string input,
+      // such as symbols or alphabet characters.
+    } else {
+      // Valid input.
+      setVolumeBA(newVolumeBA);
+    }
+  }
+
+  let validateAndSetVolumeQA = (newVolumeQA) => {
+    setLastUserInput('volumeQA');
+    let quoteDP = assetInfo[assetQA].decimalPlaces;
+    // This matches a digit sequence + optional period + optional digit sequence.
+    // The second digit sequence can only be as long as the quoteAsset's decimalPlaces.
+    let regexString = `^\\d+(\\.\\d{0,${quoteDP}})?$`;
+    let regex = new RegExp(regexString);
+    if (! _.isString(newVolumeQA)) {
+      // Not sure if this could actually happen.
+    } else if (_.isEmpty(newVolumeQA)) {
+      // We permit the user to completely empty the input box. It feels better.
+      setVolumeQA(newVolumeQA);
+    } else if (! regex.test(newVolumeQA)) {
+      // No need to do anything. The input simply won't accept any non decimal-string input,
+      // such as symbols or alphabet characters.
+    } else {
+      // Valid input.
+      setVolumeQA(newVolumeQA);
+    }
+  }
 
   let submitBuyRequest = async () => {
     // If the user isn't authenticated, push them into the auth sequence.
@@ -135,7 +228,7 @@ let Buy = () => {
         <View style={styles.quoteAssetWrapper}>
           <TextInput
             style={styles.volumeQA}
-            onChangeText={setVolumeQA}
+            onChangeText={validateAndSetVolumeQA}
             value={volumeQA}
           />
           <DropDownPicker
@@ -156,7 +249,7 @@ let Buy = () => {
         <View style={styles.baseAssetWrapper}>
           <TextInput
             style={styles.volumeBA}
-            onChangeText={setVolumeBA}
+            onChangeText={validateAndSetVolumeBA}
             value={volumeBA}
           />
           <DropDownPicker
