@@ -47,7 +47,7 @@ export const assetInfo = {
     type: 'crypto',
     decimalPlaces: 8,
     displaySymbol: 'XRP',
-    displayString: 'Ripple (XRP)',
+    displayString: 'XRP (Ripple)',
   }
 }
 
