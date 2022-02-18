@@ -10,7 +10,7 @@ import {
 
 import { mainPanelStates } from 'src/constants';
 import { Test, Buy, Sell, Send, Receive, Assets, History,
-  Notifications, Settings, Login, PIN } from './components';
+  Notifications, Settings, Login, PIN, Payment } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -44,6 +44,8 @@ const MainPanel = () => {
         }
       }
       return <PIN />
+    } else if (context.mainPanelState === mainPanelStates.PAYMENT) {
+      return <Payment />
     } else {
       return <Text>Error: Unknown mainPanelState: {context.mainPanelState}</Text>
     }

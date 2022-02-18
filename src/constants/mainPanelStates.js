@@ -11,6 +11,7 @@ export const mainPanelStates = {
   TEST: 'Test',
   LOGIN: 'Login',
   PIN: 'PIN',
+  PAYMENT: 'Payment',
 };
 
 export default mainPanelStates;
