@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: 'center',
-    borderWidth: 1,
   },
   buttonWrapper: {
     width: '25%',
@@ -93,6 +92,9 @@ const styles = StyleSheet.create({
 
 
 const styleBackButton = StyleSheet.create({
+  image: {
+    iconSize: 35,
+  },
   text: {
     fontWeight: 'bold',
     fontSize: normaliseFont(18),
