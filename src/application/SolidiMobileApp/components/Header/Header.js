@@ -50,31 +50,31 @@ const Header = (props) => {
 
 
   return (
-        <View style={[styleArg, styles.header]}>
-          <View style={styles.buttonWrapper}>
-            {includeBackButton ? backButton : blankBackButton}
-          </View>
-          <View style={styles.buttonWrapper}>
-            <ImageButton imageName='solidi'
-              styles={styleLogoButton}
-              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.TEST}) } }
-            />
-          </View>
-          <View style={styles.buttonWrapper}>
-            {/*
-            Future: Build notification section.
-            { includeNotificationButton && <Button title='Alerts' styles={styleHeaderButton}
-              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.NOTIFICATIONS}) } }
-            /> }
-            */}
-          </View>
-          <View style={styles.buttonWrapper}>
-            <ImageButton imageName='bars' imageType='icon'
-              styles={_styleSettingsButton}
-              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.SETTINGS}) } }
-            />
-          </View>
-        </View>
+    <View style={[styleArg, styles.header]}>
+      <View style={styles.buttonWrapper}>
+        {includeBackButton ? backButton : blankBackButton}
+      </View>
+      <View style={styles.buttonWrapper}>
+        <ImageButton imageName='solidi'
+          styles={styleLogoButton}
+          onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.TEST}) } }
+        />
+      </View>
+      <View style={styles.buttonWrapper}>
+        {/*
+        Future: Build notification section.
+        { includeNotificationButton && <Button title='Alerts' styles={styleHeaderButton}
+          onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.NOTIFICATIONS}) } }
+        /> }
+        */}
+      </View>
+      <View style={styles.buttonWrapper}>
+        <ImageButton imageName='bars' imageType='icon'
+          styles={_styleSettingsButton}
+          onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.SETTINGS}) } }
+        />
+      </View>
+    </View>
   );
 };
 
