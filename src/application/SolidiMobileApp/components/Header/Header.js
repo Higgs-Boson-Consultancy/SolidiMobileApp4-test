@@ -50,8 +50,6 @@ const Header = (props) => {
 
 
   return (
-    <AppStateContext.Consumer>
-      {(context) =>
         <View style={[styleArg, styles.header]}>
           <View style={styles.buttonWrapper}>
             {includeBackButton ? backButton : blankBackButton}
@@ -59,26 +57,24 @@ const Header = (props) => {
           <View style={styles.buttonWrapper}>
             <ImageButton imageName='solidi'
               styles={styleLogoButton}
-              onPress={ () => { context.setMainPanelState({mainPanelState:mainPanelStates.TEST}) } }
+              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.TEST}) } }
             />
           </View>
           <View style={styles.buttonWrapper}>
             {/*
             Future: Build notification section.
             { includeNotificationButton && <Button title='Alerts' styles={styleHeaderButton}
-              onPress={ () => { context.setMainPanelState({mainPanelState:mainPanelStates.NOTIFICATIONS}) } }
+              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.NOTIFICATIONS}) } }
             /> }
             */}
           </View>
           <View style={styles.buttonWrapper}>
             <ImageButton imageName='bars' imageType='icon'
               styles={_styleSettingsButton}
-              onPress={ () => { context.setMainPanelState({mainPanelState:mainPanelStates.SETTINGS}) } }
+              onPress={ () => { appState.setMainPanelState({mainPanelState:mainPanelStates.SETTINGS}) } }
             />
           </View>
         </View>
-      }
-    </AppStateContext.Consumer>
   );
 };
 
