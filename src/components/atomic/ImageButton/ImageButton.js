@@ -39,8 +39,15 @@ const ImageButton = ({
   let titleExists = !!title;
 
   // Defaults:
-  let iconSize = _.isNil(rest.iconSize) ? 30 : rest.iconSize;
-  let iconColor = _.isNil(rest.iconColor) ? '#333' : rest.iconColor;
+  let iconSize = 30;
+  let iconColor = '#333';
+
+  // Check for arguments:
+  if (! _.isUndefined(styles.image) && ! _.isUndefined(styles.image.iconSize))
+    iconSize = styles.image.iconSize;
+  if (! _.isUndefined(styles.image) && ! _.isUndefined(styles.image.iconColor))
+    iconColor = styles.image.iconColor;
+
 
   return (
     <Touchable

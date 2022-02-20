@@ -7,9 +7,12 @@ import {
   View,
 } from 'react-native';
 
+// Other imports
+import _ from 'lodash';
+
 // Internal imports
 import { AppStateContext } from 'src/application/data';
-import { colours, mainPanelStates, footerButtonList } from 'src/constants';
+import { colours, mainPanelStates, footerButtonList, footerIcons } from 'src/constants';
 import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
@@ -38,7 +41,7 @@ const Footer = (props) => {
 
   let leftButton = (
     <View style={styles.leftButtonWrapper}>
-      <ImageButton imageName='angle-left' imageType='icon'
+      <ImageButton imageName='chevron-left' imageType='icon'
         styles={styleLeftButton}
         onPress={ () => { appState.setFooterIndex(newFooterIndexLeft) } }
       />
@@ -50,7 +53,7 @@ const Footer = (props) => {
 
   let rightButton = (
     <View style={styles.rightButtonWrapper}>
-      <ImageButton imageName='angle-right' imageType='icon'
+      <ImageButton imageName='chevron-right' imageType='icon'
         styles={styleRightButton}
         onPress={ () => { appState.setFooterIndex(newFooterIndexRight) } }
       />
@@ -67,11 +70,17 @@ const Footer = (props) => {
   let renderPanelButton = ({ item }) => {
     let isSelected = item === appState.mainPanelState;
     let _style = isSelected ? stylePanelButtonSelected : stylePanelButton;
+    let imageName = 'question-circle';
+    let keyName = item.toUpperCase();
+    if (_.keys(footerIcons).includes(keyName)) {
+      imageName = footerIcons[keyName];
+    }
     return (
       <AppStateContext.Consumer>
       {(context) =>
         <View style={styles.buttonWrapper}>
-          <Button title={item} styles={_style}
+          <ImageButton imageName={imageName} imageType='icon'
+            title={item} styles={_style}
             onPress={ () => { context.setMainPanelState({mainPanelState: item}) } }
           />
         </View>
@@ -119,8 +128,6 @@ let styles = StyleSheet.create({
   unavailableLeftButton: {
     height: '100%',
     backgroundColor: colours.unavailableButton,
-    borderWidth: 1,
-    borderRightWidth: 0,
   },
   footerButtonList: {
     width: '70%',
@@ -135,62 +142,66 @@ let styles = StyleSheet.create({
   unavailableRightButton: {
     height: '100%',
     backgroundColor: colours.unavailableButton,
-    borderWidth: 1,
   },
 })
 
 let styleEmptyFooter = StyleSheet.create({
-  borderLeftWidth: 1,
-  borderRightWidth: 1,
+
 });
 
 let styleLeftButton = StyleSheet.create({
+  image: {
+    iconSize: 22,
+    iconColor: colours.greyedOutIcon,
+  },
   text: {
     fontSize: normaliseFont(22),
     fontWeight: 'bold',
   },
   view: {
     height: '100%',
-    borderWidth: 1,
-    borderRightWidth: 0,
-  }
+  },
 });
 
 let styleRightButton = StyleSheet.create({
+  image: {
+    iconSize: 22,
+    iconColor: colours.greyedOutIcon,
+  },
   text: {
     fontSize: normaliseFont(22),
     fontWeight: 'bold',
   },
   view: {
     height: '100%',
-    borderWidth: 1,
-  }
+  },
 });
 
 let stylePanelButton = StyleSheet.create({
+  image: {
+    iconColor: colours.greyedOutIcon,
+  },
   text: {
-    fontSize: normaliseFont(18),
+    fontSize: normaliseFont(16),
+    color: colours.greyedOutIcon,
   },
   view: {
     height: '100%',
-    backgroundColor: colours.footerPanelButton,
-    borderWidth: 1,
-    borderRightWidth: 0,
-  }
+  },
 });
 
 let stylePanelButtonSelected = StyleSheet.create({
+  image: {
+    iconColor: colours.selectedIcon,
+  },
   text: {
-    fontSize: normaliseFont(18),
-    color: 'black',
+    fontSize: normaliseFont(16),
+    color: colours.selectedIcon,
     fontWeight: 'bold',
   },
   view: {
     height: '100%',
-    backgroundColor: 'lightgrey',
-    borderWidth: 1,
-    borderRightWidth: 0,
-  }
+  },
 });
 
 

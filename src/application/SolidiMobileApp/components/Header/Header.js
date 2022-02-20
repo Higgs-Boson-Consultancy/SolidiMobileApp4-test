@@ -8,7 +8,7 @@ import {
 
 // Internal imports
 import { AppStateContext } from 'src/application/data';
-import { mainPanelStates } from 'src/constants';
+import { colours, mainPanelStates } from 'src/constants';
 import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
@@ -25,7 +25,7 @@ const Header = (props) => {
   // It will set mainPanelState to the previous state in the history,
   // and remove the current state from the history.
   let backButton = (
-    <ImageButton imageName='angle-left' imageType='icon'
+    <ImageButton imageName='chevron-left' imageType='icon'
       styles={styleBackButton}
       onPress={ () => { appState.decrementStateHistory() } }
     />
@@ -93,7 +93,8 @@ const styles = StyleSheet.create({
 
 const styleBackButton = StyleSheet.create({
   image: {
-    iconSize: 35,
+    iconSize: 22,
+    iconColor: colours.greyedOutIcon,
   },
   text: {
     fontWeight: 'bold',
