@@ -176,8 +176,6 @@ let History = () => {
   }
 
   return (
-    <AppStateContext.Consumer>
-    {(context) =>
       <View style={styles.history}>
         <View style={styles.historyInternalBox}>
           {isLoading && displayLoadingMsg()}
@@ -188,8 +186,6 @@ let History = () => {
             renderOrders()}
         </View>
       </View>
-    }
-    </AppStateContext.Consumer>
   );
 
 }
