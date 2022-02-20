@@ -176,16 +176,16 @@ let History = () => {
   }
 
   return (
-      <View style={styles.history}>
-        <View style={styles.historyInternalBox}>
-          {isLoading && displayLoadingMsg()}
-          {! isLoading && displayHistoryControls()}
-          {! isLoading && category === 'transactions' &&
-            renderTransactions()}
-          {! isLoading && category === 'orders' &&
-            renderOrders()}
-        </View>
+    <View style={styles.history}>
+      <View style={styles.historyInternalBox}>
+        {isLoading && displayLoadingMsg()}
+        {! isLoading && displayHistoryControls()}
+        {! isLoading && category === 'transactions' &&
+          renderTransactions()}
+        {! isLoading && category === 'orders' &&
+          renderOrders()}
       </View>
+    </View>
   );
 
 }
