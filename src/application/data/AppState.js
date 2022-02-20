@@ -48,6 +48,16 @@ class AppStateProvider extends Component {
     this.nonHistoryPanels = [mainPanelStates.PIN];
     this.appName = 'SolidiMobileApp';
 
+    // Shortcut function for changing the mainPanelState.
+    this.changeState = (stateName, pageName) => {
+      stateName = stateName.toUpperCase();
+      let stateNames = _.keys(mainPanelStates);
+      if (! stateNames.includes(stateName)) {
+        throw Error(`Unrecognised stateName: ${stateName}`);
+      }
+      this.state.setMainPanelState({mainPanelState: mainPanelStates[stateName], pageName});
+    }
+
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
       log(`Set state to: ${JSON.stringify(newState)}`);
@@ -207,6 +217,7 @@ class AppStateProvider extends Component {
       numberOfFooterButtonsToDisplay: this.numberOfFooterButtonsToDisplay,
       mainPanelState: this.initialMainPanelState,
       pageName: this.initialPageName,
+      changeState: this.changeState,
       setMainPanelState: this.setMainPanelState,
       stashedState: {},
       stateHistoryList: [],
