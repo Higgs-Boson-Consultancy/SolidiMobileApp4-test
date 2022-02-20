@@ -63,7 +63,7 @@ const Header = (props) => {
       <View style={styles.buttonWrapper}>
         {/*
         Future: Build notification section.
-        { includeNotificationButton && <Button title='Alerts' styles={styleHeaderButton}
+        { includeNotificationButton && <Button title='Alerts' styles={styleNotificationButton}
           onPress={ () => { appState.changeState('notifications) } }
         /> }
         */}
@@ -124,7 +124,7 @@ styleSettingsButtonSelected = StyleSheet.create({
 });
 
 
-const styleHeaderButton = StyleSheet.create({
+const styleNotificationButton = StyleSheet.create({
   text: {
     fontSize: normaliseFont(18),
   }
