@@ -9,7 +9,7 @@ import Notifications from './Notifications/Notifications';
 import Settings from './Settings/Settings';
 import Login from './Login/Login';
 import PIN from './PIN/PIN';
-import Payment from './Payment/Payment';
+import ChooseHowToPay from './ChooseHowToPay/ChooseHowToPay';
 
 
 export {
@@ -24,5 +24,5 @@ export {
   Settings,
   Login,
   PIN,
-  Payment,
+  ChooseHowToPay,
 };

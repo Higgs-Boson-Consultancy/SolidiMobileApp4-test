@@ -13,7 +13,7 @@ import _ from 'lodash';
 // Internal imports
 import { mainPanelStates } from 'src/constants';
 import { Test, Buy, Sell, Send, Receive, Assets, History,
-  Notifications, Settings, Login, PIN, Payment } from './components';
+  Notifications, Settings, Login, PIN, ChooseHowToPay } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -51,8 +51,8 @@ const MainPanel = () => {
         }
       }
       return <PIN />
-    } else if (appState.mainPanelState === mainPanelStates.PAYMENT) {
-      return <Payment />
+    } else if (appState.mainPanelState === mainPanelStates.CHOOSEHOWTOPAY) {
+      return <ChooseHowToPay />
     } else {
       return <Text>Error: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }

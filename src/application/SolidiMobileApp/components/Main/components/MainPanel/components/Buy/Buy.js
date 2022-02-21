@@ -183,7 +183,7 @@ let Buy = () => {
     // At this point, the user is already authenticated, or has just returned from the auth sequence.
     // We transfer to the payment sequence.
     // At the end of the payment sequence, the BUY order will be submitted to the server.
-    appState.changeState('payment', 'how_to_pay');
+    appState.changeState('ChooseHowToPay');
   }
 
   // Submit the order automatically if we have returned from auth sequence.
@@ -246,7 +246,7 @@ let Buy = () => {
       </View>
 
     </View>
-  
+
   )
 };
 
