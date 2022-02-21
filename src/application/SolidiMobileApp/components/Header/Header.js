@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: '25%',
   },
-})
+});
 
 
 const styleBackButton = StyleSheet.create({
@@ -100,14 +100,14 @@ const styleBackButton = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normaliseFont(18),
   }
-})
+});
 
 
 const styleLogoButton = StyleSheet.create({
   image: {
     width: '60%',
   },
-})
+});
 
 
 styleSettingsButton = StyleSheet.create({
