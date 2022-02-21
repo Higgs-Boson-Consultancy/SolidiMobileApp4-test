@@ -13,7 +13,8 @@ import _ from 'lodash';
 // Internal imports
 import { colors, mainPanelStates } from 'src/constants';
 import { Test, Buy, Sell, Send, Receive, Assets, History,
-  Notifications, Settings, Login, PIN, ChooseHowToPay } from './components';
+  Notifications, Settings, Login, PIN, ChooseHowToPay,
+  MakePayment } from './components';
 import AppStateContext from 'src/application/data';
 
 
