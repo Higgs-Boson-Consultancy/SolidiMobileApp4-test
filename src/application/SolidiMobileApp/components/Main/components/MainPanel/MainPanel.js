@@ -11,7 +11,7 @@ import {
 import _ from 'lodash';
 
 // Internal imports
-import { mainPanelStates } from 'src/constants';
+import { colors, mainPanelStates } from 'src/constants';
 import { Test, Buy, Sell, Send, Receive, Assets, History,
   Notifications, Settings, Login, PIN, ChooseHowToPay } from './components';
 import AppStateContext from 'src/application/data';
@@ -59,10 +59,20 @@ const MainPanel = () => {
   }
 
   return (
-      selectPanel()
+      <View style={styles.mainPanel}>
+        {selectPanel()}
+      </View>
     );
 
 };
+
+
+const styles = StyleSheet.create({
+  mainPanel: {
+    alignItems: 'center',
+    backgroundColor: colors.mainPanelBackground,
+  },
+});
 
 
 export default MainPanel;
