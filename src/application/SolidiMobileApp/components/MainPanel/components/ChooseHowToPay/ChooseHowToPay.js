@@ -147,7 +147,7 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
   heading1: {
-    marginTop: scaledHeight(20),
+    marginTop: scaledHeight(10),
   },
   heading2: {
     marginTop: scaledHeight(20),
