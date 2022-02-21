@@ -1,5 +1,5 @@
 let footerIcons = {
-  BUY: 'bar-chart',
+  BUY: 'line-chart',
   SELL: 'dollar',
   ASSETS: 'bank',
   SEND: 'upload',
@@ -9,7 +9,7 @@ let footerIcons = {
 
 /* Alternative choices:
 
-BUY: signal,
+BUY: signal, bar-chart
 SELL: arrow-circle-up,
 HISTORY: copy, table, th-list,
 */
