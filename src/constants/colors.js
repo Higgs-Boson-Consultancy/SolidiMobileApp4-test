@@ -9,6 +9,7 @@ export const colors = {
   linkText: 'rgb(29, 117, 253)',
   greyedOutIcon: '#5b616e',
   selectedIcon: '#1652f0',
+  lightgrey: 'rgb(204,204,204)',
 }
 
 export default colors;
