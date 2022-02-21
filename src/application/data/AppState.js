@@ -1,5 +1,5 @@
 // Goal: Store the current state of the app in a Context.
-/* 
+/*
 - The MainPanel state
 - The history stack of previous MainPanel states
 */
