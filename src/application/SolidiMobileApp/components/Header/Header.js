@@ -69,7 +69,7 @@ const Header = (props) => {
         */}
       </View>
       <View style={styles.buttonWrapper}>
-        <ImageButton imageName='bars' imageType='icon'
+        <ImageButton imageName='user' imageType='icon'
           styles={_styleSettingsButton}
           onPress={ () => { appState.changeState('settings') } }
         />
