@@ -33,12 +33,17 @@ let Payment = () => {
 
   let zeroVolumeQA = '0.' + '0'.repeat(assetsInfo[assetQA].decimalPlaces);
 
-  let confirmPayment = async () => {
+  let readPaymentConditions = async () => {
 
   }
 
-  let readPaymentConditions = async () => {
+  let confirmPayment = async () => {
+    if (paymentChoice === 'direct_payment') {
+        appState.changeState('MakePayment');
+    } else {
+      // Pay with balance.
 
+    }
   }
 
   return (
