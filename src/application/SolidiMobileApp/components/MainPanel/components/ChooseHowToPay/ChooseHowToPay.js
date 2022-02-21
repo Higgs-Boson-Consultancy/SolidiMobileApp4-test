@@ -15,6 +15,8 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 /* Notes
 
+The primary payment choice is "pay with external account" vs "pay with existing balance". This component handles that choice.
+
 https://callstack.github.io/react-native-paper/radio-button-item.html
 
 */
