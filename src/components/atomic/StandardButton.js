@@ -16,7 +16,6 @@ let styles = StyleSheet.create({
   view: {
     height: scaledHeight(40),
     alignSelf: 'flex-start',
-    height: 40,
     paddingHorizontal: scaledWidth(20),
     borderRadius: scaledWidth(8),
     backgroundColor: colors.standardButton,
