@@ -25,6 +25,7 @@ let MakePayment = () => {
 
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.buyPanel);
 
+  // Testing:
   let paymentReference = 'SPARKLE';
   let solidiSortCode = '04-05-11';
   let solidiAccountNumber = '00012484';
@@ -36,6 +37,7 @@ let MakePayment = () => {
   let [intervalTimerCreated, setIntervalTimerCreated] = useState(false);
   let intervalSeconds = 3;
   function incrementTimeElapsed () {
+    // Note: This function is a closure. It's holding the old values of several variables that (outside this function) get reset when the component is re-rendered.
     timeElapsedSeconds += intervalSeconds;
     let newMarkerValue = timeElapsedSeconds / parseFloat(maxTimeAllowedSeconds);
     setTimeElapsedMarker(newMarkerValue);
@@ -256,7 +258,6 @@ let styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-
 });
 
 
