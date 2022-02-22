@@ -181,7 +181,7 @@ let styles = StyleSheet.create({
   orderDetailsLine: {
     width: '100%',
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
   bold: {
     fontWeight: 'bold',
