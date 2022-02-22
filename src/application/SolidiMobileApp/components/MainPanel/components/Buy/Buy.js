@@ -175,7 +175,7 @@ let Buy = () => {
       // Save the order details in the global state.
       _.assign(appState.buyPanel, {volumeQA, assetQA, volumeBA, assetBA});
       // Stash the BUY state for later retrieval.
-      appState.stashState({mainPanelState: mainPanelStates.BUY, pageName: 'userHasClickedBuyButton'});
+      appState.stashState({mainPanelState: 'Buy', pageName: 'userHasClickedBuyButton'});
       appState.authenticateUser();
       return;
     }
