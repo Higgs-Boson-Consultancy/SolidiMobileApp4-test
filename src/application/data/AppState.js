@@ -38,24 +38,22 @@ class AppStateProvider extends Component {
     super(props);
 
     // Can set this initial state for testing.
-    this.initialMainPanelState = mainPanelStates.BUY;
+    this.initialMainPanelState = 'WaitingForPayment';
     this.initialPageName = 'default';
 
     // Misc
     this.numberOfFooterButtonsToDisplay = 3;
     this.standardPaddingTop = scaledHeight(80);
     this.standardPaddingHorizontal = scaledWidth(15);
-    this.nonHistoryPanels = [mainPanelStates.PIN];
+    this.nonHistoryPanels = ['PIN'];
     this.appName = 'SolidiMobileApp';
 
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
-      stateName = stateName.toUpperCase();
-      let stateNames = _.keys(mainPanelStates);
-      if (! stateNames.includes(stateName)) {
+      if (! mainPanelStates.includes(stateName)) {
         throw Error(`Unrecognised stateName: ${stateName}`);
       }
-      this.state.setMainPanelState({mainPanelState: mainPanelStates[stateName], pageName});
+      this.state.setMainPanelState({mainPanelState: stateName, pageName});
     }
 
     // Function for changing the mainPanelState.
@@ -170,9 +168,9 @@ class AppStateProvider extends Component {
 
     this.authenticateUser = () => {
       if (! this.state.user.pin) {
-        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
+        this.state.setMainPanelState({mainPanelState: 'Login'});
       } else {
-        this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN});
+        this.state.setMainPanelState({mainPanelState: 'PIN'});
       }
     }
 
@@ -189,10 +187,10 @@ class AppStateProvider extends Component {
       // If user hasn't logged in, they need to do so first.
       if (! this.state.user.isAuthenticated) {
         // We send them to the login page, which will ask them to choose a PIN afterwards.
-        this.state.setMainPanelState({mainPanelState: mainPanelStates.LOGIN});
+        this.state.setMainPanelState({mainPanelState: 'Login'});
         return;
       }
-      this.state.setMainPanelState({mainPanelState: mainPanelStates.PIN, pageName: 'choose'});
+      this.state.setMainPanelState({mainPanelState: 'PIN', pageName: 'choose'});
     }
 
     this.loadPIN = () => {
@@ -241,7 +239,7 @@ class AppStateProvider extends Component {
         pin: '',
       },
       authRequired: [
-        mainPanelStates.HISTORY,
+        'History',
       ],
       apiClient: null,
       appName: this.appName,

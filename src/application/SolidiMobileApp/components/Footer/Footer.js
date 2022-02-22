@@ -23,7 +23,7 @@ const Footer = (props) => {
 
   let appState = useContext(AppStateContext);
 
-  let hideFooter = appState.mainPanelState === mainPanelStates.PIN;
+  let hideFooter = appState.mainPanelState === 'PIN';
 
   let footerIndex = AppStateContext._currentValue.footerIndex;
   let footerEndIndex = footerIndex + appState.numberOfFooterButtonsToDisplay - 1;
@@ -72,9 +72,8 @@ const Footer = (props) => {
     let isSelected = mainPanelState === appState.mainPanelState;
     let _style = isSelected ? stylePanelButtonSelected : stylePanelButton;
     let imageName = 'question-circle';
-    let keyName = mainPanelState.toUpperCase();
-    if (_.keys(footerIcons).includes(keyName)) {
-      imageName = footerIcons[keyName];
+    if (_.keys(footerIcons).includes(mainPanelState)) {
+      imageName = footerIcons[mainPanelState];
     }
     return (
       <View style={styles.buttonWrapper}>

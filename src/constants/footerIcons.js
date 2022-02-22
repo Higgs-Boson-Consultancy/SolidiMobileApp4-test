@@ -1,10 +1,10 @@
 let footerIcons = {
-  BUY: 'line-chart',
-  SELL: 'dollar',
-  ASSETS: 'bank',
-  SEND: 'upload',
-  RECEIVE: 'download',
-  HISTORY: 'tasks',
+  Buy: 'line-chart',
+  Sell: 'dollar',
+  Assets: 'bank',
+  Send: 'upload',
+  Receive: 'download',
+  History: 'tasks',
 }
 
 /* Alternative choices:

@@ -19,7 +19,7 @@ let lj = (x) => console.log(JSON.stringify(x));
 
 
 let Login = () => {
-  
+
   let appState = useContext(AppStateContext);
 
   let [errorMessage, setErrorMessage] = useState(undefined);
@@ -72,10 +72,10 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       appState.user.userInfo = data2;
       // Change mainPanel.
       if (! appState.user.pin) {
-        appState.setMainPanelState({mainPanelState: mainPanelStates.PIN, pageName: 'choose'});
+        appState.setMainPanelState({mainPanelState: 'PIN', pageName: 'choose'});
       } else if (_.isEmpty(appState.stashedState)) {
         // Change to BUY state by default.
-        appState.setMainPanelState({mainPanelState: mainPanelStates.BUY});
+        appState.setMainPanelState({mainPanelState: 'Buy'});
       } else {
         appState.loadStashedState();
       }
@@ -90,7 +90,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
     <View style={styles.panelContainer}>
 
-      {errorMessage && 
+      {errorMessage &&
         <View style={styles.errorWrapper}>
           <Text style={styles.errorText}>
             <Text style={styles.errorTextBold}>Error: </Text>
@@ -125,7 +125,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       </View>
 
       </View>
-    
+
   );
 
 }

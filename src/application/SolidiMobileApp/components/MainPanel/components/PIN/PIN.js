@@ -81,13 +81,13 @@ let PIN = () => {
     // Change mainPanel.
     if (_.isEmpty(appState.stashedState)) {
       // Change to BUY state by default.
-      appState.setMainPanelState({mainPanelState: mainPanelStates.BUY});
+      appState.setMainPanelState({mainPanelState: 'Buy'});
       return;
     } else {
       appState.loadStashedState();
     }
   }
-  
+
   return (
     <View style={styles.panelContainer}>
       <PINCode

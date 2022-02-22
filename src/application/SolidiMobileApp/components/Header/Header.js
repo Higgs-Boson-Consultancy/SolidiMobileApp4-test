@@ -19,7 +19,7 @@ const Header = (props) => {
 
   let appState = useContext(AppStateContext);
 
-  let showLogoOnly = appState.mainPanelState === mainPanelStates.PIN;
+  let showLogoOnly = appState.mainPanelState === 'PIN';
 
   // Prepare back button.
   // It will set mainPanelState to the previous state in the history,

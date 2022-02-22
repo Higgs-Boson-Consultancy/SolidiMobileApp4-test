@@ -27,38 +27,38 @@ const MainPanel = (props) => {
   let appState = useContext(AppStateContext);
 
   let selectPanelComponent = () => {
-    if (appState.mainPanelState === mainPanelStates.TEST) {
+    if (appState.mainPanelState === 'Test') {
       return <Test />
-    } else if (appState.mainPanelState === mainPanelStates.BUY) {
+    } else if (appState.mainPanelState === 'Buy') {
       return <Buy />
-    } else if (appState.mainPanelState === mainPanelStates.SELL) {
+    } else if (appState.mainPanelState === 'Sell') {
       return <Sell />
-    } else if (appState.mainPanelState === mainPanelStates.SEND) {
+    } else if (appState.mainPanelState === 'Send') {
       return <Send />
-    } else if (appState.mainPanelState === mainPanelStates.RECEIVE) {
+    } else if (appState.mainPanelState === 'Receive') {
       return <Receive />
-    } else if (appState.mainPanelState === mainPanelStates.ASSETS) {
+    } else if (appState.mainPanelState === 'Assets') {
       return <Assets />
-    } else if (appState.mainPanelState === mainPanelStates.HISTORY) {
+    } else if (appState.mainPanelState === 'History') {
       return <History />
-    } else if (appState.mainPanelState === mainPanelStates.NOTIFICATIONS) {
+    } else if (appState.mainPanelState === 'Notifications') {
       return <Notifications />
-    } else if (appState.mainPanelState === mainPanelStates.SETTINGS) {
+    } else if (appState.mainPanelState === 'Settings') {
       return <Settings />
-    } else if (appState.mainPanelState === mainPanelStates.LOGIN) {
+    } else if (appState.mainPanelState === 'Login') {
       return <Login />
-    } else if (appState.mainPanelState === mainPanelStates.PIN) {
+    } else if (appState.mainPanelState === 'PIN') {
       if (appState.pageName == 'default') {
         if (! appState.user.pin) {
           return <Login />
         }
       }
       return <PIN />
-    } else if (appState.mainPanelState === mainPanelStates.CHOOSEHOWTOPAY) {
+    } else if (appState.mainPanelState === 'ChooseHowToPay') {
       return <ChooseHowToPay />
-    } else if (appState.mainPanelState === mainPanelStates.MAKEPAYMENT) {
+    } else if (appState.mainPanelState === 'MakePayment') {
       return <MakePayment />
-    } else if (appState.mainPanelState === mainPanelStates.WAITINGFORPAYMENT) {
+    } else if (appState.mainPanelState === 'WaitingForPayment') {
       return <WaitingForPayment />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
