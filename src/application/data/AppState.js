@@ -250,7 +250,12 @@ class AppStateProvider extends Component {
         symbolQA: '',
         volumeBA: 0,
         symbolBA: '',
-      }
+      },
+      panels: {
+        waitingForPayment: {
+          timerID: null,
+        },
+      },
     }
 
     // Save the initial state to the state history.
