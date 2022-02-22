@@ -120,6 +120,7 @@ let styles = StyleSheet.create({
   },
   leftButtonWrapper: {
     width: '15%',
+    borderLeftWidth: 1,
   },
   unavailableLeftButton: {
     height: '100%',
@@ -134,6 +135,7 @@ let styles = StyleSheet.create({
   },
   rightButtonWrapper: {
     width: '15%',
+    borderRightWidth: 1,
   },
   unavailableRightButton: {
     height: '100%',
