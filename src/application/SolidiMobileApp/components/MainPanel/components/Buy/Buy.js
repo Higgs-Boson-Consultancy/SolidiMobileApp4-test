@@ -20,7 +20,7 @@ let Buy = () => {
 
   let appState = useContext(AppStateContext);
 
-  appState.loadPIN();
+  appState.onStart();
 
   let [priceLoadCount, setPriceLoadCount] = useState(0);
   let [lastUserInput, setLastUserInput] = useState('');
