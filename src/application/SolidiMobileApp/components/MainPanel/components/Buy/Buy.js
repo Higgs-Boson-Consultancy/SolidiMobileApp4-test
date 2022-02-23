@@ -181,8 +181,30 @@ let Buy = () => {
     }
 
     // At this point, the user is already authenticated, or has just returned from the auth sequence.
+    // We send the BUY order to the server.
+    let fxmarket = assetBA + '/' + assetQA;
+    log(`Send order to server: BUY ${volumeBA} ${fxmarket} @ MARKET ${volumeQA}`);
+    let data = await appState.apiClient.privateMethod({
+      httpMethod: 'POST',
+      apiMethod: 'buy',
+      params: {
+        fxmarket,
+        amount: volumeBA,
+        price: volumeQA,
+      }
+    });
+    /*
+    Example error response:
+    {"error":"Insufficient Funds"}
+    Example data:
+    {"id":11,"datetime":1643047261277,"type":0,"price":"100","amount":"0.05"}
+    */
+   // Future: If an error occurs, display the error description below the orderSubmitted description.
+   // Store the orderID. Later, we'll use this to check whether the payment for it has been received.
+   appState.buyPanel.orderID = data.id;
+   log(`OrderID: ${appState.buyPanel.orderID}`);
+
     // We transfer to the payment sequence.
-    // At the end of the payment sequence, the BUY order will be submitted to the server.
     appState.changeState('ChooseHowToPay');
   }
 
