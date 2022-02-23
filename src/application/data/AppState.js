@@ -233,6 +233,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       this.state.user.info.depositDetails.GBP = {
         accountName: data2.accountname,
         accountNumber: data2.accountno,
+        sortCode: data2.sortcode,
         reference: data2.reference,
       }
       this.state.userInfoLoaded = true;
@@ -269,7 +270,12 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         info: {
           user: null,
           depositDetails: {
-            GBP: null,
+            GBP: {
+              accountName: null,
+              accountNumber: null,
+              sortCode: null,
+              reference: null,
+            }
           },
         },
         pin: '',
@@ -322,12 +328,21 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       this.state.user.isAuthenticated = true;
       _.assign(this.state.user, {email, password});
 
-      // Method for loading data at the start of whatever component we're working on currently.
+      // Method for loading data at the start of whatever component we're working on currently. Note: This is async, and can't be used during component creation.
       this.state.onStartDevTesting = () => {
         if (! this.state.userInfoLoaded) {
           this.loadUserInfo();
         }
       }
+
+      _.assign(this.state.buyPanel, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
+
+      _.assign(this.state.user.info.depositDetails.GBP, {
+        accountName: 'Solidi',
+        accountNumber: '00012484',
+        sortCode: '040511',
+        reference: 'SHMPQKC',
+      });
 
     }
 
