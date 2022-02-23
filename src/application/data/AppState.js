@@ -21,6 +21,7 @@ import _ from 'lodash';
 import { mainPanelStates, footerButtonList } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import misc from 'src/util/misc';
 
 // Misc
 let lj = (x) => console.log(JSON.stringify(x));
@@ -210,9 +211,16 @@ class AppStateProvider extends Component {
       });
     }
 
-    this.onStart = () => {
-      // Call this function on the landing page (which should be 'Buy').
-      this.loadPIN();
+    this.loadUserInfo = async () => {
+      let data = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'user'});
+      let keyNames = `address_1, address_2, address_3, address_4,
+bank_limit, btc_limit, country, crypto_limit, email, firstname, freewithdraw,
+landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
+postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
+`.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
+      misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
+      this.state.user.userInfo = data;
+      log("User info loaded from server.");
     }
 
     // This must be declared towards the end of the constructor.
@@ -233,7 +241,7 @@ class AppStateProvider extends Component {
       authenticateUser: this.authenticateUser,
       choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
-      onStart: this.onStart,
+      loadUserInfo: this.loadUserInfo,
       apiData: {},
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 3",

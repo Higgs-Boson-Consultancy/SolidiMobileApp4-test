@@ -62,14 +62,7 @@ let Login = () => {
         log(msg);
       }
       // Load and store user info.
-      let data2 = await apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'user'});
-      let keyNames2 = `address_1, address_2, address_3, address_4,
-bank_limit, btc_limit, country, crypto_limit, email, firstname, freewithdraw,
-landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
-postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
-`.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
-      misc.confirmExactKeys('data2', data2, keyNames2, 'submitLoginRequest');
-      appState.user.userInfo = data2;
+      await appState.loadUserInfo();
       // Change mainPanel.
       if (! appState.user.pin) {
         appState.setMainPanelState({mainPanelState: 'PIN', pageName: 'choose'});
