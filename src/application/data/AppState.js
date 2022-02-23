@@ -39,7 +39,7 @@ class AppStateProvider extends Component {
     super(props);
 
     // Can set this initial state for testing.
-    this.initialMainPanelState = 'WaitingForPayment';
+    this.initialMainPanelState = 'Buy';
     this.initialPageName = 'default';
 
     // Misc
@@ -286,6 +286,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       apiClient: null,
       appName: this.appName,
       buyPanel: {
+        orderID: null,
         volumeQA: 0,
         symbolQA: '',
         volumeBA: 0,
