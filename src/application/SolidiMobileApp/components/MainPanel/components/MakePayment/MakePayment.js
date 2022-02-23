@@ -20,17 +20,17 @@ let MakePayment = () => {
 
   let appState = useContext(AppStateContext);
 
-  // Testing:
-  _.assign(appState.buyPanel, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
-
+  // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.buyPanel);
 
-  // Testing:
-  let paymentReference = 'SPARKLE';
-  let solidiSortCode = '04-05-11';
-  let solidiAccountNumber = '00012484';
-  let solidiAccountName = 'Solidi';
+  // Load deposit account details.
+  let detailsGBP = appState.user.info.depositDetails.GBP;
+  let reference = detailsGBP.reference;
+  let solidiSortCode = detailsGBP.sortCode;
+  let solidiAccountNumber = detailsGBP.accountNumber;
+  let solidiAccountName = detailsGBP.accountName;
 
+  // Set up progress bar.
   let timeElapsedSeconds = 0;
   let maxTimeAllowedSeconds = 30 * 60; // 30 minutes.
   let [timeElapsedMarker, setTimeElapsedMarker] = useState(0.0); // between 0 and 1.
@@ -92,7 +92,7 @@ let MakePayment = () => {
         </View>
         <View style={styles.importantInfoBox}>
           <Text style={styles.importantInfoBoxText}>You must include this unique reference:</Text>
-          <Text style={styles.importantInfoBoxText}>{paymentReference}</Text>
+          <Text style={styles.importantInfoBoxText}>{reference}</Text>
         </View>
       </View>
 
@@ -148,7 +148,7 @@ let MakePayment = () => {
         <View style={styles.paymentDetailsLine}>
           <Text style={styles.paymentDetailText}>Reference</Text>
           <View style={styles.paymentDetailValue}>
-            <Text style={styles.paymentDetailText}>{paymentReference}</Text>
+            <Text style={styles.paymentDetailText}>{reference}</Text>
             <ImageButton imageName='clone' imageType='icon'
               styles={styleCopyButton}
               onPress={ () => { copyToClipboard(paymentReference) } }
