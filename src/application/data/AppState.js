@@ -285,14 +285,14 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       ],
       apiClient: null,
       appName: this.appName,
-      buyPanel: {
-        orderID: null,
-        volumeQA: 0,
-        symbolQA: '',
-        volumeBA: 0,
-        symbolBA: '',
-      },
       panels: {
+        buy: {
+          orderID: null,
+          volumeQA: 0,
+          symbolQA: '',
+          volumeBA: 0,
+          symbolBA: '',
+        },
         waitingForPayment: {
           timerID: null,
         },
@@ -336,7 +336,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         }
       }
 
-      _.assign(this.state.buyPanel, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
+      _.assign(this.state.panels.buy, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
 
       _.assign(this.state.user.info.depositDetails.GBP, {
         accountName: 'Solidi',

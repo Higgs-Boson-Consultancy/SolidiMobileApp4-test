@@ -19,7 +19,7 @@ let WaitingForPayment = () => {
   let appState = useContext(AppStateContext);
 
   // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.buyPanel);
+  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
   // Set up progress bar.
   // Load deposit account details.

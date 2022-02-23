@@ -21,7 +21,7 @@ let MakePayment = () => {
   let appState = useContext(AppStateContext);
 
   // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.buyPanel);
+  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
   // Load deposit account details.
   let detailsGBP = appState.user.info.depositDetails.GBP;
@@ -64,6 +64,9 @@ let MakePayment = () => {
   }
 
   let confirmPayment = async () => {
+    // Tell the server that the user has clicked "I have paid".
+
+    // Continue to next stage.
     appState.changeState('WaitingForPayment');
   }
 

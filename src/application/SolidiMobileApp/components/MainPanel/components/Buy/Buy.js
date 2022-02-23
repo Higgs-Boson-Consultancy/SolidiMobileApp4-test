@@ -32,8 +32,8 @@ let Buy = () => {
 
   // If we're reloading an existing order, load its details from the global state.
   if (appState.pageName === 'userHasClickedBuyButton') {
-    ({volumeQA: selectedVolumeQA, assetQA: selectedAssetQA} = appState.buyPanel);
-    ({volumeBA: selectedVolumeBA, assetBA: selectedAssetBA} = appState.buyPanel);
+    ({volumeQA: selectedVolumeQA, assetQA: selectedAssetQA} = appState.panels.buy);
+    ({volumeBA: selectedVolumeBA, assetBA: selectedAssetBA} = appState.panels.buy);
   }
 
   // QA = Quote Asset
@@ -173,7 +173,7 @@ let Buy = () => {
     if (! appState.user.isAuthenticated) {
       // This happens here, rather than in setMainPanelState, because we want the user to make the choice to buy prior to having to authenticate.
       // Save the order details in the global state.
-      _.assign(appState.buyPanel, {volumeQA, assetQA, volumeBA, assetBA});
+      _.assign(appState.panels.buy, {volumeQA, assetQA, volumeBA, assetBA});
       // Stash the BUY state for later retrieval.
       appState.stashState({mainPanelState: 'Buy', pageName: 'userHasClickedBuyButton'});
       appState.authenticateUser();
@@ -201,8 +201,8 @@ let Buy = () => {
     */
    // Future: If an error occurs, display the error description below the orderSubmitted description.
    // Store the orderID. Later, we'll use this to check whether the payment for it has been received.
-   appState.buyPanel.orderID = data.id;
-   log(`OrderID: ${appState.buyPanel.orderID}`);
+   appState.panels.buy.orderID = data.id;
+   log(`OrderID: ${appState.panels.buy.orderID}`);
 
     // We transfer to the payment sequence.
     appState.changeState('ChooseHowToPay');

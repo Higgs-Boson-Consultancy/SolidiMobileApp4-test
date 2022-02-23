@@ -27,16 +27,17 @@ let Payment = () => {
   let appState = useContext(AppStateContext);
 
   // Testing:
-  _.assign(appState.buyPanel, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
+  _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
 
   const [paymentChoice, setPaymentChoice] = React.useState('direct_payment');
 
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.buyPanel);
+  // Load order details.
+  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
   let zeroVolumeQA = '0.' + '0'.repeat(assetsInfo[assetQA].decimalPlaces);
 
   let readPaymentConditions = async () => {
-
+    // Future: Load conditions article.
   }
 
   let confirmPaymentChoice = async () => {
