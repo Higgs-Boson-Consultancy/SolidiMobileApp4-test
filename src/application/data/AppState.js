@@ -212,14 +212,30 @@ class AppStateProvider extends Component {
     }
 
     this.loadUserInfo = async () => {
+      // User info
       let data = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'user'});
       let keyNames = `address_1, address_2, address_3, address_4,
 bank_limit, btc_limit, country, crypto_limit, email, firstname, freewithdraw,
 landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
 postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 `.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
-      misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
-      this.state.user.userInfo = data;
+      misc.confirmExactKeys('data', data, keyNames, 'loadUserInfo');
+      this.state.user.info.user = data;
+      // User's GBP deposit details.
+      let data2 = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'depositdetails/GBP'});
+      // Example result:
+      // {"data2": {"accountname": "Solidi", "accountno": "00001036", "reference": "SHMPQKC", "result": "success", "sortcode": "040476"}}
+      let keyNames2 = `accountname, accountno, reference, result, sortcode`.replace(/,/g, '').split(' ').filter(x => x);
+      if (data2.result != 'success') {
+        // Future: User needs to verify some information first: address, identity.
+      }
+      misc.confirmExactKeys('data2', data2, keyNames2, 'loadUserInfo');
+      this.state.user.info.depositDetails.GBP = {
+        accountName: data2.accountname,
+        accountNumber: data2.accountno,
+        reference: data2.reference,
+      }
+      this.state.userInfoLoaded = true;
       log("User info loaded from server.");
     }
 
@@ -242,6 +258,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
       loadUserInfo: this.loadUserInfo,
+      userInfoLoaded: false,
       apiData: {},
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 3",
@@ -249,7 +266,12 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         isAuthenticated: false,
         email: '',
         password: '',
-        userInfo: {},
+        info: {
+          user: null,
+          depositDetails: {
+            GBP: null,
+          },
+        },
         pin: '',
       },
       authRequired: [
@@ -302,7 +324,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
       // Method for loading data at the start of whatever component we're working on currently.
       this.state.onStartDevTesting = () => {
-        if (_.isEmpty(this.state.user.userInfo)) {
+        if (! this.state.userInfoLoaded) {
           this.loadUserInfo();
         }
       }
