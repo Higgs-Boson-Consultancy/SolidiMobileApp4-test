@@ -1,16 +1,14 @@
 // React imports
 import React, { useContext } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 // Internal imports
 import { AppStateContext } from 'src/application/data';
 import { colors, mainPanelStates } from 'src/constants';
 import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+
+
 
 
 const Header = (props) => {
