@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Linking, Text, StyleSheet, View } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -28,6 +28,8 @@ let PurchaseSuccessful = () => {
 
   let [balanceBA, setBalanceBA] = useState('');
 
+  let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
+
   let viewAssets = () => {
     let pageName = assetsInfo[assetBA].type; // 'crypto' or 'fiat'.
     appState.changeState('Assets', pageName);
@@ -44,7 +46,7 @@ let PurchaseSuccessful = () => {
       params: {},
     });
     let result = data[assetBA].balance;
-    result = '0.05000000'
+    result = '0.05000000' // Testing
     setBalanceBA(result);
   };
   if (! balanceBA) {
@@ -61,16 +63,12 @@ let PurchaseSuccessful = () => {
 
       <View style={styles.infoSection}>
 
-      <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your payment has been received.</Text>
+        <View style={styles.infoItem}>
+          <Text style={styles.bold}>{`\u2022  `} Your payment of {volumeQA} {assetsInfo[assetQA].displayString} has been processed.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your order has been processed.</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Order details: Buy {volumeBA} {assetsInfo[assetBA].displayString} for {volumeQA} {assetsInfo[assetQA].displayString}.</Text>
+          <Text style={styles.bold}>{`\u2022  `} Your Solidi account has been credited with {volumeBA} {assetsInfo[assetBA].displayString}.</Text>
         </View>
 
         <View style={styles.infoItem}>
@@ -83,8 +81,27 @@ let PurchaseSuccessful = () => {
         <StandardButton title="View assets" onPress={ viewAssets } />
       </View>
 
-      <View style={styles.button}>
+      <View style={styles.button2}>
         <StandardButton title="Buy another asset" onPress={ buyAgain } />
+      </View>
+
+      <View style={[styles.heading, styles.heading2]}>
+        <Text style={styles.headingText}>Please review us on Trustpilot!</Text>
+      </View>
+
+      <View style={styles.infoSection}>
+
+        <View style={styles.infoItem}>
+          <Text style={styles.bold}>Every review helps build trust with our new customers. Tap the Trustpilot logo below to review us. Thanks!</Text>
+        </View>
+
+      </View>
+
+      <View style={styles.buttonWrapper}>
+        <ImageButton imageName='trustpilot'
+          styles={styleTrustpilotButton}
+          onPress={ () => { Linking.openURL(trustpilotURL) } }
+        />
       </View>
 
     </View>
@@ -111,13 +128,15 @@ let styles = StyleSheet.create({
   heading1: {
     marginTop: scaledHeight(10),
   },
+  heading2: {
+    marginTop: scaledHeight(40),
+  },
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
   infoSection: {
-    paddingTop: scaledHeight(40),
-    paddingBottom: scaledHeight(20),
+    paddingVertical: scaledHeight(20),
     alignItems: 'flex-start',
   },
   infoItem: {
@@ -126,8 +145,25 @@ let styles = StyleSheet.create({
   bold: {
     fontWeight: 'bold',
   },
-  button: {
+  button2: {
     marginTop: scaledHeight(20),
+  },
+  buttonWrapper: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
+
+
+const styleTrustpilotButton = StyleSheet.create({
+  image: {
+    width: '100%',
+  },
+  view: {
+    width: scaledWidth(300),
+    height: scaledHeight(120),
+
   },
 });
 
