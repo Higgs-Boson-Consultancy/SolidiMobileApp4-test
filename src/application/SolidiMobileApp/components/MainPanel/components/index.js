@@ -14,6 +14,7 @@ import MakePayment from './MakePayment/MakePayment';
 import WaitingForPayment from './WaitingForPayment/WaitingForPayment';
 import BlankExampleComponent from './BlankExampleComponent/BlankExampleComponent';
 import PaymentNotMade from './PaymentNotMade/PaymentNotMade';
+import PurchaseSuccessful from './PurchaseSuccessful/PurchaseSuccessful';
 
 
 export {
@@ -33,4 +34,5 @@ export {
   WaitingForPayment,
   BlankExampleComponent,
   PaymentNotMade,
+  PurchaseSuccessful,
 };

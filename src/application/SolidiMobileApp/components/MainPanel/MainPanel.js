@@ -15,7 +15,7 @@ import { colors, mainPanelStates } from 'src/constants';
 import { Test, Buy, Sell, Send, Receive, Assets, History,
   Notifications, Settings, Login, PIN, ChooseHowToPay,
   MakePayment, WaitingForPayment, BlankExampleComponent,
-  PaymentNotMade} from './components';
+  PaymentNotMade, PurchaseSuccessful } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -65,6 +65,8 @@ const MainPanel = (props) => {
       return <BlankExampleComponent />
     } else if (appState.mainPanelState === 'PaymentNotMade') {
       return <PaymentNotMade />
+    } else if (appState.mainPanelState === 'PurchaseSuccessful') {
+      return <PurchaseSuccessful />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }
