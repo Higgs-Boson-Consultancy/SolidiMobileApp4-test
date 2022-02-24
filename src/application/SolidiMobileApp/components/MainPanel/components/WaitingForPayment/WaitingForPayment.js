@@ -37,7 +37,6 @@ let WaitingForPayment = () => {
   */
   let timeElapsedSeconds = 0;
   let maxTimeAllowedSeconds = 120 * 60; // 120 minutes = 2 hours.
-  let [storedTimerID, setStoredTimerID] = useState('');
   let [timeElapsedMarker, setTimeElapsedMarker] = useState(0.0); // between 0 and 1.
   let [timeRemainingString, setTimeRemainingString] = useState('2 hours 00 minutes');
   let count = 0;
@@ -83,6 +82,7 @@ let WaitingForPayment = () => {
     }
     if (timeElapsedSeconds >= maxTimeAllowedSeconds) {
       // Change to next state.
+      clearInterval(appState.panels.waitingForPayment.timerID);
       appState.changeState('PaymentNotReceived');
     }
     // Todo: Call the server to check if the payment has been received.
@@ -90,7 +90,7 @@ let WaitingForPayment = () => {
     // [API call goes here]
     // confirmPaymentReceived();
   }
-  // Set the initial timer on startup.
+  // Set the initial timer on load.
   if (_.isNil(appState.panels.waitingForPayment.timerID)) {
     let timerID = setInterval(incrementTimeElapsed, intervalSeconds * 1000);
     appState.panels.waitingForPayment.timerID = timerID;
@@ -100,6 +100,7 @@ let WaitingForPayment = () => {
 
   let confirmPaymentReceived = async () => {
     // Change to next state.
+    clearInterval(appState.panels.waitingForPayment.timerID);
     appState.changeState('PaymentReceived');
   }
 
