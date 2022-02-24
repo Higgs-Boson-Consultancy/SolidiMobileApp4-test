@@ -34,7 +34,6 @@ let MakePayment = () => {
   let timeElapsedSeconds = 0;
   let maxTimeAllowedSeconds = 30 * 60; // 30 minutes.
   let [timeElapsedMarker, setTimeElapsedMarker] = useState(0.0); // between 0 and 1.
-  let [intervalTimerCreated, setIntervalTimerCreated] = useState(false);
   let intervalSeconds = 3;
   function incrementTimeElapsed () {
     // Note: This function is a closure. It's holding the old values of several variables that (outside this function) get reset when the component is re-rendered.
@@ -43,16 +42,17 @@ let MakePayment = () => {
     setTimeElapsedMarker(newMarkerValue);
     if (newMarkerValue > maxTimeAllowedSeconds) {
       // Stop the timer.
-      clearInterval(timerID);
+      clearInterval(appState.panels.makePayment.timerID);
       // Todo: Call the server to find out if the user made the payment but did not click "I have paid" button. Do this by checking the related settlement's status.
       // If yes, then change to state "PaymentReceived".
       // If not, then change to state "PaymentNotMade".
       appState.changeState('PaymentNotMade');
     }
   }
-  if (! intervalTimerCreated) {
-    var timerID = setInterval(incrementTimeElapsed, intervalSeconds * 1000);
-    setIntervalTimerCreated(true);
+  // Set the timer on load.
+  if (_.isNil(appState.panels.makePayment.timerID)) {
+    let timerID = setInterval(incrementTimeElapsed, intervalSeconds * 1000);
+    appState.panels.makePayment.timerID = timerID;
   }
   useEffect(() => {}, [timeElapsedMarker]);
 
@@ -70,6 +70,7 @@ let MakePayment = () => {
     // The relevant settlement's status needs to be updated to "S" (for "Sent")
     // [API call goes here]
     // Continue to next stage.
+    clearInterval(appState.panels.makePayment.timerID);
     appState.changeState('WaitingForPayment');
   }
 
