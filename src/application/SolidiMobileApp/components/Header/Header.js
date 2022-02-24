@@ -69,7 +69,7 @@ const Header = (props) => {
       <View style={styles.buttonWrapper}>
         <ImageButton imageName='user' imageType='icon'
           styles={_styleSettingsButton}
-          onPress={ () => { appState.changeState('settings') } }
+          onPress={ () => { appState.changeState('Settings') } }
         />
       </View>
     </View>
