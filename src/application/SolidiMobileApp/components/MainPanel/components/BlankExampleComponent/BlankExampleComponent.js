@@ -9,11 +9,15 @@ import _ from 'lodash';
 import AppStateContext from 'src/application/data';
 import { assetsInfo, mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { Button, StandardButton, ImageButton } from 'src/components/atomic';
+import misc from 'src/util/misc';
 
 
 
 
 let BlankExampleComponent = () => {
+
+  let appState = useContext(AppStateContext);
 
   return (
     <View style={styles.panelContainer}>
@@ -23,7 +27,7 @@ let BlankExampleComponent = () => {
         <Text style={styles.headingText}>BlankExampleComponent</Text>
       </View>
 
-      <Text>{'\n'}[some text]</Text>
+      <Text style={styles.bold}>{'\n'}[some text]</Text>
 
     </View>
     </View>
@@ -53,6 +57,9 @@ let styles = StyleSheet.create({
   },
   headingText: {
     fontSize: normaliseFont(20),
+    fontWeight: 'bold',
+  },
+  bold: {
     fontWeight: 'bold',
   },
 });
