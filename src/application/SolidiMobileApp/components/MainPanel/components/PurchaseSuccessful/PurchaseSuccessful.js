@@ -40,12 +40,8 @@ let PurchaseSuccessful = () => {
   }
 
   let loadBalance = async () => {
-    let data = await appState.apiClient.privateMethod({
-      httpMethod: 'POST',
-      apiMethod: 'balance',
-      params: {},
-    });
-    let result = data[assetBA].balance;
+    await appState.loadBalances();
+    let result = appState.apiData.balance[assetBA].balance;
     result = '0.05000000' // Testing
     setBalanceBA(result);
   };
