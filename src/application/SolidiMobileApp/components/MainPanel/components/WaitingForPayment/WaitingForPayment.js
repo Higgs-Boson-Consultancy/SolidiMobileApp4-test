@@ -101,7 +101,7 @@ let WaitingForPayment = () => {
   let confirmPaymentReceived = async () => {
     // Change to next state.
     clearInterval(appState.panels.waitingForPayment.timerID);
-    appState.changeState('PaymentReceived');
+    appState.changeState('PurchaseSuccessful');
   }
 
 
