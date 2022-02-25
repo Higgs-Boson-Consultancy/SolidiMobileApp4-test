@@ -5,12 +5,14 @@ import { RadioButton } from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import { assetsInfo, mainPanelStates, colors } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button, StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import misc from 'src/util/misc';
 
 
 /* Notes
@@ -22,14 +24,20 @@ https://callstack.github.io/react-native-paper/radio-button-item.html
 */
 
 
-let Payment = () => {
+
+
+let ChooseHowToPay = () => {
 
   let appState = useContext(AppStateContext);
 
-  // Testing:
-  _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBPX', volumeBA: '0.05', assetBA: 'BTC'});
+  let pageName = appState.pageName;
+  let permittedPageNames = 'direct_payment balance'.split(' ');
+  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'InsufficientBalance');
 
-  const [paymentChoice, setPaymentChoice] = React.useState('direct_payment');
+  let [paymentChoice, setPaymentChoice] = React.useState(pageName);
+
+  // Testing:
+  _.assign(appState.panels.buy, {volumeQA: '10000', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
@@ -42,10 +50,27 @@ let Payment = () => {
 
   let confirmPaymentChoice = async () => {
     if (paymentChoice === 'direct_payment') {
-        appState.changeState('MakePayment');
+      // Pay directly.
+      // Future: People may pay directly with crypto, not just fiat.
+      appState.changeState('MakePayment');
     } else {
       // Pay with balance.
+      payWithBalance();
+    }
+  }
 
+  let payWithBalance = async () => {
+    await appState.loadBalances();
+    let balanceQA = appState.apiData.balance[assetQA].balance;
+    let dp = assetsInfo[assetQA].decimalPlaces;
+    if (Big(balanceQA).lt(Big(volumeQA))) {
+      let diffString = Big(volumeQA).minus(Big(balanceQA)).toFixed(dp);
+      let balanceString = Big(balanceQA).toFixed(dp);
+      let volumeString = Big(volumeQA).toFixed(dp);
+      let msg = `User wants to pay with balance, but: ${assetQA} balance = ${balanceString} and specified volume is ${volumeString}. Difference = ${diffString} ${assetQA}.`;
+      log(msg);
+      // Next step
+      appState.changeState('InsufficientBalance', 'buy');
     }
   }
 
@@ -203,4 +228,4 @@ let styleConditionButton = StyleSheet.create({
 });
 
 
-export default Payment;
+export default ChooseHowToPay;
