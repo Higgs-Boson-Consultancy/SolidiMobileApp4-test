@@ -26,7 +26,7 @@ let Buy = () => {
   let [lastUserInput, setLastUserInput] = useState('');
 
   let selectedVolumeQA = '100';
-  let selectedAssetQA = 'GBPX';
+  let selectedAssetQA = 'GBP';
   let selectedVolumeBA = ''; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetBA = 'BTC';
 
@@ -40,7 +40,7 @@ let Buy = () => {
   let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
   let [openQA, setOpenQA] = useState(false);
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
-  let quoteAssets = 'GBPX EUR'.split(' ');
+  let quoteAssets = 'GBP EUR'.split(' ');
   let quoteAssetItems = quoteAssets.map(x => {
     let a = assetsInfo[x];
     return {label: a.displayString, value: a.displaySymbol};
@@ -72,8 +72,8 @@ let Buy = () => {
     // Tmp: Set market prices here.
     // Future: Load them from the API. Use loadPriceData.
     let prices = {
-      'BTC/GBPX': '2000',
-      'ETH/GBPX': '100',
+      'BTC/GBP': '2000',
+      'ETH/GBP': '100',
       'BTC/EUR': '3000',
       'ETH/EUR': '150',
     }
