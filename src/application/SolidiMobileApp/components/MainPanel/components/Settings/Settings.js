@@ -156,6 +156,26 @@ let Settings = () => {
           </View>
         </View>
 
+        <View style={styles.horizontalRule} />
+
+        <View style={styles.sectionHeading}>
+          <Text style={styles.sectionHeadingText}>Security Details</Text>
+        </View>
+
+        <View style={styles.settingItem}>
+          <View style={styles.settingName}>
+            <Text style={styles.settingNameText}>PIN</Text>
+          </View>
+          <View style={styles.settingValue}>
+            <Text style={styles.settingValueText}>{appState.user.pin}</Text>
+          </View>
+          <View style={styles.buttonWrapper}>
+            <StandardButton title='Change PIN' onPress={ () => { appState.choosePIN(); } } />
+          </View>
+        </View>
+
+
+
         </ScrollView>
 
     </View>
@@ -235,6 +255,13 @@ let styles = StyleSheet.create({
     marginTop: scaledWidth(20),
     marginHorizontal: scaledWidth(20),
   },
+  buttonWrapper: {
+    paddingRight: scaledWidth(40),
+    marginVertical: scaledHeight(10),
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  }
 });
 
 
