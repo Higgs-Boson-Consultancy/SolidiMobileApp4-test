@@ -37,7 +37,7 @@ let ChooseHowToPay = () => {
   let [paymentChoice, setPaymentChoice] = React.useState(pageName);
 
   // Testing:
-  _.assign(appState.panels.buy, {volumeQA: '10000', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
+  _.assign(appState.panels.buy, {volumeQA: '1000', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
@@ -71,6 +71,12 @@ let ChooseHowToPay = () => {
       log(msg);
       // Next step
       appState.changeState('InsufficientBalance', 'buy');
+    } else {
+      // Todo: Call to the server and instruct it to pay for the order with the user's balance.
+      // [API call goes here]
+      // Todo: Call to the server to confirm the successful completion of the order.
+      // [API call goes here]
+      appState.changeState('PurchaseSuccessful');
     }
   }
 
