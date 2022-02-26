@@ -247,7 +247,21 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         params: {},
       });
       this.state.apiData.balance = data;
-      log("User balances loaded from server.")
+      log("User balances loaded from server.");
+    }
+
+    this.startLockAppTimer = async () => {
+      let waitTimeMinutes = 30;
+      let waitTimeSeconds = waitTimeMinutes * 60;
+      let lockApp = () => {
+        let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
+        log(msg);
+        // Stash the current state.
+        let currentState = {mainPanelState: this.state.mainPanelState, pageName: this.state.pageName};
+        this.state.stashState(currentState);
+        this.state.authenticateUser();
+      }
+      setTimeout(lockApp, waitTimeSeconds * 1000);
     }
 
     // This must be declared towards the end of the constructor.
@@ -271,6 +285,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadUserInfo: this.loadUserInfo,
       userInfoLoaded: false,
       loadBalances: this.loadBalances,
+      startLockAppTimer: this.startLockAppTimer,
       apiData: {},
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 3",
@@ -323,6 +338,9 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
     // Load the PIN.
     this.loadPIN();
+
+    // Start the lock-app timer.
+    this.startLockAppTimer();
 
     // Tweak app state for dev work.
     if (tier === 'dev') {
