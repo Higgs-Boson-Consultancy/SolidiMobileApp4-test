@@ -321,6 +321,9 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       }];
     }
 
+    // Load the PIN.
+    this.loadPIN();
+
     // Tweak app state for dev work.
     if (tier === 'dev') {
       this.state.domain = 't3.solidi.co';
