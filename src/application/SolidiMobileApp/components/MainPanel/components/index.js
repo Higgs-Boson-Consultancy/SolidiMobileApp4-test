@@ -16,6 +16,7 @@ import BlankExampleComponent from './BlankExampleComponent/BlankExampleComponent
 import PaymentNotMade from './PaymentNotMade/PaymentNotMade';
 import PurchaseSuccessful from './PurchaseSuccessful/PurchaseSuccessful';
 import InsufficientBalance from './InsufficientBalance/InsufficientBalance';
+import ReadArticle from './ReadArticle/ReadArticle';
 
 
 export {
@@ -37,4 +38,5 @@ export {
   PaymentNotMade,
   PurchaseSuccessful,
   InsufficientBalance,
+  ReadArticle,
 };
