@@ -196,7 +196,7 @@ let Buy = () => {
   }
 
   // Set an interval timer that periodically reloads the price data from the server.
-  let checkTimeSeconds = 15;
+  let checkTimeSeconds = 15000; // Todo: At end, change this to 15.
   // Time function.
   let checkPrice = async () => {
     await loadPriceData();
