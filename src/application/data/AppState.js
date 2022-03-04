@@ -39,7 +39,7 @@ class AppStateProvider extends Component {
     super(props);
 
     // Can set this initial state for testing.
-    this.initialMainPanelState = 'Buy';
+    this.initialMainPanelState = 'Sell';
     this.initialPageName = 'default';
 
     // Misc
