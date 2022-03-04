@@ -85,9 +85,10 @@ let WaitingForPayment = () => {
       clearInterval(appState.panels.waitingForPayment.timerID);
       appState.changeState('PaymentNotReceived');
     }
-    // Call the server to check if the payment has been received (if yes, the order will have been filled).
-    let orderStatus = appState.getOrderStatus();
+    // Call the server to check if the payment has arrived (if it has, the order will have been filled).
+    let orderStatus = appState.getOrderStatus({orderID: appState.panels.buy.orderID});
     if (orderStatus == 'filled') {
+      clearInterval(appState.panels.waitingForPayment.timerID);
       appState.changeState('PurchaseSuccessful');
     }
   }
@@ -98,12 +99,6 @@ let WaitingForPayment = () => {
   }
   // Re-render this component when the progress bar value changes.
   useEffect(() => {}, [timeElapsedMarker]);
-
-  let confirmPaymentReceived = async () => {
-    // Change to next state.
-    clearInterval(appState.panels.waitingForPayment.timerID);
-    appState.changeState('PurchaseSuccessful');
-  }
 
 
   return (
