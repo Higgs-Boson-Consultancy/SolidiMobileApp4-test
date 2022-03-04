@@ -103,8 +103,8 @@ let Buy = () => {
     if (_.isEmpty(volumeQA)) {
       // pass
     } else if (lastUserInput == 'volumeBA') {
-      // If the last action the user did was to change volumeBA, don't recalculate it. This will just be annoying.
-      // - Note: Without this clause, the two recalculation events would trigger each other.
+      // If the user changes volumeBA, this will cause volumeQA to be recalculated.
+      // This clause prevents the volumeQA change causing volumeBA to be recalculated for a second time (which would be a recursive event loop).
     } else if (appState.apiData.prices) {
       log('Recalculate base asset volume');
       let checkVolumeBA = _.isEmpty(volumeBA) ? '0' : volumeBA;
@@ -128,8 +128,8 @@ let Buy = () => {
     if (_.isEmpty(volumeBA)) {
       // pass
     } else if (lastUserInput == 'volumeQA') {
-      // If the last action the user did was to change volumeQA, don't recalculate it. This will just be annoying.
-      // - Note: Without this clause, the two recalculation events would trigger each other.
+      // If the user changes volumeQA, this will cause volumeBA to be recalculated.
+      // This clause prevents the volumeBA change causing volumeQA to be recalculated for a second time (which would be a recursive event loop).
     } else if (appState.apiData.prices) {
       log('Recalculate quote asset volume');
       let checkVolumeQA = _.isEmpty(volumeQA) ? '0' : volumeQA;
