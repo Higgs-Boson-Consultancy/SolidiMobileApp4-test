@@ -28,7 +28,7 @@ let Sell = () => {
   let [lastUserInput, setLastUserInput] = useState('');
 
   let selectedVolumeQA = '100';
-  let selectedAssetQA = 'GBPX';
+  let selectedAssetQA = 'GBP';
   let selectedVolumeBA = ''; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetBA = 'BTC';
 
@@ -42,7 +42,7 @@ let Sell = () => {
   let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
   let [openQA, setOpenQA] = useState(false);
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
-  let quoteAssets = 'GBPX EURX'.split(' ');
+  let quoteAssets = 'GBP EUR'.split(' ');
   let quoteAssetItems = quoteAssets.map(x => {
     let a = assetsInfo[x];
     return {label: a.displayString, value: a.displaySymbol};
@@ -62,25 +62,31 @@ let Sell = () => {
   let [itemsBA, setItemsBA] = useState(baseAssetItems);
 
   let [balanceBA, setBalanceBA] = useState('');
+  let [marketPrice, setMarketPrice] = useState('');
 
   let loadPriceData = async () => {
-    let fxmarket = assetBA + '/' + assetQA;
-    let data = await appState.apiClient.publicMethod({
-      httpMethod: 'GET',
-      apiMethod: 'ticker',
-      params: {},
-    });
-    log(data)
-    // Tmp: To mimic price changes, increment the price slightly.
-    let price = appState.apiData.prices[fxmarket];
+    let market = assetBA + '/' + assetQA;
+    // Display the value we have in storage first.
+    let price = appState.getPrice(market);
+    setMarketPrice(price);
+    // Load the prices from the server.
+    await appState.loadPrices();
+    // Tmp: To mimic price changes during testing, increment the price slightly.
+    /*
     let dp = assetsInfo[assetQA].decimalPlaces;
-    let price2 = (Big(price).minus(Big('1.01'))).toFixed(dp);
-    appState.apiData.prices[fxmarket] = price2;
+    let priceX = (Big(price).plus(Big('1.01'))).toFixed(dp);
+    appState.apiData.ticker[market] = priceX;
+    price = priceX;
+    */
     // End tmp.
-    log(`Price data loaded from server. Focus: ${fxmarket} market. Price: ${price2}`);
-    // Todo: Log the data, store it in the apiData, extract the relevant bits, calculate volumeBA that can be sold for the current QA volume, and use setVolumeBA to change the volumeBA value.
-    // The QA volume will stay at its current value.
+    // Display the new value, if it's different.
+    let price2 = appState.getPrice(market);
+    if (price != price2) {
+      setMarketPrice(price2);
+    }
+    log(`Price data loaded from server. Focus: ${market} market. Price: ${price2}`);
     // Need to recalculate volumeBA if the price has changed.
+    // Note: The QA volume will stay at its current value.
     calculateVolumeBA();
   }
 
@@ -119,11 +125,16 @@ let Sell = () => {
     } else if (lastUserInput == 'volumeBA') {
       // If the user changes volumeBA, this will cause volumeQA to be recalculated.
       // This clause prevents the volumeQA change causing volumeBA to be recalculated for a second time (which would be a recursive event loop).
-    } else if (appState.apiData.prices) {
+    } else {
       log('Recalculate base asset volume');
       let checkVolumeBA = _.isEmpty(volumeBA) ? '0' : volumeBA;
       let market = assetBA + '/' + assetQA;
-      let price = appState.apiData.prices[market];
+      let price = appState.getPrice(market);
+      if (price === '0') {
+        // Price data has not yet been retrieved from server.
+        setVolumeBA('[loading]');
+        return;
+      }
       let baseDP = assetsInfo[assetBA].decimalPlaces;
       let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
       // If new value of volumeBA is different, update it.
@@ -146,11 +157,16 @@ let Sell = () => {
     } else if (lastUserInput == 'volumeQA') {
       // If the user changes volumeQA, this will cause volumeBA to be recalculated.
       // This clause prevents the volumeBA change causing volumeQA to be recalculated for a second time (which would be a recursive event loop).
-    } else if (appState.apiData.prices) {
+    } else {
       log('Recalculate quote asset volume');
       let checkVolumeQA = _.isEmpty(volumeQA) ? '0' : volumeQA;
       let market = assetBA + '/' + assetQA;
-      let price = appState.apiData.prices[market];
+      let price = appState.getPrice(market);
+      if (price === '0') {
+        // Price data has not yet been retrieved from server.
+        setVolumeQA('[loading]');
+        return;
+      }
       let quoteDP = assetsInfo[assetQA].decimalPlaces;
       let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
       if (Big(newVolumeQA) !== Big(checkVolumeQA)) {
@@ -207,7 +223,7 @@ let Sell = () => {
 
   let generatePriceDescription = () => {
     let market = selectedAssetBA + '/' + selectedAssetQA;
-    let price = appState.apiData.prices[market];
+    let price = appState.getPrice(market);
     let dp = assetsInfo[selectedAssetQA].decimalPlaces;
     let priceString = Big(price).toFixed(dp);
     let displayStringBA = assetsInfo[selectedAssetBA].displaySymbol;
@@ -239,13 +255,13 @@ let Sell = () => {
     // Save the order data internally.
     _.assign(appState.panels.sell, {volumeQA, assetQA, volumeBA, assetBA});
     // We send the SELL order to the server.
-    let fxmarket = assetBA + '/' + assetQA;
-    log(`Send order to server: SELL ${volumeBA} ${fxmarket} @ MARKET ${volumeQA}`);
+    let market = assetBA + '/' + assetQA;
+    log(`Send order to server: SELL ${volumeBA} ${market} @ MARKET ${volumeQA}`);
     let data = await appState.apiClient.privateMethod({
       httpMethod: 'POST',
       apiMethod: 'sell',
       params: {
-        fxmarket,
+        fxmarket: market,
         amount: volumeBA,
         price: volumeQA,
       },
