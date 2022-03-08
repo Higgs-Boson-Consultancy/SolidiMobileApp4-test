@@ -16,9 +16,10 @@ import {deleteUserPinCode} from '@haskkor/react-native-pincode'
 
 // Other imports
 import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
-import { mainPanelStates, footerButtonList } from 'src/constants';
+import { assetsInfo, mainPanelStates, footerButtonList } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -360,7 +361,10 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       // Get the balance held in the appState.
       // Note: Currently, no ETH balance appearing in the data. Why not ?
       if (_.isUndefined(this.state.apiData.balance[asset])) return '[loading]';
-      return this.state.apiData.balance[asset].balance;
+      let balance = this.state.apiData.balance[asset].balance;
+      let dp = assetsInfo[asset].decimalPlaces;
+      let balanceString = Big(balance).toFixed(dp);
+      return balanceString;
     }
 
     this.loadPrices = async () => {
