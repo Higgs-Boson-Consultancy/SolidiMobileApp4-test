@@ -263,9 +263,39 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       // Handle off-exchange symbols:
       if (asset == 'GBPX') asset = 'GBP';
       if (asset == 'EURX') asset = 'EUR';
-      if (_.isUndefined(this.state.apiData.balance)) return '';
       if (_.isUndefined(this.state.apiData.balance[asset])) return '';
       return this.state.apiData.balance[asset].balance;
+    }
+
+    this.loadPrices = async () => {
+      let data = await this.state.apiClient.publicMethod({
+        httpMethod: 'GET',
+        apiMethod: 'ticker',
+        params: {},
+      });
+      this.state.apiData.ticker = data;
+      // Tmp: For development:
+      // Sample prices.
+      let ticker = {
+        'BTC/GBPX': '2000.00',
+        'ETH/GBPX': '100.00',
+        'BTC/EURX': '3000.00',
+        'ETH/EURX': '150.00',
+      }
+      _.assign(this.state.apiData, {ticker});
+      // End tmp
+      log("Prices loaded from server.");
+    }
+
+    this.getPrice = (fxmarket) => {
+      // Get the price held in the appState.
+      let [assetBA, assetQA] = fxmarket.split('/');
+      // Handle off-exchange symbols:
+      if (assetQA == 'GBP') assetQA = 'GBPX';
+      if (assetQA == 'EUR') assetQA = 'EURX';
+      let fxmarket2 = assetBA + '/' + assetQA;
+      if (_.isUndefined(this.state.apiData.ticker[fxmarket2])) return '0';
+      return this.state.apiData.ticker[fxmarket2];
     }
 
     this.startLockAppTimer = async () => {
@@ -342,10 +372,15 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       userInfoLoaded: false,
       loadBalances: this.loadBalances,
       getBalance: this.getBalance,
+      loadPrices: this.loadPrices,
+      getPrice: this.getPrice,
       startLockAppTimer: this.startLockAppTimer,
       cancelTimers: this.cancelTimers,
       getOrderStatus: this.getOrderStatus,
-      apiData: {},
+      apiData: {
+        ticker: {},
+        balance: {},
+      },
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 3",
       user: {
@@ -444,15 +479,6 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       }
 
       _.assign(this.state.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
-
-      // Sample prices.
-      let prices = {
-        'BTC/GBPX': '2000.00',
-        'ETH/GBPX': '100.00',
-        'BTC/EURX': '3000.00',
-        'ETH/EURX': '150.00',
-      }
-      _.assign(this.state.apiData, {prices});
 
       _.assign(this.state.user.info.depositDetails.GBP, {
         accountName: 'Solidi',
