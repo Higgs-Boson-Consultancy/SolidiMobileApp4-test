@@ -55,6 +55,7 @@ let capitalise = (s) => {
 
 let getStandardAsset = (asset) => {
   // Convert Solidi server asset symbol (e.g. "GBPX") to standard asset symbol (e.g. "GBP").
+  // Currently, we only need to remove the off-exchange 'X' from some ticker symbols.
   if (asset == 'GBPX') asset = 'GBP';
   if (asset == 'EURX') asset = 'EUR';
   return asset;

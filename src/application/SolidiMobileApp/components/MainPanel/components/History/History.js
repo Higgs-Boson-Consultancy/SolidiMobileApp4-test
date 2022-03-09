@@ -35,7 +35,7 @@ let History = () => {
       httpMethod: 'POST',
       apiMethod: 'order',
       params: {}
-    })
+    });
     // Example data:
     // {"results": [{"date": "14 Feb 2022", "fxmarket": "BTC/GBPX", "id": 31, "ocount": "1", "order_age": "147", "order_type": "Limit", "price": "100.00000000", "qty": "0.05000000", "s1_id": null, "s1_status": null, "s2_id": null, "s2_status": null, "side": "Buy", "status": "LIVE", "time": "17:34:42", "unixtime": "1644860082"}], "total": "1"}
     appState.setAPIData({key: 'order', data:data2});

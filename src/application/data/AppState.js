@@ -317,14 +317,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         'ETH/EURX',
       ]
       // End tmp
-      // Remove off-exchange 'X' from ticker symbols.
-      data = data.map(market => {
-        let [baseAsset, quoteAsset] = market.split('/');
-        if (quoteAsset == 'GBPX') quoteAsset = 'GBP';
-        if (quoteAsset == 'EURX') quoteAsset = 'EUR';
-        let market2 = baseAsset + '/' + quoteAsset;
-        return market2;
-      });
+      data = data.map(market => misc.getStandardMarket(market));
       // If the data differs from existing data, save it. (This will cause a component reload.)
       let msg = "Markets loaded from server.";
       if (jd(data) === jd(this.state.apiData.market)) {
@@ -396,14 +389,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         'ETH/EURX': '150.00',
       }
       // End tmp
-      // Remove off-exchange 'X' from ticker symbols.
-      data = _.mapKeys(data, (value, key) => {
-        let [baseAsset, quoteAsset] = key.split('/');
-        if (quoteAsset == 'GBPX') quoteAsset = 'GBP';
-        if (quoteAsset == 'EURX') quoteAsset = 'EUR';
-        let key2 = baseAsset + '/' + quoteAsset;
-        return key2;
-      });
+      data = _.mapKeys(data, (value, key) => misc.getStandardMarket(key));
       let msg = "Prices loaded from server.";
       if (jd(data) === jd(this.state.apiData.ticker)) {
         log(msg + " No change.");
