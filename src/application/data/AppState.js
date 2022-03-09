@@ -393,6 +393,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         apiMethod: 'balance',
         params: {},
       });
+      data = _.mapKeys(data, (value, key) => misc.getStandardAsset(key));
       let msg = "User balances loaded from server.";
       if (jd(data) === jd(this.state.apiData.balance)) {
         log(msg + " No change.");
