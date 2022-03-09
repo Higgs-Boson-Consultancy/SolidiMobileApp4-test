@@ -20,6 +20,7 @@ import misc from 'src/util/misc';
 let Buy = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default userHasClickedBuyButton'.split(' ');
@@ -85,6 +86,7 @@ let Buy = () => {
     loadAssetData();
     // Reload data from the server.
     let markets2 = await appState.loadMarkets();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Store the new data, if it's different, so that our display updates.
     if (markets !== markets2) setMarkets(markets2);
     loadAssetData();
@@ -112,6 +114,7 @@ let Buy = () => {
     setMarketPrice(price);
     // Reload data from the server.
     await appState.loadPrices();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let price2 = appState.getPrice(market);
     // Tmp: To mimic price changes, increment the price slightly.
     /*

@@ -20,6 +20,7 @@ import misc from 'src/util/misc';
 let Assets = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let [isLoading, setIsLoading] = useState(true);
   let [reloadCount, setReloadCount] = useState(0);
@@ -42,6 +43,7 @@ let Assets = () => {
       apiMethod: 'balance',
       params: {},
     });
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Example data:
 /*
 {

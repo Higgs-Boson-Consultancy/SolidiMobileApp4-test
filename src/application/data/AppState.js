@@ -104,7 +104,18 @@ class AppStateProvider extends Component {
       // Finally, change to new state.
       if (makeFinalSwitch) {
         this.setState({mainPanelState, pageName});
+        this.state.stateChangeID += 1;
+        log(`New stateChangeID: ${this.state.stateChangeID}`);
       }
+    }
+
+    this.stateChangeIDHasChanged = (stateChangeID) => {
+      let stateChangeID2 = this.state.stateChangeID;
+      if (stateChangeID !== stateChangeID2) {
+        log(`stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`);
+        return true;
+      }
+      return false;
     }
 
     this.stashState = (stateX) => {
@@ -469,6 +480,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       pageName: this.initialPageName,
       changeState: this.changeState,
       setMainPanelState: this.setMainPanelState,
+      stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
       stateHistoryList: [],
       stashState: this.stashState,
@@ -497,6 +509,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadPrices: this.loadPrices,
       getPrice: this.getPrice,
       getOrderStatus: this.getOrderStatus,
+      stateChangeID: 0,
       abortControllers: {},
       apiData: {
         market: {},

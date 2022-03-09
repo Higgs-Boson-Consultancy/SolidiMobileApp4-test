@@ -18,6 +18,7 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 let History = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let [isLoading, setIsLoading] = useState(true);
   let [reloadCount, setReloadCount] = useState(0);
@@ -27,7 +28,8 @@ let History = () => {
       httpMethod: 'POST',
       apiMethod: 'transaction',
       params: {}
-    })
+    });
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Example data:
     // {"total": 1, "transactions": [{"cur1": "GBP", "cur1amt": "10000.00000000", "cur2": "", "cur2amt": "0.00000000", "fee_cur": "", "fees": "0.00000000", "fxmarket": 1, "ref": "initial deposit", "short_desc": "Transfer In", "status": "A", "txn_code": "PI", "txn_date": "14 Feb 2022", "txn_time": "16:56"}]}
     appState.setAPIData({key: 'transaction', data});
@@ -36,6 +38,7 @@ let History = () => {
       apiMethod: 'order',
       params: {}
     });
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Example data:
     // {"results": [{"date": "14 Feb 2022", "fxmarket": "BTC/GBPX", "id": 31, "ocount": "1", "order_age": "147", "order_type": "Limit", "price": "100.00000000", "qty": "0.05000000", "s1_id": null, "s1_status": null, "s2_id": null, "s2_status": null, "side": "Buy", "status": "LIVE", "time": "17:34:42", "unixtime": "1644860082"}], "total": "1"}
     appState.setAPIData({key: 'order', data:data2});

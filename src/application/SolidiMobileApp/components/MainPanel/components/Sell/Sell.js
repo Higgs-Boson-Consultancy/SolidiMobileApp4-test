@@ -31,6 +31,7 @@ and then include a FlatList with the markets that include either the selected ba
 let Sell = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default loadExistingOrder'.split(' ');
@@ -97,6 +98,7 @@ let Sell = () => {
     loadAssetData();
     // Reload data from the server.
     let markets2 = await appState.loadMarkets();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Store the new data, if it's different, so that our display updates.
     if (markets !== markets2) setMarkets(markets2);
     loadAssetData();
@@ -124,6 +126,7 @@ let Sell = () => {
     setMarketPrice(price);
     // Reload data from the server.
     await appState.loadPrices();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let price2 = appState.getPrice(market);
     // Tmp: To mimic price changes during testing, increment the price slightly.
     /*
@@ -146,6 +149,7 @@ let Sell = () => {
     setBalanceBA(balance1);
     // Load the balance from the server.
     await appState.loadBalances();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Display the new value, if it's different.
     let balance2 = appState.getBalance(assetBA);
     if (balance1 !== balance2) {
@@ -316,6 +320,7 @@ let Sell = () => {
         price: volumeQA,
       },
     });
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     /*
     Example error response:
 
