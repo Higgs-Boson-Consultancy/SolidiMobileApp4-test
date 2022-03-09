@@ -23,7 +23,7 @@ let WaitingForPayment = () => {
 
   // Set up progress bar.
   // Load deposit account details.
-  let detailsGBP = appState.user.info.depositDetails.GBP;
+  let detailsGBP = appState.user.info.deposit_details.GBP;
   let reference = detailsGBP.reference;
   let solidiSortCode = detailsGBP.sortCode;
   let solidiAccountNumber = detailsGBP.accountNumber;

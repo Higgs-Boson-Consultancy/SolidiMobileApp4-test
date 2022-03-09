@@ -259,7 +259,7 @@ class AppStateProvider extends Component {
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadUserInfo = async () => {
-      // User info
+      // Load user info
       let data = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'user'});
       let keyNames = `address_1, address_2, address_3, address_4,
 bank_limit, btc_limit, country, crypto_limit, email, firstname, freewithdraw,
@@ -267,9 +267,16 @@ landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
 postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 `.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
       misc.confirmExactKeys('data', data, keyNames, 'loadUserInfo');
-      this.state.user.info.user = data;
-      // User's GBP deposit details.
-      let data2 = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'depositdetails/GBP'});
+      // If the data differs from existing data, save it. (This will cause a reload.)
+      let msg = "User info (basic) loaded from server.";
+      if (jd(data) === jd(this.state.user.info.user)) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(data));
+        this.state.user.info.user = data;
+      }
+      // Load user's GBP deposit details.
+      let data2 = await this.state.apiClient.privateMethod({httpMethod: 'POST', apiMethod: 'deposit_details/GBP'});
       // Example result:
       // {"data2": {"accountname": "Solidi", "accountno": "00001036", "reference": "SHMPQKC", "result": "success", "sortcode": "040476"}}
       let keyNames2 = `accountname, accountno, reference, result, sortcode`.replace(/,/g, '').split(' ').filter(x => x);
@@ -277,15 +284,22 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         // Future: User needs to verify some information first: address, identity.
       }
       misc.confirmExactKeys('data2', data2, keyNames2, 'loadUserInfo');
-      this.state.user.info.depositDetails.GBP = {
+      let detailsGBP = {
         accountName: data2.accountname,
         accountNumber: data2.accountno,
         sortCode: data2.sortcode,
         reference: data2.reference,
       }
+      // If the data differs from existing data, save it. (This will cause a reload.)
+      msg = "User info (deposit details GBP) loaded from server.";
+      if (jd(detailsGBP) === jd(this.state.user.info.deposit_details.GBP)) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(detailsGBP));
+        this.state.user.info.deposit_details.GBP = detailsGBP;
+      }
       this.state.userInfoLoaded = true;
       this.loadBalances();
-      log("User info loaded from server.");
     }
 
     this.loadMarkets = async () => {
@@ -464,7 +478,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         password: '',
         info: {
           user: {},
-          depositDetails: {
+          deposit_details: {
             GBP: {
               accountName: null,
               accountNumber: null,
@@ -559,7 +573,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
       _.assign(this.state.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
 
-      _.assign(this.state.user.info.depositDetails.GBP, {
+      _.assign(this.state.user.info.deposit_details.GBP, {
         accountName: 'Solidi',
         accountNumber: '00012484',
         sortCode: '040511',
