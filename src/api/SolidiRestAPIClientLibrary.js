@@ -67,8 +67,8 @@ export default class SolidiRestAPIClientLibrary {
 
   async publicMethod(args, ...args2) {
     this._checkArgs2(args2, 'publicMethod');
-    let expected = 'httpMethod, apiMethod'.split(', ');
-    this._checkExpectedArgs(args, expected);
+    let expected = 'httpMethod, apiMethod, abortSignal'.split(', ');
+    this._checkExpectedArgs(args, expected, 'publicMethod');
     if (_.isUndefined(args.params)) { args.params = {}; }
     if (_.isUndefined(args.apiVersion)) { args.apiVersion = 'v1'; }
     args.privateAPICall = false;
@@ -77,8 +77,8 @@ export default class SolidiRestAPIClientLibrary {
 
   async privateMethod(args, ...args2) {
     this._checkArgs2(args2, 'privateMethod');
-    let expected = 'httpMethod, apiMethod'.split(', ');
-    this._checkExpectedArgs(args, expected);
+    let expected = 'httpMethod, apiMethod, abortSignal'.split(', ');
+    this._checkExpectedArgs(args, expected, 'privateMethod');
     if (_.isUndefined(args.params)) { args.params = {}; }
     if (_.isUndefined(args.apiVersion)) { args.apiVersion = 'v1'; }
     args.privateAPICall = true;
@@ -87,9 +87,9 @@ export default class SolidiRestAPIClientLibrary {
 
   async makeAPICall(args, ...args2) {
     this._checkArgs2(args2, 'makeAPICall');
-    let expected = 'privateAPICall, httpMethod, apiMethod, params, apiVersion'.split(', ');
+    let expected = 'privateAPICall, httpMethod, apiMethod, params, apiVersion, abortSignal'.split(', ');
     this._checkExactExpectedArgs(args, expected, 'makeAPICall');
-    let {privateAPICall, httpMethod, apiMethod, params, apiVersion} = args;
+    let {privateAPICall, httpMethod, apiMethod, params, apiVersion, abortSignal} = args;
     let path = `/api2/${apiVersion}/${apiMethod}`;
     let uri = 'https://' + this.domain + path;
     if (params == null) params = {};
@@ -125,16 +125,19 @@ export default class SolidiRestAPIClientLibrary {
       headers['Content-Length'] = postData.length;
     }
     //log({postData})
+    let requestCompleted = false;
     try {
       let options = {
         method: httpMethod,
         headers,
         redirect: 'follow',
+        signal: abortSignal,
       }
       if (postData) options.body = postData;
       let msg = `Calling ${uri}`;
       log(msg)
       let response = await fetch(uri, options);
+      requestCompleted = true;
       let data = await response.text();
       //log("Response: " + data);
       try {
@@ -145,8 +148,18 @@ export default class SolidiRestAPIClientLibrary {
       }
       return data;
     } catch(err) {
-      log(err);
-      throw err;
+      if (err.name == 'AbortError') {
+        if (requestCompleted) {
+          let msg = `Attempt to abort but already completed: ${uri}`;
+          log(msg);
+        } else {
+          let msg = `Aborted: ${uri}`;
+          log(msg);
+        }
+      } else {
+        console.error(err);
+        throw err;
+      }
     }
     // If we don't get a JSON response from the API, something is wrong on the backend.
   }

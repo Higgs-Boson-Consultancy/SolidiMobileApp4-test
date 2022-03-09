@@ -71,6 +71,7 @@ class AppStateProvider extends Component {
       if (_.isNil(pageName)) pageName = 'default';
       newState = {mainPanelState, pageName};
       this.cancelTimers();
+      this.abortAllRequests();
       /*
       If this is a new state, add an entry to the state history,
       unless it's a state we don't care about: e.g. PIN.
@@ -165,6 +166,44 @@ class AppStateProvider extends Component {
       if (newIndex !== this.state.footerIndex) {
         this.setState({footerIndex: newIndex});
       }
+    }
+
+    this.createAbortSignal = () => {
+      // Prepare for cancelling requests if the user changes screen.
+      let controller = new AbortController();
+      let abortSignal = controller.signal;
+      // Get a random integer from 0 to 999999:
+      do {
+        var controllerID = Math.floor(Math.random() * 10**6);
+      } while (_.keys(this.state.abortControllers).includes(controllerID));
+      this.state.abortControllers[controllerID] = controller;
+      return abortSignal;
+    }
+
+    this.abortAllRequests = () => {
+      let controllers = this.state.abortControllers;
+      // Remove aborted controllers.
+      // Future problem: If the user switches back and forth between screens fast enough, it's perhaps possible that the reassignment here of the activeControllers to controllers will miss some new requests.
+      let activeControllers = _.entries(controllers).filter(([key, value]) => value !== 'aborted');
+      controllers = _.fromPairs(activeControllers);
+      // Abort any active controllers.
+      for (let [controllerID, controller] of _.entries(controllers)) {
+        if (controller !== 'aborted') controller.abort();
+        controllers[controllerID] = 'aborted';
+        log(`Aborted controller ${controllerID}`)
+      }
+    }
+
+    this.publicMethod = (args) => {
+      let {httpMethod, apiMethod, params} = args;
+      let abortSignal = this.state.createAbortSignal();
+      return this.state.apiClient.publicMethod({httpMethod, apiMethod, params, abortSignal});
+    }
+
+    this.privateMethod = (args) => {
+      let {httpMethod, apiMethod, params} = args;
+      let abortSignal = this.state.createAbortSignal();
+      return this.state.apiClient.privateMethod({httpMethod, apiMethod, params, abortSignal});
     }
 
     this.setAPIData = ({key, data}) => {
@@ -434,6 +473,10 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
+      createAbortSignal: this.createAbortSignal,
+      abortAllRequests: this.abortAllRequests,
+      publicMethod: this.publicMethod,
+      privateMethod: this.privateMethod,
       setAPIData: this.setAPIData,
       authenticateUser: this.authenticateUser,
       choosePIN: this.choosePIN,
@@ -451,6 +494,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadPrices: this.loadPrices,
       getPrice: this.getPrice,
       getOrderStatus: this.getOrderStatus,
+      abortControllers: {},
       apiData: {
         market: {},
         ticker: {},
