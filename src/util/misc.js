@@ -53,11 +53,31 @@ let capitalise = (s) => {
 }
 
 
+let getStandardAsset = (asset) => {
+  // Convert Solidi server asset symbol (e.g. "GBPX") to standard asset symbol (e.g. "GBP").
+  if (asset == 'GBPX') asset = 'GBP';
+  if (asset == 'EURX') asset = 'EUR';
+  return asset;
+}
+
+
+let getStandardMarket = (market) => {
+  // Convert Solidi server market string (e.g. "BTC/GBPX") to standard market string (e.g. "BTC/GBP").
+  let [baseAsset, quoteAsset] = market.split('/');
+  baseAsset = getStandardAsset(baseAsset);
+  quoteAsset = getStandardAsset(quoteAsset);
+  let market2 = baseAsset + '/' + quoteAsset;
+  return market2;
+}
+
+
 let misc = {
   confirmKeys,
   confirmExactKeys,
   confirmItemInArray,
   capitalise,
+  getStandardAsset,
+  getStandardMarket,
 }
 
 

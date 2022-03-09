@@ -8,6 +8,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
+import misc from 'src/util/misc';
 import { assetsInfo, mainPanelStates } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button } from 'src/components/atomic';
@@ -137,7 +138,8 @@ let History = () => {
     );
   }
   let renderOrderItem = ({ item }) => {
-    let [baseAsset, quoteAsset] = item['fxmarket'].split('/');
+    let market = misc.getStandardMarket(item['fxmarket'])
+    let [baseAsset, quoteAsset] = market.split('/');
     let priceDP = assetsInfo[quoteAsset].decimalPlaces;
     let price = Big(item.price).toFixed(priceDP);
     let orderStatus = item.status;
