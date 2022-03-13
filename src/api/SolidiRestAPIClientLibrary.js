@@ -67,7 +67,7 @@ export default class SolidiRestAPIClientLibrary {
 
   async publicMethod(args, ...args2) {
     this._checkArgs2(args2, 'publicMethod');
-    let expected = 'httpMethod, apiMethod, abortSignal'.split(', ');
+    let expected = 'httpMethod, apiMethod, abortController'.split(', ');
     this._checkExpectedArgs(args, expected, 'publicMethod');
     if (_.isUndefined(args.params)) { args.params = {}; }
     if (_.isUndefined(args.apiVersion)) { args.apiVersion = 'v1'; }
@@ -77,7 +77,7 @@ export default class SolidiRestAPIClientLibrary {
 
   async privateMethod(args, ...args2) {
     this._checkArgs2(args2, 'privateMethod');
-    let expected = 'httpMethod, apiMethod, abortSignal'.split(', ');
+    let expected = 'httpMethod, apiMethod, abortController'.split(', ');
     this._checkExpectedArgs(args, expected, 'privateMethod');
     if (_.isUndefined(args.params)) { args.params = {}; }
     if (_.isUndefined(args.apiVersion)) { args.apiVersion = 'v1'; }
@@ -87,9 +87,9 @@ export default class SolidiRestAPIClientLibrary {
 
   async makeAPICall(args, ...args2) {
     this._checkArgs2(args2, 'makeAPICall');
-    let expected = 'privateAPICall, httpMethod, apiMethod, params, apiVersion, abortSignal'.split(', ');
+    let expected = 'privateAPICall, httpMethod, apiMethod, params, apiVersion, abortController'.split(', ');
     this._checkExactExpectedArgs(args, expected, 'makeAPICall');
-    let {privateAPICall, httpMethod, apiMethod, params, apiVersion, abortSignal} = args;
+    let {privateAPICall, httpMethod, apiMethod, params, apiVersion, abortController} = args;
     let path = `/api2/${apiVersion}/${apiMethod}`;
     let uri = 'https://' + this.domain + path;
     if (params == null) params = {};
@@ -125,21 +125,46 @@ export default class SolidiRestAPIClientLibrary {
       headers['Content-Length'] = postData.length;
     }
     //log({postData})
-    let requestCompleted = false;
+    // Abort the request if it takes longer than maxTimeSeconds.
+    let maxTimeSeconds = 10;
+    let timeout = false;
+    let timerID = setTimeout(() => {
+        abortController.abort();
+        timeout = true;
+      }, maxTimeSeconds * 1000
+    );
+    // Make the API request.
     try {
       let options = {
         method: httpMethod,
         headers,
         redirect: 'follow',
-        signal: abortSignal,
+        signal: abortController.signal,
       }
       if (postData) options.body = postData;
       let msg = `Calling ${uri}`;
       log(msg)
       let response = await fetch(uri, options);
-      requestCompleted = true;
       let data = await response.text();
       //log("Response: " + data);
+      // Catch and handle timeouts:
+/*
+<html>
+<head><title>504 Gateway Time-out</title></head>
+<body>
+<center><h1>504 Gateway Time-out</h1></center>
+<hr><center>nginx/1.16.1</center>
+</body>
+</html>
+*/
+      data = data.replace(/[\r\n]+/gm, ''); // remove line breaks
+      //log({data})
+      let timeoutSection = '<html><head><title>504 Gateway Time-out</title></head>';
+      let n = timeoutSection.length;
+      let firstSection = data.slice(0, n);
+      if (firstSection == timeoutSection) {
+        return {error: 'timeout'};
+      }
       try {
         data = JSON.parse(data);
       } catch(err) {
@@ -149,19 +174,17 @@ export default class SolidiRestAPIClientLibrary {
       return data;
     } catch(err) {
       if (err.name == 'AbortError') {
-        if (requestCompleted) { // This doesn't appear to ever run.
-          let msg = `Attempt to abort but already completed: ${uri}`;
-          log(msg);
-        } else {
-          let msg = `Aborted: ${uri}`;
-          log(msg);
-        }
+        let msg = `Aborted: ${uri}`;
+        log(msg);
+        if (timeout) return {error: 'timeout'};
+        return {error: 'aborted'};
       } else {
         console.error(err);
         throw err;
       }
+    } finally {
+      clearTimeout(timerID);
     }
-    // If we don't get a JSON response from the API, something is wrong on the backend.
   }
 
   signAPICall(args, ...args2) {
