@@ -504,6 +504,28 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       return orderStatus;
     }
 
+    this.sendSellOrder = async () => {
+      ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.sell);
+      let market = assetBA + '/' + assetQA;
+      log(`Send order to server: SELL ${volumeBA} ${market} @ MARKET ${volumeQA}`);
+      let data = await appState.privateMethod({
+        httpMethod: 'POST',
+        apiMethod: 'sell',
+        params: {
+          fxmarket: market,
+          amount: volumeBA,
+          price: volumeQA,
+        },
+      });
+      /*
+      Example error response:
+
+      */
+      // Store the orderID. Later, we'll use it to check the order's status.
+      appState.panels.sell.orderID = data.id;
+      return data;
+    }
+
     // The actual state object of the app.
     // This must be declared towards the end of the constructor.
     this.state = {
@@ -542,6 +564,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadPrices: this.loadPrices,
       getPrice: this.getPrice,
       getOrderStatus: this.getOrderStatus,
+      sendSellOrder: this.sendSellOrder,
       stateChangeID: 0,
       abortControllers: {},
       apiData: {

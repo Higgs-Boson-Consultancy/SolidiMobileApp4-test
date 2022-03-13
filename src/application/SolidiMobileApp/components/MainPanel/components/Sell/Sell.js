@@ -308,28 +308,9 @@ let Sell = () => {
     }
     // Save the order data internally.
     _.assign(appState.panels.sell, {volumeQA, assetQA, volumeBA, assetBA});
-    // We send the SELL order to the server.
-    let market = assetBA + '/' + assetQA;
-    log(`Send order to server: SELL ${volumeBA} ${market} @ MARKET ${volumeQA}`);
-    let data = await appState.privateMethod({
-      httpMethod: 'POST',
-      apiMethod: 'sell',
-      params: {
-        fxmarket: market,
-        amount: volumeBA,
-        price: volumeQA,
-      },
-    });
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    /*
-    Example error response:
-
-    */
-    // Todo: If an error occurs, display it.
-    // Store the orderID. Later, we'll use it to check the order's status.
-    appState.panels.sell.orderID = data.id;
-
-    // We transfer to the receive-payment sequence.
+    // Send the order.
+    appState.sendSellOrder();
+    // Transfer to the receive-payment sequence.
     appState.changeState('ChooseHowToReceivePayment', 'balance');
   }
 
