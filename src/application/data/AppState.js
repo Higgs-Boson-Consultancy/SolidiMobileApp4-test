@@ -375,11 +375,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       }
       // If the data differs from existing data, save it. (This will cause a reload.)
       msg = "User info (deposit details GBP) loaded from server.";
-      if (jd(detailsGBP) === jd(this.state.user.info.deposit_details.GBP)) {
+      if (jd(detailsGBP) === jd(this.state.user.info.depositDetails.GBP)) {
         log(msg + " No change.");
       } else {
         log(msg + " New data saved to appState. " + jd(detailsGBP));
-        this.state.user.info.deposit_details.GBP = detailsGBP;
+        this.state.user.info.depositDetails.GBP = detailsGBP;
       }
       this.state.userInfoLoaded = true;
       this.loadBalances();
@@ -557,7 +557,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         password: '',
         info: {
           user: {},
-          deposit_details: {
+          depositDetails: {
             GBP: {
               accountName: null,
               accountNumber: null,
@@ -655,7 +655,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
       _.assign(this.state.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
 
-      _.assign(this.state.user.info.deposit_details.GBP, {
+      _.assign(this.state.user.info.depositDetails.GBP, {
         accountName: 'Solidi',
         accountNumber: '00012484',
         sortCode: '040511',
