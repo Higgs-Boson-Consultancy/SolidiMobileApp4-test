@@ -118,7 +118,17 @@ class AppStateProvider extends Component {
       return false;
     }
 
+    this.stashCurrentState = () => {
+      this.state.stashState({
+        mainPanelState: this.state.mainPanelState,
+        pageName: this.state.pageName,
+      });
+    }
+
     this.stashState = (stateX) => {
+      // A state consists of a mainPanelState and a pageName.
+      let expected = 'mainPanelState pageName'.split(' ');
+      misc.confirmExactKeys('stateX', stateX, expected, 'stashState');
       let msg = `Stashing state: ${JSON.stringify(stateX)}`
       log(msg);
       this.state.stashedState = stateX;
@@ -179,21 +189,20 @@ class AppStateProvider extends Component {
       }
     }
 
-    this.createAbortSignal = () => {
+    this.createAbortController = () => {
       // Prepare for cancelling requests if the user changes screen.
       let controller = new AbortController();
-      let abortSignal = controller.signal;
       // Get a random integer from 0 to 999999:
       do {
         var controllerID = Math.floor(Math.random() * 10**6);
       } while (_.keys(this.state.abortControllers).includes(controllerID));
       this.state.abortControllers[controllerID] = controller;
-      return abortSignal;
+      return controller;
     }
 
     this.abortAllRequests = () => {
       let controllers = this.state.abortControllers;
-      log({controllers})
+      //log({controllers})
       // Remove aborted controllers.
       let activeControllers = _.entries(controllers).filter(([key, value]) => value !== 'aborted');
       controllers = _.fromPairs(activeControllers);
@@ -207,16 +216,32 @@ class AppStateProvider extends Component {
       this.state.abortControllers = controllers;
     }
 
-    this.publicMethod = (args) => {
+    this.publicMethod = async (args) => {
       let {httpMethod, apiMethod, params} = args;
-      let abortSignal = this.state.createAbortSignal();
-      return this.state.apiClient.publicMethod({httpMethod, apiMethod, params, abortSignal});
+      let abortController = this.state.createAbortController();
+      let data = await this.state.apiClient.publicMethod({httpMethod, apiMethod, params, abortController});
+      if (_.has(data, 'error')) {
+        if (data.error == 'timeout') {
+          // Future: If we already have a stashed state, this could cause a problem.
+          this.state.stashCurrentState();
+          this.changeState('RequestTimeout');
+        }
+      }
+      return data;
     }
 
-    this.privateMethod = (args) => {
+    this.privateMethod = async (args) => {
       let {httpMethod, apiMethod, params} = args;
-      let abortSignal = this.state.createAbortSignal();
-      return this.state.apiClient.privateMethod({httpMethod, apiMethod, params, abortSignal});
+      let abortController = this.state.createAbortController();
+      let data = await this.state.apiClient.privateMethod({httpMethod, apiMethod, params, abortController});
+      if (_.has(data, 'error')) {
+        if (data.error == 'timeout') {
+          // Future: If we already have a stashed state, this could cause a problem.
+          this.state.stashCurrentState();
+          this.changeState('RequestTimeout');
+        }
+      }
+      return data;
     }
 
     this.setAPIData = ({key, data}) => {
@@ -484,12 +509,13 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
       stateHistoryList: [],
+      stashCurrentState: this.stashCurrentState,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
-      createAbortSignal: this.createAbortSignal,
+      createAbortController: this.createAbortController,
       abortAllRequests: this.abortAllRequests,
       publicMethod: this.publicMethod,
       privateMethod: this.privateMethod,
