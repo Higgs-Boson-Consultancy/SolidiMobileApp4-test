@@ -40,12 +40,13 @@ let MakePayment = () => {
     timeElapsedSeconds += intervalSeconds;
     let newMarkerValue = timeElapsedSeconds / parseFloat(maxTimeAllowedSeconds);
     setTimeElapsedMarker(newMarkerValue);
-    if (newMarkerValue > maxTimeAllowedSeconds) {
+    if (timeElapsedSeconds > maxTimeAllowedSeconds) {
       // Stop the timer.
       clearInterval(appState.panels.makePayment.timerID);
       // Call the server to find out if the user made the payment but did not click "I have paid" button.
       // If the payment has arrived, the order will have been filled.
       let orderStatus = appState.getOrderStatus({orderID: appState.panels.buy.orderID});
+      // Change to next state.
       if (orderStatus == 'settled') {
         appState.changeState('PurchaseSuccessful');
       } else {
