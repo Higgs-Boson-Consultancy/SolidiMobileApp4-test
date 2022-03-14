@@ -350,7 +350,7 @@ landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
 postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 `.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
       misc.confirmExactKeys('data', data, keyNames, 'loadUserInfo');
-      // If the data differs from existing data, save it. (This will cause a reload.)
+      // If the data differs from existing data, save it.
       let msg = "User info (basic) loaded from server.";
       if (jd(data) === jd(this.state.user.info.user)) {
         log(msg + " No change.");
@@ -373,7 +373,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         sortCode: data2.sortcode,
         reference: data2.reference,
       }
-      // If the data differs from existing data, save it. (This will cause a reload.)
+      // If the data differs from existing data, save it.
       msg = "User info (deposit details GBP) loaded from server.";
       if (jd(detailsGBP) === jd(this.state.user.info.depositDetails.GBP)) {
         log(msg + " No change.");
@@ -401,7 +401,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       ]
       // End tmp
       data = data.map(market => misc.getStandardMarket(market));
-      // If the data differs from existing data, save it. (This will cause a component reload.)
+      // If the data differs from existing data, save it.
       let msg = "Markets loaded from server.";
       if (jd(data) === jd(this.state.apiData.market)) {
         log(msg + " No change.");
