@@ -225,9 +225,17 @@ let ChooseHowToReceivePayment = () => {
 
       <View style={styles.horizontalRule}/>
 
-      <View style={styles.confirmButtonWrapper}>
-        <StandardButton title="Confirm & Sell" onPress={ confirmReceivePaymentChoice } />
-      </View>
+      { ! orderSubmitted &&
+        <View style={styles.confirmButtonWrapper}>
+          <StandardButton title="Confirm & Sell" onPress={ confirmReceivePaymentChoice } />
+        </View>
+      }
+
+      { orderSubmitted &&
+        <View style={styles.confirmButtonWrapper}>
+          <Text style={styles.orderSubmittedText}>Order submitted. Please wait...</Text>
+        </View>
+      }
 
     </View>
     </View>
@@ -299,6 +307,9 @@ let styles = StyleSheet.create({
   confirmButtonWrapper: {
     marginTop: scaledHeight(20),
     paddingHorizontal: scaledWidth(30),
+  },
+  orderSubmittedText: {
+    color: 'red',
   },
 });
 
