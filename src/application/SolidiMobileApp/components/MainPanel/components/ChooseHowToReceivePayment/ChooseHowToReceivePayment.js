@@ -310,6 +310,7 @@ let styles = StyleSheet.create({
   },
   orderSubmittedText: {
     color: 'red',
+    fontWeight: 'bold',
   },
 });
 
