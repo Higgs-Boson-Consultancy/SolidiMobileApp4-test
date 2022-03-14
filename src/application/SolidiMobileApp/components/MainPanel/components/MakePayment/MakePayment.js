@@ -25,10 +25,11 @@ let MakePayment = () => {
 
   // Load deposit account details.
   let detailsGBP = appState.user.info.depositDetails.GBP;
-  let reference = detailsGBP.reference;
+  let solidiAccountName = detailsGBP.accountName;
   let solidiSortCode = detailsGBP.sortCode;
   let solidiAccountNumber = detailsGBP.accountNumber;
-  let solidiAccountName = detailsGBP.accountName;
+  let reference = detailsGBP.reference;
+
 
   // Set up progress bar.
   let timeElapsedSeconds = 0;
