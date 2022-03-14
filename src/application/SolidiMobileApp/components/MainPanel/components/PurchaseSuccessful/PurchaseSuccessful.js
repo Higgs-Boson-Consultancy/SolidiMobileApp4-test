@@ -90,7 +90,7 @@ let PurchaseSuccessful = () => {
         <Text style={styles.headingText}>Please review us on Trustpilot!</Text>
       </View>
 
-      <View style={styles.infoSection}>
+      <View style={styles.infoSection2}>
 
         <View style={styles.infoItem}>
           <Text style={styles.bold}>Every review helps build trust with our new customers. Tap the Trustpilot logo below to review us. Thanks!</Text>
@@ -138,6 +138,10 @@ let styles = StyleSheet.create({
   },
   infoSection: {
     paddingVertical: scaledHeight(20),
+    alignItems: 'flex-start',
+  },
+  infoSection2: {
+    paddingTop: scaledHeight(10),
     alignItems: 'flex-start',
   },
   infoItem: {
