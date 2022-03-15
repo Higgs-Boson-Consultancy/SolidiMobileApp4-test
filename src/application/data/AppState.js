@@ -240,6 +240,7 @@ class AppStateProvider extends Component {
     this.privateMethod = async (args) => {
       let {httpMethod, apiRoute, params} = args;
       if (_.isNil(httpMethod)) httpMethod = 'POST';
+      if (_.isNil(params)) params = {};
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.privateMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
@@ -557,7 +558,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       let market = assetBA + '/' + assetQA;
       log(`Send order to server: BUY ${volumeBA} ${market} @ MARKET ${volumeQA}`);
       market = misc.getSolidiServerMarket(market);
-      let data = await appState.privateMethod({
+      let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'buy',
         params: {
@@ -596,6 +597,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       {"error": "Insufficient Funds"}
       */
       // Store the orderID. Later, we'll use it to check the order's status.
+      log(`OrderID: ${data.id}`);
       this.state.panels.sell.orderID = data.id;
       return data;
     }
