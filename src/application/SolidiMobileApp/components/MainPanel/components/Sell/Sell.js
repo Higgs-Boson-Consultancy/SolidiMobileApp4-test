@@ -26,6 +26,13 @@ and then include a FlatList with the markets that include either the selected ba
 */
 
 
+/* Notes
+
+We don't use a loading spinner here. Instead, we show '[loading]' for the baseAsset amount until we get price data back from the server.
+
+*/
+
+
 
 
 let Sell = () => {
@@ -316,8 +323,13 @@ let Sell = () => {
   return (
 
     <View style={styles.panelContainer}>
+    <View style={styles.panelSubContainer}>
 
       <View>
+
+      <View style={styles.heading}>
+        <Text style={styles.headingText}>Sell now</Text>
+      </View>
 
       <Text style={styles.descriptionText}>I want to get:</Text>
 
@@ -362,11 +374,11 @@ let Sell = () => {
       </View>
 
       <View style={styles.balanceWrapper}>
-        <Text style={styles.descriptionText}>Your balance: {balanceBA} {(balanceBA != '[loading]') && assetBA}</Text>
+        <Text style={styles.descriptionText2}>Your balance: {balanceBA} {(balanceBA != '[loading]') && assetBA}</Text>
       </View>
 
-      <View style={styles.descriptionWrapper}>
-        <Text style={styles.descriptionText}>Current price: {generatePriceDescription()}</Text>
+      <View style={styles.priceWrapper}>
+        <Text style={styles.descriptionText2}>Current price: {generatePriceDescription()}</Text>
       </View>
 
       <View style={styles.buttonWrapper}>
@@ -376,6 +388,7 @@ let Sell = () => {
       </View>
 
     </View>
+    </View>
 
   )
 };
@@ -383,21 +396,33 @@ let Sell = () => {
 
 let styles = StyleSheet.create({
   panelContainer: {
-    paddingTop: scaledHeight(80),
+    paddingVertical: scaledHeight(15),
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
+  },
+  panelSubContainer: {
+    paddingTop: scaledHeight(10),
+    //paddingHorizontal: scaledWidth(30),
+  },
+  heading: {
+    alignItems: 'center',
+    marginBottom: scaledHeight(40),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
   },
   boldText: {
     fontWeight: 'bold',
   },
   descriptionText: {
     fontWeight: 'bold',
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(18),
   },
   quoteAssetWrapper: {
     paddingVertical: scaledHeight(20),
-    width: '80%',
+    width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -420,7 +445,7 @@ let styles = StyleSheet.create({
   },
   baseAssetWrapper: {
     paddingVertical: scaledHeight(20),
-    width: '80%',
+    width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -441,11 +466,18 @@ let styles = StyleSheet.create({
   baseAssetContainer: {
     width: scaledWidth(220),
   },
-  buttonWrapper: {
+  balanceWrapper: {
+    //marginBottom: scaledHeight(10),
+  },
+  priceWrapper: {
     marginTop: scaledHeight(20),
   },
-  balanceWrapper: {
-    marginBottom: scaledHeight(15),
+  descriptionText2: {
+    fontWeight: 'bold',
+    fontSize: normaliseFont(16),
+  },
+  buttonWrapper: {
+    marginTop: scaledHeight(20),
   },
 });
 
