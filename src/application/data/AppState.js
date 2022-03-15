@@ -478,11 +478,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     }
 
     this.loadBalances = async () => {
-      let data = await this.state.privateMethod({
-        httpMethod: 'POST',
-        apiRoute: 'balance',
-        params: {},
-      });
+      let data = await this.state.privateMethod({apiRoute: 'balance'});
+      // Todo: Handle this error inside privateMethod.
+      /* Example error
+      {"error":"Incorrect nonce"}
+      */
       data = _.mapKeys(data, (value, key) => misc.getStandardAsset(key));
       let msg = "User balances loaded from server.";
       if (jd(data) === jd(this.state.apiData.balance)) {
@@ -602,8 +602,57 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       return data;
     }
 
-    this.withdrawToPrimaryExternalAccount = async () => {
-      // Todo: Call the withdraw route. Set fee = 0. (?)
+    this.loadFees = async () => {
+      // For now, we only load withdrawal fees.
+      let data = await this.state.privateMethod({apiRoute:'fee'});
+      /* Example error:
+      {"error": "Incorrect nonce"}
+      */
+      /* Example data:
+      [{"name":"BTC","free_fee":"0.00000000"},{"name":"GBP","free_fee":"0.50000000"}]
+      */
+      // Data also contains 'GBPX', which we ignore.
+      // Restructure data.
+      let newFees = {};
+      for (let x of data) {
+        newFees[x.name] = x.free_fee;
+      }
+      let msg = "Withdrawal fee data loaded from server.";
+      if (jd(newFees) === jd(this.state.fees.withdraw)) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState.");
+        this.state.fees.withdraw = newFees;
+      }
+      return newFees;
+    }
+
+    this.getFee = ({feeType, asset}) => {
+      // Get a fee held in the appState.
+      // feeType = deposit, withdraw.
+      if (! 'deposit withdraw'.split(' ').includes(feeType))
+        throw new Error(`Unrecognised feeType: ${feeType}`);
+      if (_.isNil(this.state.fees[feeType][asset])) return '[loading]';
+      let fee = this.state.fees[feeType][asset];
+      let dp = assetsInfo[asset].decimalPlaces;
+      let feeString = Big(fee).toFixed(dp);
+      return feeString;
+    }
+
+    this.sendWithdraw = async ({asset, volume, addressInfo}) => {
+      log(`Send withdraw to server: withdraw ${volume} ${asset} to ${addressInfo}`);
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: `withdraw/${asset}`,
+        params: {
+          volume,
+          addressInfo,
+          priority: 'FREE',
+        },
+      });
+      /* Example data:
+      {"id": 9094}
+      */
     }
 
     // The actual state object of the app.
@@ -644,8 +693,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadPrices: this.loadPrices,
       getPrice: this.getPrice,
       getOrderStatus: this.getOrderStatus,
+      sendBuyOrder: this.sendBuyOrder,
       sendSellOrder: this.sendSellOrder,
-      withdrawToPrimaryExternalAccount: this.withdrawToPrimaryExternalAccount,
+      loadFees: this.loadFees,
+      getFee: this.getFee,
+      sendWithdraw: this.sendWithdraw,
       stateChangeID: 0,
       abortControllers: {},
       apiData: {
@@ -711,6 +763,14 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         },
         requestTimeout: {
           timerID: null,
+        },
+      },
+      fees: {
+        deposit: {
+          GBP: 0,
+        },
+        withdraw: {
+          GBP: 0,
         },
       },
     }
