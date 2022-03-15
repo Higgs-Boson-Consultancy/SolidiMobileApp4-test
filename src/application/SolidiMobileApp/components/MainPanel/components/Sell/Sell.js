@@ -308,9 +308,7 @@ let Sell = () => {
     }
     // Save the order data internally.
     _.assign(appState.panels.sell, {volumeQA, assetQA, volumeBA, assetBA});
-    // Send the order.
-    appState.sendSellOrder();
-    // Transfer to the receive-payment sequence.
+    // Transfer to the receive-payment sequence (which will send the order).
     appState.changeState('ChooseHowToReceivePayment', 'balance');
   }
 
