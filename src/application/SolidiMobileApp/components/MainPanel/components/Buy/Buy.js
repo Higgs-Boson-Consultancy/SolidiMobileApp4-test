@@ -9,10 +9,17 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetsInfo, mainPanelStates } from 'src/constants';
-import { StandardButton } from 'src/components/atomic';
+import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
+
+
+/* Notes
+
+We don't use a loading spinner here. Instead, we show '[loading]' for the baseAsset amount until we get price data back from the server.
+
+*/
 
 
 
@@ -283,29 +290,9 @@ let Buy = () => {
 
     // At this point, the user is already authenticated, or has just returned from the auth sequence.
     // We send the BUY order to the server.
-    let market = assetBA + '/' + assetQA;
-    log(`Send order to server: BUY ${volumeBA} ${market} @ MARKET ${volumeQA}`);
-    market = misc.getSolidiServerMarket(market);
-    let data = await appState.privateMethod({
-      httpMethod: 'POST',
-      apiRoute: 'buy',
-      params: {
-        fxmarket: market,
-        amount: volumeBA,
-        price: volumeQA,
-      },
-    });
-    /*
-    Example error response:
-    {"error":"Insufficient Funds"}
-    Example data:
-    {"id":11,"datetime":1643047261277,"type":0,"price":"100","amount":"0.05"}
-    */
-    // Todo: If an error occurs, display it.
-    // Store the orderID. Later, we'll use it to check the order's status.
-    appState.panels.buy.orderID = data.id;
-    log(`OrderID: ${appState.panels.buy.orderID}`);
-
+    // It's an escrow order - we escrow the baseAsset and wait for the payment to arrive.
+    // No need to await the result.
+    appState.sendBuyOrder();
     // We transfer to the payment sequence.
     appState.changeState('ChooseHowToPay', 'direct_payment');
   }
@@ -318,8 +305,13 @@ let Buy = () => {
   return (
 
     <View style={styles.panelContainer}>
+    <View style={styles.panelSubContainer}>
 
       <View>
+
+      <View style={styles.heading}>
+        <Text style={styles.headingText}>Buy now</Text>
+      </View>
 
       <Text style={styles.descriptionText}>I want to spend:</Text>
 
@@ -363,7 +355,9 @@ let Buy = () => {
         />
       </View>
 
-      <Text style={styles.descriptionText}>Current price: {generatePriceDescription()}</Text>
+      <View style={styles.priceWrapper}>
+        <Text style={styles.priceText}>Current price: {generatePriceDescription()}</Text>
+      </View>
 
       <View style={styles.buttonWrapper}>
         <StandardButton title="Buy now" onPress={ startBuyRequest } />
@@ -372,6 +366,7 @@ let Buy = () => {
       </View>
 
     </View>
+    </View>
 
   )
 };
@@ -379,15 +374,34 @@ let Buy = () => {
 
 let styles = StyleSheet.create({
   panelContainer: {
-    paddingTop: scaledHeight(80),
+    paddingVertical: scaledHeight(15),
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
+  },
+  panelSubContainer: {
+    paddingTop: scaledHeight(10),
+    //paddingHorizontal: scaledWidth(30),
+  },
+  heading: {
+    alignItems: 'center',
+    marginBottom: scaledHeight(40),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
   },
   boldText: {
     fontWeight: 'bold',
   },
   descriptionText: {
+    fontWeight: 'bold',
+    fontSize: normaliseFont(18),
+  },
+  priceWrapper: {
+    marginVertical: scaledHeight(10),
+  },
+  priceText: {
     fontWeight: 'bold',
     fontSize: normaliseFont(16),
   },
