@@ -398,13 +398,6 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normaliseFont(18),
   },
-  priceWrapper: {
-    marginVertical: scaledHeight(10),
-  },
-  priceText: {
-    fontWeight: 'bold',
-    fontSize: normaliseFont(16),
-  },
   quoteAssetWrapper: {
     paddingVertical: scaledHeight(20),
     width: '80%',
@@ -450,6 +443,13 @@ let styles = StyleSheet.create({
   },
   baseAssetContainer: {
     width: scaledWidth(220),
+  },
+  priceWrapper: {
+    marginVertical: scaledHeight(10),
+  },
+  priceText: {
+    fontWeight: 'bold',
+    fontSize: normaliseFont(16),
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
