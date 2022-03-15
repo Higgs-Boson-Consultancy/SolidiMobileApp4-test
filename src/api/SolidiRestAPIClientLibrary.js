@@ -172,6 +172,7 @@ export default class SolidiRestAPIClientLibrary {
       try {
         data = JSON.parse(data);
       } catch(err) {
+        // Future: return {error: 'bad_data', data}, and switch to a page that displays it.
         console.error(data);
         throw new Error("Cannot parse data into JSON.");
       }
