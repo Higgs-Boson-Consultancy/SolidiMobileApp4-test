@@ -10,7 +10,7 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { assetsInfo, mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, ImageButton } from 'src/components/atomic';
+import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 
