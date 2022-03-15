@@ -20,6 +20,7 @@ export const mainPanelStates = [
   'ReadArticle',
   'ChooseHowToReceivePayment',
   'RequestTimeout',
+  'SaleSuccessful',
 ];
 
 export default mainPanelStates;
