@@ -96,6 +96,11 @@ let sleep = async (timeSeconds) => {
 }
 
 
+let splitStringIntoArray = (s) => {
+  return s.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
+}
+
+
 let misc = {
   confirmKeys,
   confirmExactKeys,
@@ -106,6 +111,7 @@ let misc = {
   getSolidiServerAsset,
   getSolidiServerMarket,
   sleep,
+  splitStringIntoArray,
 }
 
 
