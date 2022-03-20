@@ -232,12 +232,18 @@ class AppStateProvider extends Component {
           this.state.stashCurrentState();
           this.changeState('RequestTimeout');
         }
-        if (data.error == 'cannot_parse_data') {
+        let error = data.error;
+        if (error == 'cannot_parse_data') {
           // Future:
           //this.state.stashCurrentState();
           //this.changeState('DataProblem');
+        } else if (error == 'Insufficient currency') {
+          // Todo: Fix 'ticker' function on backend.
+          //pass
+        } else {
+          // Todo: For any other errors, switch to an error description page.
+          console.error(error);
         }
-        // Todo: For any other errors, switch to an error description page.
         return;
       }
       try {
@@ -245,7 +251,9 @@ class AppStateProvider extends Component {
           misc.confirmExactKeys('data', data, keyNames, functionName);
         }
       } catch(err) {
-        console.error(err);
+        let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
+        msg += String(err);
+        console.error(msg);
         // Todo: switch to an error description page.
       }
       return data;
@@ -261,12 +269,14 @@ class AppStateProvider extends Component {
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.privateMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
-        if (data.error == 'timeout') {
+        let error = data.error;
+        if (error == 'timeout') {
           // Future: If we already have a stashed state, this could cause a problem.
           this.state.stashCurrentState();
           this.changeState('RequestTimeout');
         }
         // Todo: For any other errors, switch to an error description page.
+        console.error(error);
         return;
       }
       try {
@@ -274,7 +284,9 @@ class AppStateProvider extends Component {
           misc.confirmExactKeys('data', data, keyNames, functionName);
         }
       } catch(err) {
-        console.error(err);
+        let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
+        msg += String(err);
+        console.error(msg);
         // Todo: switch to an error description page.
       }
       return data;
