@@ -28,6 +28,7 @@ let PersonalDetails = () => {
 
   let appState = useContext(AppStateContext);
   let [isLoading, setIsLoading] = useState(true);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
@@ -43,16 +44,25 @@ let PersonalDetails = () => {
 
   // Tmp
   let initialTitle = 'Mr'; // this should be loaded from the user info.
-
-  // Title Dropdown
+  // Title dropdown
   let [title, setTitle] = useState(initialTitle);
   let titleOptions = 'Mr Mrs Ms'.split(' ');
   let titleOptionsList = titleOptions.map(x => ({label: x, value: x}) );
   let [openTitle, setOpenTitle] = useState(false);
   useEffect( () => {
-    if (isLoading) return;
-    //updateUserData({detail:'title', value:title});
+    if (! firstRender) updateUserData({detail:'title', value:title});
   }, [title]);
+
+  // Tmp
+  let initialGender = 'Male'; // this should be loaded from the user info.
+  // Gender dropdown
+  let [gender, setGender] = useState(initialGender);
+  let genderOptions = 'Male Female'.split(' ');
+  let genderOptionsList = genderOptions.map(x => ({label: x, value: x}) );
+  let [openGender, setOpenGender] = useState(false);
+  useEffect( () => {
+    if (! firstRender) updateUserData({detail:'gender', value:gender});
+  }, [gender]);
 
 
   // Initial setup.
@@ -64,8 +74,8 @@ let PersonalDetails = () => {
   let setup = async () => {
     // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
     await loadUserData();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    setIsLoading(false); // Causes re-render.
+    //if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    //setIsLoading(false); // Causes re-render.
   }
 
 
@@ -90,10 +100,12 @@ let PersonalDetails = () => {
     // The API route will differ depending on which detail we are updating.
     // Select the right one based on the detail.
     let info = appState.user.info;
-    let userDataDetails = misc.splitStringIntoArray(`
+    let userDataDetails = `
+title firstname lastname
 address_1 address_2 address_3 address_4
-`);
-    log(userDataDetails)
+date_of_birth gender
+`;
+    userDataDetails = misc.splitStringIntoArray(userDataDetails);
     let userDataCategory;
     let apiRoute;
     let prevValue;
@@ -102,17 +114,16 @@ address_1 address_2 address_3 address_4
       apiRoute = 'user/update';
       prevValue = info.user[detail];
     } else {
-      console.error(`Unrecognised detail: ${detail}`);
+      console.error(`updateUserData: Unrecognised detail: ${detail}`);
       return;
     }
     log(`API request: Update ${userDataCategory}: Change ${detail} from '${prevValue}' to '${value}'.`);
     let params = { [userDataCategory]: {[detail]: value} }
     let result = await appState.privateMethod({ apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    // Check for errors.
-    let error = result.error;
     // Future: The error should be an object with 'code' and 'message' properties.
-    if (error) {
+    if (_.has(result, 'error')) {
+      let error = result.error;
       log(`Error returned from API request (Update ${userDataCategory}: Change ${detail} from '${prevValue}' to '${value}'): ${JSON.stringify(error)}`);
       if (_.isObject(error)) {
         if (_.isEmpty(error)) {
@@ -165,7 +176,7 @@ address_1 address_2 address_3 address_4
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Title</Text>
           </View>
-          <View style={[styles.detailValue, {paddingVertical:0}]}>
+          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
             <DropDownPicker
               listMode="SCROLLVIEW"
               scrollViewProps={{nestedScrollEnabled: true}}
@@ -196,6 +207,43 @@ address_1 address_2 address_3 address_4
           </View>
           <View style={styles.detailValue}>
             <Text style={styles.detailValueText}>{details.user.lastname}</Text>
+          </View>
+        </View>
+
+        {renderError('date_of_birth')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>{`\u2022  `}Date of Birth</Text>
+          </View>
+          <View>
+            <TextInput defaultValue={details.user.date_of_birth}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'date_of_birth', value});
+              }}
+            />
+          </View>
+        </View>
+
+        <View style={[styles.detail, {zIndex:1}]}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>{`\u2022  `}Gender</Text>
+          </View>
+          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
+            <DropDownPicker
+              listMode="SCROLLVIEW"
+              scrollViewProps={{nestedScrollEnabled: true}}
+              placeholder={gender}
+              open={openGender}
+              value={gender}
+              items={genderOptionsList}
+              setOpen={setOpenGender}
+              setValue={setGender}
+              style={[styles.detailDropdown]}
+              textStyle = {styles.detailDropdownText}
+            />
           </View>
         </View>
 
@@ -288,10 +336,16 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(5),
     width: '100%',
     height: '100%',
+    //borderWidth: 1, // testing
   },
   panelSubContainer: {
     //paddingTop: scaledHeight(10),
     //paddingHorizontal: scaledWidth(30),
+    //borderWidth: 1, // testing
+  },
+  scrollView: {
+    //borderWidth: 1, // testing
+    height: '94%',
   },
   heading: {
     alignItems: 'center',
@@ -325,7 +379,7 @@ let styles = StyleSheet.create({
     paddingRight: scaledWidth(10),
     paddingVertical: scaledHeight(10),
     //borderWidth: 1, // testing
-    minWidth: '30%', // Expands with length of detail name.
+    minWidth: '35%', // Expands with length of detail name.
   },
   detailNameText: {
     fontSize: normaliseFont(16),
