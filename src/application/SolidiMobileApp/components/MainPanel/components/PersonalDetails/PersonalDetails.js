@@ -58,13 +58,14 @@ let PersonalDetails = () => {
   // Initial setup.
   useEffect( () => {
     setup();
-  }, []); // Pass empty array so that we only run once on mount.
+  }, []); // Pass empty array so that this only runs once on mount.
 
 
   let setup = async () => {
     // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
     await loadUserData();
-    setIsLoading(false);
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    setIsLoading(false); // Causes re-render.
   }
 
 
