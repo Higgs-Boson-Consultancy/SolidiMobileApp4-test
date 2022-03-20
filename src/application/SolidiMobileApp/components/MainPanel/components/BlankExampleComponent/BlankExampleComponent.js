@@ -1,5 +1,5 @@
 // React imports
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 
 // Other imports
@@ -36,14 +36,14 @@ let BlankExampleComponent = () => {
   // Initial setup.
   useEffect( () => {
     setup();
-  }, []); // Pass empty array so that we only run once on mount.
+  }, []); // Pass empty array so that this only runs once on mount.
 
 
   let setup = async () => {
     // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
     // await loadUserData();
     // await loadBalanceData();
-    setIsLoading(false);
+    setIsLoading(false); // Causes re-render.
   }
 
 
