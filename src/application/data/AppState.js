@@ -218,8 +218,12 @@ class AppStateProvider extends Component {
     }
 
     this.publicMethod = async (args) => {
-      let {httpMethod, apiRoute, params} = args;
+      let {functionName, httpMethod, apiRoute, params, keyNames} = args;
+      if (_.isNil(functionName)) functionName = '[Unspecified function]';
       if (_.isNil(httpMethod)) httpMethod = 'POST';
+      if (_.isNil(apiRoute)) throw new Error('apiRoute required');
+      if (_.isNil(params)) params = {};
+      if (_.isNil(keyNames)) keyNames = [];
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
@@ -234,6 +238,15 @@ class AppStateProvider extends Component {
           //this.changeState('DataProblem');
         }
         // Todo: For any other errors, switch to an error description page.
+        return;
+      }
+      try {
+        if (keyNames.length > 0) {
+          misc.confirmExactKeys('data', data, keyNames, functionName);
+        }
+      } catch(err) {
+        console.error(err);
+        // Todo: switch to an error description page.
       }
       return data;
     }
