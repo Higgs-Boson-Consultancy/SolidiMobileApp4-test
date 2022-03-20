@@ -27,6 +27,7 @@ We don't use a loading spinner here. Instead, we show '[loading]' for the baseAs
 let Buy = () => {
 
   let appState = useContext(AppStateContext);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
@@ -94,6 +95,7 @@ let Buy = () => {
 
 
   let loadMarketData = async () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // First, get the markets we have in storage.
     let markets = appState.getMarkets();
     loadAssetData();
@@ -121,6 +123,7 @@ let Buy = () => {
   }
 
   let loadPriceData = async () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let market = assetBA + '/' + assetQA;
     // First, get the price we have in storage.
     let price = appState.getPrice(market);
@@ -175,7 +178,7 @@ let Buy = () => {
     }
   }
   useEffect(() => {
-    calculateVolumeBA();
+    if (! firstRender) calculateVolumeBA();
   }, [volumeQA]);
 
   // Handle user recalculating volumeQA when:
@@ -206,13 +209,13 @@ let Buy = () => {
     }
   }
   useEffect(() => {
-    calculateVolumeQA();
+    if (! firstRender) calculateVolumeQA();
   }, [volumeBA]);
 
   // Recalculate volumeBA when the assetBA or the assetQA is changed in a dropdown.
   // Hold the volumeQA constant.
   useEffect(() => {
-    calculateVolumeBA();
+    if (! firstRender) calculateVolumeBA();
   }, [assetBA, assetQA]);
 
   let validateAndSetVolumeBA = (newVolumeBA) => {

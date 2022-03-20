@@ -561,6 +561,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     this.getBalance = (asset) => {
       // Get the balance held in the appState.
       // Note: Currently, no ETH balance appearing in the data. Why not ?
+      if (_.isUndefined(this.state.apiData.balance)) return '[loading]';
       if (_.isUndefined(this.state.apiData.balance[asset])) return '[loading]';
       let balance = this.state.apiData.balance[asset].balance;
       let dp = assetsInfo[asset].decimalPlaces;

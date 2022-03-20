@@ -26,6 +26,7 @@ let BlankExampleComponent = () => {
 
   let appState = useContext(AppStateContext);
   let [isLoading, setIsLoading] = useState(true);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
@@ -43,6 +44,7 @@ let BlankExampleComponent = () => {
     // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
     // await loadUserData();
     // await loadBalanceData();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     setIsLoading(false); // Causes re-render.
   }
 

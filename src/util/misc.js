@@ -1,4 +1,8 @@
-// Misc utility functions. All stateless.
+// Misc utility functions.
+
+
+// React imports
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 
 // Imports
@@ -106,6 +110,17 @@ let splitStringIntoArray = (s) => {
 }
 
 
+let useFirstRender = () => {
+  let firstRender = useRef(true);
+
+  useEffect(() => {
+    firstRender.current = false;
+  }, []);
+
+  return firstRender.current;
+}
+
+
 let misc = {
   log,
   jd,
@@ -120,6 +135,7 @@ let misc = {
   getSolidiServerMarket,
   sleep,
   splitStringIntoArray,
+  useFirstRender,
 }
 
 

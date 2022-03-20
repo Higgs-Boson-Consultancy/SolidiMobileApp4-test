@@ -1,5 +1,5 @@
 // React imports
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, TextInput, StyleSheet, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 
@@ -38,6 +38,7 @@ We don't use a loading spinner here. Instead, we show '[loading]' for the baseAs
 let Sell = () => {
 
   let appState = useContext(AppStateContext);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
@@ -102,11 +103,11 @@ let Sell = () => {
     await loadMarketData();
     await loadPriceData();
     await loadBalanceData();
-    setIsLoading(false);
   }
 
 
   let loadMarketData = async () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // First, get the markets we have in storage.
     let markets = appState.getMarkets();
     loadAssetData();
@@ -134,6 +135,7 @@ let Sell = () => {
   }
 
   let loadPriceData = async () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let market = assetBA + '/' + assetQA;
     // First, get the price we have in storage.
     let price = appState.getPrice(market);
@@ -158,6 +160,7 @@ let Sell = () => {
   }
 
   let loadBalanceData = async () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Display the value we have in storage first.
     let balance1 = appState.getBalance(assetBA);
     setBalanceBA(balance1);
@@ -172,13 +175,14 @@ let Sell = () => {
   }
   // When the user changes the assetBA, reload the balance data.
   useEffect(() => {
-    loadBalanceData();
+    if (! firstRender) loadBalanceData();
   }, [assetBA]);
 
   // Handle recalculating volumeBA when:
   // - the price changes.
   // - the user changes the volumeQA value.
   let calculateVolumeBA = () => {
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     log("Check whether volumeBA should be recalculated.")
     // Use stored price for this market to recalculate the value of volumeBA.
     if (_.isEmpty(volumeQA)) {
@@ -237,13 +241,13 @@ let Sell = () => {
     }
   }
   useEffect(() => {
-    calculateVolumeQA();
+    if (! firstRender) calculateVolumeQA();
   }, [volumeBA]);
 
   // Recalculate volumeBA when the assetBA or the assetQA is changed in a dropdown.
   // Hold the volumeQA constant.
   useEffect(() => {
-    calculateVolumeBA();
+    if (! firstRender) calculateVolumeBA();
   }, [assetBA, assetQA]);
 
   let validateAndSetVolumeBA = (newVolumeBA) => {
