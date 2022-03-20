@@ -1,5 +1,5 @@
 // React imports
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, StyleSheet, View } from 'react-native';
 
 // Other imports
@@ -8,9 +8,9 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assetsInfo, mainPanelStates } from 'src/constants';
+import { assetsInfo, mainPanelStates, colors } from 'src/constants';
 import AppStateContext from 'src/application/data';
-import { Button } from 'src/components/atomic';
+import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 
@@ -20,9 +20,9 @@ import misc from 'src/util/misc';
 let Assets = () => {
 
   let appState = useContext(AppStateContext);
+  let [isLoading, setIsLoading] = useState(true);
   let stateChangeID = appState.stateChangeID;
 
-  let [isLoading, setIsLoading] = useState(true);
   let [reloadCount, setReloadCount] = useState(0);
 
   let selectedCategory = appState.pageName;
@@ -36,6 +36,20 @@ let Assets = () => {
     {label: 'Crypto', value: 'crypto'},
     {label: 'Fiat', value: 'fiat'},
   ]);
+
+
+  // Initial setup.
+  useEffect(() => {
+    setup();
+  }, []); // Pass empty array so that this only runs once on mount.
+
+
+  let setup = async () => {
+    // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
+    await getData();
+    setIsLoading(false); // Causes re-render.
+  }
+
 
   let getData = async () => {
     let data = await appState.privateMethod({
@@ -102,20 +116,6 @@ let Assets = () => {
 }
 */
     appState.setAPIData({key: 'balance', data});
-    setIsLoading(false);
-  }
-
-  useEffect(() => {
-    getData();
-  }, [reloadCount]);
-
-  let renderLoadingMessage = () => {
-    // Empty at present.
-    return (
-      <View style={styles.loadingMsg}>
-        <Text></Text>
-      </View>
-    );
   }
 
   let renderControls = () => {
@@ -133,7 +133,7 @@ let Assets = () => {
             setItems={setCategoryItems}
           />
         </View>
-        <Button title='Reload' onPress={ () => { setReloadCount(reloadCount+1); } } />
+        <Button title='Reload' onPress={ getData } />
       </View>
     )
   }
@@ -185,7 +185,13 @@ let Assets = () => {
   return (
     <View style={styles.panelContainer}>
 
-      { isLoading && renderLoadingMessage() }
+      { isLoading && <Spinner/> }
+
+      { ! isLoading &&
+        <View style={[styles.heading, styles.heading1]}>
+          <Text style={styles.headingText}>Assets</Text>
+        </View>
+      }
 
       { ! isLoading && renderControls() }
       { ! isLoading && renderAssets() }
@@ -203,21 +209,33 @@ let styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  heading: {
+    alignItems: 'center',
+  },
+  heading1: {
+    marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(30),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
+  },
   controls: {
     alignItems: 'flex-end',
     flexDirection: 'row',
     justifyContent: "space-between",
     zIndex: 1,
-    //borderWidth: 1,
+    //borderWidth: 1, // testing
   },
   assetCategoryWrapper: {
     width: '50%',
   },
   flatListWrapper: {
-    height: '90%',
+    height: '80%',
+    //borderWidth: 1, // testing
   },
   assetList: {
-    //borderWidth: 1,
+    //borderWidth: 1, // testing
     marginTop: scaledHeight(15),
   },
   flatListItem: {
