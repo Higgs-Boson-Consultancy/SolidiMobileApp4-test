@@ -1,5 +1,5 @@
 // React imports
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, TextInput, ScrollView, StyleSheet, View } from 'react-native';
 
 // Other imports
@@ -40,6 +40,7 @@ let PersonalDetails = () => {
   let [details, setDetails] = useState(details1);
 
   let [errorDisplay, setErrorDisplay] = useState({});
+  let runningUpdate = useRef(false);
 
 
   // Tmp
@@ -49,9 +50,7 @@ let PersonalDetails = () => {
   let titleOptions = 'Mr Mrs Ms'.split(' ');
   let titleOptionsList = titleOptions.map(x => ({label: x, value: x}) );
   let [openTitle, setOpenTitle] = useState(false);
-  useEffect( () => {
-    if (! firstRender) updateUserData({detail:'title', value:title});
-  }, [title]);
+  useEffect( () => { if (! firstRender) runNewUpdate({title}); }, [title]);
 
   // Tmp
   let initialGender = 'Male'; // this should be loaded from the user info.
@@ -60,9 +59,7 @@ let PersonalDetails = () => {
   let genderOptions = 'Male Female'.split(' ');
   let genderOptionsList = genderOptions.map(x => ({label: x, value: x}) );
   let [openGender, setOpenGender] = useState(false);
-  useEffect( () => {
-    if (! firstRender) updateUserData({detail:'gender', value:gender});
-  }, [gender]);
+  useEffect( () => { if (! firstRender) runNewUpdate({gender}); }, [gender]);
 
 
   // Initial setup.
@@ -76,6 +73,21 @@ let PersonalDetails = () => {
     await loadUserData();
     //if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     //setIsLoading(false); // Causes re-render.
+  }
+
+
+  let runNewUpdate = async (update) => {
+    if (runningUpdate.current) {
+      // If this function has already been called elsewhere, sleep a bit and retry.
+      await misc.sleep(0.2 + Math.random());
+      runNewUpdate(update);
+    } else {
+      runningUpdate.current = true;
+      let detail = _.keys(update)[0];
+      let value = _.values(update)[0];
+      await updateUserData({detail, value});
+      runningUpdate.current = false;
+    }
   }
 
 
@@ -99,11 +111,13 @@ let PersonalDetails = () => {
     // We send an update to the server every time the user finishes choosing / updating a value.
     // The API route will differ depending on which detail we are updating.
     // Select the right one based on the detail.
+    functionName = 'updateUserData';
     let info = appState.user.info;
     let userDataDetails = `
 title firstname lastname
-address_1 address_2 address_3 address_4
-date_of_birth gender
+date_of_birth gender citizenship
+email mobile
+address_1 address_2 address_3 address_4 postcode country
 `;
     userDataDetails = misc.splitStringIntoArray(userDataDetails);
     let userDataCategory;
@@ -117,9 +131,10 @@ date_of_birth gender
       console.error(`updateUserData: Unrecognised detail: ${detail}`);
       return;
     }
+    // Todo: Only run the update if we have a previous value and the value has definitely changed.
     log(`API request: Update ${userDataCategory}: Change ${detail} from '${prevValue}' to '${value}'.`);
     let params = { [userDataCategory]: {[detail]: value} }
-    let result = await appState.privateMethod({ apiRoute, params });
+    let result = await appState.privateMethod({ functionName, apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: The error should be an object with 'code' and 'message' properties.
     if (_.has(result, 'error')) {
@@ -169,7 +184,7 @@ date_of_birth gender
       <ScrollView style={styles.scrollView}>
 
         <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Basic Details </Text>
+          <Text style={styles.sectionHeadingText}>Basic Details</Text>
         </View>
 
         <View style={[styles.detail, {zIndex:1}]}>
@@ -247,10 +262,68 @@ date_of_birth gender
           </View>
         </View>
 
+        <View style={[styles.detail, {borderWidth:1}]}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>  Country of Citizenship</Text>
+          </View>
+          <View style={[styles.detailValue, {paddingLeft:0}]}>
+            {/*<Text style={styles.detailValueText}>{details.user.citizenship}</Text>*/}
+            <Text style={styles.detailValueText}>  United Kingdom</Text>
+          </View>
+        </View>
+
+
+
         <View style={styles.horizontalRule} />
 
+
+
         <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Address Details </Text>
+          <Text style={styles.sectionHeadingText}>Contact Details</Text>
+        </View>
+
+        {renderError('email')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>Email</Text>
+          </View>
+          <View>
+          <TextInput defaultValue={details.user.email}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'email', value});
+              }}
+            />
+          </View>
+        </View>
+
+        {renderError('mobile')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>Mobile</Text>
+          </View>
+          <View>
+          <TextInput defaultValue={details.user.mobile}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'mobile', value});
+              }}
+            />
+          </View>
+        </View>
+
+
+
+        <View style={styles.horizontalRule} />
+
+
+
+        <View style={styles.sectionHeading}>
+          <Text style={styles.sectionHeadingText}>Address Details</Text>
         </View>
 
         {renderError('address_1')}
@@ -320,6 +393,41 @@ date_of_birth gender
             />
           </View>
         </View>
+
+        {renderError('postcode')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>Postcode</Text>
+          </View>
+          <View>
+          <TextInput defaultValue={details.user.postcode}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'postcode', value});
+              }}
+            />
+          </View>
+        </View>
+
+        {renderError('country')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>Country</Text>
+          </View>
+          <View>
+          <TextInput defaultValue={details.user.country}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'country', value});
+              }}
+            />
+          </View>
+        </View>
+
 
       </ScrollView>
 
