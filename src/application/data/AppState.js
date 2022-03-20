@@ -240,9 +240,13 @@ class AppStateProvider extends Component {
         } else if (error == 'Insufficient currency') {
           // Todo: Fix 'ticker' function on backend.
           //pass
+        } else if (error == 'aborted') {
+          //pass
         } else {
           // Todo: For any other errors, switch to an error description page.
-          console.error(error);
+          let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}):`;
+          msg += String(error);
+          console.error(msg);
         }
         return;
       }
@@ -251,7 +255,7 @@ class AppStateProvider extends Component {
           misc.confirmExactKeys('data', data, keyNames, functionName);
         }
       } catch(err) {
-        let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
+        let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}):`;
         msg += String(err);
         console.error(msg);
         // Todo: switch to an error description page.
@@ -274,9 +278,14 @@ class AppStateProvider extends Component {
           // Future: If we already have a stashed state, this could cause a problem.
           this.state.stashCurrentState();
           this.changeState('RequestTimeout');
+        } else if (error == 'aborted') {
+          //pass
+        } else {
+          // Todo: For any other errors, switch to an error description page.
+          let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
+          msg += String(error);
+          console.error(msg);
         }
-        // Todo: For any other errors, switch to an error description page.
-        console.error(error);
         return;
       }
       try {
