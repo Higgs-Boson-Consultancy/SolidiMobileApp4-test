@@ -233,14 +233,18 @@ class AppStateProvider extends Component {
           //this.state.stashCurrentState();
           //this.changeState('DataProblem');
         }
+        // Todo: For any other errors, switch to an error description page.
       }
       return data;
     }
 
     this.privateMethod = async (args) => {
-      let {httpMethod, apiRoute, params} = args;
+      let {functionName, httpMethod, apiRoute, params, keyNames} = args;
+      if (_.isNil(functionName)) functionName = '[Unspecified function]';
       if (_.isNil(httpMethod)) httpMethod = 'POST';
+      if (_.isNil(apiRoute)) throw new Error('apiRoute required');
       if (_.isNil(params)) params = {};
+      if (_.isNil(keyNames)) keyNames = [];
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.privateMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
@@ -249,6 +253,16 @@ class AppStateProvider extends Component {
           this.state.stashCurrentState();
           this.changeState('RequestTimeout');
         }
+        // Todo: For any other errors, switch to an error description page.
+        return;
+      }
+      try {
+        if (keyNames.length > 0) {
+          misc.confirmExactKeys('data', data, keyNames, functionName);
+        }
+      } catch(err) {
+        console.error(err);
+        // Todo: switch to an error description page.
       }
       return data;
     }
@@ -352,16 +366,36 @@ class AppStateProvider extends Component {
       }
     }
 
+    this.switchToErrorState = ({error}) => {
+      /* Future:
+      - An error code.
+      - Send an error report to an API route.
+      */
+      this.state.error.message = error;
+      this.state.stashCurrentState();
+      this.state.changeState('Error'); // Todo
+    }
+
     // This is called immediately after a successful Login or PIN entry.
     this.loadUserInfo = async () => {
-      // 1) Load user info
-      let data = await this.state.privateMethod({apiRoute: 'user'});
+      await this.loadUser();
+      await this.loadDepositDetails();
+      await this.loadDefaultAccounts();
+      await this.loadBalances();
+    }
+
+    this.loadUser = async () => {
       let keyNames = `address_1, address_2, address_3, address_4,
 bank_limit, btc_limit, country, crypto_limit, email, firstname, freewithdraw,
 landline, lastname, mobile, mon_bank_limit, mon_btc_limit, mon_crypto_limit,
 postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
-`.replace(/\n/g, ' ').replace(/,/g, '').split(' ').filter(x => x);
-      misc.confirmExactKeys('data', data, keyNames, 'loadUserInfo');
+`;
+      keyNames = misc.splitStringIntoArray(keyNames);
+      let data = await this.state.privateMethod({
+        functionName: 'loadUser',
+        apiRoute: 'user',
+        keyNames,
+      });
       // If the data differs from existing data, save it.
       let msg = "User info (basic) loaded from server.";
       if (jd(data) === jd(this.state.user.info.user)) {
@@ -370,20 +404,26 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         log(msg + " New data saved to appState. " + jd(data));
         this.state.user.info.user = data;
       }
-      // 2) Load user's GBP deposit details.
-      let data2 = await this.state.privateMethod({apiRoute: 'deposit_details/GBP'});
+    }
+
+    this.loadDepositDetails = async () => {
+      let keyNames = `accountname, accountno, reference, result, sortcode`;
+      keyNames = misc.splitStringIntoArray(keyNames);
+      let data = await this.state.privateMethod({
+        functionName: 'loadDepositDetails',
+        apiRoute: 'deposit_details/GBP',
+        keyNames,
+      });
       // Example result:
-      // {"data2": {"accountname": "Solidi", "accountno": "00001036", "reference": "SHMPQKC", "result": "success", "sortcode": "040476"}}
-      let keyNames2 = `accountname, accountno, reference, result, sortcode`.replace(/,/g, '').split(' ').filter(x => x);
-      if (data2.result != 'success') {
+      // {"data": {"accountname": "Solidi", "accountno": "00001036", "reference": "SHMPQKC", "result": "success", "sortcode": "040476"}}
+      if (data.result != 'success') {
         // Future: User needs to verify some information first: address, identity.
       }
-      misc.confirmExactKeys('data2', data2, keyNames2, 'loadUserInfo');
       let detailsGBP = {
-        accountName: data2.accountname,
-        sortCode: data2.sortcode,
-        accountNumber: data2.accountno,
-        reference: data2.reference,
+        accountName: data.accountname,
+        sortCode: data.sortcode,
+        accountNumber: data.accountno,
+        reference: data.reference,
       }
       // If the data differs from existing data, save it.
       msg = "User info (deposit details GBP) loaded from server.";
@@ -393,15 +433,23 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         log(msg + " New data saved to appState. " + jd(detailsGBP));
         this.state.user.info.depositDetails.GBP = detailsGBP;
       }
-      // 3) Load user's default GBP account.
-      let data3 = await this.state.privateMethod({apiRoute: 'default_account/GBP'});
+    }
+
+    this.loadDefaultAccounts = async () => {
+      let data = await this.state.privateMethod({apiRoute: 'default_account/GBP'});
       // Data is a list of accounts. Each account is a JSON-encoded string containing these three keys:
       // accname, sortcode, accno.
-      let keyNames3 = `accname, sortcode, accno`.replace(/,/g, '').split(' ').filter(x => x);
+      let keyNames = `accname, sortcode, accno`;
+      keyNames = misc.splitStringIntoArray(keyNames);
       let defaultAccounts = [];
-      for (let account of data3) {
+      for (let account of data) {
         account = JSON.parse(account);
-        misc.confirmExactKeys('account', account, keyNames3, 'loadUserInfo');
+        try {
+          misc.confirmExactKeys('account', account, keyNames, 'loadDefaultAccounts');
+        } catch(err) {
+          console.error(err);
+          // Todo: Switch to Error page.
+        }
         let account2 = {
           accountName: account.accname,
           sortCode: account.sortcode,
@@ -415,7 +463,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         sortCode: '12-12-13',
         accountNumber: '123090342',
       }]
-      // Note: Don't let user get through onboarding without providing a default account.
+      // Future: Elsewhere, don't let the user get through onboarding without providing a default account.
       if (defaultAccounts.length == 0) {
         let msg = `At least one default GBP account is required.`;
         throw new Error(msg);
@@ -430,9 +478,21 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         log(msg + " New data saved to appState. " + jd(defaultAccount));
         this.state.user.info.defaultAccount.GBP = defaultAccount;
       }
-      // X) Finish.
-      this.state.userInfoLoaded = true;
-      this.loadBalances();
+    }
+
+    this.getUserInfo = () => {
+      let details = this.state.user.info;
+      if (! _.isEmpty(details.user)) {
+        return details;
+      }
+      // Otherwise, return specified empty slots that match the expected / required tree structure.
+      details = {
+        user: {
+          firstname: '',
+          lastname: '',
+        }
+      }
+      return details;
     }
 
     this.loadMarkets = async () => {
@@ -688,8 +748,12 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       lockApp: this.lockApp,
       startLockAppTimer: this.startLockAppTimer,
       cancelTimers: this.cancelTimers,
+      switchToErrorState: this.switchToErrorState,
       loadUserInfo: this.loadUserInfo,
-      userInfoLoaded: false,
+      getUserInfo: this.getUserInfo,
+      loadUser: this.loadUser,
+      loadDepositDetails: this.loadDepositDetails,
+      loadDefaultAccounts: this.loadDefaultAccounts,
       loadMarkets: this.loadMarkets,
       getMarkets: this.getMarkets,
       getBaseAssets: this.getBaseAssets,
@@ -706,6 +770,8 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       sendWithdraw: this.sendWithdraw,
       stateChangeID: 0,
       abortControllers: {},
+      // In apiData, we store unmodified data retrieved from the API.
+      // Each sub-object corresponds to a different API route, and should have the same name as that route.
       apiData: {
         market: {},
         ticker: {},
@@ -718,6 +784,8 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         email: '',
         password: '',
         info: {
+          // In info, we store a lot of user-specific data retrieved from the API.
+          // It is often restructured into a new form, but remains partitioned by API route.
           user: {},
           depositDetails: {
             GBP: {
@@ -779,6 +847,10 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
           GBP: 0,
         },
       },
+      error: {
+        code: 0,
+        message: '',
+      }
     }
 
     // Save the initial state to the state history.
@@ -809,8 +881,12 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     });
 
     // Call public methods that provide useful data.
-    this.state.loadMarkets();
-    this.state.loadPrices();
+    let setup = async () => {
+      // Avoid "Incorrect nonce" errors by doing the API calls sequentially.
+      await this.state.loadMarkets();
+      await this.state.loadPrices();
+    }
+    //setup();
 
     // === End setup
 
@@ -827,9 +903,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
       // Method for loading data at the start of whatever component we're working on currently. Note: This is async, and can't be used during component creation.
       this.state.onStartDevTesting = () => {
-        if (! this.state.userInfoLoaded) {
-          this.loadUserInfo();
-        }
+        this.loadUserInfo();
       }
 
       _.assign(this.state.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
