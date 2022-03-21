@@ -8,7 +8,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
@@ -46,13 +46,14 @@ let Assets = () => {
 
   let setup = async () => {
     await getData();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     setIsLoading(false); // Causes re-render.
   }
 
 
   let getData = async () => {
     await appState.loadBalances();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    await appState.loadAssetInfo();
     // Todo: Need to cause a re-render. E.g. increment the reloadCount.
     // Alternatively, write a "reload" function, which handles the re-render step.
   }
@@ -82,10 +83,11 @@ let Assets = () => {
     // {"asset": "XRP", "balance": "0.00000000"}
     let asset = item.asset;
     let volume = item.balance;
-    let assetDP = assetsInfo[asset].decimalPlaces;
+    let assetInfo = appState.getAssetInfo(asset);
+    let assetDP = assetInfo.decimalPlaces;
     let displayVolume = Big(volume).toFixed(assetDP);
-    let name = assetsInfo[asset].name;
-    let symbol = assetsInfo[asset].displaySymbol;
+    let name = assetInfo.name;
+    let symbol = assetInfo.displaySymbol;
     return (
       <View style={styles.flatListItem}>
         <Text style={[styles.assetText]}>{displayVolume}</Text>
@@ -101,7 +103,7 @@ let Assets = () => {
     let assets = _.keys(data).sort();
     let data2 = assets.map(asset => ( {asset, balance: data[asset]} ) );
     // Filter depending on dropdown category.
-    let data3 = data2.filter(item => assetsInfo[item.asset].type == category);
+    let data3 = data2.filter(item => appState.getAssetInfo(item.asset).type == category);
     return (
       <View style={styles.flatListWrapper}>
         <FlatList
