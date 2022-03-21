@@ -209,6 +209,7 @@ let Sell = () => {
     }
   }
   useEffect(() => {
+    // Note: We actually do want to run this on firstRender, because we fetch the latest price from the server.
     calculateVolumeBA();
   }, [volumeQA]);
 
