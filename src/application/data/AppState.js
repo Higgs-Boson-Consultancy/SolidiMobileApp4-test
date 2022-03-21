@@ -535,6 +535,72 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       return details;
     }
 
+    this.loadAssetInfo = async () => {
+      let data = await this.state.publicMethod({
+        httpMethod: 'GET',
+        apiRoute: 'asset_info',
+        params: {},
+      });
+      // Tmp: For development:
+      _.assign(data, {
+        'ETH': {
+          name: 'Ethereum',
+          type: 'crypto',
+          decimalPlaces: 8,
+          displaySymbol: 'ETH',
+          displayString: 'ETH (Ethereum)',
+        },
+        'EUR': {
+          name: 'Euro',
+          type: 'fiat',
+          decimalPlaces: 2,
+          displaySymbol: 'EUR',
+          displayString: 'EUR (Euro)',
+        },
+      });
+      // If the data differs from existing data, save it.
+      let msg = "Asset info loaded from server.";
+      if (jd(data) === jd(this.state.apiData.asset_info)) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(data));
+        this.state.apiData.asset_info = data;
+      }
+      return data;
+    }
+
+    this.getAssetInfo = (asset) => {
+      // Hardcode some standard assets so that we always have something to display.
+      let hardcodedAssets = {
+        'BTC': {
+          name: 'Bitcoin',
+          type: 'crypto',
+          decimalPlaces: 8,
+          displaySymbol: 'BTC',
+          displayString: 'BTC (Bitcoin)',
+        },
+        'GBP': {
+          name: 'British Pound',
+          type: 'fiat',
+          decimalPlaces: 2,
+          displaySymbol: 'GBP',
+          displayString: 'GBP (British Pound)',
+        },
+      }
+      let blankAsset = {
+        name: '[loading]',
+        type: '[loading]',
+        decimalPlaces: 8,
+        displaySymbol: '[loading]',
+        displayString: '[loading]',
+      }
+      if (_.isNil(this.state.apiData.asset_info)) {
+        if (_.keys(hardcodedAssets).includes(asset)) return hardcodedAssets[asset];
+        return blankAsset;
+      }
+      return this.state.apiData.asset_info[asset];
+    }
+
     this.loadMarkets = async () => {
       let data = await this.state.publicMethod({
         httpMethod: 'GET',
@@ -792,6 +858,8 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadUser: this.loadUser,
       loadDepositDetails: this.loadDepositDetails,
       loadDefaultAccounts: this.loadDefaultAccounts,
+      loadAssetInfo: this.loadAssetInfo,
+      getAssetInfo: this.getAssetInfo,
       loadMarkets: this.loadMarkets,
       getMarkets: this.getMarkets,
       getBaseAssets: this.getBaseAssets,
