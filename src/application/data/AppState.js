@@ -525,6 +525,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         return details;
       }
       // Otherwise, return specified empty slots that match the expected / required tree structure.
+      // Update: Perhaps this isn't necessary.
       details = {
         user: {
           firstname: '',
