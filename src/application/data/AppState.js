@@ -594,7 +594,9 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         displaySymbol: '[loading]',
         displayString: '[loading]',
       }
-      if (_.isNil(this.state.apiData.asset_info)) {
+      let dataUnavailable = _.isNil(this.state.apiData.asset_info) ||
+        (_.isNil(this.state.apiData.asset_info[asset]));
+      if (dataUnavailable) {
         if (_.keys(hardcodedAssets).includes(asset)) return hardcodedAssets[asset];
         return blankAsset;
       }
