@@ -50,6 +50,7 @@ let ChooseHowToPay = () => {
   let [disablePayWithBalanceButton, setDisablePayWithBalanceButton] = useState(false);
   let [stylePayWithBalanceButton, setStylePayWithBalanceButton] = useState(stylePWBButton);
   let [stylePayWithBalanceButtonText, setStylePayWithBalanceButtonText] = useState(stylePWBButtonText);
+  let [colorPWBButton, setColorPWBButton] = useState(colors.standardButtonText);
 
   // Testing:
   _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
@@ -85,10 +86,12 @@ let ChooseHowToPay = () => {
       setDisablePayWithBalanceButton(true);
       setStylePayWithBalanceButton(stylePWBButtonDisabled);
       setStylePayWithBalanceButtonText(stylePWBButtonTextDisabled);
+      // Future: setColorPWBButton() to a different color ?
     } else { // enforce reset in case user goes back and changes the volumeQA.
       setDisablePayWithBalanceButton(false);
       setStylePayWithBalanceButton(stylePWBButton);
       setStylePayWithBalanceButtonText(stylePWBButtonText);
+      //setColorPWBButton(colors.standardButtonText);
     }
   }
 
@@ -155,6 +158,7 @@ let ChooseHowToPay = () => {
 
           <RadioButton.Item label="Pay with balance" value="balance"
             disabled={disablePayWithBalanceButton}
+            color={colorPWBButton}
             style={stylePayWithBalanceButton} labelStyle={styles.buttonLabel} />
 
           <View style={styles.buttonDetail}>
