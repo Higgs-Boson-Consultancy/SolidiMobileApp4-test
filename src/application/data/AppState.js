@@ -314,9 +314,9 @@ class AppStateProvider extends Component {
       // If email (and password) aren't present, go to Login.
       // Note: The PIN is kept in storage even if the user logs out.
       if (! this.state.user.email) return this.state.changeState('Login');
-      // Otherwise, if we have PIN, go to PIN entry.
+      // Otherwise, if we have a PIN, go to PIN entry.
       if (this.state.user.pin) return this.state.changeState('PIN');
-      // Other, go to Login.
+      // Otherwise, go to Login.
       return this.state.changeState('Login');
     }
 
@@ -775,7 +775,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
     this.sendBuyOrder = async () => {
       if (! this.state.panels.buy.activeOrder) {
-        log('sendBuyOrder: No active BUY order.');
+        log('No active BUY order. Leaving sendBuyOrder.');
         return;
       }
       // Ensure that this order only gets processed once.
