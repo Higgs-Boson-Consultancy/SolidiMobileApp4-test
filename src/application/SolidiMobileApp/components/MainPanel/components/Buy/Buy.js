@@ -288,10 +288,12 @@ let Buy = () => {
     /* Move the user into the auth sequence.
     - This happens here, rather than in setMainPanelState, because we want the user to make the choice to buy prior to having to authenticate.
     - After authentication, we'll redirect to ChooseHowToPay (which will send the order as it initialises).
-    - Note: Even if the user is logged in, they have to enter their PIN before the order is sent to the server.
     */
-    // Future: Can remove PIN check by only calling authenticateUser() if user.isAuthenticated = false.
-    return appState.authenticateUser();
+    if (! appState.user.isAuthenticated) {
+      return appState.authenticateUser();
+    }
+
+    return appState.changeState('ChooseHowToPay');
   }
 
 
