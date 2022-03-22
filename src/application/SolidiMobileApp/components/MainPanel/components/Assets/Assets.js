@@ -53,7 +53,7 @@ let Assets = () => {
 
   let getData = async () => {
     await appState.loadBalances();
-    await appState.loadAssetInfo();
+    await appState.loadAssetsInfo();
     // Todo: Need to cause a re-render. E.g. increment the reloadCount.
     // Alternatively, write a "reload" function, which handles the re-render step.
   }

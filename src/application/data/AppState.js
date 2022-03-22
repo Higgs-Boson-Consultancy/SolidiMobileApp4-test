@@ -560,7 +560,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       return details;
     }
 
-    this.loadAssetInfo = async () => {
+    this.loadAssetsInfo = async () => {
       let data = await this.state.publicMethod({
         httpMethod: 'GET',
         apiRoute: 'asset_info',
@@ -918,7 +918,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadUser: this.loadUser,
       loadDepositDetails: this.loadDepositDetails,
       loadDefaultAccounts: this.loadDefaultAccounts,
-      loadAssetInfo: this.loadAssetInfo,
+      loadAssetsInfo: this.loadAssetsInfo,
       getAssetInfo: this.getAssetInfo,
       loadMarkets: this.loadMarkets,
       getMarkets: this.getMarkets,
