@@ -19,7 +19,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assetsInfo, mainPanelStates, footerButtonList } from 'src/constants';
+import { mainPanelStates, footerButtonList } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -615,7 +615,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       let blankAsset = {
         name: '[loading]',
         type: '[loading]',
-        decimalPlaces: 8,
+        decimalPlaces: 2,
         displaySymbol: '[loading]',
         displayString: '[loading]',
       }
@@ -719,7 +719,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       if (_.isUndefined(this.state.apiData.balance)) return '[loading]';
       if (_.isUndefined(this.state.apiData.balance[asset])) return '[loading]';
       let balance = this.state.apiData.balance[asset];
-      let dp = assetsInfo[asset].decimalPlaces;
+      let dp = this.state.getAssetInfo(asset).decimalPlaces;
       let balanceString = Big(balance).toFixed(dp);
       return balanceString;
     }
@@ -860,7 +860,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         throw new Error(`Unrecognised feeType: ${feeType}`);
       if (_.isNil(this.state.fees[feeType][asset])) return '[loading]';
       let fee = this.state.fees[feeType][asset];
-      let dp = assetsInfo[asset].decimalPlaces;
+      let dp = this.state.getAssetInfo(asset).decimalPlaces;
       let feeString = Big(fee).toFixed(dp);
       return feeString;
     }

@@ -8,7 +8,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import AppStateContext from 'src/application/data';
 import { Button, StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
@@ -57,8 +57,6 @@ let ChooseHowToPay = () => {
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
-  let zeroVolumeQA = '0.' + '0'.repeat(assetsInfo[assetQA].decimalPlaces);
-
 
   // Initial setup.
   useEffect( () => {
@@ -67,6 +65,7 @@ let ChooseHowToPay = () => {
 
 
   let setup = async () => {
+    await appState.loadAssetsInfo();
     await appState.loadBalances();
     await checkBalance();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -75,6 +74,8 @@ let ChooseHowToPay = () => {
 
 
   let balanceQA = () => { return appState.getBalance(assetQA) };
+
+  let zeroVolumeQA = () => { return '0.' + '0'.repeat(appState.getAssetInfo(assetQA).decimalPlaces) }
 
 
   // Disable the "Pay with balance" button if the balance is too small.
@@ -112,7 +113,7 @@ let ChooseHowToPay = () => {
     await appState.loadBalances();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let balanceQA = appState.getBalance(assetQA);
-    let dp = assetsInfo[assetQA].decimalPlaces;
+    let dp = appState.getAssetInfo(assetQA).decimalPlaces;
     if (Big(balanceQA).lt(Big(volumeQA))) {
       let diffString = Big(volumeQA).minus(Big(balanceQA)).toFixed(dp);
       let balanceString = Big(balanceQA).toFixed(dp);
@@ -184,22 +185,22 @@ let ChooseHowToPay = () => {
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You buy</Text>
-          <Text style={styles.bold}>{volumeBA} {assetsInfo[assetBA].displaySymbol}</Text>
+          <Text style={styles.bold}>{volumeBA} {appState.getAssetInfo(assetBA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You spend</Text>
-          <Text style={styles.bold}>{volumeQA} {assetsInfo[assetQA].displaySymbol}</Text>
+          <Text style={styles.bold}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Fee</Text>
-          <Text style={styles.bold}>{zeroVolumeQA} {assetsInfo[assetQA].displaySymbol}</Text>
+          <Text style={styles.bold}>{zeroVolumeQA()} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Total</Text>
-          <Text style={styles.bold}>{volumeQA} {assetsInfo[assetQA].displaySymbol}</Text>
+          <Text style={styles.bold}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
       </View>
