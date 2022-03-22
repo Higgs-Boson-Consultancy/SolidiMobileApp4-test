@@ -52,6 +52,12 @@ let Settings = () => {
         />
       </View>
 
+      <View style={styles.buttonWrapper}>
+        <StandardButton title='Log Out'
+          onPress={ () => { appState.logout(); } }
+        />
+      </View>
+
     </View>
     </View>
   )
