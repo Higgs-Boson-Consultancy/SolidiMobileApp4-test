@@ -44,7 +44,8 @@ let Login = () => {
       let apiClient = appState.apiClient;
       let apiRoute = 'login_mobile' + `/${email}`;
       let params = {password};
-      let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params});
+      let abortController = appState.createAbortController();
+      let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       let keyNames = 'apiKey, apiSecret'.split(', ');
       misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
       let {apiKey, apiSecret} = data;
