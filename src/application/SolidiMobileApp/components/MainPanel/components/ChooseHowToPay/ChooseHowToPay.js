@@ -35,8 +35,8 @@ let ChooseHowToPay = () => {
   let permittedPageNames = 'direct_payment balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToPay');
 
+  let [renderCount, triggerRender] = useState(0);
   let [paymentChoice, setPaymentChoice] = useState(pageName);
-  let [balanceQA, setBalanceQA] = useState('');
   let [disablePayWithBalanceButton, setDisablePayWithBalanceButton] = useState(false);
   let [stylePayWithBalanceButton, setStylePayWithBalanceButton] = useState(stylePWBButton);
   let [stylePayWithBalanceButtonText, setStylePayWithBalanceButtonText] = useState(stylePWBButtonText);
@@ -52,24 +52,20 @@ let ChooseHowToPay = () => {
 
   // Initial setup.
   useEffect( () => {
-    loadBalanceData();
+    setup();
   }, []); // Pass empty array to only run once on mount.
 
 
-  let loadBalanceData = async () => {
-    // Display the value we have in storage first.
-    let balance1 = appState.getBalance(assetQA);
-    setBalanceQA(balance1);
-    // Load the balance from the server.
+  let setup = async () => {
     await appState.loadBalances();
+    await checkBalance();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    // Display the new value, if it's different.
-    let balance2 = appState.getBalance(assetQA);
-    if (balance1 !== balance2) {
-      setBalanceQA(balance2);
-    }
-    checkBalance();
+    triggerRender(renderCount+1);
   }
+
+
+  let balanceQA = () => { appState.getBalance(assetQA) };
+
 
   // Disable the "Pay with balance" button if the balance is too small.
   let checkBalance = async () => {
@@ -153,7 +149,7 @@ let ChooseHowToPay = () => {
           <View style={styles.buttonDetail}>
             <Text style={stylePayWithBalanceButtonText}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
             <Text style={stylePayWithBalanceButtonText}>{`\u2022  `} Processed instantly</Text>
-            <Text style={styles.bold}>{`\u2022  `} Your balance: {balanceQA} {(balanceQA != '[loading]') && assetQA}</Text>
+            <Text style={styles.bold}>{`\u2022  `} Your balance: {balanceQA()} {(balanceQA() != '[loading]') && assetQA}</Text>
             {disablePayWithBalanceButton &&
               <Text style={styles.balanceLowText}>{`\u2022  `} (Balance is too low for this option)</Text>
             }
