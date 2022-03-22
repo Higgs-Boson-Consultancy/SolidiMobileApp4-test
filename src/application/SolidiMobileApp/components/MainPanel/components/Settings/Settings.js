@@ -41,7 +41,7 @@ let Settings = () => {
       </View>
 
       <View style={styles.buttonWrapper}>
-        <StandardButton title='Bank Accounts'
+        <StandardButton title='Bank Account'
           onPress={ () => { appState.changeState('BankAccounts'); } }
         />
       </View>
