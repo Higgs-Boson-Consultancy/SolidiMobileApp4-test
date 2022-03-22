@@ -55,11 +55,18 @@ let PIN = () => {
     }
     // Store PIN in global state.
     appState.user.pin = pin;
-    // If we have successfully entered the PIN, then look up the user's email and password.
+    // If the user has entered a PIN, then use it to look up the user's email and password.
     if (pinStatus === 'enter') {
       let loginCredentials = await Keychain.getInternetCredentials(appState.domain);
       // Example result:
       // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "mr@pig.com"}
+      /* Issue:
+      - The user may have logged out, in which case the email and password have been deleted.
+      In this case:
+      - Keychain.getInternetCredentials will return false.
+      - We need to stop here and switch to Login page.
+      */
+      if (! loginCredentials) return appState.changeState('Login');
       let {username: email, password} = loginCredentials;
       let msg = `loginCredentials (email=${email}, password=${password}) loaded from keychain under ${appState.domain})`;
       log(msg);
@@ -70,6 +77,10 @@ let PIN = () => {
       let params = {password};
       let abortController = appState.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
+      /* Issue:
+      - The email and password may have changed (e.g. via the web application).
+      In this case, we'll get a particular error. Need to catch it and switch to Login page.
+      */
       if (data.error) {
         let msg = `Error in PIN._finishProcess: ${misc.jd(data)}`
         console.error(msg);
