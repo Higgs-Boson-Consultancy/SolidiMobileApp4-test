@@ -32,8 +32,9 @@ let ChooseHowToPay = () => {
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'direct_payment balance'.split(' ');
+  let permittedPageNames = 'default direct_payment balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToPay');
+  if (pageName == 'default') pageName = 'direct_payment';
 
   let [renderCount, triggerRender] = useState(0);
   let [paymentChoice, setPaymentChoice] = useState(pageName);
