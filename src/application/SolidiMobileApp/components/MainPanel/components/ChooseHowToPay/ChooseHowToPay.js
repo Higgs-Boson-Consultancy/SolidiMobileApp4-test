@@ -64,7 +64,7 @@ let ChooseHowToPay = () => {
   }
 
 
-  let balanceQA = () => { appState.getBalance(assetQA) };
+  let balanceQA = () => { return appState.getBalance(assetQA) };
 
 
   // Disable the "Pay with balance" button if the balance is too small.
