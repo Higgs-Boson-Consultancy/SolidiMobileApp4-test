@@ -359,20 +359,29 @@ class AppStateProvider extends Component {
       this.state.authenticateUser();
     }
 
-    this.startLockAppTimer = async () => {
-      let waitTimeMinutes = 120; // Future: Set to 30 mins.
+    this.resetLockAppTimer = async () => {
+      let currentTimerID = this.state.lockAppTimerID;
+      // If there's an active timer, stop it.
+      if (! _.isNil(currentTimerID)) {
+        clearTimeout(currentTimerID);
+      }
+      let waitTimeMinutes = 1; // Future: Set to 30 mins.
       let waitTimeSeconds = waitTimeMinutes * 60;
       let callLockApp = () => {
-        if (appState.mainPanelState !== 'PIN') {
+        if (this.state.mainPanelState !== 'PIN') {
           let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
           log(msg);
           this.state.lockApp();
         }
       }
-      setTimeout(callLockApp, waitTimeSeconds * 1000);
+      // Start new timer.
+      let timerID = setTimeout(callLockApp, waitTimeSeconds * 1000);
+      this.state.lockAppTimerID = timerID;
     }
 
     this.cancelTimers = () => {
+      // Reset the "lockApp" timer.
+      this.state.resetLockAppTimer();
       /* Cancel any existing timers. */
       if (this.state.panels.buy.timerID) {
         clearInterval(this.state.panels.buy.timerID);
@@ -877,7 +886,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
       lockApp: this.lockApp,
-      startLockAppTimer: this.startLockAppTimer,
+      resetLockAppTimer: this.resetLockAppTimer,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
       loadUserInfo: this.loadUserInfo,
@@ -945,6 +954,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       ],
       apiClient: null,
       appName: this.appName,
+      lockAppTimerID: null,
       panels: {
         buy: {
           timerID: null,
@@ -1002,7 +1012,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     this.loadPIN();
 
     // Start the lock-app timer.
-    this.startLockAppTimer();
+    this.resetLockAppTimer();
 
     // Tweak app state for dev work.
     if (tier === 'dev') {
