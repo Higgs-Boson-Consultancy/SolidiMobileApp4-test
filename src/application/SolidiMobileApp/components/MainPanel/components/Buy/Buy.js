@@ -285,7 +285,7 @@ let Buy = () => {
     // Store the fact that we have an active BUY order.
     appState.panels.buy.activeOrder = true;
 
-    /* Move the user into the auth sequence.
+    /* Check if the user is not logged in.
     - This happens here, rather than in setMainPanelState, because we want the user to make the choice to buy prior to having to authenticate.
     - After authentication, we'll redirect to ChooseHowToPay (which will send the order as it initialises).
     */
