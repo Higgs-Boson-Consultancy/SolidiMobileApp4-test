@@ -25,7 +25,7 @@ import misc from 'src/util/misc';
 let BlankExampleComponent = () => {
 
   let appState = useContext(AppStateContext);
-  let [isLoading, setIsLoading] = useState(true);
+  let [renderCount, triggerRender] = useState(0);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
@@ -44,7 +44,7 @@ let BlankExampleComponent = () => {
     // await loadUserData();
     // await loadBalanceData();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    setIsLoading(false); // Causes re-render.
+    triggerRender(renderCount+1);
   }
 
 
