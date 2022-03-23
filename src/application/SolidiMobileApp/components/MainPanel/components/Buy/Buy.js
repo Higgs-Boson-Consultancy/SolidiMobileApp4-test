@@ -9,7 +9,7 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -18,6 +18,8 @@ import misc from 'src/util/misc';
 /* Notes
 
 We don't use a loading spinner here. Instead, we show '[loading]' for the baseAsset amount until we get price data back from the server.
+
+We focus on keeping the fiat quoteAsset volume (usually GBP at the moment) constant, because our target customer thinks in terms of GBP rather than in amounts of a crypto asset.
 
 */
 
@@ -29,49 +31,45 @@ let Buy = () => {
   let appState = useContext(AppStateContext);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
+  // priceString is used to trigger a recalculation of volumeBA when the market prices change.
+  let [priceString, setPriceString] = useState('');
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Buy');
 
+  // Keep track of the last user action that changed an aspect of the order.
   let [lastUserInput, setLastUserInput] = useState('');
 
   // Defaults.
-  let defaultMarkets = appState.getMarkets();
-  let defaultBaseAssets = ['BTC'];
-  let defaultQuoteAssets = ['GBP'];
-  let selectedVolumeBA = ''; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetBA = 'BTC';
-  let selectedVolumeQA = '100';
+  let selectedVolumeBA = '[loading]'; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetQA = 'GBP';
+  let selectedVolumeQA = '100';
 
   // Function that derives dropdown properties from an asset list.
   let deriveAssetItems = (assets) => {
-    return assets.map(x => {
-      let a = assetsInfo[x];
-      return {label: a.displayString, value: a.displaySymbol};
+    return assets.map(asset => {
+      let info = appState.getAssetInfo(asset);
+      return {label: info.displayString, value: info.displaySymbol};
     });
   }
-  let baseAssetItems = deriveAssetItems(defaultBaseAssets);
-  let quoteAssetItems = deriveAssetItems(defaultQuoteAssets);
+
+  // Functions that derive dropdown properties from the current lists of base and quote assets.
+  let baseAssetItems2 = () => { return deriveAssetItems(appState.getBaseAssets()) }
+  let quoteAssetItems2 = () => { return deriveAssetItems(appState.getQuoteAssets()) }
 
   // Dropdown State:
   // BA = Base Asset
   let [volumeBA, setVolumeBA] = useState(selectedVolumeBA);
   let [openBA, setOpenBA] = useState(false);
   let [assetBA, setAssetBA] = useState(selectedAssetBA);
-  let [itemsBA, setItemsBA] = useState(baseAssetItems);
+  let [itemsBA, setItemsBA] = useState(baseAssetItems2());
   // QA = Quote Asset
   let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
   let [openQA, setOpenQA] = useState(false);
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
-  let [itemsQA, setItemsQA] = useState(quoteAssetItems);
-
-  // More state.
-  let [markets, setMarkets] = useState(defaultMarkets);
-  let [baseAssets, setBaseAssets] = useState(defaultBaseAssets);
-  let [quoteAssets, setQuoteAssets] = useState(defaultQuoteAssets);
-  let [marketPrice, setMarketPrice] = useState('');
+  let [itemsQA, setItemsQA] = useState(quoteAssetItems2());
 
 
   // Initial setup.
@@ -82,102 +80,79 @@ let Buy = () => {
 
 
   let setup = async () => {
-    await loadMarketData();
-    await loadPriceData();
-  }
-
-
-  let loadMarketData = async () => {
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    // First, get the markets we have in storage.
-    let markets = appState.getMarkets();
-    loadAssetData();
-    // Reload data from the server.
-    let markets2 = await appState.loadMarkets();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    // Store the new data, if it's different, so that our display updates.
-    if (markets !== markets2) setMarkets(markets2);
-    loadAssetData();
-  }
-
-  let loadAssetData = () => {
-    let baseAssets2 = appState.getBaseAssets();
-    // If the asset list has changed, save the state.
-    if (baseAssets != baseAssets2) {
-      let baseAssetItems = deriveAssetItems(baseAssets2);
-      setItemsBA(baseAssetItems);
-    }
-    let quoteAssets2 = appState.getQuoteAssets();
-    // If the asset list has changed, save the state.
-    if (quoteAssets != quoteAssets2) {
-      let quoteAssetItems = deriveAssetItems(quoteAssets2);
-      setItemsQA(quoteAssetItems);
-    }
-  }
-
-  let loadPriceData = async () => {
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    let market = assetBA + '/' + assetQA;
-    // First, get the price we have in storage.
-    let price = appState.getPrice(market);
-    setMarketPrice(price);
-    // Reload data from the server.
+    await appState.loadAssetsInfo();
+    await appState.loadMarkets();
     await appState.loadPrices();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    let price2 = appState.getPrice(market);
-    // Tmp: To mimic price changes, increment the price slightly.
-    /*
-    let dp = assetsInfo[assetQA].decimalPlaces;
-    priceX = (Big(price).minus(Big('1.01'))).toFixed(dp);
-    appState.apiData.prices[fxmarket] = price2;
-    price2 = priceX;
-    */
-    // End tmp.
-    // Store the new data, if it's different, so that our display updates.
-    if (price != price2) setMarketPrice(price2);
-    // Need to recalculate volumeBA if the price has changed.
-    // Note: The QA volume will stay at its current value.
+    setItemsBA(baseAssetItems2());
+    setItemsQA(quoteAssetItems2());
     calculateVolumeBA();
   }
+
 
   // Handle recalculating volumeBA when:
   // - the price changes.
   // - the user changes the volumeQA value.
-  let calculateVolumeBA = () => {
-    log("Check whether volumeBA should be recalculated.")
+  let calculateVolumeBA = (args) => {
+    log(`Check whether volumeBA should be recalculated. assetBA = ${assetBA}`);
+    // Defaults
+    if (_.isNil(args)) args = {};
+    let {priceStringChange, assetChange} = args;
+    if (_.isNil(priceStringChange)) priceStringChange = false
+    if (_.isNil(assetChange)) assetChange = false
     // Use stored price for this market to recalculate the value of volumeBA.
+    let market = assetBA + '/' + assetQA;
+    let price = appState.getPrice(market);
+    let prevPrice = appState.getPrevPrice(market);
+    let priceChange = (price !== prevPrice);
     if (_.isEmpty(volumeQA)) {
       // pass
-    } else if (lastUserInput == 'volumeBA') {
+    } else if (lastUserInput == 'volumeBA' && ! priceStringChange && ! assetChange) {
       // If the user changes volumeBA, this will cause volumeQA to be recalculated.
       // This clause prevents the volumeQA change causing volumeBA to be recalculated for a second time (which would be a recursive event loop).
+      // However, if there has been a change in one of the market prices, or the user has changed an asset, then we should recalculate.
     } else {
       log('Recalculate base asset volume');
       let checkVolumeBA = _.isEmpty(volumeBA) ? '0' : volumeBA;
-      let market = assetBA + '/' + assetQA;
-      let price = appState.getPrice(market);
       if (price === '0') {
         // Price data has not yet been retrieved from server.
         setVolumeBA('[loading]');
         return;
       }
-      let baseDP = assetsInfo[assetBA].decimalPlaces;
+      /*
+      Check if: We are triggering based on a price change.
+      But: A price change has not occurrred in this specific market.
+      */
+      if (priceStringChange && ! priceChange) {
+        log(`No change in price (${price}). Stopping recalculation of volumeBA.`);
+        return
+      }
+      let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
       let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
       // If new value of volumeBA is different, update it.
-      if (Big(newVolumeBA) !== Big(checkVolumeBA)) {
+      if (
+        checkVolumeBA == '[loading]' ||
+        (! Big(newVolumeBA).eq(Big(checkVolumeBA)))
+      ) {
         log("New base asset volume: " + newVolumeBA);
         setVolumeBA(newVolumeBA);
       }
     }
   }
+
   useEffect(() => {
     if (! firstRender) calculateVolumeBA();
   }, [volumeQA]);
 
+  useEffect(() => {
+    if (! firstRender) calculateVolumeBA({priceStringChange:true});
+  }, [priceString]);
+
+
   // Handle user recalculating volumeQA when:
   // - the user changes the volumeBA value.
   let calculateVolumeQA = () => {
-    log("Check whether volumeQA should be recalculated.")
+    log(`Check whether volumeQA should be recalculated. assetQA = ${assetQA}`);
     if (_.isEmpty(volumeBA)) {
       // pass
     } else if (lastUserInput == 'volumeQA') {
@@ -193,14 +168,15 @@ let Buy = () => {
         setVolumeQA('[loading]');
         return;
       }
-      let quoteDP = assetsInfo[assetQA].decimalPlaces;
+      let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
       let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
-      if (Big(newVolumeQA) !== Big(checkVolumeQA)) {
+      if (! Big(newVolumeQA).eq(Big(checkVolumeQA))) {
         log("New quote asset volume: " + newVolumeQA);
         setVolumeQA(newVolumeQA);
       }
     }
   }
+
   useEffect(() => {
     if (! firstRender) calculateVolumeQA();
   }, [volumeBA]);
@@ -208,12 +184,13 @@ let Buy = () => {
   // Recalculate volumeBA when the assetBA or the assetQA is changed in a dropdown.
   // Hold the volumeQA constant.
   useEffect(() => {
-    if (! firstRender) calculateVolumeBA();
+    if (! firstRender) calculateVolumeBA({assetChange:true});
   }, [assetBA, assetQA]);
+
 
   let validateAndSetVolumeBA = (newVolumeBA) => {
     setLastUserInput('volumeBA');
-    let baseDP = assetsInfo[assetBA].decimalPlaces;
+    let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
     // This matches a digit sequence + optional period + optional digit sequence.
     // The second digit sequence can only be as long as the baseAsset's decimalPlaces.
     let regexString = `^\\d+(\\.\\d{0,${baseDP}})?$`;
@@ -234,7 +211,7 @@ let Buy = () => {
 
   let validateAndSetVolumeQA = (newVolumeQA) => {
     setLastUserInput('volumeQA');
-    let quoteDP = assetsInfo[assetQA].decimalPlaces;
+    let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
     // This matches a digit sequence + optional period + optional digit sequence.
     // The second digit sequence can only be as long as the quoteAsset's decimalPlaces.
     let regexString = `^\\d+(\\.\\d{0,${quoteDP}})?$`;
@@ -253,29 +230,46 @@ let Buy = () => {
     }
   }
 
+
   let generatePriceDescription = () => {
     let market = assetBA + '/' + assetQA;
     let price = appState.getPrice(market);
     log(`Market price for ${market} market = ${price}`);
-    let dp = assetsInfo[assetQA].decimalPlaces;
+    let dp = appState.getAssetInfo(assetQA).decimalPlaces;
     let priceString = Big(price).toFixed(dp);
-    let displayStringBA = assetsInfo[assetBA].displaySymbol;
-    let displayStringQA = assetsInfo[assetQA].displaySymbol;
+    let displayStringBA = appState.getAssetInfo(assetBA).displaySymbol;
+    let displayStringQA = appState.getAssetInfo(assetQA).displaySymbol;
     let description = `1 ${displayStringBA} = ${priceString} ${displayStringQA}`;
     return description;
   }
 
+
   // Set an interval timer that periodically reloads the price data from the server.
   let checkTimeSeconds = 15000; // Todo: At end, change this to 15.
-  // Time function.
+  //checkTimeSeconds = 10; // Testing
+  // Timer function.
+  /*
+  Note: setInterval runs in a separate execution context.
+  - The only way that it can affect the main page is by updating state.
+  - It can't retrieve state from the main page.
+  - So: We update state using the results of the API call.
+  */
   let checkPrice = async () => {
-    await loadPriceData();
+    await appState.loadPrices();
+    let newPriceString = JSON.stringify(appState.getPrices());
+    setPriceString(newPriceString);
   }
-  // Set timer on load.
-  if (_.isNil(appState.panels.buy.timerID)) {
-    let timerID = setInterval(checkPrice, checkTimeSeconds * 1000);
-    appState.panels.buy.timerID = timerID;
-  }
+  // Set timer.
+  useEffect(() => {
+    let intervalID = setInterval(() => {
+      checkPrice();
+    }, checkTimeSeconds * 1000);
+    // This cleanup callback is run when the component is unmounted.
+    return () => {
+      clearInterval(intervalID);
+    }
+  }, []); // Run once on start.
+
 
   let startBuyRequest = async () => {
 
@@ -317,7 +311,7 @@ let Buy = () => {
           value={volumeQA}
         />
         <DropDownPicker
-          placeholder={assetsInfo[assetQA].displayString}
+          placeholder={appState.getAssetInfo(assetQA).displayString}
           style={styles.quoteAsset}
           containerStyle={styles.quoteAssetContainer}
           open={openQA}
@@ -338,7 +332,7 @@ let Buy = () => {
           value={volumeBA}
         />
         <DropDownPicker
-          placeholder={assetsInfo[assetBA].displayString}
+          placeholder={appState.getAssetInfo(assetBA).displayString}
           style={styles.baseAsset}
           containerStyle={styles.baseAssetContainer}
           open={openBA}
@@ -347,6 +341,9 @@ let Buy = () => {
           setOpen={setOpenBA}
           setValue={setAssetBA}
           setItems={setItemsBA}
+          onChangeValue={(value) => {
+            //log({newAssetBA: value});
+          }}
         />
       </View>
 
