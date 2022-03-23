@@ -656,6 +656,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     }
 
     this.getMarkets = () => {
+      // Note: This defaultList also produces the default base and quote assets in various pages.
       let defaultList = ['BTC/GBP'];
       let markets = this.state.apiData.market;
       if (_.isEmpty(markets)) return defaultList;
@@ -741,22 +742,63 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         'BTC/EURX': '3000.00',
         'ETH/EURX': '150.00',
       }
-      // End tmp
+      // End Tmp
       data = _.mapKeys(data, (value, key) => misc.getStandardMarket(key));
       let msg = "Prices loaded from server.";
+      this.state.priceLoadCount += 1;
+      // Tmp 2: To mock price changes, decrement the price by a bit more on each load.
+      let tmp2 = true;
+      if (tmp2) {
+        for (let market of this.state.getMarkets()) {
+          if (market == 'BTC/GBP') continue;
+          let [assetBA, assetQA] = market.split('/');
+          let dp = this.state.getAssetInfo(assetQA).decimalPlaces;
+          let price = data[market];
+          let x = Big('1.01').mul(Big(this.state.priceLoadCount));
+          let price2 = (Big(price).minus(x)).toFixed(dp);
+          data[market] = price2;
+        }
+      }
+      // End Tmp 2
       if (jd(data) === jd(this.state.apiData.ticker)) {
         log(msg + " No change.");
       } else {
         log(msg + " New data saved to appState. " + jd(data));
+        // Save old data for price change checking. Use new data if old data is empty.
+        this.state.prevAPIData.ticker = this.state.apiData.ticker;
+        if (_.isEmpty(this.state.apiData.ticker)) {
+          this.state.prevAPIData.ticker = data;
+        }
+        // Save new data.
         this.state.apiData.ticker = data;
       }
       return data;
     }
 
-    this.getPrice = (fxmarket) => {
+    this.getPrices = () => {
+      return this.state.apiData.ticker;
+    }
+
+    this.getPrice = (market) => {
       // Get the price held in the appState.
-      if (_.isUndefined(this.state.apiData.ticker[fxmarket])) return '0';
-      return this.state.apiData.ticker[fxmarket];
+      if (_.isUndefined(this.state.apiData.ticker[market])) return '0';
+      return this.state.apiData.ticker[market];
+    }
+
+    this.getPrevPrice = (market) => {
+      // Get the previous price held in the appState.
+      if (_.isUndefined(this.state.prevAPIData.ticker[market])) return '0';
+      return this.state.prevAPIData.ticker[market];
+    }
+
+    this.setPrice = ({market, price}) => {
+      // Useful during development.
+      this.state.apiData.ticker[market] = price;
+    }
+
+    this.setPrevPrice = ({market, price}) => {
+      // Useful during development.
+      this.state.prevAPIData.ticker[market] = price;
     }
 
     this.getOrderStatus = async ({orderID}) => {
@@ -929,7 +971,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadBalances: this.loadBalances,
       getBalance: this.getBalance,
       loadPrices: this.loadPrices,
+      getPrices: this.getPrices,
       getPrice: this.getPrice,
+      getPrevPrice: this.getPrevPrice,
+      setPrice: this.setPrice,
+      setPrevPrice: this.setPrevPrice,
       getOrderStatus: this.getOrderStatus,
       sendBuyOrder: this.sendBuyOrder,
       sendSellOrder: this.sendSellOrder,
@@ -945,6 +991,10 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         ticker: {},
         balance: {},
       },
+      prevAPIData: {
+        ticker: {},
+      },
+      priceLoadCount: 0,
       domain: 'solidi.co',
       userAgent: "Solidi Mobile App 4",
       user: {
@@ -983,7 +1033,6 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       panels: {
         buy: {
           activeOrder: false,
-          timerID: null,
           orderID: null,
           volumeQA: 0,
           symbolQA: '',
@@ -1053,6 +1102,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
     // Call public methods that provide useful data.
     let setup = async () => {
+      await this.state.loadAssetsInfo();
       await this.state.loadMarkets();
       await this.state.loadPrices();
     }
