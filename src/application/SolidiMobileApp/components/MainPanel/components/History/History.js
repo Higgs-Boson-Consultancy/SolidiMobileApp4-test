@@ -9,7 +9,7 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -38,24 +38,18 @@ let History = () => {
 
 
   let getData = async () => {
-    let data = await appState.privateMethod({
-      httpMethod: 'POST',
-      apiRoute: 'transaction',
-      params: {}
-    });
+    let data = await appState.privateMethod({apiRoute: 'transaction'});
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Example data:
     // {"total": 1, "transactions": [{"cur1": "GBP", "cur1amt": "10000.00000000", "cur2": "", "cur2amt": "0.00000000", "fee_cur": "", "fees": "0.00000000", "fxmarket": 1, "ref": "initial deposit", "short_desc": "Transfer In", "status": "A", "txn_code": "PI", "txn_date": "14 Feb 2022", "txn_time": "16:56"}]}
-    appState.setAPIData({key: 'transaction', data});
-    let data2 = await appState.privateMethod({
-      httpMethod: 'POST',
-      apiRoute: 'order',
-      params: {},
-    });
+    //appState.setAPIData({key: 'transaction', data});
+    appState.apiData.transaction = data;
+    let data2 = await appState.privateMethod({apiRoute: 'order'});
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Example data:
     // {"results": [{"date": "14 Feb 2022", "fxmarket": "BTC/GBPX", "id": 31, "ocount": "1", "order_age": "147", "order_type": "Limit", "price": "100.00000000", "qty": "0.05000000", "s1_id": null, "s1_status": null, "s2_id": null, "s2_status": null, "side": "Buy", "status": "LIVE", "time": "17:34:42", "unixtime": "1644860082"}], "total": "1"}
-    appState.setAPIData({key: 'order', data:data2});
+    //appState.setAPIData({key: 'order', data:data2});
+    appState.apiData.order = data2;
   }
 
   // Check to see if a category has been specified as this panel is loaded.
@@ -112,13 +106,13 @@ let History = () => {
 
   let renderTransactionItem = ({ item }) => {
     let asset = item.cur1;
-    let volumeDP = assetsInfo[asset].decimalPlaces;
+    let volumeDP = appState.getAssetInfo(asset).decimalPlaces;
     let volume = Big(item.cur1amt).toFixed(volumeDP);
     return (
       <View style={styles.flatListItem}>
         <Text>{item.txn_date} {item.txn_time}</Text>
         <Text style={styles.typeField}>{codeToType(item.txn_code)}</Text>
-        <Text>{volume} {assetsInfo[asset].displayString}</Text>
+        <Text>{volume} {appState.getAssetInfo(asset).displayString}</Text>
         <Text>Reference: {item.ref}</Text>
       </View>
     );
@@ -143,7 +137,7 @@ let History = () => {
   let renderOrderItem = ({ item }) => {
     let market = misc.getStandardMarket(item['fxmarket'])
     let [baseAsset, quoteAsset] = market.split('/');
-    let priceDP = assetsInfo[quoteAsset].decimalPlaces;
+    let priceDP = appState.getAssetInfo(quoteAsset).decimalPlaces;
     let price = Big(item.price).toFixed(priceDP);
     let orderStatus = item.status;
     return (
@@ -158,7 +152,7 @@ let History = () => {
           }
         </View>
         <Text style={styles.typeField}>{item.side} Order</Text>
-        <Text>Spent {price} {assetsInfo[quoteAsset].displaySymbol} to get {item.qty} {assetsInfo[baseAsset].displaySymbol}.</Text>
+        <Text>Spent {price} {appState.getAssetInfo(quoteAsset).displaySymbol} to get {item.qty} {appState.getAssetInfo(baseAsset).displaySymbol}.</Text>
       </View>
     );
   }
