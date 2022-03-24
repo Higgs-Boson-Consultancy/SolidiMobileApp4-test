@@ -8,7 +8,7 @@ import _ from 'lodash';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 
@@ -117,7 +117,7 @@ let WaitingForPayment = () => {
 
         <View style={styles.paymentDetailsLine}>
           <Text style={styles.paymentDetailText}>Amount</Text>
-          <Text style={styles.paymentDetailText}>{volumeQA} {assetsInfo[assetQA].displaySymbol}</Text>
+          <Text style={styles.paymentDetailText}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
         <View style={styles.paymentDetailsLine}>
