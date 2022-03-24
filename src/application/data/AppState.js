@@ -436,6 +436,10 @@ class AppStateProvider extends Component {
       this.state.changeState('Error'); // Todo
     }
 
+
+    /* Public API methods: */
+
+
     this.loadAssetsInfo = async () => {
       let data = await this.state.publicMethod({
         httpMethod: 'GET',
@@ -676,6 +680,10 @@ class AppStateProvider extends Component {
       // Useful during development.
       this.state.prevAPIData.ticker[market] = price;
     }
+
+
+    /* Private API methods: */
+
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadUserInfo = async () => {
