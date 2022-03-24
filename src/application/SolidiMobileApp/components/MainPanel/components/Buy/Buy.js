@@ -71,6 +71,8 @@ let Buy = () => {
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
   let [itemsQA, setItemsQA] = useState(quoteAssetItems2());
 
+  let [newAPIVersion, setNewAPIVersion] = useState(false);
+
 
   // Initial setup.
   useEffect( () => {
@@ -83,10 +85,12 @@ let Buy = () => {
     await appState.loadAssetsInfo();
     await appState.loadMarkets();
     await appState.loadPrices();
+    let apiCheck = await appState.checkForNewAPIVersion();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     setItemsBA(baseAssetItems2());
     setItemsQA(quoteAssetItems2());
     calculateVolumeBA();
+    setNewAPIVersion(apiCheck);
   }
 
 
@@ -291,6 +295,21 @@ let Buy = () => {
   }
 
 
+  let upgradeRequired = () => {
+    return (
+      <View style={styles.upgradeRequired}>
+        <Text style={styles.upgradeRequiredText}>Solidi has finished a major new release. Please upgrade to switch over to the new system. Visit our website for instructions.</Text>
+        <View style={styles.upgradeButtonSection}>
+          <Text style={styles.upgradeRequiredText}>If you have any trouble, please </Text>
+          <Button title="Contact Us" onPress={ () => { appState.changeState('ContactUs') } }
+            styles={styleContactUsButton}/>
+          <Text style={styles.upgradeRequiredText}>.</Text>
+        </View>
+      </View>
+    )
+  }
+
+
   return (
 
     <View style={styles.panelContainer}>
@@ -354,6 +373,8 @@ let Buy = () => {
       <View style={styles.buttonWrapper}>
         <StandardButton title="Buy now" onPress={ startBuyRequest } />
       </View>
+
+      {newAPIVersion && upgradeRequired()}
 
       </View>
 
@@ -445,6 +466,28 @@ let styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
+  },
+  upgradeRequired: {
+    marginTop: scaledHeight(40),
+    marginHorizontal: scaledWidth(30),
+  },
+  upgradeRequiredText: {
+    fontWeight: 'bold',
+    color: 'red',
+  },
+  upgradeButtonSection: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+});
+
+
+let styleContactUsButton = StyleSheet.create({
+  text: {
+    margin: 0,
+    padding: 0,
+    fontSize: normaliseFont(14),
   },
 });
 
