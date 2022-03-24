@@ -137,6 +137,8 @@ class AppStateProvider extends Component {
     }
 
     this.loadStashedState = () => {
+      // If there's no stashed state, don't do anything.
+      if (_.isEmpty(this.state.stashedState)) return;
       let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
       log(msg);
       this.state.setMainPanelState(this.state.stashedState, stashed=true);

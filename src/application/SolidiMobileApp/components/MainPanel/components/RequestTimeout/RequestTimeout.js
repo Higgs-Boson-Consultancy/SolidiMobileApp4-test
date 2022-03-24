@@ -76,9 +76,11 @@ let RequestTimeout = () => {
       </View>
 
       <View style={styles.infoSection}>
-        <View style={styles.infoItem}>
-          <Text>If you've tried to reload several times, and it still hasn't worked, please contact us.</Text>
-        </View>
+          <Text>If you've tried to reload several times, and it still hasn't worked, then please:{'\n'}</Text>
+          <Button title="Contact Us"
+            onPress={ () => { appState.changeState('ContactUs') } }
+            styles={styleContactUsButton}
+          />
       </View>
 
     </View>
@@ -137,6 +139,15 @@ let styleClickHereButton = StyleSheet.create({
   },
   view: {
     //borderWidth: 1,
+  },
+});
+
+
+let styleContactUsButton = StyleSheet.create({
+  text: {
+    margin: 0,
+    padding: 0,
+    fontSize: normaliseFont(14),
   },
 });
 
