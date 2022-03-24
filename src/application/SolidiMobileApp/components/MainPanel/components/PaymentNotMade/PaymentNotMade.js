@@ -7,7 +7,7 @@ import _ from 'lodash';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { assetsInfo, mainPanelStates, colors } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import misc from 'src/util/misc';
@@ -48,7 +48,7 @@ let PaymentNotMade = () => {
   cancelOrder();
 
   let viewAssets = () => {
-    let pageName = assetsInfo[assetQA].type; // 'crypto' or 'fiat'.
+    let pageName = appState.getAssetInfo(assetQA).type; // 'crypto' or 'fiat'.
     appState.changeState('Assets', pageName);
   }
 
@@ -75,7 +75,7 @@ let PaymentNotMade = () => {
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Order details: Buy {volumeBA} {assetsInfo[assetBA].displayString} for {volumeQA} {assetsInfo[assetQA].displayString}.</Text>
+          <Text style={styles.bold}>{`\u2022  `} Order details: Buy {volumeBA} {appState.getAssetInfo(assetBA).displayString} for {volumeQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
         </View>
 
       </View>
@@ -91,11 +91,11 @@ let PaymentNotMade = () => {
         </View>
 
         <View style={styles.infoItem}>
-          <Text>{`\u2022  `} The funds will be added to your {assetsInfo[assetQA].displayString} account.</Text>
+          <Text>{`\u2022  `} The funds will be added to your {appState.getAssetInfo(assetQA).displayString} account.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text>{`\u2022  `} In this case, you can now make a purchase of {assetsInfo[assetBA].displayString} directly, using the funds in your account.</Text>
+          <Text>{`\u2022  `} In this case, you can now make a purchase of {appState.getAssetInfo(assetBA).displayString} directly, using the funds in your account.</Text>
         </View>
 
       </View>
