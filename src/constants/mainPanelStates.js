@@ -22,6 +22,7 @@ export const mainPanelStates = [
   'RequestTimeout',
   'SaleSuccessful',
   'PersonalDetails',
+  'ContactUs',
 ];
 
 export default mainPanelStates;

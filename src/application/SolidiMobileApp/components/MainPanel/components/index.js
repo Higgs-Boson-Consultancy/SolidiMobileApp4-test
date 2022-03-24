@@ -21,6 +21,7 @@ import ChooseHowToReceivePayment from './ChooseHowToReceivePayment/ChooseHowToRe
 import RequestTimeout from './RequestTimeout/RequestTimeout';
 import SaleSuccessful from './SaleSuccessful/SaleSuccessful';
 import PersonalDetails from './PersonalDetails/PersonalDetails';
+import ContactUs from './ContactUs/ContactUs';
 
 
 export {
@@ -47,4 +48,5 @@ export {
   RequestTimeout,
   SaleSuccessful,
   PersonalDetails,
+  ContactUs,
 };
