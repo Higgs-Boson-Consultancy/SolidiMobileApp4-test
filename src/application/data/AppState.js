@@ -728,6 +728,22 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       }
     }
 
+    this.getUserInfo = () => {
+      let details = this.state.user.info;
+      if (! _.isEmpty(details.user)) {
+        return details;
+      }
+      // Otherwise, return specified empty slots that match the expected / required tree structure.
+      // Update: Perhaps this isn't necessary.
+      details = {
+        user: {
+          firstname: '',
+          lastname: '',
+        }
+      }
+      return details;
+    }
+
     this.loadDepositDetails = async () => {
       let keyNames = `accountname, accountno, reference, result, sortcode`;
       keyNames = misc.splitStringIntoArray(keyNames);
@@ -804,22 +820,6 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         log(msg + " New data saved to appState. " + jd(defaultAccount));
         this.state.user.info.defaultAccount.GBP = defaultAccount;
       }
-    }
-
-    this.getUserInfo = () => {
-      let details = this.state.user.info;
-      if (! _.isEmpty(details.user)) {
-        return details;
-      }
-      // Otherwise, return specified empty slots that match the expected / required tree structure.
-      // Update: Perhaps this isn't necessary.
-      details = {
-        user: {
-          firstname: '',
-          lastname: '',
-        }
-      }
-      return details;
     }
 
     this.getOrderStatus = async ({orderID}) => {
@@ -1004,8 +1004,8 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       /* END Public API methods */
       /* Private API methods */
       loadUserInfo: this.loadUserInfo,
-      getUserInfo: this.getUserInfo,
       loadUser: this.loadUser,
+      getUserInfo: this.getUserInfo,
       loadDepositDetails: this.loadDepositDetails,
       loadDefaultAccounts: this.loadDefaultAccounts,
       getOrderStatus: this.getOrderStatus,
