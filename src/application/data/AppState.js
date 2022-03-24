@@ -984,7 +984,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       resetLockAppTimer: this.resetLockAppTimer,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
-      // Public API methods:
+      /* Public API methods */
       loadAssetsInfo: this.loadAssetsInfo,
       getAssetInfo: this.getAssetInfo,
       loadMarkets: this.loadMarkets,
@@ -1001,7 +1001,8 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       getPrevPrice: this.getPrevPrice,
       setPrice: this.setPrice,
       setPrevPrice: this.setPrevPrice,
-      // Private API methods:
+      /* END Public API methods */
+      /* Private API methods */
       loadUserInfo: this.loadUserInfo,
       getUserInfo: this.getUserInfo,
       loadUser: this.loadUser,
@@ -1013,6 +1014,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       loadFees: this.loadFees,
       getFee: this.getFee,
       sendWithdraw: this.sendWithdraw,
+      /* END Private API methods */
       stateChangeID: 0,
       abortControllers: {},
       // In apiData, we store unmodified data retrieved from the API.
