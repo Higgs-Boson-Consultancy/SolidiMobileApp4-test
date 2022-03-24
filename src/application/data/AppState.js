@@ -437,7 +437,11 @@ class AppStateProvider extends Component {
     }
 
 
-    /* Public API methods: */
+
+
+    /* Public API methods */
+
+
 
 
     this.loadAssetsInfo = async () => {
@@ -682,7 +686,16 @@ class AppStateProvider extends Component {
     }
 
 
-    /* Private API methods: */
+
+
+    /* END Public API methods */
+
+
+
+
+    /* Private API methods */
+
+
 
 
     // This is called immediately after a successful Login or PIN entry.
@@ -931,6 +944,14 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       */
       // Todo: Store list of withdraw IDs. View them later, and see whether they have completed.
     }
+
+
+
+
+    /* END Private API methods */
+
+
+
 
     // The actual state object of the app.
     // This must be declared towards the end of the constructor.
