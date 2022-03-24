@@ -50,6 +50,7 @@ class AppStateProvider extends Component {
     this.standardPaddingHorizontal = scaledWidth(15);
     this.nonHistoryPanels = ['PIN'];
     this.appName = 'SolidiMobileApp';
+    this.apiVersion = '1';
 
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
@@ -444,12 +445,22 @@ class AppStateProvider extends Component {
 
 
 
+    this.checkForNewAPIVersion = async () => {
+      let data = await this.state.publicMethod({
+        apiRoute: 'api_latest_version',
+        httpMethod: 'GET',
+      });
+      let newAPIVersion = data.api_latest_version === this.state.apiVersion;
+      return newAPIVersion;
+    }
+
     this.loadAssetsInfo = async () => {
       let data = await this.state.publicMethod({
         httpMethod: 'GET',
         apiRoute: 'asset_info',
         params: {},
       });
+
       // Tmp: For development:
       _.assign(data, {
         'ETH': {
@@ -985,6 +996,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
       /* Public API methods */
+      checkForNewAPIVersion: this.checkForNewAPIVersion,
       loadAssetsInfo: this.loadAssetsInfo,
       getAssetInfo: this.getAssetInfo,
       loadMarkets: this.loadMarkets,
