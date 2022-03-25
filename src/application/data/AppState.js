@@ -408,16 +408,6 @@ class AppStateProvider extends Component {
       // Reset the "lockApp" timer.
       this.state.resetLockAppTimer();
       /* Cancel any existing timers. */
-      if (this.state.panels.buy.timerID) {
-        clearInterval(this.state.panels.buy.timerID);
-        this.state.panels.buy.timerID = null;
-        log(`Cleared interval: buy`);
-      }
-      if (this.state.panels.sell.timerID) {
-        clearInterval(this.state.panels.buy.timerID);
-        this.state.panels.sell.timerID = null;
-        log(`Cleared interval: sell`);
-      }
       if (this.state.panels.makePayment.timerID) {
         clearInterval(this.state.panels.makePayment.timerID);
         this.state.panels.makePayment.timerID = null;
@@ -1095,7 +1085,6 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
           symbolBA: '',
         },
         sell: {
-          timerID: null,
           orderID: null,
           volumeQA: 0,
           symbolQA: '',
