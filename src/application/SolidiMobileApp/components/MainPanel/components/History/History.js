@@ -14,6 +14,11 @@ import { Button, StandardButton, Spinner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('History');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 

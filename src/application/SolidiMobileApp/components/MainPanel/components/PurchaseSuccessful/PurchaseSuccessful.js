@@ -12,6 +12,11 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('PurchaseSuccessful');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 /* Notes
 - We also use this component to display "paymentNotReceived", if the user clicks "I have paid", but 2 hours pass without us receiving the payment.

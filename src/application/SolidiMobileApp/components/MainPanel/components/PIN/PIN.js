@@ -22,6 +22,11 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import misc from 'src/util/misc';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('PIN');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 

@@ -13,6 +13,11 @@ import { mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('MakePayment');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 

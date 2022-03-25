@@ -1,13 +1,16 @@
 // React imports
 import React, { useRef } from 'react';
 
-
 // Imports
 import _ from 'lodash';
 import { Buffer } from "buffer";
 import CryptoJS from 'crypto-js';
 import { resolve } from 'path';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('SolidiRestAPIClientLibrary');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 // Shortcuts
 let jd = JSON.stringify;

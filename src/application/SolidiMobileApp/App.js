@@ -14,9 +14,10 @@ import { Header, MainPanel, Footer } from './components';
 import { AppStateProvider } from 'src/application/data';
 import { mainPanelStates } from 'src/constants';
 
-// Misc
-log = console.log;
-let lj = (x) => console.log(JSON.stringify(x));
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('App');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 

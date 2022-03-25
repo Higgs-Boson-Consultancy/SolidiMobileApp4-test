@@ -11,6 +11,11 @@ import AppStateContext from 'src/application/data';
 import { mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('WaitingForPayment');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 
