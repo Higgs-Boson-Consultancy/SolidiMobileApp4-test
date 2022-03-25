@@ -335,12 +335,19 @@ class AppStateProvider extends Component {
     }
 
     this.choosePIN = async () => {
+      // Deleting the PIN happens first, because it will affect the flow in subsequent pages.
       await this.state.deletePIN(deleteFromKeychain=true);
+      // If the app is locked, and the user has chosen to reset the PIN, then we need to log them out.
+      // This ensures that they have to log in before they can choose a new PIN.
+      if (this.state.appLocked) {
+        await this.state.logout();
+      }
       // If user hasn't logged in, they need to do so first.
       if (! this.state.user.isAuthenticated) {
         // We send them to the login page, which will ask them to choose a PIN afterwards.
         return this.state.setMainPanelState({mainPanelState: 'Login'});
       }
+      // If the app was not locked, and we are logged in, go directly to the choosePIN page.
       this.state.setMainPanelState({mainPanelState: 'PIN', pageName: 'choose'});
     }
 
@@ -369,11 +376,10 @@ class AppStateProvider extends Component {
       await Keychain.resetInternetCredentials(this.state.domain);
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
-      // Change state.
-      this.state.changeState('Buy');
     }
 
     this.lockApp = () => {
+      this.state.appLocked = true;
       this.state.stashCurrentState();
       this.state.authenticateUser();
     }
@@ -1031,6 +1037,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       /* END Private API methods */
       stateChangeID: 0,
       abortControllers: {},
+      appLocked: false,
       // In apiData, we store unmodified data retrieved from the API.
       // Each sub-object corresponds to a different API route, and should have the same name as that route.
       apiData: {
