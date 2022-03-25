@@ -96,6 +96,8 @@ let PIN = () => {
       // Load and store user info.
       await appState.loadUserInfo();
     }
+    // If we've entered (or chosen) a PIN, and the app was locked, set appLocked to false.
+    appState.appLocked = false;
     // Change state.
     if (appState.panels.buy.activeOrder) {
       return appState.changeState('ChooseHowToPay');
