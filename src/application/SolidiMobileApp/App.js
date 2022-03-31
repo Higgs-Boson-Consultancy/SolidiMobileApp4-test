@@ -9,10 +9,10 @@ import {
 import SplashScreen from 'react-native-splash-screen';
 
 // Internal imports
-import { colors } from 'src/constants';
 import { Header, MainPanel, Footer } from './components';
 import { AppStateProvider } from 'src/application/data';
-import { mainPanelStates } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
+import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 // Logger
 import logger from 'src/util/logger';
@@ -65,10 +65,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mainPanel: {
-    height: '80%',
+    height: '78%',
   },
   footer: {
-    height: '10%',
+    height: '12%',
+    paddingTop: scaledHeight(5),
   },
 })
 
