@@ -14,7 +14,7 @@ let StandardButton = (props) => {
 
 let styles = StyleSheet.create({
   view: {
-    height: scaledHeight(40),
+    height: scaledHeight(45),
     alignSelf: 'flex-start',
     paddingHorizontal: scaledWidth(20),
     borderRadius: scaledWidth(8),
