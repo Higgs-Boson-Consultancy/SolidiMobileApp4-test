@@ -17,6 +17,8 @@ import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 
+
+
 const Footer = (props) => {
 
   let {style: styleArg} = props;
@@ -120,6 +122,8 @@ let styles = StyleSheet.create({
   },
   leftButtonWrapper: {
     width: '15%',
+    //borderWidth: 1, // testing
+    backgroundColor: colors.footerPanelButton,
   },
   unavailableLeftButton: {
     height: '100%',
@@ -131,9 +135,12 @@ let styles = StyleSheet.create({
   },
   buttonWrapper: {
     width: '33.33%',
+    backgroundColor: colors.footerPanelButton,
   },
   rightButtonWrapper: {
     width: '15%',
+    //borderWidth: 1, // testing
+    backgroundColor: colors.footerPanelButton,
   },
   unavailableRightButton: {
     height: '100%',
