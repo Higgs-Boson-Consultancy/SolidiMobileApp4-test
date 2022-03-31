@@ -30,6 +30,7 @@ let ContactUs = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ContactUs');
 
+  let domain = 'solidi.co';
   let contactURL = 'https://solidi.co/contactus';
 
 
@@ -60,6 +61,12 @@ let ContactUs = () => {
           styles={styleLinkButton}
         />
       </View>
+
+      <Text style={styles.bold}>
+      If you would like to contact us via another device, here are the details:{'\n'}
+      {`\u2022  `}Website: {domain}{'\n'}
+      {`\u2022  `}Contact Us: {contactURL}
+      </Text>
 
     </View>
     </View>
@@ -94,7 +101,7 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   buttonSection: {
-    marginTop: scaledHeight(80),
+    marginVertical: scaledHeight(80),
   }
 });
 
