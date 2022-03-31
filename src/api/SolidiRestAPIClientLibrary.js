@@ -236,6 +236,11 @@ export default class SolidiRestAPIClientLibrary {
         log(msg);
         if (timeout) return {error: 'timeout'};
         return {error: 'aborted'};
+      } else if (err.name == 'TypeError') {
+        if (err.message == 'Network request failed') {
+          return {error: 'request_failed'};
+        }
+        throw err;
       } else {
         console.error(err);
         throw err;

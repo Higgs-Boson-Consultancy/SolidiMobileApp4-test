@@ -251,6 +251,9 @@ class AppStateProvider extends Component {
           //pass
         } else if (error == 'aborted') {
           //pass
+        } else if (error == 'request_failed') {
+          let pageName = this.state.stashedState.mainPanelState;
+          this.changeState('RequestFailed', pageName);
         } else {
           // Todo: For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}):`;
@@ -289,6 +292,9 @@ class AppStateProvider extends Component {
           this.changeState('RequestTimeout');
         } else if (error == 'aborted') {
           //pass
+        } else if (error == 'request_failed') {
+          this.state.stashCurrentState();
+          this.changeState('RequestFailed');
         } else {
           // Todo: For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
