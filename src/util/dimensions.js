@@ -7,7 +7,7 @@ let {
 
 // Base values are based on the iPhone 13 (iOS 15) simulator.
 let baseScreenWidth = 390;
-let baseScreenHeight= 844;
+let baseScreenHeight = 844;
 let horizontalScale = screenWidth / baseScreenWidth;
 let verticalScale = screenHeight / baseScreenHeight;
 let scaledWidth = (x) => { return x * horizontalScale };
