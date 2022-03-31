@@ -228,7 +228,6 @@ const styles = StyleSheet.create({
   },
   historyControls: {
     width: '100%',
-    height: '10%',
     flexDirection: 'row',
     justifyContent: "space-between",
     zIndex: 1,
