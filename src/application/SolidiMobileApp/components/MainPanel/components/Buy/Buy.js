@@ -428,7 +428,7 @@ let styles = StyleSheet.create({
     //borderWidth: 1, // testing
   },
   volumeQA: {
-    height: 40,
+    height: scaledHeight(40),
     width: scaledWidth(120),
     borderWidth: 1,
     borderRadius: 8,
@@ -436,7 +436,7 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(20),
   },
   quoteAsset: {
-    height: 40,
+    height: scaledHeight(40),
     width: scaledWidth(220),
   },
   quoteAssetContainer: {
@@ -451,7 +451,7 @@ let styles = StyleSheet.create({
     zIndex: 1,
   },
   volumeBA: {
-    height: 40,
+    height: scaledHeight(40),
     width: scaledWidth(120),
     borderWidth: 1,
     borderRadius: 8,
@@ -459,7 +459,7 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(20),
   },
   baseAsset: {
-    height: 40,
+    height: scaledHeight(40),
     width: scaledWidth(220),
   },
   baseAssetContainer: {
