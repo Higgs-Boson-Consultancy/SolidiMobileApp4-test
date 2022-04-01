@@ -34,7 +34,7 @@ let BankAccounts = () => {
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'BankAccounts');
 
 
-  let account1 = appState.user.info.defaultAccount.GBP;
+  let account1 = appState.user.info.defaultAccounts.GBP;
   let accountAsset = 'GBP';
 
 

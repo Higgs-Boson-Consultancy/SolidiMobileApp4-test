@@ -53,7 +53,7 @@ let ChooseHowToReceivePayment = () => {
 
   // Load user's external GBP account.
   // Todo: Reload the account data in setup by calling: await appState.loadUserInfo();
-  let externalAccount = appState.user.info.defaultAccount.GBP;
+  let externalAccount = appState.user.info.defaultAccounts.GBP;
 
    // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.sell);
@@ -157,7 +157,7 @@ let ChooseHowToReceivePayment = () => {
       // Future: If the order doesn't complete, change to an error page.
     }
     // Now that order has completed, make a withdrawal to the user's primary external account.
-    let addressInfo = appState.user.info.defaultAccount.GBP;
+    let addressInfo = appState.user.info.defaultAccounts.GBP;
     await appState.sendWithdraw({asset:assetQA, volume:totalQA, addressInfo});
   }
 

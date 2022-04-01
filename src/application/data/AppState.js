@@ -815,11 +815,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       let defaultAccount = defaultAccounts[0];
       // If the data differs from existing data, save it.
       msg = "User info (default account GBP) loaded from server.";
-      if (jd(defaultAccount) === jd(this.state.user.info.defaultAccount.GBP)) {
+      if (jd(defaultAccount) === jd(this.state.user.info.defaultAccounts.GBP)) {
         log(msg + " No change.");
       } else {
         log(msg + " New data saved to appState. " + jd(defaultAccount));
-        this.state.user.info.defaultAccount.GBP = defaultAccount;
+        this.state.user.info.defaultAccounts.GBP = defaultAccount;
       }
     }
 
@@ -1075,7 +1075,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
               reference: null,
             },
           },
-          defaultAccount: {
+          defaultAccounts: {
             GBP: {
               accountName: null,
               sortCode: null,
@@ -1205,7 +1205,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
       this.state.user.pin = '1112';
 
-      this.state.user.info.defaultAccount.GBP = {
+      this.state.user.info.defaultAccounts.GBP = {
         accountName: 'Mr John Fish, Esq',
         sortCode: '12-12-13',
         accountNumber: '123090342',
