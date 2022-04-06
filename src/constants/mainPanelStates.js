@@ -27,6 +27,7 @@ export const mainPanelStates = [
   'Security',
   'RequestFailed',
   'Error',
+  'SendSuccessful',
 ];
 
 export default mainPanelStates;

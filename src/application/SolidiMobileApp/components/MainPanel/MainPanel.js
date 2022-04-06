@@ -18,7 +18,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   PaymentNotMade, PurchaseSuccessful, InsufficientBalance,
   ReadArticle, ChooseHowToReceivePayment, RequestTimeout,
   SaleSuccessful, PersonalDetails, ContactUs, BankAccounts,
-  Security, RequestFailed, Error } from './components';
+  Security, RequestFailed, Error, SendSuccessful } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -92,6 +92,8 @@ const MainPanel = (props) => {
       return <RequestFailed />
     } else if (appState.mainPanelState === 'Error') {
       return <Error />
+    } else if (appState.mainPanelState === 'SendSuccessful') {
+      return <SendSuccessful />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }
