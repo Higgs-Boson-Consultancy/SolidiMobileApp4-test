@@ -121,6 +121,47 @@ let useFirstRender = () => {
 }
 
 
+let isNumericString = (value) => {
+  if (! _.isString(value)) return false;
+  // This matches a digit sequence + optional period + optional digit sequence.
+  let regexString = `^-?\\d+(\\.\\d+)?$`;
+  let regex = new RegExp(regexString);
+  let result = regex.test(value);
+  return result;
+}
+
+
+let camelCaseToCapitalisedWords = (s) => {
+  // 's' = 'string'
+  let n = s.length;
+  let r = ''; // 'r' = 'result'
+  for (let i=0; i<n; i++) {
+    let c = s[i]; // 'c' = 'character'
+    let lastCharacter = (i === n - 1);
+    if (lastCharacter) {
+      r += c;
+      continue;
+    }
+    let c2 = s[i+1];
+    if (c === c.toLowerCase()) {
+      if (c2 === c2.toUpperCase()) {
+        // Add a space before we move to the next word.
+        r += c + ' ';
+      } else {
+        // Next char is also lower-case.
+        r += c;
+      }
+    } else {
+      // Upper-case character.
+      r += c;
+    }
+  }
+  return capitalise(r);
+}
+
+
+
+
 let misc = {
   log,
   jd,
@@ -136,6 +177,8 @@ let misc = {
   sleep,
   splitStringIntoArray,
   useFirstRender,
+  isNumericString,
+  camelCaseToCapitalisedWords,
 }
 
 
