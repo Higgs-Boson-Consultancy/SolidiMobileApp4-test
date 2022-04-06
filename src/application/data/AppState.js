@@ -525,12 +525,14 @@ class AppStateProvider extends Component {
       } else {
         msg += " New data saved to appState."
         //msg += ' ' + jd(data));
+        log(msg);
         this.state.apiData.asset_info = data;
       }
       return data;
     }
 
     this.getAssetInfo = (asset) => {
+      if (_.isEmpty(asset)) { console.error('Asset required'); return; }
       // Hardcode some standard assets so that we always have something to display.
       let hardcodedAssets = {
         'BTC': {
@@ -792,7 +794,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         return;
       }
       if (data.result != 'success') {
-        // Future: User needs to verify some information first: address, identity.
+        // Future: User needs to verify some personal information first: address, identity.
       }
       let detailsGBP = {
         accountName: data.accountname,
@@ -811,6 +813,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     }
 
     this.loadDefaultAccounts = async () => {
+      // These are default accounts for withdrawals. They should be external addresses /accounts held by the user.
       let data = await this.state.privateMethod({apiRoute: 'default_account/GBP'});
       // Data is a list of accounts. Each account is a JSON-encoded string containing these three keys:
       // accname, sortcode, accno.
