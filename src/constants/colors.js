@@ -10,6 +10,7 @@ export const colors = {
   greyedOutIcon: '#5b616e',
   selectedIcon: '#1652f0',
   lightgrey: 'rgb(204,204,204)',
+  placeHolderTextColor: 'grey',
 }
 
 export default colors;
