@@ -86,13 +86,13 @@ let ChooseHowToReceivePayment = () => {
 
   let loadFeeData = async () => {
     // Display the value we have in storage first.
-    let fee1 = appState.getFee({feeType: 'withdraw', asset: 'GBP'});
+    let fee1 = appState.getFee({feeType: 'withdraw', asset: 'GBP', priority: 'low'});
     setFeeAndTotal(fee1);
     // Load the fee from the server.
     await appState.loadFees();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Display the new value, if it's different.
-    let fee2 = appState.getFee({feeType: 'withdraw', asset: 'GBP'});
+    let fee2 = appState.getFee({feeType: 'withdraw', asset: 'GBP', priority: 'low'});
     fee2 = '0.5'; // testing
     if (fee1 !== fee2) {
       setFeeAndTotal(fee2);
