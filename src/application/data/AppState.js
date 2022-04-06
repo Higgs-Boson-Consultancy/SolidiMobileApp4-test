@@ -226,6 +226,9 @@ class AppStateProvider extends Component {
       this.state.abortControllers = controllers;
     }
 
+    // Note: publicMethod and privateMethod have to be kept in sync.
+    // Future: Perhaps they could be refactored into a single function with two wrapper functions.
+
     this.publicMethod = async (args) => {
       let {functionName, httpMethod, apiRoute, params, keyNames} = args;
       if (_.isNil(functionName)) functionName = '[Unspecified function]';
@@ -235,6 +238,9 @@ class AppStateProvider extends Component {
       if (_.isNil(keyNames)) keyNames = [];
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
+      // Tmp: Ticker isn't currently working.
+      if (apiRoute == 'ticker') delete data.error;
+      // Examine errors.
       if (_.has(data, 'error')) {
         let error = data.error;
         if (error == 'cannot_parse_data') {
@@ -1224,6 +1230,12 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         requestTimeout: {
           timerID: null,
         },
+        send: {
+          asset: null,
+          volume: null,
+          addressProperties: null,
+          priority: null,
+        },
       },
       fees: {
         deposit: {
@@ -1315,6 +1327,21 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         sortCode: '12-12-13',
         accountNumber: '123090342',
       }
+
+      _.assign(this.state.panels.send, {
+        asset: 'GBP',
+        volume: '7001.23',
+        addressProperties: {
+          address: '1BwmSDfQQDnkC4DkovjjtUCbaz9ijBYGcY',
+          accountName: 'William Brown',
+          sortCode: '12-34-56',
+          accountNumber: '123456123',
+          destinationTag: '52',
+          BIC: 'INGDESMM',
+          IBAN: 'ES91 2100 0418 4502 0005 1332',
+        },
+        priority: 'low',
+      });
 
     }
 
