@@ -479,6 +479,7 @@ class AppStateProvider extends Component {
         apiRoute: 'api_latest_version',
         httpMethod: 'GET',
       });
+      if (data == 'DisplayedError') return;
       // if (! .has(data, 'api_latest_version')) this.state.changeState('Error');
       let newAPIVersion = data.api_latest_version === this.state.apiVersion;
       return newAPIVersion;
@@ -490,7 +491,7 @@ class AppStateProvider extends Component {
         apiRoute: 'asset_info',
         params: {},
       });
-
+      if (data == 'DisplayedError') return;
       // Tmp: For development:
       _.assign(data, {
         'ETH': {
@@ -583,6 +584,7 @@ class AppStateProvider extends Component {
         apiRoute: 'market',
         params: {},
       });
+      if (data == 'DisplayedError') return;
       // Tmp: For development:
       // Sample markets.
       data = [
@@ -630,6 +632,7 @@ class AppStateProvider extends Component {
         apiRoute: 'country',
         params: {},
       });
+      if (data == 'DisplayedError') return;
       // If the data differs from existing data, save it.
       let msg = "Country data loaded from server.";
       if (jd(data) === jd(this.state.apiData.country)) {
@@ -654,6 +657,7 @@ class AppStateProvider extends Component {
         apiRoute: 'ticker',
         params: {},
       });
+      if (data == 'DisplayedError') return;
       /* Example errors
       {"error":"Insufficient currency"}
       */
@@ -776,6 +780,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         apiRoute: 'user',
         keyNames,
       });
+      if (data == 'DisplayedError') return;
       // If the data differs from existing data, save it.
       let msg = "User info (basic) loaded from server.";
       if (jd(data) === jd(this.state.user.info.user)) {
@@ -810,12 +815,9 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         apiRoute: 'deposit_details/GBP',
         keyNames,
       });
-      // Example result:
+      if (data == 'DisplayedError') return;
+      // Example result for GBP:
       // {"data": {"accountname": "Solidi", "accountno": "00001036", "reference": "SHMPQKC", "result": "success", "sortcode": "040476"}}
-      if (! _.has(data, 'result')) {
-        console.error(data);
-        return;
-      }
       if (data.result != 'success') {
         // Future: User needs to verify some personal information first: address, identity.
       }
@@ -838,6 +840,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
     this.loadDefaultAccounts = async () => {
       // These are default accounts for withdrawals. They should be external addresses /accounts held by the user.
       let data = await this.state.privateMethod({apiRoute: 'default_account/GBP'});
+      if (data == 'DisplayedError') return;
       // Data is a list of accounts. Each account is a JSON-encoded string containing these three keys:
       // accname, sortcode, accno.
       let keyNames = `accname, sortcode, accno`;
@@ -883,6 +886,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
 
     this.loadBalances = async () => {
       let data = await this.state.privateMethod({apiRoute: 'balance'});
+      if (data == 'DisplayedError') return;
       data = _.mapKeys(data, (value, key) => misc.getStandardAsset(key));
       data = _.mapValues(data, (value, key) => value.balance);
       let msg = "User balances loaded from server.";
@@ -913,6 +917,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         apiRoute: 'order_status/' + orderID,
         params: {},
       });
+      if (data == 'DisplayedError') return;
       // Todo: Look at data, and return 'live' or 'filled'.
       // Alternatively: call 'order/' + orderid, and check "settlement_status" value.
       let orderStatus = 'live'; //tmp
@@ -941,6 +946,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
           price: volumeQA,
         },
       });
+      if (data == 'DisplayedError') return;
       /*
       Example data:
       {"id":11,"datetime":1643047261277,"type":0,"price":"100","amount":"0.05"}
@@ -966,6 +972,7 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
           price: volumeQA,
         },
       });
+      if (data == 'DisplayedError') return;
       /*
       Example error response:
       {"error": "Insufficient Funds"}
