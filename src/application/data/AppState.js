@@ -1043,20 +1043,27 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
       return feeString;
     }
 
-    this.sendWithdraw = async ({asset, volume, addressInfo}) => {
-      log(`Send withdraw to server: withdraw ${volume} ${asset} to ${addressInfo}`);
+    this.sendWithdraw = async ({asset, volume, addressInfo, priority, functionName}) => {
+      log(`Send withdraw to server: withdraw ${volume} ${asset} to ${JSON.stringify(addressInfo)}`);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: `withdraw/${asset}`,
         params: {
           volume,
           addressInfo,
-          priority: 'FREE',
+          priority,
         },
+        functionName,
       });
       /* Example data:
-      {"id": 9094}
+        {"id": 9094}
       */
+      /* Example error:
+      {
+        "error": "ValidationError: Amount (0.00000000) is zero."
+      }
+      */
+      return data;
     }
 
 
