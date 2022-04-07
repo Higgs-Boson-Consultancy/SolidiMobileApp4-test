@@ -13,22 +13,27 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('SaleSuccessful');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 
 let SaleSuccessful = () => {
 
   let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
 
+  // Note: Never add "default" to the list of pageNames. One of the two options must be chosen explicitly.
   let pageName = appState.pageName;
   let permittedPageNames = 'direct_payment balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SaleSuccessful');
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA, totalQA} = appState.panels.sell);
-
-  let [balanceQA, setBalanceQA] = useState(''); // this is equivalent to 0 when initialised.
 
   let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
 
@@ -40,7 +45,22 @@ let SaleSuccessful = () => {
 
 
   let setup = async () => {
-    await loadBalance();
+    try {
+      await appState.loadBalances();
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      triggerRender(renderCount+1);
+    } catch(err) {
+      let msg = `SaleSuccessful.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
+
+  let getBalanceString = () => {
+    let b = appState.getBalance(assetBA);
+    let result = b;
+    if (misc.isNumericString(b)) result += ' ' + assetBA;
+    return result;
   }
 
 
@@ -49,21 +69,15 @@ let SaleSuccessful = () => {
     appState.changeState('Assets', pageName);
   }
 
+
   let sellAgain = () => {
     appState.changeState('Sell');
   }
 
+
   let buyAgain = () => {
     appState.changeState('Buy');
   }
-
-  let loadBalance = async () => {
-    await appState.loadBalances();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    let result = appState.getBalance(assetQA);
-    result = '100.00' // Testing
-    setBalanceQA(result);
-  };
 
 
   return (
@@ -89,7 +103,7 @@ let SaleSuccessful = () => {
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.bold}>{`\u2022  `} Your new {appState.getAssetInfo(assetQA).displaySymbol} balance is: { (balanceQA > 0) ? balanceQA : ''}</Text>
+            <Text style={styles.bold}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
           </View>
 
           </View>
