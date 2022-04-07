@@ -49,7 +49,7 @@ let PurchaseSuccessful = () => {
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       triggerRender(renderCount+1);
     } catch(err) {
-      let msg = `Send.setup: Error = ${err}`;
+      let msg = `PurchaseSuccessful.setup: Error = ${err}`;
       console.log(msg);
     }
   }
