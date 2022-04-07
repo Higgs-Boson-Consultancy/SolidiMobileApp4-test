@@ -44,7 +44,7 @@ let PIN = () => {
   if (appState.pageName === 'choose') {
     pinStatus = 'choose';
   }
-  log({pinStatus});
+  //log({pinStatus});
 
   let _finishProcess = async () => {
     let pinStored = await hasUserSetPinCode(appState.appName);
@@ -82,6 +82,7 @@ let PIN = () => {
       let params = {password};
       let abortController = appState.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
+      if (data == 'DisplayedError') return;
       /* Issue:
       - The email and password may have changed (e.g. via the web application).
       In this case, we'll get a particular error. Need to catch it and switch to Login page.
