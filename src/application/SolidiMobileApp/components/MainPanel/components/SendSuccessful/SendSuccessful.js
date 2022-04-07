@@ -41,9 +41,6 @@ let SendSuccessful = () => {
   // Load transfer details.
   ({asset, volume, addressProperties, priority} = appState.panels.send);
 
-  // State
-  let [balance, setBalance] = useState('');
-
 
   // Initial setup.
   useEffect( () => {
@@ -55,7 +52,6 @@ let SendSuccessful = () => {
     try {
       await appState.loadBalances();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      setBalance(appState.getBalance(asset));
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Send.setup: Error = ${err}`;
@@ -66,8 +62,9 @@ let SendSuccessful = () => {
 
   let getBalanceString = () => {
     let b = appState.getBalance(asset);
-    if (! misc.isNumericString(b)) return '';
-    return b + ' ' + asset;
+    let result = b;
+    if (misc.isNumericString(b)) result += ' ' + asset;
+    return result;
   }
 
 
