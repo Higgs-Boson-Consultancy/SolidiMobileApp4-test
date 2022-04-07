@@ -36,8 +36,8 @@ let Security = () => {
   // This call will return empty default values if the data has not yet been loaded.
   let [details, setDetails] = useState(appState.getUserInfo());
 
-  let [passwordVisible, setPasswordVisible] = useState(true);
-  let [pinVisible, setPINVisible] = useState(true);
+  let [passwordVisible, setPasswordVisible] = useState(false);
+  let [pinVisible, setPINVisible] = useState(false);
 
 
   // Initial setup.
@@ -51,6 +51,18 @@ let Security = () => {
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     setDetails(appState.getUserInfo());
     triggerRender(renderCount+1);
+  }
+
+
+  let getPasswordButtonTitle = () => {
+    let title = passwordVisible ? 'Hide password' : 'Show password';
+    return title;
+  }
+
+
+  let getPINButtonTitle = () => {
+    let title = pinVisible ? 'Hide PIN' : 'Show PIN';
+    return title;
   }
 
 
@@ -78,14 +90,14 @@ let Security = () => {
             autoCapitalize='none'
             autoCorrect={false}
             textContentType='newPassword'
-            secureTextEntry={passwordVisible}
+            secureTextEntry={! passwordVisible}
             editable={false}
           />
         </View>
       </View>
 
       <View style={styles.buttonWrapper}>
-        <StandardButton title='Show password'
+        <StandardButton title={getPasswordButtonTitle()}
           onPress={ () => { setPasswordVisible(! passwordVisible) } }
         />
       </View>
@@ -100,14 +112,14 @@ let Security = () => {
             value={appState.user.pin}
             style={[styles.detailValue, styles.secretTextInput]}
             textContentType='newPassword'
-            secureTextEntry={pinVisible}
+            secureTextEntry={! pinVisible}
             editable={false}
           />
         </View>
       </View>
 
       <View style={styles.buttonWrapper}>
-        <StandardButton title='Show PIN'
+        <StandardButton title={getPINButtonTitle()}
           onPress={ () => { setPINVisible(! pinVisible) } }
         />
       </View>
