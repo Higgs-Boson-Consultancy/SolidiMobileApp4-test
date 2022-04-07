@@ -57,7 +57,7 @@ let Sell = () => {
 
   // Defaults.
   let selectedAssetBA = 'BTC';
-  let selectedVolumeBA = ''; // Later, we calculate this from the price and the volumeQA.
+  let selectedVolumeBA = '[loading]'; // Later, we calculate this from the price and the volumeQA.
   let selectedAssetQA = 'GBP';
   let selectedVolumeQA = '100';
 
