@@ -24,7 +24,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 /* Notes
 
-We refer to the asset (in the variable names etc) as the "stored asset".
+We refer to the asset (in the variable names etc) as the "stored asset". (SA)
 
 The address properties vary between assets.
 
@@ -634,10 +634,10 @@ let styles = StyleSheet.create({
   },
   heading: {
     alignItems: 'center',
-    marginBottom: scaledHeight(40),
   },
   heading1: {
     marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(40),
   },
   headingText: {
     fontSize: normaliseFont(20),
