@@ -83,9 +83,6 @@ let Send = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Send');
 
-  // Keep track of the last user action that changed an aspect of the transfer.
-  let [lastUserInput, setLastUserInput] = useState('volumeSA');
-
  // Function that derives dropdown properties from an asset list.
  let deriveAssetItems = (assets) => {
     return assets.map(asset => {
@@ -213,7 +210,6 @@ let Send = () => {
 
 
   let validateAndSetVolumeSA = (newVolumeSA) => {
-    setLastUserInput('volumeSA');
     let storedDP = appState.getAssetInfo(assetSA).decimalPlaces;
     // This matches a digit sequence + optional period + optional digit sequence.
     // The second digit sequence can only be as long as the storedAsset's decimalPlaces.
