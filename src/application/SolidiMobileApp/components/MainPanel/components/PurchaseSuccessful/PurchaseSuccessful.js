@@ -28,12 +28,11 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let PurchaseSuccessful = () => {
 
   let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
-
-  let [balanceBA, setBalanceBA] = useState('');
 
   let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
 
@@ -45,7 +44,22 @@ let PurchaseSuccessful = () => {
 
 
   let setup = async () => {
-    await loadBalance();
+    try {
+      await appState.loadBalances();
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      triggerRender(renderCount+1);
+    } catch(err) {
+      let msg = `Send.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
+
+  let getBalanceString = () => {
+    let b = appState.getBalance(assetBA);
+    let result = b;
+    if (misc.isNumericString(b)) result += ' ' + assetBA;
+    return result;
   }
 
 
@@ -54,17 +68,11 @@ let PurchaseSuccessful = () => {
     appState.changeState('Assets', pageName);
   }
 
+
   let buyAgain = () => {
     appState.changeState('Buy');
   }
 
-  let loadBalance = async () => {
-    await appState.loadBalances();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    let result = appState.getBalance(assetBA);
-    result = '0.05000000' // Testing
-    setBalanceBA(result);
-  };
 
   return (
     <View style={styles.panelContainer}>
@@ -85,7 +93,7 @@ let PurchaseSuccessful = () => {
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your new {appState.getAssetInfo(assetBA).displaySymbol} balance is: { (balanceBA > 0) ? balanceBA : ''}</Text>
+          <Text style={styles.bold}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
         </View>
 
       </View>
