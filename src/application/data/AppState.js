@@ -1,4 +1,5 @@
 // Goal: Store the current state of the app in a Context.
+
 /*
 - The MainPanel state
 - The history stack of previous MainPanel states
@@ -236,6 +237,7 @@ class AppStateProvider extends Component {
       if (_.isNil(apiRoute)) throw new Error('apiRoute required');
       if (_.isNil(params)) params = {};
       if (_.isNil(keyNames)) keyNames = [];
+      if (this.state.mainPanelState === 'RequestFailed') return;
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
       // Tmp: Ticker isn't currently working.
@@ -294,6 +296,7 @@ class AppStateProvider extends Component {
       if (_.isNil(apiRoute)) throw new Error('apiRoute required');
       if (_.isNil(params)) params = {};
       if (_.isNil(keyNames)) keyNames = [];
+      if (this.state.mainPanelState === 'RequestFailed') return;
       let abortController = this.state.createAbortController();
       let data = await this.state.apiClient.privateMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
@@ -315,6 +318,10 @@ class AppStateProvider extends Component {
         } else if (_.isString(error) && error.startsWith('ValidationError:')) {
           // This is a user-input validation error.
           // The page that sent the request should display it to the user.
+          return data;
+        } else if (error == 'Could not retrieve deposit details') {
+          // This is an internal error.
+          // Display it on the original page.
           return data;
         } else {
           // For any other errors, switch to an error description page.
@@ -769,7 +776,8 @@ class AppStateProvider extends Component {
     // This is called immediately after a successful Login or PIN entry.
     this.loadUserInfo = async () => {
       await this.loadUser();
-      await this.loadDepositDetails();
+      await this.loadAssetsInfo();
+      await this.loadDepositDetailsForAsset('GBP');
       await this.loadDefaultAccounts();
       await this.loadBalances();
     }
@@ -1044,11 +1052,11 @@ postcode, uuid, year_bank_limit, year_btc_limit, year_crypto_limit,
         console.error(`Unrecognised priority: ${priority}`);
       }
       if (_.isNil(this.state.fees[feeType][asset])) {
-        log(`No fee found for fees.${feeType}.${asset}.`)
+        log(`No fee found for fees.${feeType}.${asset}.`);
         return '[loading]';
       }
       if (_.isNil(this.state.fees[feeType][asset][priority])) {
-        console.error(`${asset} ${feeType} fees do not include priority '${priority}'`);
+        return '[loading]';
       }
       let fee = this.state.fees[feeType][asset][priority];
       let dp = this.state.getAssetInfo(asset).decimalPlaces;
