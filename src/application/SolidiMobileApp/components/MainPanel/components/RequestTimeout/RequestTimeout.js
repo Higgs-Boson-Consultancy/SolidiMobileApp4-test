@@ -59,7 +59,7 @@ let RequestTimeout = () => {
 
       <View style={styles.infoSection}>
         <View style={styles.infoItem}>
-          <Text>Sorry! The server didn't respond in time. We weren't able to load the {appState.stashedState.mainPanelState} panel.</Text>
+          <Text>Sorry! The server didn't respond in time. We weren't able to load the {appState.stashedState.mainPanelState} page.</Text>
         </View>
       </View>
 
