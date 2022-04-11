@@ -74,7 +74,7 @@ let MakePayment = () => {
     /* For testing */
     /*
     let text = await Clipboard.getString();
-    log({text})
+    log(`Copy text to clipboard: ${text}`);
     */
   }
 
@@ -279,7 +279,7 @@ let styles = StyleSheet.create({
 });
 
 
-const styleCopyButton = StyleSheet.create({
+let styleCopyButton = StyleSheet.create({
   image: {
     iconSize: 16,
     iconColor: colors.greyedOutIcon,
