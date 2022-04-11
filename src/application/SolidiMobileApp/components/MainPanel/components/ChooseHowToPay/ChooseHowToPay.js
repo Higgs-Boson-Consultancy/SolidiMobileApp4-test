@@ -58,7 +58,7 @@ let ChooseHowToPay = () => {
   let [colorPWBButton, setColorPWBButton] = useState(colors.standardButtonText);
 
   // Testing:
-  _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
+  _.assign(appState.panels.buy, {volumeQA: '100.10', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
@@ -194,22 +194,22 @@ let ChooseHowToPay = () => {
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You buy</Text>
-          <Text style={styles.bold}>{volumeBA} {appState.getAssetInfo(assetBA).displaySymbol}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{volumeBA} {appState.getAssetInfo(assetBA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You spend</Text>
-          <Text style={styles.bold}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Fee</Text>
-          <Text style={styles.bold}>{zeroVolumeQA()} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{zeroVolumeQA()} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Total</Text>
-          <Text style={styles.bold}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
         </View>
 
       </View>
@@ -291,6 +291,10 @@ let styles = StyleSheet.create({
   balanceLowText: {
     fontWeight: 'bold',
     color: 'red',
+  },
+  monospaceText: {
+    // For Android, a second solution may be needed.
+    fontVariant: ['tabular-nums'],
   },
 });
 

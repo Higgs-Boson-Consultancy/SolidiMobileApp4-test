@@ -256,22 +256,22 @@ let ChooseHowToReceivePayment = () => {
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You sell</Text>
-          <Text style={styles.bold}>{volumeBA} {assetBA}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{volumeBA} {assetBA}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>You get</Text>
-          <Text style={styles.bold}>{volumeQA} {assetQA}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{volumeQA} {assetQA}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Fee</Text>
-          <Text style={styles.bold}>{calculateFeeQA()} {assetQA}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{calculateFeeQA()} {assetQA}</Text>
         </View>
 
         <View style={styles.orderDetailsLine}>
           <Text style={styles.bold}>Total</Text>
-          <Text style={styles.bold}>{calculateTotalQA()} {assetQA}</Text>
+          <Text style={[styles.monospaceText, styles.bold]}>{calculateTotalQA()} {assetQA}</Text>
         </View>
 
       </View>
@@ -364,6 +364,10 @@ let styles = StyleSheet.create({
   orderSubmittedText: {
     color: 'red',
     fontWeight: 'bold',
+  },
+  monospaceText: {
+    // For Android, a second solution may be needed.
+    fontVariant: ['tabular-nums'],
   },
 });
 
