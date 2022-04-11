@@ -29,7 +29,7 @@ So if the user has selected "pay to my balance", we only need to send the sell o
 
 When the user selects "pay to my external account", we need to also send a withdrawal request.
 
-// Future: People may want to be paid in EUR, not just GBP.
+Future: People may want to be paid in EUR, not just GBP.
 
 */
 
@@ -51,8 +51,11 @@ let ChooseHowToReceivePayment = () => {
   let [orderSubmitted, setOrderSubmitted] = useState(false);
 
   // Load user's external GBP account.
-  // Todo: Reload the account data in setup by calling: await appState.loadUserInfo();
-  let externalAccount = appState.user.info.defaultAccounts.GBP;
+  let externalAccount = appState.getDefaultAccountForAsset('GBP');
+  let accountName = (! _.has(externalAccount, 'accountName')) ? '[loading]' : externalAccount.accountName;
+  let sortCode = (! _.has(externalAccount, 'sortCode')) ? '[loading]' : externalAccount.sortCode;
+  let accountNumber = (! _.has(externalAccount, 'accountNumber')) ? '[loading]' : externalAccount.accountNumber;
+
 
    // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.sell);
@@ -66,6 +69,7 @@ let ChooseHowToReceivePayment = () => {
 
   let setup = async () => {
     try {
+      await appState.loadUserInfo();
       await appState.loadBalances();
       await appState.loadFees();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -150,7 +154,7 @@ let ChooseHowToReceivePayment = () => {
       // Future: If the order doesn't complete, change to an error page.
     }
     // Now that order has completed, make a withdrawal to the user's primary external account.
-    let addressInfo = appState.user.info.defaultAccounts.GBP;
+    let addressInfo = appState.getDefaultAccountForAsset('GBP');
     await appState.sendWithdraw({asset:assetQA, volume:totalQA, addressInfo});
   }
 
@@ -218,9 +222,9 @@ let ChooseHowToReceivePayment = () => {
 
         <View style={styles.buttonDetail}>
           <Text style={styles.bold}>{`\u2022  `} Get paid in 8 hours</Text>
-          <Text style={styles.bold}>{`\u2022  `} Paying to {externalAccount.accountName}</Text>
-          <Text style={styles.bold}>{`\u2022  `} Sort Code: {externalAccount.sortCode}</Text>
-          <Text style={styles.bold}>{`\u2022  `} Account Number: {externalAccount.accountNumber}</Text>
+          <Text style={styles.bold}>{`\u2022  `} Paying to: {accountName}</Text>
+          <Text style={styles.bold}>{`\u2022  `} Sort Code: {sortCode}</Text>
+          <Text style={styles.bold}>{`\u2022  `} Account Number: {accountNumber}</Text>
         </View>
 
         <RadioButton.Item label="Paid to balance" value="balance"
