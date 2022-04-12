@@ -51,7 +51,7 @@ let BlankExampleComponent = () => {
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       triggerRender(renderCount+1);
     } catch(err) {
-      let msg = `Send.setup: Error = ${err}`;
+      let msg = `BlankExampleComponent.setup: Error = ${err}`;
       console.log(msg);
     }
   }
