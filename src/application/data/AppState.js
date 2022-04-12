@@ -282,7 +282,7 @@ class AppStateProvider extends Component {
         }
       } catch(err) {
         let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}):`;
-        msg += misc.jd(err);
+        msg += ' ' + String(err);
         this.state.switchToErrorState({message:msg});
         return 'DisplayedError';
       }
@@ -342,7 +342,7 @@ class AppStateProvider extends Component {
         }
       } catch(err) {
         let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
-        msg += misc.jd(err);
+        msg += ' ' + String(err);
         this.state.switchToErrorState({message:msg});
         return 'DisplayedError';
       }
