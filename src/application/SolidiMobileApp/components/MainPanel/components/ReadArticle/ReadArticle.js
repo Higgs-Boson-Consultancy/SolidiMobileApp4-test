@@ -14,6 +14,11 @@ import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import misc from 'src/util/misc';
 import { PaymentConditions, TermsAndConditions } from 'src/articles';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('ReadArticle');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 

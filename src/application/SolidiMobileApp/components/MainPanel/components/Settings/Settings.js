@@ -13,6 +13,11 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('Settings');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 
