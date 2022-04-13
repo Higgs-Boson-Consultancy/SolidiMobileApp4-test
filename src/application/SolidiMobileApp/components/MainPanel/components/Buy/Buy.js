@@ -355,6 +355,7 @@ let Buy = () => {
           searchTextInputProps={{
             maxLength: 15
           }}
+          maxHeight={scaledHeight(300)}
         />
       </View>
 
@@ -383,6 +384,7 @@ let Buy = () => {
           searchTextInputProps={{
             maxLength: 15
           }}
+          maxHeight={scaledHeight(300)}
         />
       </View>
 
