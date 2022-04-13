@@ -64,7 +64,7 @@ let PIN = () => {
     if (pinStatus === 'enter') {
       let loginCredentials = await Keychain.getInternetCredentials(appState.domain);
       // Example result:
-      // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "mr@pig.com"}
+      // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
       /* Issue:
       - The user may have logged out, in which case the email and password have been deleted.
       In this case:
