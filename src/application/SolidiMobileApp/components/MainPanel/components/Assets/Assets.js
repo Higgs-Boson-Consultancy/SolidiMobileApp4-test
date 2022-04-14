@@ -50,9 +50,9 @@ let Assets = () => {
 
   let setup = async () => {
     try {
-      await appState.loadBalances();
       await appState.loadAssetsInfo();
       await appState.loadAssetIcons();
+      await appState.loadBalances();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
       triggerRender(renderCount+1);
