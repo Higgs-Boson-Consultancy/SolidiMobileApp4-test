@@ -776,6 +776,30 @@ class AppStateProvider extends Component {
 
 
 
+    this.loadPersonalDetailOptions = async () => {
+      let data = await this.state.privateMethod({
+        functionName: 'loadPersonalDetailOptions',
+        apiRoute: 'personal_detail_option',
+      });
+      if (data == 'DisplayedError') return;
+      // If the data differs from existing data, save it.
+      let msg = "Personal detail options loaded from server.";
+      if (jd(data) === jd(this.state.apiData.personal_detail_options )) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(data));
+        this.state.apiData.personal_detail_options = data;
+      }
+    }
+
+    this.getPersonalDetailOptions = (detailName) => {
+      // Should contain a list of options for each detailName. (e.g. "title").
+      let result = this.state.apiData.personal_detail_options;
+      if (! _.has(result, detailName)) return ['[loading]'];
+      return result[detailName];
+    }
+
+
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
       await this.loadUserInfo();
@@ -804,12 +828,16 @@ class AppStateProvider extends Component {
       }
     }
 
-    this.getUserInfo = (detailName) => {
-      let details = this.state.user.info;
-      if (! _.has(details, detailName)) {
+    this.getUserInfo = (detail) => {
+      let details = this.state.user.info.user;
+      if (! _.has(details, detail)) {
         return '[loading]';
       }
-      return details[detailName];
+      return details[detail];
+    }
+
+    this.setUserInfo = ({detail, value}) => {
+      this.state.user.info.user[detail] = value;
     }
 
     this.loadDepositDetailsForAsset = async (asset) => {
@@ -1143,9 +1171,12 @@ class AppStateProvider extends Component {
       getFullDecimalValue: this.getFullDecimalValue,
       /* END Public API methods */
       /* Private API methods */
+      loadPersonalDetailOptions: this.loadPersonalDetailOptions,
+      getPersonalDetailOptions: this.getPersonalDetailOptions,
       loadInitialStuffAboutUser: this.loadInitialStuffAboutUser,
       loadUserInfo: this.loadUserInfo,
       getUserInfo: this.getUserInfo,
+      setUserInfo: this.setUserInfo,
       loadDepositDetailsForAsset: this.loadDepositDetailsForAsset,
       getDepositDetailsForAsset: this.getDepositDetailsForAsset,
       loadDefaultAccountForAsset: this.loadDefaultAccountForAsset,
@@ -1165,9 +1196,11 @@ class AppStateProvider extends Component {
       // In apiData, we store unmodified data retrieved from the API.
       // Each sub-object corresponds to a different API route, and should have the same name as that route.
       apiData: {
-        market: {},
-        ticker: {},
         balance: {},
+        country: {},
+        market: {},
+        personal_detail_options: {},
+        ticker: {},
       },
       prevAPIData: {
         ticker: {},
@@ -1301,7 +1334,7 @@ class AppStateProvider extends Component {
       // Use test values for accessing a dev API.
       let apiKey = 'WmgwEP7RqaF9morLAiDauluX146BdUO9g5GVUNMkXsukQW5qeIBI35F5';
       let apiSecret = 'aMGnGuxXzdSu0EOY6jiWgonu7Ycb4SgeFWClq9i0nbuoPjnWDFST4gnbfAmjtDx8zau0kN0HYv5OOtKs8DldTJp9';
-      let email = 'mr@pig.com';
+      let email = 'johnqfish@foo.com';
       let password = 'mrfishsayshelloN6';
       _.assign(this.state.apiClient, {apiKey, apiSecret});
       this.state.user.isAuthenticated = true;
@@ -1322,8 +1355,6 @@ class AppStateProvider extends Component {
         sortCode: '040511',
         reference: 'SHMPQKC',
       });
-
-      _.assign(this.state.user.info.user, {"address_1": "foo", "address_2": "foo2", "address_3": null, "address_4": null, "bank_limit": "0.00", "btc_limit": "12.50000000", "country": null, "crypto_limit": "20.00", "email": "mr@pig.com", "firstname": "Mr", "freewithdraw": 0, "landline": null, "lastname": "Pig", "mobile": null, "mon_bank_limit": "0", "mon_btc_limit": "12.5", "mon_crypto_limit": "20", "postcode": "Casdij", "uuid": "ecb7e23a-a4ff-4c18-80d5-924fec8ee7d9", "year_bank_limit": "0", "year_btc_limit": "200", "year_crypto_limit": "200"});
 
       this.state.user.pin = '1112';
 
