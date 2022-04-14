@@ -1,6 +1,6 @@
 // React imports
-import React, { useContext, useEffect } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { Image, Text, StyleSheet, View } from 'react-native';
 import { StandardButton } from 'src/components/atomic';
 
 // Internal imports
@@ -8,19 +8,43 @@ import AppStateContext from 'src/application/data';
 import { mainPanelStates } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
+//foo
+import ImageLookup from 'src/images';
+
 
 let Test = () => {
 
   let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
+
 
   useEffect(() => {
-    //pass
+    setup();
   }, []);
+
+
+  let setup = async () => {
+    try {
+      await appState.loadAssetIcons();
+      triggerRender(renderCount+1);
+    } catch(err) {
+      let msg = `Test.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
 
   return (
     <View style={styles.panelContainer}>
 
       <Text style={styles.headingText}>BlankExampleComponent2</Text>
+
+      <Image source={appState.getAssetIcon('EUR')} style={{
+          width: scaledWidth(27),
+          height: scaledHeight(27),
+          resizeMode: 'cover',
+          borderWidth: 1,
+        }}/>
 
       <Text>Status: </Text>
       <StandardButton title='Log out' style={styleButton}
