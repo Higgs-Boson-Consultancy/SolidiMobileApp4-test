@@ -25,6 +25,7 @@ import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 import appTier from 'src/constants/appTier';
+import ImageLookup from 'src/images';
 
 // Logger
 import logger from 'src/util/logger';
@@ -561,11 +562,11 @@ class AppStateProvider extends Component {
           addressProperties: [],
         },
         'GBP': {
-          name: 'British Pound',
+          name: 'UK Pound',
           type: 'fiat',
           decimalPlaces: 2,
           displaySymbol: 'GBP',
-          displayString: 'GBP (British Pound)',
+          displayString: 'GBP (UK Pound)',
           addressProperties: [],
         },
       }
@@ -776,6 +777,8 @@ class AppStateProvider extends Component {
 
 
 
+    // At the top here, we store a few methods that provide public information that can cause political problems (e.g. over which options are / are not supported), so we keep them private (so that they're not publically enumerable).
+
     this.loadPersonalDetailOptions = async () => {
       let data = await this.state.privateMethod({
         functionName: 'loadPersonalDetailOptions',
@@ -784,21 +787,60 @@ class AppStateProvider extends Component {
       if (data == 'DisplayedError') return;
       // If the data differs from existing data, save it.
       let msg = "Personal detail options loaded from server.";
-      if (jd(data) === jd(this.state.apiData.personal_detail_options )) {
+      if (jd(data) === jd(this.state.apiData.personal_detail_option )) {
         log(msg + " No change.");
       } else {
         log(msg + " New data saved to appState. " + jd(data));
-        this.state.apiData.personal_detail_options = data;
+        this.state.apiData.personal_detail_option = data;
       }
     }
 
     this.getPersonalDetailOptions = (detailName) => {
       // Should contain a list of options for each detailName. (e.g. "title").
-      let result = this.state.apiData.personal_detail_options;
+      let result = this.state.apiData.personal_detail_option;
       if (! _.has(result, detailName)) return ['[loading]'];
       return result[detailName];
     }
 
+    this.loadAssetIcons = async () => {
+      let data = await this.state.privateMethod({
+        functionName: 'loadAssetIcons',
+        apiRoute: 'asset_icon',
+      });
+      if (data == 'DisplayedError') return;
+      // The data is in base64. Convert the icons back to bitmaps.
+      _.mapValues(data, (value, key) => {
+
+      });
+      let loadedAssetIcons = _.keys(data);
+      // If the data differs from existing data, save it.
+      let msg = `Asset icons loaded from server: ${loadedAssetIcons.join(', ')}.`;
+      if (jd(data) === jd(this.state.apiData.asset_icon )) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState.");
+        this.state.apiData.asset_icon = data;
+      }
+    }
+
+    this.getAssetIcon = (asset) => {
+      // This supplies a value that goes into the 'source' attribute of an <Image/> component.
+      let assetIcon = null; // default - produces an blank space where the icon would normally be.
+      let storedIcons = _.keys(ImageLookup);
+      let loadedIcons = _.keys(this.state.apiData.asset_icon);
+      if (storedIcons.includes(asset)) {
+        assetIcon = ImageLookup[asset];
+      } else if (loadedIcons.includes(asset)) {
+        assetIcon = this.state.apiData.asset_icon[asset];
+        let base64Icon = 'data:image/png;base64,' + assetIcon;
+        return {uri: base64Icon};
+      }
+      return assetIcon;
+    }
+
+
+
+    // BEGIN actual private methods (as opposed to hidden public methods).
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
@@ -1173,6 +1215,8 @@ class AppStateProvider extends Component {
       /* Private API methods */
       loadPersonalDetailOptions: this.loadPersonalDetailOptions,
       getPersonalDetailOptions: this.getPersonalDetailOptions,
+      loadAssetIcons: this.loadAssetIcons,
+      getAssetIcon: this.getAssetIcon,
       loadInitialStuffAboutUser: this.loadInitialStuffAboutUser,
       loadUserInfo: this.loadUserInfo,
       getUserInfo: this.getUserInfo,
@@ -1196,10 +1240,11 @@ class AppStateProvider extends Component {
       // In apiData, we store unmodified data retrieved from the API.
       // Each sub-object corresponds to a different API route, and should have the same name as that route.
       apiData: {
+        asset_icon: {},
         balance: {},
         country: {},
         market: {},
-        personal_detail_options: {},
+        personal_detail_option: {},
         ticker: {},
       },
       prevAPIData: {
