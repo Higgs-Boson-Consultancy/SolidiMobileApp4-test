@@ -40,46 +40,49 @@ let PersonalDetails = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'PersonalDetails');
 
-  // This call will return empty default values if the data has not yet been loaded.
-  let details1 = appState.getUserInfo();
-  let [details, setDetails] = useState(details1);
-
   let [errorDisplay, setErrorDisplay] = useState({});
 
 
-  // Tmp
-  let initialTitle = 'Mr'; // this should be loaded from the user info.
   // Title dropdown
+  let initialTitle = appState.getUserInfo('title');
   let [title, setTitle] = useState(initialTitle);
-  let titleOptions = 'Mr Mrs Ms'.split(' ');
-  let titleOptionsList = titleOptions.map(x => ({label: x, value: x}) );
+  let generateTitleOptionsList = () => {
+    let titleOptions = appState.getPersonalDetailOptions('title');
+    return titleOptions.map(x => ({label: x, value: x}) );
+  }
+  let [titleOptionsList, setTitleOptionsList] = useState(generateTitleOptionsList());
   let [openTitle, setOpenTitle] = useState(false);
-  useEffect( () => { if (! firstRender)
-    updateUserData({detail: 'title', value: title});
-  }, [title]);
 
-  // Tmp
-  let initialGender = 'Male'; // this should be loaded from the user info.
+
   // Gender dropdown
+  let initialGender = appState.getUserInfo('gender');
   let [gender, setGender] = useState(initialGender);
-  let genderOptions = 'Male Female'.split(' ');
-  let genderOptionsList = genderOptions.map(x => ({label: x, value: x}) );
+  let generateGenderOptionsList = () => {
+    let genderOptions = appState.getPersonalDetailOptions('gender');
+    return genderOptions.map(x => ({label: x, value: x}) );
+  }
+  let [genderOptionsList, setGenderOptionsList] = useState(generateGenderOptionsList());
   let [openGender, setOpenGender] = useState(false);
-  useEffect( () => { if (! firstRender)
-    updateUserData({detail: 'gender', value: gender});
-  }, [gender]);
 
-    // Country dropdown (for address)
-    let [country, setCountry] = useState('United Kingdom');
-    let [openCountry, setOpenCountry] = useState(false);
-    useEffect( () => { if (! firstRender)
-      updateUserData({detail: 'country', value: country});
-    }, [country]);
-    let generateCountryOptionsList = () => {
-      let countries = appState.getCountries();
-      let result = countries.map(x => { return {label: x.name, value: x.code} });
-      return result;
-    }
+  // Citizenship dropdown
+  let initialCitizenship = appState.getUserInfo('citizenship');
+  let [citizenship, setCitizenship] = useState(initialCitizenship);
+  let generateCitizenshipOptionsList = () => {
+    let countries = appState.getCountries();
+    return countries.map(x => { return {label: x.name, value: x.code} });
+  }
+  let [citizenshipOptionsList, setCitizenshipOptionsList] = useState(generateCitizenshipOptionsList());
+  let [openCitizenship, setOpenCitizenship] = useState(false);
+
+  // Country dropdown
+  let initialCountry = appState.getUserInfo('country');
+  let [country, setCountry] = useState(initialCountry);
+  let generateCountryOptionsList = () => {
+    let countries = appState.getCountries();
+    return countries.map(x => { return {label: x.name, value: x.code} });
+  }
+  let [countryOptionsList, setCountryOptionsList] = useState(generateCountryOptionsList());
+  let [openCountry, setOpenCountry] = useState(false);
 
 
   // Initial setup.
@@ -88,11 +91,23 @@ let PersonalDetails = () => {
   }, []); // Pass empty array so that this only runs once on mount.
 
 
+
+
+
   let setup = async () => {
     try {
-      await loadUserData();
+      await appState.loadPersonalDetailOptions();
+      await appState.loadInitialStuffAboutUser();
       await appState.loadCountries();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setTitle(appState.getUserInfo('title'));
+      setTitleOptionsList(generateTitleOptionsList());
+      setGender(appState.getUserInfo('gender'));
+      setGenderOptionsList(generateGenderOptionsList());
+      setCitizenship(appState.getUserInfo('citizenship'));
+      setCitizenshipOptionsList(generateCitizenshipOptionsList());
+      setCountry(appState.getUserInfo('country'));
+      setCountryOptionsList(generateCountryOptionsList());
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `PersonalDetails.setup: Error = ${err}`;
@@ -101,55 +116,45 @@ let PersonalDetails = () => {
   }
 
 
-  let loadUserData = async () => {
-    // Display the value we have in storage first.
-    let details1 = appState.getUserInfo();
-    setDetails(details1);
-    // Load the user info from the server.
-    await appState.loadInitialStuffAboutUser();
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    // Display the new value, if it's different.
-    let details2 = appState.getUserInfo();
-    if (details1 !== details2) {
-      setDetails(details2);
-    }
-  }
-
-
   let updateUserData = async ({detail, value}) => {
-    // Note: The local state (the value that is displayed in the GUI) has already been updated via the user's selection of the new value.
-    // We send an update to the server every time the user finishes choosing / updating a value.
-    // The API route will differ depending on which detail we are updating.
-    // Select the right one based on the detail.
+    /*
+    Every time the user selects a new value:
+    - We send an update to the server.
+    - If the update is successful, we update the appState with the new value.
+    */
+    // Only update if the value has definitely changed.
+    if (value == '[loading]') return;
+    let prevValue = appState.getUserInfo(detail);
+    if (value === prevValue) {
+      // Reset any existing error.
+      setErrorDisplay({...errorDisplay, [detail]: null});
+      return;
+    }
+    // Proceed with update.
     functionName = 'updateUserData';
     let info = appState.user.info;
+    // Check if we recognise the detail.
     let userDataDetails = `
-title firstname lastname
-date_of_birth gender citizenship
+title firstName middleNames lastName
+dateOfBirth gender citizenship
 email mobile
-address_1 address_2 address_3 address_4 postcode country
+address1 address2 address3 address4 postcode country
 `;
     userDataDetails = misc.splitStringIntoArray(userDataDetails);
-    let userDataCategory;
-    let apiRoute;
-    let prevValue;
-    if (userDataDetails.includes(detail)) {
-      userDataCategory = 'user';
-      apiRoute = 'user/update';
-      prevValue = info.user[detail];
-    } else {
+    if (! userDataDetails.includes(detail)) {
       console.error(`updateUserData: Unrecognised detail: ${detail}`);
       return;
     }
-    // Todo: Only run the update if we have a previous value and the value has definitely changed.
-    log(`API request: Update ${userDataCategory}: Change ${detail} from '${prevValue}' to '${value}'.`);
-    let params = { [userDataCategory]: {[detail]: value} }
+    // Send the update.
+    log(`API request: Update user: Change ${detail} from '${prevValue}' to '${value}'.`);
+    let apiRoute = 'user/update';
+    let params = { user: {[detail]: value} }
     let result = await appState.privateMethod({ functionName, apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: The error should be an object with 'code' and 'message' properties.
     if (_.has(result, 'error')) {
       let error = result.error;
-      log(`Error returned from API request (Update ${userDataCategory}: Change ${detail} from '${prevValue}' to '${value}'): ${JSON.stringify(error)}`);
+      log(`Error returned from API request (Update user: Change ${detail} from '${prevValue}' to '${value}'): ${JSON.stringify(error)}`);
       if (_.isObject(error)) {
         if (_.isEmpty(error)) {
           error = 'Received an empty error object ({}) from the server.'
@@ -161,23 +166,20 @@ address_1 address_2 address_3 address_4 postcode country
       setErrorDisplay({...errorDisplay, [detail]: error});
     } else { // No errors.
       // Update the appState.
-      // Use the specific detail to select the sub-object that we need to update.
-      if (userDataDetails.includes(detail)) {
-        info.user[detail] = value;
-      }
+      appState.setUserInfo({detail, value});
       // Reset any existing error.
       setErrorDisplay({...errorDisplay, [detail]: null});
     }
   }
 
 
-  let renderError = (detailName) => {
+  let renderError = (detail) => {
     // We render an error above a detail, if an error has been set for it.
-    // Example detailName: 'address_1'
-    if (_.isNil(errorDisplay[detailName])) return;
+    // Example detail: 'address_1'
+    if (_.isNil(errorDisplay[detail])) return;
     return (
       <View style={styles.errorDisplay}>
-        <Text style={styles.errorDisplayText}>Error: {detailName}: {errorDisplay[detailName]}</Text>
+        <Text style={styles.errorDisplayText}>Error: {detail}: {errorDisplay[detail]}</Text>
       </View>
     )
   }
@@ -213,42 +215,64 @@ address_1 address_2 address_3 address_4 postcode country
               setValue={setTitle}
               style={[styles.detailDropdown]}
               textStyle = {styles.detailDropdownText}
+              onChangeValue = { (title) => {
+                updateUserData({detail: 'title', value: title});
+              }}
             />
           </View>
         </View>
+
+        {renderError('firstName')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}First Name</Text>
           </View>
-          <View style={[styles.detailValue]}>
-            <Text style={styles.detailValueText}>{details.user.firstname}</Text>
+          <View>
+          <TextInput defaultValue={appState.getUserInfo('firstName')}
+            style={[styles.detailValue, styles.editableTextInput]}
+            onEndEditing = {event => {
+              let value = event.nativeEvent.text;
+              updateUserData({detail:'firstName', value});
+            }}
+            autoCompleteType='off'
+          />
           </View>
         </View>
+
+        {renderError('middleNames')}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>{`\u2022  `}Middle Names</Text>
+          </View>
+          <View>
+          <TextInput defaultValue={appState.getUserInfo('middleNames')}
+            style={[styles.detailValue, styles.editableTextInput]}
+            onEndEditing = {event => {
+              let value = event.nativeEvent.text;
+              updateUserData({detail:'middleNames', value});
+            }}
+            autoCompleteType='off'
+          />
+          </View>
+        </View>
+
+        {renderError('lastName')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Last Name</Text>
           </View>
-          <View style={styles.detailValue}>
-            <Text style={styles.detailValueText}>{details.user.lastname}</Text>
-          </View>
-        </View>
-
-        {renderError('date_of_birth')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Date of Birth</Text>
-          </View>
           <View>
-            <TextInput defaultValue={details.user.date_of_birth}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'date_of_birth', value});
-              }}
-            />
+          <TextInput defaultValue={appState.getUserInfo('lastName')}
+            style={[styles.detailValue, styles.editableTextInput]}
+            onEndEditing = {event => {
+              let value = event.nativeEvent.text;
+              updateUserData({detail:'lastName', value});
+            }}
+            autoCompleteType='off'
+          />
           </View>
         </View>
 
@@ -268,17 +292,53 @@ address_1 address_2 address_3 address_4 postcode country
               setValue={setGender}
               style={[styles.detailDropdown]}
               textStyle = {styles.detailDropdownText}
+              onChangeValue = { (gender) => {
+                updateUserData({detail: 'gender', value: gender});
+              }}
             />
           </View>
         </View>
 
-        <View style={[styles.detail, {borderWidth:1}]}>
+        {renderError('dateOfBirth')}
+
+        <View style={styles.detail}>
           <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>  Country of Citizenship</Text>
+            <Text style={styles.detailNameText}>{`\u2022  `}Date of Birth</Text>
           </View>
-          <View style={[styles.detailValue, {paddingLeft:0}]}>
-            {/*<Text style={styles.detailValueText}>{details.user.citizenship}</Text>*/}
-            <Text style={styles.detailValueText}>  United Kingdom</Text>
+          <View>
+            <TextInput defaultValue={appState.getUserInfo('dateOfBirth')}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'dateOfBirth', value});
+              }}
+              autoCompleteType='off'
+            />
+          </View>
+        </View>
+
+        <View style={[styles.detail, {zIndex:1}]}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>{`\u2022  `}Country of Citizenship</Text>
+          </View>
+          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
+            <DropDownPicker
+              listMode="SCROLLVIEW"
+              scrollViewProps={{nestedScrollEnabled: true}}
+              placeholder={citizenship}
+              open={openCitizenship}
+              value={citizenship}
+              items={citizenshipOptionsList}
+              setOpen={setOpenCitizenship}
+              setValue={setCitizenship}
+              style={[styles.detailDropdown]}
+              textStyle = {styles.detailDropdownText}
+              onChangeValue = { (citizenship) => {
+                updateUserData({detail: 'citizenship', value: citizenship});
+              }}
+              searchable = {true}
+              maxHeight={scaledHeight(300)}
+            />
           </View>
         </View>
 
@@ -292,14 +352,14 @@ address_1 address_2 address_3 address_4 postcode country
           <Text style={styles.sectionHeadingText}>Contact Details</Text>
         </View>
 
-        {renderError('email')}
+        {/* Don't allow the email address to be changed easily, because it's how we get in touch with the user, and also the ID with which the user logs in. */}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>Email</Text>
           </View>
           <View style={styles.detailValue}>
-            <Text style={styles.detailValueText}>{details.user.email}</Text>
+            <Text style={styles.detailValueText}>{appState.getUserInfo('email')}</Text>
           </View>
         </View>
 
@@ -307,10 +367,18 @@ address_1 address_2 address_3 address_4 postcode country
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>Mobile</Text>
+            <Text style={styles.detailNameText}>{`\u2022  `}Mobile</Text>
           </View>
-          <View style={styles.detailValue}>
-            <Text style={styles.detailValueText}>{details.user.mobile}</Text>
+          <View>
+            <TextInput defaultValue={appState.getUserInfo('mobile')}
+              style={[styles.detailValue, styles.editableTextInput]}
+              onEndEditing = {event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'mobile', value});
+              }}
+              autoCompleteType='off'
+              autoCapitalize='none'
+            />
           </View>
         </View>
 
@@ -324,69 +392,69 @@ address_1 address_2 address_3 address_4 postcode country
           <Text style={styles.sectionHeadingText}>Address Details</Text>
         </View>
 
-        {renderError('address_1')}
+        {renderError('address1')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Address</Text>
           </View>
           <View>
-            <TextInput defaultValue={details.user.address_1}
+            <TextInput defaultValue={appState.getUserInfo('address1')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address_1', value});
+                updateUserData({detail:'address1', value});
               }}
             />
           </View>
         </View>
 
-        {renderError('address_2')}
+        {renderError('address2')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={details.user.address_2}
+          <TextInput defaultValue={appState.getUserInfo('address2')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address_2', value});
+                updateUserData({detail:'address2', value});
               }}
             />
           </View>
         </View>
 
-        {renderError('address_3')}
+        {renderError('address3')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={details.user.address_3}
+          <TextInput defaultValue={appState.getUserInfo('address3')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address_3', value});
+                updateUserData({detail:'address3', value});
               }}
             />
           </View>
         </View>
 
-        {renderError('address_4')}
+        {renderError('address4')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={details.user.address_4}
+          <TextInput defaultValue={appState.getUserInfo('address4')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address_4', value});
+                updateUserData({detail:'address4', value});
               }}
             />
           </View>
@@ -396,10 +464,10 @@ address_1 address_2 address_3 address_4 postcode country
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>Postcode</Text>
+            <Text style={styles.detailNameText}>{`\u2022  `}Postcode</Text>
           </View>
           <View>
-          <TextInput defaultValue={details.user.postcode}
+          <TextInput defaultValue={appState.getUserInfo('postcode')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
@@ -408,8 +476,6 @@ address_1 address_2 address_3 address_4 postcode country
             />
           </View>
         </View>
-
-        {renderError('country')}
 
         <View style={[styles.detail, {zIndex:1}]}>
           <View style={styles.detailName}>
@@ -422,12 +488,16 @@ address_1 address_2 address_3 address_4 postcode country
               placeholder={country}
               open={openCountry}
               value={country}
-              items={ generateCountryOptionsList() }
-              //items={genderOptionsList}
+              items={countryOptionsList}
               setOpen={setOpenCountry}
               setValue={setCountry}
               style={[styles.detailDropdown]}
               textStyle = {styles.detailDropdownText}
+              onChangeValue = { (country) => {
+                updateUserData({detail: 'country', value: country});
+              }}
+              searchable = {true}
+              maxHeight={scaledHeight(300)}
             />
           </View>
         </View>
@@ -479,6 +549,7 @@ let styles = StyleSheet.create({
   sectionHeadingText: {
     fontSize: normaliseFont(16),
     fontWeight: 'bold',
+    fontStyle: 'italic',
   },
   detail: {
     //borderWidth: 1, // testing
@@ -491,7 +562,7 @@ let styles = StyleSheet.create({
     paddingRight: scaledWidth(10),
     paddingVertical: scaledHeight(10),
     //borderWidth: 1, // testing
-    minWidth: '35%', // Expands with length of detail name.
+    minWidth: '40%', // Expands with length of detail name.
   },
   detailNameText: {
     fontSize: normaliseFont(16),
@@ -500,7 +571,7 @@ let styles = StyleSheet.create({
   detailValue: {
     paddingLeft: scaledWidth(10),
     paddingVertical: scaledHeight(10),
-    minWidth: '65%',
+    minWidth: '60%',
     //borderWidth: 1, // testing
   },
   detailValueText: {
