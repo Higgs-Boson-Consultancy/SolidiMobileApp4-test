@@ -4,11 +4,18 @@
 
 import solidi from './solidi.png';
 import trustpilot from './trustpilot.png';
+import asset_icons from './asset_icons';
+
+let { GBP, BTC, ETH } = asset_icons;
 
 
 let ImageLookup = {
   solidi,
   trustpilot,
+  GBP,
+  BTC,
+  ETH,
+  asset_icons,
 }
 
 export default ImageLookup;
