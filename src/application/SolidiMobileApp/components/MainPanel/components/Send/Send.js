@@ -357,7 +357,7 @@ let Send = () => {
         <View>
           <TextInput
             style={styles.fullWidthTextInput}
-            onChangeText={setBIC}
+            onChangeText={setIBAN}
             value={BIC}
             placeholder={'ES91 2100 0418 4502 0005 1332'}
             placeholderTextColor={colors.placeHolderTextColor}
