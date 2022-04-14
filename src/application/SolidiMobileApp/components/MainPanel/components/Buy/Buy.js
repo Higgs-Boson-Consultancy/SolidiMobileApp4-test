@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useState, useEffect } from 'react';
-import { Text, TextInput, StyleSheet, View } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 // Other imports
@@ -56,7 +56,18 @@ let Buy = () => {
   let deriveAssetItems = (assets) => {
     return assets.map(asset => {
       let info = appState.getAssetInfo(asset);
-      return {label: info.displayString, value: info.displaySymbol};
+      let assetIcon = appState.getAssetIcon(asset);
+      let assetItem = {
+        label: info.displayString,
+        value: info.displaySymbol,
+        icon: () => <Image source={assetIcon} style={{
+            width: scaledWidth(27),
+            height: scaledHeight(27),
+            resizeMode: 'cover',
+          }}
+        />,
+      }
+      return assetItem;
     });
   }
 
@@ -90,6 +101,7 @@ let Buy = () => {
       await appState.loadAssetsInfo();
       await appState.loadMarkets();
       await appState.loadPrices();
+      await appState.loadAssetIcons();
       let apiCheck = await appState.checkForNewAPIVersion();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
@@ -444,41 +456,45 @@ let styles = StyleSheet.create({
   },
   volumeQA: {
     height: scaledHeight(40),
-    width: scaledWidth(120),
+    width: scaledWidth(125),
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: scaledWidth(10),
-    marginRight: scaledWidth(20),
+    marginRight: scaledWidth(15),
+  },
+  quoteAssetContainer: {
+    width: scaledWidth(220),
   },
   quoteAsset: {
     height: scaledHeight(40),
     width: scaledWidth(220),
   },
-  quoteAssetContainer: {
-    width: scaledWidth(220),
-  },
   baseAssetWrapper: {
     paddingVertical: scaledHeight(20),
-    width: '80%',
+    width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 1,
+    //borderWidth: 1, //testing
   },
   volumeBA: {
     height: scaledHeight(40),
-    width: scaledWidth(120),
+    width: scaledWidth(125),
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: scaledWidth(10),
-    marginRight: scaledWidth(20),
+    marginRight: scaledWidth(15),
+    //borderWidth: 1, //testing
+  },
+  baseAssetContainer: {
+    width: scaledWidth(220),
+    //borderWidth: 1, //testing
   },
   baseAsset: {
     height: scaledHeight(40),
     width: scaledWidth(220),
-  },
-  baseAssetContainer: {
-    width: scaledWidth(220),
+    //borderWidth: 1, //testing
   },
   priceWrapper: {
     marginVertical: scaledHeight(10),
