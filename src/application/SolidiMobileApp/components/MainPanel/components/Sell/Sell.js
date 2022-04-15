@@ -92,14 +92,18 @@ let Sell = () => {
     ({volumeBA: selectedVolumeBA, assetBA: selectedAssetBA} = appState.panels.sell);
   }
 
-  // Dropdown State:
+  // Volume state:
   // BA = Base Asset
   let [volumeBA, setVolumeBA] = useState(selectedVolumeBA);
+  // QA = Quote Asset
+  let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
+
+  // Dropdown state: Base asset
   let [openBA, setOpenBA] = useState(false);
   let [assetBA, setAssetBA] = useState(selectedAssetBA);
   let [itemsBA, setItemsBA] = useState(generateBaseAssetItems());
-  // QA = Quote Asset
-  let [volumeQA, setVolumeQA] = useState(selectedVolumeQA);
+
+  // Dropdown state: Quote asset
   let [openQA, setOpenQA] = useState(false);
   let [assetQA, setAssetQA] = useState(selectedAssetQA);
   let [itemsQA, setItemsQA] = useState(generateQuoteAssetItems());
