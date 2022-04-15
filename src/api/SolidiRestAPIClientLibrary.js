@@ -199,8 +199,8 @@ export default class SolidiRestAPIClientLibrary {
       let msg = `Calling ${uri}`;
       log(msg);
       let response = await fetch(uri, options);
-      let data = await response.text();
-      //log("Response: " + data);
+      let responseData = await response.text();
+      //log("Response: " + responseData);
       // Catch and handle timeouts:
 /*
 <html>
@@ -211,32 +211,38 @@ export default class SolidiRestAPIClientLibrary {
 </body>
 </html>
 */
-      data = data.replace(/[\r\n]+/gm, ''); // remove line breaks
-      //log({data})
+      responseData = responseData.replace(/[\r\n]+/gm, ''); // remove line breaks
+      //log({responseData})
       // Error 502: Bad Gateway
       let timeoutSection = '<html><head><title>502 Bad Gateway</title></head>';
       let n = timeoutSection.length;
-      let firstSection = data.slice(0, n);
+      let firstSection = responseData.slice(0, n);
       if (firstSection == timeoutSection) {
         return {error: 'request_failed'};
       }
       // Error 504: Gateway Time-out
       let timeoutSection2 = '<html><head><title>504 Gateway Time-out</title></head>';
       let n2 = timeoutSection2.length;
-      let firstSection2 = data.slice(0, n2);
+      let firstSection2 = responseData.slice(0, n2);
       if (firstSection2 == timeoutSection2) {
         return {error: 'timeout'};
       }
+      /* Format:
+      - The response will always be an object, with an 'error' property.
+      - The error property will be: null, 'success', or an error.
+      - If the error is null, the response can contain a 'data' property.
+      */
       try {
-        data = JSON.parse(data);
+        result = JSON.parse(responseData);
       } catch(err) {
-        log(`Can't parse received data: ${data}`);
-        return {error: 'cannot_parse_data', data};
+        log(`Can't parse received data: ${responseData}`);
+        return {error: 'cannot_parse_data', responseData};
       }
-      if (data.error) {
-        //console.error(uri + ' ' + jd(data));
+      if (_.isNull(result.error)) {
+        return result.data;
       }
-      return data;
+      //console.log(result.error);
+      return {error: result.error};
     } catch(err) {
       if (err.name == 'AbortError') {
         let msg = `Aborted: ${uri}`;
