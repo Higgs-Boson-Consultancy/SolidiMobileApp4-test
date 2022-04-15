@@ -897,14 +897,12 @@ class AppStateProvider extends Component {
       // Example result for GBP:
       /*
       {
-        "result": "success",
         "sortCode": "040476",
         "accountNumber": "00001036",
         "accountName": "Solidi",
         "reference": "SHMPQKC"
       }
       */
-     delete data.result;
      let details = data;
       // If the data differs from existing data, save it.
       msg = `Deposit details for asset=${asset} loaded from server.`;
