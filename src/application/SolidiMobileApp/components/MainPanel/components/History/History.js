@@ -49,6 +49,7 @@ let History = () => {
     }
   }
 
+
   // Check to see if a category has been specified as this panel is loaded.
   let selectedCategory = 'orders'; // default value.
   let categories = 'transactions orders'.split(' ');
@@ -60,12 +61,14 @@ let History = () => {
     selectedCategory = pageName;
   }
 
+
   let [open, setOpen] = useState(false);
   let [category, setCategory] = useState(selectedCategory);
   let [categoryItems, setCategoryItems] = useState([
     {label: 'Orders', value: 'orders'},
     {label: 'All Transactions', value: 'transactions'},
   ]);
+
 
   let displayHistoryControls = () => {
 
@@ -88,6 +91,7 @@ let History = () => {
     );
   }
 
+
   let codeToType = (code) => {
     let convert = {
       'PI': 'Receive', // == deposit
@@ -100,6 +104,7 @@ let History = () => {
     let type = convert[code];
     return type;
   }
+
 
   let renderTransactionItem = ({ item }) => {
     let txnDate = item['date'];
@@ -119,10 +124,10 @@ let History = () => {
     );
   }
 
+
   let renderTransactions = () => {
     //let data = appState.apiData.transaction.transactions;
     let data = appState.getTransactions();
-    lj(data)
     return (
       <View style={styles.flatListWrapper}>
         <FlatList
@@ -137,6 +142,8 @@ let History = () => {
       </View>
     );
   }
+
+
   let renderOrderItem = ({ item }) => {
     let market = misc.getStandardMarket(item['market']);
     let orderSide = item['side'];
@@ -159,6 +166,7 @@ let History = () => {
     );
   }
 
+
   let renderOrders = () => {
     let data = appState.getOrders();
     return (
@@ -175,6 +183,7 @@ let History = () => {
       </View>
     );
   }
+
 
   return (
     <View style={styles.panelContainer}>
@@ -199,7 +208,7 @@ let History = () => {
 }
 
 
-const styles = StyleSheet.create({
+let styles = StyleSheet.create({
   panelContainer: {
     width: '100%',
     height: '100%',
