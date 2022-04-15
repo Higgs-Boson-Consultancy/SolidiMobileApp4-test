@@ -62,6 +62,7 @@ let History = () => {
   }
 
 
+  // Dropdown state: Category
   let [open, setOpen] = useState(false);
   let [category, setCategory] = useState(selectedCategory);
   let [categoryItems, setCategoryItems] = useState([
