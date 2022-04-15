@@ -269,9 +269,9 @@ class AppStateProvider extends Component {
           return data;
         } else {
           // For any other errors, switch to an error description page.
-          let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
+          let msg = `Error in ${functionName}: publicMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
           if (! _.isString(error)) error = JSON.stringify(error);
-          msg += ' ' + String(error);
+          msg += "\nError = " + String(error);
           this.state.switchToErrorState({message:msg});
           return 'DisplayedError';
         }
@@ -493,6 +493,7 @@ class AppStateProvider extends Component {
 
     this.checkForNewAPIVersion = async () => {
       let data = await this.state.publicMethod({
+        functionName: 'checkForNewAPIVersion',
         apiRoute: 'api_latest_version',
         httpMethod: 'GET',
       });
