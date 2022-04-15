@@ -30,6 +30,18 @@ let History = () => {
   let [isLoading, setIsLoading] = useState(true);
 
 
+  // Check to see if a category has been specified as this panel is loaded.
+  let selectedCategory = 'orders'; // default value.
+  let categories = 'transactions orders'.split(' ');
+  let pageName = appState.pageName;
+  if (pageName !== 'default') {
+    if (! categories.includes(pageName)) {
+      throw Error(`Unrecognised category: ${pageName}`);
+    }
+    selectedCategory = pageName;
+  }
+
+
   // Initial setup.
   useEffect(() => {
     setup();
@@ -47,18 +59,6 @@ let History = () => {
       let msg = `History.setup: Error = ${err}`;
       console.log(msg);
     }
-  }
-
-
-  // Check to see if a category has been specified as this panel is loaded.
-  let selectedCategory = 'orders'; // default value.
-  let categories = 'transactions orders'.split(' ');
-  let pageName = appState.pageName;
-  if (pageName !== 'default') {
-    if (! categories.includes(pageName)) {
-      throw Error(`Unrecognised category: ${pageName}`);
-    }
-    selectedCategory = pageName;
   }
 
 
