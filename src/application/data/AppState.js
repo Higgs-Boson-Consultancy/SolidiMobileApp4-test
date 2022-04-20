@@ -1018,9 +1018,9 @@ class AppStateProvider extends Component {
         httpMethod: 'POST',
         apiRoute: 'buy',
         params: {
-          fxmarket: market,
-          amount: volumeBA,
-          price: volumeQA,
+          market,
+          baseAssetVolume: volumeBA,
+          quoteAssetVolume: volumeQA,
         },
       });
       if (data == 'DisplayedError') return;
@@ -1044,9 +1044,9 @@ class AppStateProvider extends Component {
         httpMethod: 'POST',
         apiRoute: 'sell',
         params: {
-          fxmarket: market,
-          amount: volumeBA,
-          price: volumeQA,
+          market,
+          baseAssetVolume: volumeBA,
+          quoteAssetVolume: volumeQA,
         },
       });
       if (data == 'DisplayedError') return;
