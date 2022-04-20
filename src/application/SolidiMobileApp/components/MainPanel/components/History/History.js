@@ -144,6 +144,24 @@ let History = () => {
   }
 
 
+  let renderOrders = () => {
+    let data = appState.getOrders();
+    return (
+      <View style={styles.flatListWrapper}>
+        <FlatList
+          style={styles.orderList}
+          data={data}
+          renderItem={renderOrderItem}
+          keyExtractor={(item, index) => index}
+          numColumns={1}
+          scrollEnabled='true'
+          contentContainerStyle={{justifyContent: 'center'}}
+        />
+      </View>
+    );
+  }
+
+
   let renderOrderItem = ({ item }) => {
     let market = misc.getStandardMarket(item['market']);
     let orderSide = item['side'];
@@ -162,24 +180,6 @@ let History = () => {
         </View>
         <Text style={styles.typeField}>{orderSide} Order</Text>
         <Text>Spent {quoteVolume} {appState.getAssetInfo(quoteAsset).displaySymbol} to get {baseVolume} {appState.getAssetInfo(baseAsset).displaySymbol}.</Text>
-      </View>
-    );
-  }
-
-
-  let renderOrders = () => {
-    let data = appState.getOrders();
-    return (
-      <View style={styles.flatListWrapper}>
-        <FlatList
-          style={styles.orderList}
-          data={data}
-          renderItem={renderOrderItem}
-          keyExtractor={(item, index) => index}
-          numColumns={1}
-          scrollEnabled='true'
-          contentContainerStyle={{justifyContent: 'center'}}
-        />
       </View>
     );
   }
