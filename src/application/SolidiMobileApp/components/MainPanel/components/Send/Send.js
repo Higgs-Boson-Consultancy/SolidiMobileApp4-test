@@ -555,7 +555,7 @@ let Send = () => {
               }
               let result = Big(balanceSA).minus(Big(transferFee)).toFixed();
               let result2 = appState.getFullDecimalValue({asset:assetSA, value:result, functionName:'Send'});
-              setVolumeSA(result2);
+              validateAndSetVolumeSA(result2);
             }}
             styles={styleMaxButton}
           />
