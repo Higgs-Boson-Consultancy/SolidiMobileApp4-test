@@ -966,12 +966,11 @@ class AppStateProvider extends Component {
       let data = await this.state.privateMethod({apiRoute: 'balance'});
       if (data == 'DisplayedError') return;
       data = _.mapKeys(data, (value, key) => misc.getStandardAsset(key));
-      data = _.mapValues(data, (value, key) => value.balance);
       let msg = "User balances loaded from server.";
       if (jd(data) === jd(this.state.apiData.balance)) {
         log(msg + " No change.");
       } else {
-        log(msg + " New data saved to appState.");
+        log(msg + " New data saved to appState." + " " + jd(data));
         //this.state.setAPIData({key:'balance', data});
         this.state.apiData.balance = data;
       }
