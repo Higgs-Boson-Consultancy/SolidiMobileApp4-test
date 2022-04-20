@@ -1063,42 +1063,36 @@ class AppStateProvider extends Component {
     this.loadFees = async () => {
       // For now, we only load withdrawal fees.
       let data = await this.state.privateMethod({apiRoute:'fee'});
+      lj(data)
       if (data == 'DisplayedError') return;
       /* Example data:
-      [
-        {
-          "asset": "BTC",
+      {
+        "GBP": {
           "withdraw": {
-            "lowFee": "0.00000000",
-            "mediumFee": "0.00030000",
-            "highFee": "0.00050000"
-          }
-        },
-        {
-          "asset": "GBP",
-          "withdraw": {
+            "highFee": "0.50000000",
             "lowFee": "0.50000000",
-            "mediumFee": "0.50000000",
-            "highFee": "0.50000000"
+            "mediumFee": "0.50000000"
           }
-        },
-      ]
+        }
+      }
       */
       // Data also contains 'GBPX', which we ignore.
       // Restructure data.
       let withdrawFees = {};
-      for (let x of data) {
-        withdrawFees[x.asset] = {
-          low: x.withdraw.lowFee,
-          medium: x.withdraw.mediumFee,
-          high: x.withdraw.highFee,
+      for (let [asset, fees] of _.entries(data)) {
+        withdrawFees[asset] = {
+          low: fees.withdraw.lowFee,
+          medium: fees.withdraw.mediumFee,
+          high: fees.withdraw.highFee,
         }
       }
       let msg = "Withdrawal fee data loaded from server.";
       if (jd(withdrawFees) === jd(this.state.fees.withdraw)) {
         log(msg + " No change.");
       } else {
-        log(msg + " New data saved to appState.");
+        msg += " New data saved to appState.";
+        //msg += " " + jd(withdrawFees);
+        log(msg);
         this.state.fees.withdraw = withdrawFees;
       }
       return withdrawFees;
