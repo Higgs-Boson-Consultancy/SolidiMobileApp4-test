@@ -32,7 +32,7 @@ let History = () => {
 
   // Check pageName to see if a category has been specified as this panel is loaded.
   let selectedCategory = 'orders'; // default value.
-  let categories = 'transactions orders'.split(' ');
+  let categories = 'orders transactions'.split(' ');
   let pageName = appState.pageName;
   if (pageName !== 'default') {
     if (! categories.includes(pageName)) {
@@ -127,7 +127,6 @@ let History = () => {
 
 
   let renderTransactions = () => {
-    //let data = appState.apiData.transaction.transactions;
     let data = appState.getTransactions();
     return (
       <View style={styles.flatListWrapper}>
@@ -198,10 +197,12 @@ let History = () => {
         { isLoading && <Spinner/> }
 
         {! isLoading && displayHistoryControls()}
-        {! isLoading && category === 'transactions' &&
-          renderTransactions()}
+
         {! isLoading && category === 'orders' &&
           renderOrders()}
+
+        {! isLoading && category === 'transactions' &&
+          renderTransactions()}
       </View>
     </View>
   );
