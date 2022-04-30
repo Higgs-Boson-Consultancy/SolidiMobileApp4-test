@@ -48,7 +48,7 @@ let Test = () => {
 
       <Text>Status: </Text>
       <StandardButton title='Log out' style={styleButton}
-        onPress={ () => { appState.logOut(); } }
+        onPress={ () => { appState.logout(); } }
       />
       <StandardButton title='Change PIN' style={styleButton}
         onPress={ () => { appState.choosePIN(); } }
