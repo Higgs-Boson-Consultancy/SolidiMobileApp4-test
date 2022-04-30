@@ -361,7 +361,9 @@ class AppStateProvider extends Component {
     }
 
     this.authenticateUser = () => {
-      // If email (and password) aren't present, go to Login.
+      // If login credentials (email and password) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
+      if (! this.state.user.loginCredentialsFound) return this.state.changeState('Authenticate');
+      // If login credentials aren't present in memory, go to Login.
       // Note: The PIN is kept in storage even if the user logs out.
       if (! this.state.user.email) return this.state.changeState('Login');
       // Otherwise, if we have a PIN, go to PIN entry.
@@ -414,6 +416,26 @@ class AppStateProvider extends Component {
         this.state.user.pin = pin;
         log(`PIN loaded: ${pin}`);
       }
+    }
+
+    this.checkForLoginCredentials = async () => {
+      /*
+      - We check if login credentials (email and password) are stored in the keychain.
+      - We don't actually load them into the app's memory here. (We do that only once the user has entered the correct PIN value.)
+      - This is async - there will be a slight delay while the data is retrieved.
+      -- However: The user would have to be very fast indeed to click a button on the initial BUY page to change to a different state before this completes.
+      */
+      let credentials = await Keychain.getInternetCredentials(this.state.domain);
+      // Example result:
+      // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
+      if (credentials) {
+        if (_.has(credentials, 'username') && _.has(credentials, 'password')) {
+          log(`Stored login credentials found in Keychain (but not loaded into memory).`);
+          this.state.user.loginCredentialsFound = true;
+          return;
+        }
+      }
+      log(`No login credentials found in Keychain.`);
     }
 
     this.logout = async () => {
@@ -1222,6 +1244,7 @@ class AppStateProvider extends Component {
       deletePIN: this.deletePIN,
       choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
+      checkForLoginCredentials: this.checkForLoginCredentials,
       logout: this.logout,
       lockApp: this.lockApp,
       resetLockAppTimer: this.resetLockAppTimer,
@@ -1301,6 +1324,7 @@ class AppStateProvider extends Component {
         email: '',
         password: '',
         pin: '',
+        loginCredentialsFound: false,
         info: {
           // In info, we store a lot of user-specific data retrieved from the API.
           // It is often restructured into a new form, but remains partitioned by API route.
@@ -1410,6 +1434,7 @@ class AppStateProvider extends Component {
 
     // Load data from keychain.
     this.loadPIN();
+    this.checkForLoginCredentials();
 
     // Start the lock-app timer.
     this.resetLockAppTimer();
