@@ -9,7 +9,7 @@ import _ from 'lodash';
 // Internal imports
 import AppStateContext from 'src/application/data';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
-import { StandardButton } from 'src/components/atomic';
+import { Button, StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 import { mainPanelStates } from 'src/constants';
@@ -93,6 +93,13 @@ let Login = () => {
   return (
 
     <View style={styles.panelContainer}>
+    <View style={styles.panelSubContainer}>
+
+      <View>
+
+      <View style={styles.heading}>
+        <Text style={styles.headingText}>Login</Text>
+      </View>
 
       {errorMessage &&
         <View style={styles.errorWrapper}>
@@ -103,7 +110,7 @@ let Login = () => {
         </View>
       }
 
-      <Text style={styles.text1}>Email address:</Text>
+      <Text style={styles.descriptionText}>Email address:</Text>
 
       <View style={styles.wideTextInputWrapper}>
         <TextInput
@@ -113,7 +120,7 @@ let Login = () => {
         />
       </View>
 
-      <Text style={styles.text1}>Password:</Text>
+      <Text style={styles.descriptionText}>Password:</Text>
 
       <View style={styles.wideTextInputWrapper}>
         <TextInput
@@ -125,10 +132,25 @@ let Login = () => {
       </View>
 
       <View style={styles.loginButtonWrapper}>
-        <StandardButton title="Login" onPress={ submitLoginRequest } />
+        <StandardButton title="Log in" onPress={ submitLoginRequest } />
+      </View>
+
+      <View style={styles.buttonWrapper}>
+        <Button title="Don't have an account? Click here."
+          onPress={ () => { appState.changeState('Register') } }
+        />
+      </View>
+
+      <View style={styles.buttonWrapper}>
+        <Button title="Any problems? Contact us."
+          onPress={ () => { appState.changeState('ContactUs') } }
+        />
       </View>
 
       </View>
+
+    </View>
+    </View>
 
   );
 
@@ -137,10 +159,29 @@ let Login = () => {
 
 let styles = StyleSheet.create({
   panelContainer: {
-    paddingTop: scaledHeight(80),
+    paddingVertical: scaledHeight(15),
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
+  },
+  panelSubContainer: {
+    paddingTop: scaledHeight(10),
+    //paddingHorizontal: scaledWidth(30),
+  },
+  heading: {
+    alignItems: 'center',
+    marginBottom: scaledHeight(40),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  descriptionText: {
+    fontWeight: 'bold',
+    fontSize: normaliseFont(18),
   },
   errorWrapper: {
     marginBottom: 30,
@@ -160,9 +201,10 @@ let styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: 'space-between',
     alignItems: 'center',
+    //borderWidth: 1, // testing
   },
   wideTextInput: {
-    height: 40,
+    height: scaledHeight(40),
     width: scaledWidth(360),
     borderWidth: 1,
     borderRadius: 8,
@@ -170,7 +212,12 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(20),
   },
   loginButtonWrapper: {
-    marginTop: 10,
+    marginTop: scaledHeight(30),
+    marginBottom: scaledHeight(40),
+  },
+  buttonWrapper: {
+    marginTop: scaledHeight(20),
+    // borderWidth: 1, // testing
   },
 })
 
