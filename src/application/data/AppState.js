@@ -804,15 +804,13 @@ class AppStateProvider extends Component {
     }
 
     this.loadAssetIcons = async () => {
-      let data = await this.state.privateMethod({
+      let data = await this.state.publicMethod({
         functionName: 'loadAssetIcons',
         apiRoute: 'asset_icon',
+        httpMethod: 'GET',
       });
       if (data == 'DisplayedError') return;
-      // The data is in base64. Convert the icons back to bitmaps.
-      _.mapValues(data, (value, key) => {
-
-      });
+      // The data is in base64. It turns out that an <Image/> can accept a base64 source, so need to convert it back to a bitmap.
       let loadedAssetIcons = _.keys(data);
       // If the data differs from existing data, save it.
       let msg = `Asset icons loaded from server: ${loadedAssetIcons.join(', ')}.`;
