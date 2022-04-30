@@ -1,18 +1,43 @@
+// React imports
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+
+// Other imports
+import _ from 'lodash';
+
+// Internal imports
 import Button from './Button/Button';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
-let StandardButton = (props) => {
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('Login');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+
+
+let StandardButton = ({styles, ...props}) => {
+  let styleText = defaultStyle.text;
+  let styleView = defaultStyle.view;
+  if (! _.isNil(styles)) {
+    if (styles.view) {
+      styleView = StyleSheet.flatten([styleView, styles.view]);
+    }
+    if (styles.text) {
+      styleText = StyleSheet.flatten([styleText, styles.text]);
+    }
+  }
+  let finalStyles = {view: styleView, text: styleText};
   return (
     <View style={styleButtonWrapper}>
-      <Button {...props} styles={styles} />
+      <Button styles={finalStyles} {...props} />
     </View>
   )
 };
 
-let styles = StyleSheet.create({
+
+let defaultStyle = StyleSheet.create({
   view: {
     height: scaledHeight(45),
     alignSelf: 'flex-start',
@@ -27,9 +52,11 @@ let styles = StyleSheet.create({
   },
 });
 
+
 // This wrapper view prevents the button expanding to fill the width of the parent view.
 let styleButtonWrapper = StyleSheet.create({
   alignSelf: 'flex-start',
 });
+
 
 export default StandardButton;
