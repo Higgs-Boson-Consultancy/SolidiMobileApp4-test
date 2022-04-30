@@ -870,7 +870,6 @@ class AppStateProvider extends Component {
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
       await this.loadUserInfo();
-      await this.loadAssetsInfo();
       await this.loadDepositDetailsForAsset('GBP');
       await this.loadDefaultAccountForAsset('GBP');
       await this.loadBalances();
