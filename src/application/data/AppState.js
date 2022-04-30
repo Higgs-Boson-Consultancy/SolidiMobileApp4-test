@@ -91,7 +91,7 @@ class AppStateProvider extends Component {
       Don't store a reloaded stashed state in the history list.
       */
       let stateHistoryList = this.state.stateHistoryList;
-      let storeHistoryState = (! stashed && ! this.nonHistoryPanels.includes(mainPanelState))
+      let storeHistoryState = (! stashed && ! this.nonHistoryPanels.includes(mainPanelState));
       if (storeHistoryState) {
         let currentState = stateHistoryList[stateHistoryList.length - 1];
         if (JSON.stringify(newState) === JSON.stringify(currentState)) {
@@ -109,7 +109,7 @@ class AppStateProvider extends Component {
           makeFinalSwitch = false;
           // Stash the new state for later retrieval.
           this.state.stashState(newState);
-          this.state.authenticateUser();
+          return this.state.authenticateUser();
         }
       }
       // Finally, change to new state.
@@ -140,7 +140,7 @@ class AppStateProvider extends Component {
       // A state consists of a mainPanelState and a pageName.
       let expected = 'mainPanelState pageName'.split(' ');
       misc.confirmExactKeys('stateX', stateX, expected, 'stashState');
-      let msg = `Stashing state: ${JSON.stringify(stateX)}`
+      let msg = `Stashing state: ${JSON.stringify(stateX)}`;
       log(msg);
       this.state.stashedState = stateX;
     }
