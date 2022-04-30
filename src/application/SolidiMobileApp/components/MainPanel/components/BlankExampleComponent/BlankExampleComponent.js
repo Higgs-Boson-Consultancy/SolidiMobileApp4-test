@@ -98,6 +98,7 @@ let styles = StyleSheet.create({
   },
   heading1: {
     marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(40),
   },
   headingText: {
     fontSize: normaliseFont(20),
