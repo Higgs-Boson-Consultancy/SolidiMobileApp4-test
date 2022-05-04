@@ -117,6 +117,7 @@ let Login = () => {
           style={styles.wideTextInput}
           onChangeText={setEmail}
           value={email}
+          autoCapitalize={'none'}
         />
       </View>
 
