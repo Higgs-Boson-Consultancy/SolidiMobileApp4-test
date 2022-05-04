@@ -56,8 +56,8 @@ class AppStateProvider extends Component {
 
     // Misc
     this.numberOfFooterButtonsToDisplay = 3;
-    this.standardPaddingTop = scaledHeight(80);
-    this.standardPaddingHorizontal = scaledWidth(15);
+    //this.standardPaddingTop = scaledHeight(80); // future ?
+    //this.standardPaddingHorizontal = scaledWidth(15); // future ?
     this.nonHistoryPanels = ['PIN'];
 
     // Shortcut function for changing the mainPanelState.
