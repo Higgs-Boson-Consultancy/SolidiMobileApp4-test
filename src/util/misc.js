@@ -20,6 +20,11 @@ function confirmKeys(objName, obj, keyNames, functionName) {
     if (_.isUndefined(obj[k])) {
       let msg = `${functionName}: '${objName}' is expected to have the key '${k}', but does not.`;
       msg += `\n- These keys are present: ${_.keys(obj)}`;
+      msg += '\n- With these values:';
+      for (let key of _.keys(obj)) {
+        let value = obj[key];
+        msg += `\n-- ${key}: ${value}`;
+      }
       throw new Error(msg);
     }
   }
