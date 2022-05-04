@@ -36,7 +36,9 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let jd = JSON.stringify;
 
 // Settings
-let appDomain = 'solidi.co';
+let domain = 'solidi.co';
+let appName = 'SolidiMobileApp';
+let apiVersion = '1';
 
 
 
@@ -57,9 +59,6 @@ class AppStateProvider extends Component {
     this.standardPaddingTop = scaledHeight(80);
     this.standardPaddingHorizontal = scaledWidth(15);
     this.nonHistoryPanels = ['PIN'];
-    this.appName = 'SolidiMobileApp';
-    this.apiVersion = '1';
-    this.appTier = appTier;
 
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
@@ -1318,7 +1317,10 @@ class AppStateProvider extends Component {
         ticker: {},
       },
       priceLoadCount: 0,
-      domain: appDomain,
+      domain,
+      appName,
+      appTier,
+      apiVersion,
       userAgent: "Solidi Mobile App 4",
       user: {
         isAuthenticated: false,
@@ -1368,7 +1370,6 @@ class AppStateProvider extends Component {
         'WaitingForPayment',
       ],
       apiClient: null,
-      appName: this.appName,
       lockAppTimerID: null,
       panels: {
         buy: {
