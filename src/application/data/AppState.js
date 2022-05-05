@@ -998,7 +998,8 @@ class AppStateProvider extends Component {
     }
 
     this.loadDefaultAccountForAsset = async (asset) => {
-      // These are default accounts for withdrawals. They should be external addresses /accounts held by the user.
+      // These are default accounts for withdrawals. They should be external addresses / accounts held by the user.
+      // We use these when the user sells an asset - they may choose to receive the payment into this account.
       let funcName = 'loadDefaultAccountForAsset';
       if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
@@ -1076,7 +1077,7 @@ class AppStateProvider extends Component {
 
     this.sendBuyOrder = async () => {
       if (! this.state.panels.buy.activeOrder) {
-        log('No active BUY order. Leaving sendBuyOrder.');
+        //log('No active BUY order. Leaving sendBuyOrder.');
         return;
       }
       // Ensure that this order only gets processed once.
@@ -1479,12 +1480,8 @@ class AppStateProvider extends Component {
       }];
     }
 
-    // === Call initial setup functions.
 
-    // Tweak app state for dev work.
-    if (appTier === 'dev') {
-      this.state.domain = 't3.solidi.co';
-    }
+    // Call initial setup functions.
 
     // Load data from keychain.
     this.loadPIN();
@@ -1493,75 +1490,6 @@ class AppStateProvider extends Component {
     // Start the lock-app timer.
     this.resetLockAppTimer();
 
-    // Create a non-authenticated API client that can call public methods.
-    this.state.apiClient = new SolidiRestAPIClientLibrary({
-      userAgent: this.state.userAgent, apiKey:'', apiSecret:'',
-      domain: this.state.domain,
-    });
-
-    // Call public methods that provide useful data.
-    let setup = async () => {
-      await this.state.loadAssetsInfo();
-      await this.state.loadMarkets();
-      await this.state.loadPrices();
-    }
-    //setup();
-
-    // === End setup
-
-    // Tweak app state for dev work.
-    if (appTier === 'dev') {
-
-      this.state.domain = 't3.solidi.co';
-
-      // Use test values for accessing a dev API.
-      /*
-      let apiKey = 'WmgwEP7RqaF9morLAiDauluX146BdUO9g5GVUNMkXsukQW5qeIBI35F5';
-      let apiSecret = 'aMGnGuxXzdSu0EOY6jiWgonu7Ycb4SgeFWClq9i0nbuoPjnWDFST4gnbfAmjtDx8zau0kN0HYv5OOtKs8DldTJp9';
-      let email = 'johnqfish@foo.com';
-      let password = 'mrfishsayshelloN6';
-      _.assign(this.state.apiClient, {apiKey, apiSecret});
-      this.state.user.isAuthenticated = true;
-      _.assign(this.state.user, {email, password});
-      */
-
-      // Method for loading data at the start of whatever component we're working on currently. Note: This is async, and can't be used during component creation.
-      this.state.onStartDevTesting = () => {
-        this.loadInitialStuffAboutUser();
-      }
-
-      //_.assign(this.state.panels.buy, {volumeQA: '100.00', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
-
-      //_.assign(this.state.panels.sell, {volumeQA: '100.00', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC', totalQA: '100.00'});
-
-      /*
-      _.assign(this.state.user.info.depositDetails.GBP, {
-        accountName: 'Solidi',
-        accountNumber: '00012484',
-        sortCode: '040511',
-        reference: 'SHMPQKC',
-      });
-
-      this.state.user.pin = '1112';
-
-      _.assign(this.state.panels.send, {
-        asset: 'GBP',
-        volume: '7001.23',
-        addressProperties: {
-          address: '1BwmSDfQQDnkC4DkovjjtUCbaz9ijBYGcY',
-          accountName: 'William Brown',
-          sortCode: '12-34-56',
-          accountNumber: '123456123',
-          destinationTag: '52',
-          BIC: 'INGDESMM',
-          IBAN: 'ES91 2100 0418 4502 0005 1332',
-        },
-        priority: 'low',
-      });
-
-      */
-
-    }
 
   }
 
