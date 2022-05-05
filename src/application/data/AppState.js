@@ -832,7 +832,9 @@ class AppStateProvider extends Component {
       // Add zeros to the value to get the full number of decimal places for the asset.
       if (_.isNil(functionName)) functionName = '[Unspecified location]';
       if (! misc.isNumericString(value)) {
-        log(`${functionName}.getFullDecimalValue: value '${value}' is not a numeric string.`);
+        if (value != '[loading]') {
+          log(`${functionName}.getFullDecimalValue: value '${value}' is not a numeric string.`);
+        }
         return '[loading]';
       }
       let dp = this.state.getAssetInfo(asset).decimalPlaces;
