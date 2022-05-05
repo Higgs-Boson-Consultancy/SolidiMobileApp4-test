@@ -40,6 +40,10 @@ let domain = 'solidi.co';
 let appName = 'SolidiMobileApp';
 let apiVersion = '1';
 
+// Load access information for dev tier.
+let devBasicAuth = (appTier == 'dev') ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
+
+
 
 
 let AppStateContext = React.createContext();
@@ -1322,6 +1326,7 @@ class AppStateProvider extends Component {
       appName,
       appTier,
       apiVersion,
+      devBasicAuth,
       userAgent: "Solidi Mobile App 4",
       user: {
         isAuthenticated: false,
