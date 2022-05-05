@@ -53,26 +53,8 @@ let Login = () => {
         setErrorMessage(msg);
         return;
       }
-      // Load API Key and Secret from server.
-      let apiClient = appState.apiClient;
-      let apiRoute = 'login_mobile' + `/${email}`;
-      let params = {password};
-      let abortController = appState.createAbortController();
-      let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
-      let keyNames = 'apiKey, apiSecret'.split(', ');
-      misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
-      let {apiKey, apiSecret} = data;
-      // Store these access values in the global state.
-      _.assign(apiClient, {apiKey, apiSecret});
-      appState.apiClient = apiClient;
-      appState.user.isAuthenticated = true;
-      _.assign(appState.user, {email, password});
-      // Store the email and password in the secure keychain storage.
-      await Keychain.setInternetCredentials(appState.domain, email, password);
-      let msg = `loginCredentials (email=${email}, password=${password}) stored in keychain under ${appState.domain})`;
-      log(msg);
-      // Load user stuff.
-      await appState.loadInitialStuffAboutUser();
+      // Log in.
+      await appState.login({email, password});
       // Change state.
       if (! appState.user.pin) {
         return appState.changeState('PIN', 'choose');
