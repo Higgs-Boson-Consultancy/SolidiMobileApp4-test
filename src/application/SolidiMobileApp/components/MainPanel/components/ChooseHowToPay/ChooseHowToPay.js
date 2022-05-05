@@ -48,7 +48,7 @@ let ChooseHowToPay = () => {
   - No need to await the result.
   */
   appState.sendBuyOrder();
-  // To do: Actually, this doesn't seem right. This can return an "InsufficientFunds order".
+  // To do: Actually, this doesn't seem right. This can return an "InsufficientFunds error".
 
 
   let [renderCount, triggerRender] = useState(0);
@@ -73,7 +73,7 @@ let ChooseHowToPay = () => {
 
   let setup = async () => {
     try {
-      await appState.loadAssetsInfo();
+      await appState.generalSetup();
       await appState.loadBalances();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       await checkBalance();
