@@ -83,7 +83,7 @@ let PIN = () => {
       let {username: email, password} = loginCredentials;
       let msg = `loginCredentials (email=${email}, password=${password}) loaded from keychain under ${appState.domain})`;
       log(msg);
-      // Use the email and password to load the API Key and Secret from server.
+      // Use the email and password to load the API Key and Secret from the server.
       let {userAgent, domain} = appState;
       let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
       let apiRoute = 'login_mobile' + `/${email}`;
