@@ -633,13 +633,12 @@ class AppStateProvider extends Component {
       // Tmp: For development:
       // Sample markets.
       data = [
-        'BTC/GBPX',
-        'ETH/GBPX',
-        'BTC/EURX',
-        'ETH/EURX',
+        'BTC/GBP',
+        'ETH/GBP',
+        'BTC/EUR',
+        'ETH/EUR',
       ]
       // End tmp
-      data = data.map(market => misc.getStandardMarket(market));
       // If the data differs from existing data, save it.
       let msg = "Markets loaded from server.";
       if (jd(data) === jd(this.state.apiData.market)) {
@@ -993,7 +992,6 @@ class AppStateProvider extends Component {
     this.loadBalances = async () => {
       let data = await this.state.privateMethod({apiRoute: 'balance'});
       if (data == 'DisplayedError') return;
-      data = _.mapKeys(data, (value, key) => misc.getStandardAsset(key));
       let msg = "User balances loaded from server.";
       if (jd(data) === jd(this.state.apiData.balance)) {
         log(msg + " No change.");
