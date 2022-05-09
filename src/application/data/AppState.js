@@ -1111,7 +1111,6 @@ class AppStateProvider extends Component {
       ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.buy);
       let market = assetBA + '/' + assetQA;
       log(`Send order to server: BUY ${volumeBA} ${market} @ MARKET ${volumeQA}`);
-      market = misc.getSolidiServerMarket(market);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'buy',
@@ -1138,7 +1137,6 @@ class AppStateProvider extends Component {
       ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.sell);
       let market = assetBA + '/' + assetQA;
       log(`Send order to server: SELL ${volumeBA} ${market} @ MARKET ${volumeQA}`);
-      market = misc.getSolidiServerMarket(market);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'sell',
