@@ -104,16 +104,13 @@ let Buy = () => {
 
   let setup = async () => {
     try {
-      await appState.loadAssetsInfo();
-      await appState.loadMarkets();
+      await appState.generalSetup();
       await appState.loadPrices();
-      await appState.loadAssetIcons();
-      let apiCheck = await appState.checkForNewAPIVersion();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
       calculateVolumeBA();
-      setNewAPIVersion(apiCheck);
+      setNewAPIVersion(appState.checkLatestAPIVersion());
       setErrorMessage('');
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;

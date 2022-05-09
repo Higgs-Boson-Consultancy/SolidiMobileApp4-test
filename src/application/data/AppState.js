@@ -38,7 +38,7 @@ let jd = JSON.stringify;
 // Settings
 let domain = 'solidi.co';
 let appName = 'SolidiMobileApp';
-let apiVersion = '1';
+let appAPIVersion = '1';
 
 // Load access information for dev tier.
 let devBasicAuth = (appTier == 'dev') ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
@@ -214,13 +214,26 @@ class AppStateProvider extends Component {
         let {userAgent, domain} = this.state;
         this.state.apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
       }
-      // Load public assets info.
+      // Load default public info.
+      if (! this.state.apiVersionLoaded) {
+        await this.state.loadLatestAPIVersion();
+        this.state.apiVersionLoaded = true;
+      }
       if (! this.state.assetsInfoLoaded) {
         await this.state.loadAssetsInfo();
         this.state.assetsInfoLoaded = true;
       }
+      if (! this.state.marketsLoaded) {
+        await this.state.loadMarkets();
+        this.state.marketsLoaded = true;
+      }
+      if (! this.state.assetIconsLoaded) {
+        await this.state.loadAssetIcons();
+        this.state.assetIconsLoaded = true;
+      }
+      // Login to a specific user if we're developing.
       if (this.state.appTier == 'dev') {
-        await this.state.login({email: 'johnqfish20@foo.com', password: 'bigFish6'});
+        await this.state.login({email: 'johnqfish22@foo.com', password: 'bigFish6'});
       }
     }
 
@@ -561,18 +574,26 @@ class AppStateProvider extends Component {
 
 
 
-    this.checkForNewAPIVersion = async () => {
+    this.loadLatestAPIVersion = async () => {
       let data = await this.state.publicMethod({
-        functionName: 'checkForNewAPIVersion',
+        functionName: 'loadAPIVersion',
         apiRoute: 'api_latest_version',
         httpMethod: 'GET',
       });
       if (data == 'DisplayedError') return;
       // if (! .has(data, 'api_latest_version')) this.state.changeState('Error');
-      let newAPIVersion = data.api_latest_version !== this.state.apiVersion;
-      let msg = `apiVersion in app: ${apiVersion}. Latest apiVersion from API data: ${data.api_latest_version}.`;
+      let api_latest_version = data.api_latest_version;
+      this.state.apiData.api_latest_version = api_latest_version;
+      log(`Latest API version: ${api_latest_version}`);
+    }
+
+    this.checkLatestAPIVersion = () => {
+      let appAPIVersion = this.state.appAPIVersion;
+      let api_latest_version = this.state.apiData.api_latest_version;
+      let check = api_latest_version !== appAPIVersion;
+      let msg = `apiVersion in app: ${appAPIVersion}. Latest apiVersion from API data: ${api_latest_version}.`;
       log(msg);
-      return newAPIVersion;
+      return check;
     }
 
     this.loadAssetsInfo = async () => {
@@ -1304,7 +1325,8 @@ class AppStateProvider extends Component {
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
       /* Public API methods */
-      checkForNewAPIVersion: this.checkForNewAPIVersion,
+      loadLatestAPIVersion: this.loadLatestAPIVersion,
+      checkLatestAPIVersion: this.checkLatestAPIVersion,
       loadAssetsInfo: this.loadAssetsInfo,
       getAssetInfo: this.getAssetInfo,
       getAssetsInfo: this.getAssetsInfo,
@@ -1357,6 +1379,7 @@ class AppStateProvider extends Component {
       // Each sub-object corresponds to a different API route, and should have the same name as that route.
       // Note: Need to be careful about which are arrays and which are objects with keyed values.
       apiData: {
+        api_latest_version: null,
         asset_icon: {},
         balance: {},
         country: [],
@@ -1373,10 +1396,13 @@ class AppStateProvider extends Component {
       domain,
       appName,
       appTier,
-      apiVersion,
+      appAPIVersion,
       devBasicAuth,
       userAgent: "Solidi Mobile App 4",
+      apiVersionLoaded: false,
       assetsInfoLoaded: false,
+      marketsLoaded: false,
+      assetsIconsLoaded: false,
       user: {
         isAuthenticated: false,
         email: '',
