@@ -83,8 +83,7 @@ let Receive = () => {
 
   let setup = async () => {
     try {
-      await appState.loadAssetsInfo();
-      await appState.loadAssetIcons();
+      await appState.generalSetup();
       await appState.loadDepositDetailsForAsset(assetCA);
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsCA(generateAssetItems());
