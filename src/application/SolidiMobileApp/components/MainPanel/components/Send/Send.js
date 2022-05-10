@@ -568,6 +568,7 @@ let Send = () => {
 
       <View style={styles.storedAssetWrapper}>
         <TextInput
+          placeholder={'0.50'}
           style={styles.volumeSA}
           onChangeText={validateAndSetVolumeSA}
           value={volumeSA}
