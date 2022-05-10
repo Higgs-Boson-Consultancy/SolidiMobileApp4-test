@@ -1086,7 +1086,8 @@ class AppStateProvider extends Component {
       return balanceString;
     }
 
-    this.getOrderStatus = async ({orderID}) => {
+    this.fetchOrderStatus = async ({orderID}) => {
+      // "fetch" used to mean "load from API & get value".
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'order_status/' + orderID,
@@ -1364,7 +1365,7 @@ class AppStateProvider extends Component {
       getDefaultAccountForAsset: this.getDefaultAccountForAsset,
       loadBalances: this.loadBalances,
       getBalance: this.getBalance,
-      getOrderStatus: this.getOrderStatus,
+      fetchOrderStatus: this.fetchOrderStatus,
       sendBuyOrder: this.sendBuyOrder,
       sendSellOrder: this.sendSellOrder,
       loadFees: this.loadFees,
