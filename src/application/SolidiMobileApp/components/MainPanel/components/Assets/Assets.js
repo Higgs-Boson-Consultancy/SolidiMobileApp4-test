@@ -50,8 +50,7 @@ let Assets = () => {
 
   let setup = async () => {
     try {
-      await appState.loadAssetsInfo();
-      await appState.loadAssetIcons();
+      await appState.generalSetup();
       await appState.loadBalances();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
