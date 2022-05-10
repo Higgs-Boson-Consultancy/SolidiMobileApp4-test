@@ -440,7 +440,7 @@ let Send = () => {
 
 
   let calculateTotal = () => {
-    let v = appState.removeFinalDecimalPointIfItExists(volumeSA);
+    let v = misc.removeFinalDecimalPointIfItExists(volumeSA);
     if (! (misc.isNumericString(v) && misc.isNumericString(transferFee))) {
       return '';
     }
@@ -476,7 +476,7 @@ let Send = () => {
 
 
   let calculateAmountToSend = () => {
-    let v = appState.removeFinalDecimalPointIfItExists(volumeSA);
+    let v = misc.removeFinalDecimalPointIfItExists(volumeSA);
     let amount = appState.getFullDecimalValue({asset:assetSA, value:v, functionName:'Send'});
     return amount;
   }

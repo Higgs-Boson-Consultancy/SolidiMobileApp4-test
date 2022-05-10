@@ -852,12 +852,6 @@ class AppStateProvider extends Component {
       return value;
     }
 
-    this.removeFinalDecimalPointIfItExists = (v) => {
-      if (! _.isString(v)) return v;
-      if (v.slice(-1) == '.') v = v.slice(0, -1);
-      return v;
-    }
-
     this.getFullDecimalValue = ({asset, value, functionName}) => {
       // Add zeros to the value to get the full number of decimal places for the asset.
       if (_.isNil(functionName)) functionName = '[Unspecified location]';
@@ -865,7 +859,7 @@ class AppStateProvider extends Component {
         if (value != '[loading]') {
           log(`${functionName}.getFullDecimalValue: value '${value}' is not a numeric string.`);
         }
-        return '[loading]';
+        return '';
       }
       let dp = this.state.getAssetInfo(asset).decimalPlaces;
       let value2 = Big(value).toFixed(dp);
@@ -1353,7 +1347,6 @@ class AppStateProvider extends Component {
       setPrice: this.setPrice,
       setPrevPrice: this.setPrevPrice,
       getZeroValue: this.getZeroValue,
-      removeFinalDecimalPointIfItExists: this.removeFinalDecimalPointIfItExists,
       getFullDecimalValue: this.getFullDecimalValue,
       /* END Public API methods */
       /* Private API methods */

@@ -130,6 +130,13 @@ let camelCaseToCapitalisedWords = (s) => {
 }
 
 
+let removeFinalDecimalPointIfItExists = (v) => {
+  if (! _.isString(v)) return v;
+  if (v.slice(-1) == '.') v = v.slice(0, -1);
+  return v;
+}
+
+
 
 
 let misc = {
@@ -145,6 +152,7 @@ let misc = {
   useFirstRender,
   isNumericString,
   camelCaseToCapitalisedWords,
+  removeFinalDecimalPointIfItExists,
 }
 
 
