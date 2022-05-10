@@ -19,7 +19,11 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 /* Notes
+
 - We use this component to also display "paymentNotReceived", if the user clicks "I have paid", but 2 hours pass without us receiving the payment.
+
+- On the server, every so often, unpaid (but filled) orders will be cancelled.
+
 */
 
 
@@ -43,15 +47,6 @@ let PaymentNotMade = () => {
 
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
-
-  let cancelOrder = () => {
-    //log("Todo: cancel order");
-    // Todo: API call to cancel the order (and the related settlements, trades, and txns).
-    // Is this actually necessary, or will something on the server cancel the order instead ?
-  }
-
-  // Cancel the order.
-  cancelOrder();
 
   let viewAssets = () => {
     let pageName = appState.getAssetInfo(assetQA).type; // 'crypto' or 'fiat'.
