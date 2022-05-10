@@ -91,6 +91,7 @@ let WaitingForPayment = () => {
       appState.changeState('PaymentNotReceived');
     }
     // Call the server to check if the payment has arrived (if it has, the order will have settled).
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let orderStatus = await appState.fetchOrderStatus({orderID: appState.panels.buy.orderID});
     if (orderStatus == 'settled') {
       clearInterval(appState.panels.waitingForPayment.timerID);

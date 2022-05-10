@@ -42,7 +42,7 @@ let MakePayment = () => {
   let maxTimeAllowedSeconds = 30 * 60; // 30 minutes.
   let [timeElapsedMarker, setTimeElapsedMarker] = useState(0.0); // between 0 and 1.
   let intervalSeconds = 3;
-  function incrementTimeElapsed () {
+  let incrementTimeElapsed = async () => {
     // Note: This function is a closure. It's holding the old values of several variables that (outside this function) get reset when the component is re-rendered.
     timeElapsedSeconds += intervalSeconds;
     let newMarkerValue = timeElapsedSeconds / parseFloat(maxTimeAllowedSeconds);
@@ -52,7 +52,8 @@ let MakePayment = () => {
       clearInterval(appState.panels.makePayment.timerID);
       // Call the server to find out if the user made the payment but did not click "I have paid" button.
       // If the payment has arrived, the order will have been filled.
-      let orderStatus = appState.getOrderStatus({orderID: appState.panels.buy.orderID});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      let orderStatus = await appState.fetchOrderStatus({orderID: appState.panels.buy.orderID});
       // Change to next state.
       if (orderStatus == 'settled') {
         appState.changeState('PurchaseSuccessful');
