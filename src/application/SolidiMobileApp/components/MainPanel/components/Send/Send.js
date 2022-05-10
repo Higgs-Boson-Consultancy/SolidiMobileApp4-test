@@ -109,8 +109,7 @@ let Send = () => {
 
   // Initial state:
   let selectedAssetSA = 'BTC';
-  let selectedVolumeSA = '0.00000000';
-  let [volumeSA, setVolumeSA] = useState(selectedVolumeSA);
+  let [volumeSA, setVolumeSA] = useState('');
 
   // Dropdown state: Select asset
   // SA = Stored Asset
@@ -169,10 +168,9 @@ let Send = () => {
 
   let setup = async () => {
     try {
-      await appState.loadFees();
-      await appState.loadAssetsInfo();
-      await appState.loadAssetIcons();
+      await appState.generalSetup();
       await appState.loadBalances();
+      await appState.loadFees();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setBalanceSA(appState.getBalance(assetSA));
       setItemsSA(generateStoredAssetItems());
@@ -191,7 +189,6 @@ let Send = () => {
     if (! firstRender) {
       log(`Set assetSA to: ${assetSA}`);
       //log({addressProperties: appState.getAssetInfo(assetSA).addressProperties});
-      let currentVolumeSA = volumeSA;
       // If the volume is zero, change its number of decimal places appropriately.
       let volumeIsZero = false;
       if (misc.isNumericString(volumeSA)) {
@@ -202,7 +199,6 @@ let Send = () => {
       if (volumeIsZero) {
         let zeroValue = appState.getZeroValue(assetSA);
         setVolumeSA(zeroValue);
-        currentVolumeSA = zeroValue;
       }
       setBalanceSA(appState.getBalance(assetSA));
       setItemsPriority(generatePriorityItems());
@@ -444,10 +440,11 @@ let Send = () => {
 
 
   let calculateTotal = () => {
-    if (! (misc.isNumericString(volumeSA) && misc.isNumericString(transferFee))) {
+    let v = appState.removeFinalDecimalPointIfItExists(volumeSA);
+    if (! (misc.isNumericString(v) && misc.isNumericString(transferFee))) {
       return '';
     }
-    let result = Big(volumeSA).plus(Big(transferFee)).toFixed();
+    let result = Big(v).plus(Big(transferFee)).toFixed();
     let result2 = appState.getFullDecimalValue({asset:assetSA, value:result});
     return result2;
   }
@@ -476,6 +473,13 @@ let Send = () => {
 
 
   let _styleFinalBalanceText = highlightFinalBalance() ? styles.highlightedBalanceText : styles.balanceText;
+
+
+  let calculateAmountToSend = () => {
+    let v = appState.removeFinalDecimalPointIfItExists(volumeSA);
+    let amount = appState.getFullDecimalValue({asset:assetSA, value:v, functionName:'Send'});
+    return amount;
+  }
 
 
   let startSendRequest = async () => {
@@ -595,7 +599,7 @@ let Send = () => {
         </View>
         <View style={styles.transferDetail}>
           <Text>Amount to send:</Text>
-          <Text style={styles.monospaceText}>{appState.getFullDecimalValue({asset:assetSA, value:volumeSA, functionName:'Send'})} {assetSA}</Text>
+          <Text style={styles.monospaceText}>{calculateAmountToSend()} {assetSA}</Text>
         </View>
         <View style={styles.transferDetail}>
           <Text>Network fee:</Text>
