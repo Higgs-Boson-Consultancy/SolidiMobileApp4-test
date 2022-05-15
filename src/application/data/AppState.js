@@ -1349,6 +1349,7 @@ class AppStateProvider extends Component {
 
 
 
+
     /* END Private API methods */
 
 
