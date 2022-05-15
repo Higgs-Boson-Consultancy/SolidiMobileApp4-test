@@ -546,19 +546,22 @@ class AppStateProvider extends Component {
       this.state.resetLockAppTimer();
       /* Cancel any existing timers. */
       if (this.state.panels.makePayment.timerID) {
-        clearInterval(this.state.panels.makePayment.timerID);
+        let timerID = this.state.panels.makePayment.timerID;
+        clearInterval(timerID);
         this.state.panels.makePayment.timerID = null;
-        log(`Cleared interval: makePayment`);
+        log(`Cleared interval: makePayment (timerID=${timerID})`);
       }
       if (this.state.panels.waitingForPayment.timerID) {
-        clearInterval(this.state.panels.waitingForPayment.timerID);
+        let timerID = this.state.panels.waitingForPayment.timerID;
+        clearInterval(timerID);
         this.state.panels.waitingForPayment.timerID = null;
-        log(`Cleared interval: waitingForPayment`);
+        log(`Cleared interval: waitingForPayment (timerID=${timerID})`);
       }
       if (this.state.panels.requestTimeout.timerID) {
-        clearInterval(this.state.panels.requestTimeout.timerID);
+        let timerID = this.state.panels.requestTimeout.timerID;
+        clearInterval(timerID);
         this.state.panels.requestTimeout.timerID = null;
-        log(`Cleared interval: requestTimeout`);
+        log(`Cleared interval: requestTimeout (timerID=${timerID})`);
       }
     }
 
