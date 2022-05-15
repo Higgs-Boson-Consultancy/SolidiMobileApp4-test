@@ -43,6 +43,17 @@ function confirmExactKeys(objName, obj, keyNames, functionName) {
 }
 
 
+function itemInArray(arrayName, arrayObj, item, functionName) {
+  if (! arrayObj instanceof Array) return false;
+  for (let x of arrayObj) {
+    if (_.isEqual(item, x)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 function confirmItemInArray(arrayName, arrayObj, item, functionName) {
   // Confirm that an array contains a particular item.
   if (! arrayObj instanceof Array) {
@@ -145,6 +156,7 @@ let misc = {
   lj,
   confirmKeys,
   confirmExactKeys,
+  itemInArray,
   confirmItemInArray,
   capitalise,
   sleep,
