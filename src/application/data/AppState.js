@@ -1529,12 +1529,12 @@ class AppStateProvider extends Component {
         },
         sell: {
           orderID: null,
-          volumeQA: 0,
+          volumeQA: '0',
           symbolQA: '',
-          volumeBA: 0,
+          volumeBA: '0',
           symbolBA: '',
-          feeQA: 0,
-          totalQA: 0,
+          feeQA: '0',
+          totalQA: '0',
         },
         makePayment: {
           timerID: null,
