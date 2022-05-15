@@ -117,16 +117,17 @@ class AppStateProvider extends Component {
       }
       // Finally, change to new state.
       if (makeFinalSwitch) {
-        this.state.stateChangeID += 1;
-        log(`New stateChangeID: ${this.state.stateChangeID}`);
-        this.setState({mainPanelState, pageName});
+        let stateChangeID = this.state.stateChangeID + 1;
+        log(`New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`);
+        this.setState({mainPanelState, pageName, stateChangeID});
       }
     }
 
-    this.stateChangeIDHasChanged = (stateChangeID) => {
+    this.stateChangeIDHasChanged = (stateChangeID, mainPanelState) => {
       let stateChangeID2 = this.state.stateChangeID;
+      let location = mainPanelState ? mainPanelState + ': ' : '';
       if (stateChangeID !== stateChangeID2) {
-        log(`stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`);
+        log(`${location}stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`);
         return true;
       }
       return false;
