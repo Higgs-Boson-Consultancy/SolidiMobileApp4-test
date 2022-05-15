@@ -1,9 +1,18 @@
-
+// React imports
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Platform, TouchableNativeFeedback, TouchableOpacity } from 'react-native';
 
+// Internal imports
 import { StyledView, StyledText } from './components';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('Button');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+
+
 
 const Button = ({
   title,
