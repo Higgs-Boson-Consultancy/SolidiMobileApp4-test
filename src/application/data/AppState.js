@@ -1098,18 +1098,27 @@ class AppStateProvider extends Component {
     }
 
     this.fetchOrderStatus = async ({orderID}) => {
-      // "fetch" used to mean "load from API & get value".
+      // "fetch" means "load from API & get value".
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'order_status/' + orderID,
         params: {},
+        functionName: 'fetchOrderStatus',
       });
       if (data == 'DisplayedError') return;
-      // Todo: Look at data, and return 'live' or 'filled'.
-      // Alternatively: call 'order/' + orderid, and check "settlement_status" value.
-      let orderStatus = 'live'; //tmp
-      let knownStatuses = 'live settled'.split(' ');
-      misc.confirmItemInArray('knownStatuses', knownStatuses, orderStatus, 'getOrderStatus');
+      //log(data);
+      /* Example result:
+{
+  "id": 7198,
+  "status": "FILLED"
+}
+      */
+      // Possible status values: FILLED, SETTLED, CANCELLED
+      let orderStatus = data.status;
+      let knownStatuses = 'FILLED, SETTLED, CANCELLED'.split(', ');
+      if (! misc.itemInArray('knownStatuses', knownStatuses, orderStatus, 'fetchOrderStatus')) {
+        // Future: go to error page?
+      }
       return orderStatus;
     }
 
