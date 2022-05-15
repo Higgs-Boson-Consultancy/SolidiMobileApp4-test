@@ -1521,12 +1521,13 @@ class AppStateProvider extends Component {
         buy: {
           activeOrder: false,
           orderID: null,
-          volumeQA: 0,
+          volumeQA: '0',
           symbolQA: '',
-          volumeBA: 0,
+          volumeBA: '0',
           symbolBA: '',
         },
         sell: {
+          activeOrder: false,
           orderID: null,
           volumeQA: '0',
           symbolQA: '',
