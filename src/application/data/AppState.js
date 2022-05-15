@@ -573,6 +573,7 @@ class AppStateProvider extends Component {
       log(`switchToErrorState: ${message}`);
       this.state.error.message = message;
       this.state.stashCurrentState();
+      this.cancelTimers();
       this.state.changeState('Error');
     }
 
