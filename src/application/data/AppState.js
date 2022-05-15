@@ -1122,16 +1122,18 @@ class AppStateProvider extends Component {
       return orderStatus;
     }
 
-    this.sendBuyOrder = async () => {
+    this.sendBuyOrder = async (params) => {
       if (! this.state.panels.buy.activeOrder) {
         //log('No active BUY order. Leaving sendBuyOrder.');
         return;
       }
       // Ensure that this order only gets processed once.
       this.state.panels.buy.activeOrder = false;
+      let {paymentMethod} = params;
       ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.buy);
       let market = assetBA + '/' + assetQA;
-      log(`Send order to server: BUY ${volumeBA} ${market} @ MARKET ${volumeQA}`);
+      let orderType = 'IMMEDIATE_OR_CANCEL';
+      log(`Send order to server: [${market}] BUY ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'buy',
@@ -1139,19 +1141,49 @@ class AppStateProvider extends Component {
           market,
           baseAssetVolume: volumeBA,
           quoteAssetVolume: volumeQA,
-          orderType: 'IMMEDIATE_OR_CANCEL',
+          orderType,
+          paymentMethod,
         },
         functionName: 'sendBuyOrder',
       });
       if (data == 'DisplayedError') return;
+      //log(data)
       /*
-      Example data:
-      {"id":11,"datetime":1643047261277,"type":0,"price":"100","amount":"0.05"}
-      Example error response:
+      Example result:
+{
+  "baseAssetVolume": "0.00037974",
+  "fees": "0.00",
+  "market": "BTC/GBP",
+  "orderID": 7189,
+  "quoteAssetVolume": "10.00000000",
+  "result": "FILLED",
+  "settlements": [
+    {
+      "settlementID": 15,
+      "settlementReference": "CJDUQ6M",
+      "status": "N"
+    }
+  ]
+}
+
+      Example result if the price has changed:
+{
+  "baseAssetVolume": "0.00036922",
+  "market": "BTC/GBP",
+  "quoteAssetVolume": "11.00",
+  "result": "PRICE_CHANGE"
+}
+
+      Example error:
+
       */
+      // To do: Check for "limits exceeded" error.
+      // Need to change state to an error / explanation page.
       // Store the orderID. Later, we'll use it to check the order's status.
-      log(`OrderID: ${data.id}`);
-      this.state.panels.buy.orderID = data.id;
+      if (data.orderID) {
+        log(`BUY orderID: ${data.orderID}`);
+        this.state.panels.buy.orderID = data.orderID;
+      }
       return data;
     }
 
