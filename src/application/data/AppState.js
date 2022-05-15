@@ -264,9 +264,13 @@ class AppStateProvider extends Component {
       await this.state.loadInitialStuffAboutUser();
     }
 
-    this.createAbortController = () => {
+    this.createAbortController = (params) => {
       // Prepare for cancelling requests if the user changes screen.
+      // Note: Some API requests should not be aborted if we change screen, so we have an optional noAbort parameter.
+      if (_.isNil(params)) params = {};
+      let {noAbort} = params;
       let controller = new AbortController();
+      if (noAbort) return controller;
       // Get a random integer from 0 to 999999.
       do { var controllerID = Math.floor(Math.random() * 10**6);
       } while (_.keys(this.state.abortControllers).includes(controllerID));
@@ -294,14 +298,15 @@ class AppStateProvider extends Component {
     // Future: Perhaps they could be refactored into a single function with two wrapper functions.
 
     this.publicMethod = async (args) => {
-      let {functionName, httpMethod, apiRoute, params, keyNames} = args;
+      let {functionName, httpMethod, apiRoute, params, keyNames, noAbort} = args;
       if (_.isNil(functionName)) functionName = '[Unspecified function]';
       if (_.isNil(httpMethod)) httpMethod = 'POST';
       if (_.isNil(apiRoute)) throw new Error('apiRoute required');
       if (_.isNil(params)) params = {};
       if (_.isNil(keyNames)) keyNames = [];
+      if (_.isNil(noAbort)) noAbort = false;
       if (this.state.mainPanelState === 'RequestFailed') return;
-      let abortController = this.state.createAbortController();
+      let abortController = this.state.createAbortController({noAbort});
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
       // Tmp: Ticker isn't currently working.
       if (apiRoute == 'ticker') delete data.error;
@@ -353,14 +358,15 @@ class AppStateProvider extends Component {
     }
 
     this.privateMethod = async (args) => {
-      let {functionName, httpMethod, apiRoute, params, keyNames} = args;
+      let {functionName, httpMethod, apiRoute, params, keyNames, noAbort} = args;
       if (_.isNil(functionName)) functionName = '[Unspecified function]';
       if (_.isNil(httpMethod)) httpMethod = 'POST';
       if (_.isNil(apiRoute)) throw new Error('apiRoute required');
       if (_.isNil(params)) params = {};
       if (_.isNil(keyNames)) keyNames = [];
+      if (_.isNil(noAbort)) noAbort = false;
       if (this.state.mainPanelState === 'RequestFailed') return;
-      let abortController = this.state.createAbortController();
+      let abortController = this.state.createAbortController({noAbort});
       let data = await this.state.apiClient.privateMethod({httpMethod, apiRoute, params, abortController});
       if (_.has(data, 'error')) {
         let error = data.error;
