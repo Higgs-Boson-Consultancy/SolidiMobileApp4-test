@@ -164,6 +164,7 @@ class AppStateProvider extends Component {
         return;
       }
       this.cancelTimers();
+      this.abortAllRequests();
       let prevState = stateHistoryList[stateHistoryList.length - 2];
       let {mainPanelState, pageName} = prevState;
       if (stateHistoryList.length > 1) {
@@ -192,7 +193,9 @@ class AppStateProvider extends Component {
       }
       // Finally, change to previous state.
       if (makeFinalSwitch) {
-        this.setState({mainPanelState, pageName});
+        let stateChangeID = this.state.stateChangeID + 1;
+        log(`New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`);
+        this.setState({mainPanelState, pageName, stateChangeID});
       }
     }
 
