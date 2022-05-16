@@ -1,10 +1,11 @@
 // React imports
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Platform, TouchableNativeFeedback, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, TouchableNativeFeedback, TouchableOpacity } from 'react-native';
 
 // Internal imports
 import { StyledView, StyledText } from './components';
+import { colors } from 'src/constants';
 
 // Logger
 import logger from 'src/util/logger';
@@ -25,6 +26,12 @@ const Button = ({
     android: TouchableNativeFeedback,
   });
 
+  let styleView = styles.view;
+
+  if (disabled) {
+    styleView = StyleSheet.flatten([styles.view, styleDisabled]);
+  }
+
   return (
     <Touchable
       accessibilityRole="button"
@@ -33,7 +40,7 @@ const Button = ({
       style={styles.touchable}
       {...rest}
     >
-      <StyledView disabled={disabled} styles={styles.view}>
+      <StyledView disabled={disabled} styles={styleView}>
         <StyledText disabled={disabled} styles={styles.text}>
           {title}
         </StyledText>
@@ -41,6 +48,12 @@ const Button = ({
     </Touchable>
   );
 };
+
+
+let styleDisabled = StyleSheet.create({
+  backgroundColor: colors.greyedOutIcon,
+});
+
 
 Button.defaultProps = {
   disabled: false,
@@ -51,6 +64,7 @@ Button.defaultProps = {
   },
 };
 
+
 Button.propTypes = {
   title: PropTypes.string.isRequired,
   disabled: PropTypes.bool,
@@ -60,5 +74,6 @@ Button.propTypes = {
     text: PropTypes.object,
   }),
 };
+
 
 export default Button;
