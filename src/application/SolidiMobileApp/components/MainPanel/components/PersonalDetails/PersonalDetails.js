@@ -40,6 +40,8 @@ let PersonalDetails = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'PersonalDetails');
 
+
+  // Misc
   let [errorDisplay, setErrorDisplay] = useState({});
 
 
@@ -521,7 +523,7 @@ let styles = StyleSheet.create({
     //borderWidth: 1, // testing
   },
   panelSubContainer: {
-    //paddingTop: scaledHeight(10),
+    paddingTop: scaledHeight(10),
     //paddingHorizontal: scaledWidth(30),
     //borderWidth: 1, // testing
   },
@@ -533,7 +535,6 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
   heading1: {
-    marginTop: scaledHeight(10),
   },
   headingText: {
     fontSize: normaliseFont(20),
