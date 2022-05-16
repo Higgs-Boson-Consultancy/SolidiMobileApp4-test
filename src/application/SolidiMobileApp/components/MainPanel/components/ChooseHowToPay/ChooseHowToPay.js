@@ -52,7 +52,6 @@ let ChooseHowToPay = () => {
 
   // Confirm Button state
   let [disableConfirmButton, setDisableConfirmButton] = useState(false);
-  let [styleConfirmButton, setStyleConfirmButton] = useState(styleConfirmButtonDefault);
 
   // Misc
   let refScrollView = useRef();
@@ -118,7 +117,6 @@ let ChooseHowToPay = () => {
     // - (The user can arrive to this page without an active order by pressing the Back button.)
     log('confirmPaymentChoice button clicked.');
     setDisableConfirmButton(true);
-    setStyleConfirmButton(styleConfirmButtonDisabled);
     setSendOrderMessage('Sending order...');
     refScrollView.current.scrollToEnd();
     if (paymentChoice === 'direct_payment') {
@@ -174,7 +172,6 @@ let ChooseHowToPay = () => {
     appState.panels.buy.activeOrder = true;
     await checkBalance(); // user's balance may now be greater than volumeQA.
     setDisableConfirmButton(false);
-    setStyleConfirmButton(styleConfirmButtonDefault);
     setSendOrderMessage('');
     let suffix = priceDown ? ' in your favour!' : '.';
     let msg = `The market price has shifted${suffix} Your order has been updated. Please check the details and click "Confirm & Pay" again to proceed.`;
@@ -275,7 +272,6 @@ let ChooseHowToPay = () => {
           <StandardButton title={"Confirm & Pay"}
             onPress={ confirmPaymentChoice }
             disabled={disableConfirmButton}
-            styles={styleConfirmButton}
           />
           <View style={styles.sendOrderMessage}>
             <Text style={styles.sendOrderMessageText}>{sendOrderMessage}</Text>
@@ -422,20 +418,6 @@ let stylePWBButtonAdditionalTextDisabled = StyleSheet.create({
 let styleConditionButton = StyleSheet.create({
   view: {
 
-  },
-});
-
-
-let styleConfirmButtonDefault = StyleSheet.create({
-  view: {
-    backgroundColor: colors.standardButton,
-  },
-});
-
-
-let styleConfirmButtonDisabled = StyleSheet.create({
-  view: {
-    backgroundColor: colors.greyedOutIcon,
   },
 });
 
