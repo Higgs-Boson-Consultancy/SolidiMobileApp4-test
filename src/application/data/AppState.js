@@ -1163,7 +1163,8 @@ class AppStateProvider extends Component {
       ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.buy);
       let market = assetBA + '/' + assetQA;
       let orderType = 'IMMEDIATE_OR_CANCEL';
-      log(`Send order to server: [${market}] BUY ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`);
+      let msg = `Send order to server: [${market}] BUY ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`;
+      log(msg);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'buy',
