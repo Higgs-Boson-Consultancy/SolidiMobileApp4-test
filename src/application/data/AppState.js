@@ -1225,10 +1225,19 @@ class AppStateProvider extends Component {
       */
     }
 
-    this.sendSellOrder = async () => {
+    this.sendSellOrder = async (params) => {
+      if (! this.state.panels.sell.activeOrder) {
+        log('No active SELL order. Leaving sendSellOrder.');
+        return;
+      }
+      // Ensure that this order only gets processed once.
+      this.state.panels.sell.activeOrder = false;
+      let {paymentMethod} = params;
       ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.sell);
       let market = assetBA + '/' + assetQA;
-      log(`Send order to server: SELL ${volumeBA} ${market} @ MARKET ${volumeQA}`);
+      let orderType = 'IMMEDIATE_OR_CANCEL';
+      let msg = `Send order to server: [${market}] SELL ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`;
+      log(msg);
       let data = await this.state.privateMethod({
         httpMethod: 'POST',
         apiRoute: 'sell',
@@ -1236,17 +1245,17 @@ class AppStateProvider extends Component {
           market,
           baseAssetVolume: volumeBA,
           quoteAssetVolume: volumeQA,
-          orderType: 'IMMEDIATE_OR_CANCEL',
+          orderType,
+          paymentMethod,
         },
+        functionName: 'sendSellOrder',
       });
       if (data == 'DisplayedError') return;
-      /*
-      Example error response:
-      {"error": "Insufficient Funds"}
-      */
       // Store the orderID. Later, we'll use it to check the order's status.
-      log(`OrderID: ${data.id}`);
-      this.state.panels.sell.orderID = data.id;
+      if (data.orderID) {
+        log(`OrderID: ${data.id}`);
+        this.state.panels.sell.orderID = data.id;
+      }
       return data;
     }
 
