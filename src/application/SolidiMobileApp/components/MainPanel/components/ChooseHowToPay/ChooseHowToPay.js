@@ -113,29 +113,42 @@ let ChooseHowToPay = () => {
   }
 
   let confirmPaymentChoice = async () => {
-    // Future: If there's no active BUY order, display an error message.
-    // - (The user can arrive to this page without an active order by pressing the Back button.)
+    /*
+    - If there's no active BUY order, display an error message.
+    - (The user can arrive to this page without an active order by pressing the Back button.)
+    */
     log('confirmPaymentChoice button clicked.');
     setDisableConfirmButton(true);
     setSendOrderMessage('Sending order...');
     refScrollView.current.scrollToEnd();
     if (paymentChoice === 'direct_payment') {
       // Choice: Pay directly from external fiat account.
-      let output = await appState.sendBuyOrder({paymentMethod: 'solidi'});
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      if (output.result == 'PRICE_CHANGE') {
+      await payDirectly();
+    } else {
+      // Choice: Pay with balance.
+      await payWithBalance();
+    }
+  }
+
+
+  let payDirectly = async () => {
+    let output = await appState.sendBuyOrder({paymentMethod: 'solidi'});
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    if (_.has(output, 'result')) {
+      let result = output.result;
+      if (result == 'NO_ACTIVE_ORDER') {
+        setSendOrderMessage('No active order.');
+      } else if (result == 'PRICE_CHANGE') {
         await handlePriceChange(output);
       } else {
         appState.changeState('MakePayment');
       }
-    } else {
-      // Choice: Pay with balance.
-      payWithBalance();
     }
   }
 
+
   let payWithBalance = async () => {
-    // We disable the "Pay with balance" button if the balance isn't large enough, but we still double-check the balance value here.
+    // We already disabled the "Pay with balance" button earlier if the balance wasn't large enough, but we still double-check the balance value here.
     // We reload the balances just in case they have changed in the meantime.
     await appState.loadBalances();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -150,16 +163,19 @@ let ChooseHowToPay = () => {
       // Next step
       appState.changeState('InsufficientBalance', 'buy');
       return;
-    } else {
-      // Call to the server and instruct it to pay for the order with the user's balance.
-      let output = await appState.sendBuyOrder({paymentMethod: 'balance'});
-      //lj(output);
-      if (output.result == 'PRICE_CHANGE') {
+    }
+    // Call to the server and instruct it to pay for the order with the user's balance.
+    let output = await appState.sendBuyOrder({paymentMethod: 'balance'});
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    if (_.has(output, 'result')) {
+      let result = output.result;
+      if (result == 'NO_ACTIVE_ORDER') {
+        setSendOrderMessage('No active order.');
+      } else if (result == 'PRICE_CHANGE') {
         await handlePriceChange(output);
-        return;
+      } else {
+        appState.changeState('PurchaseSuccessful');
       }
-      appState.changeState('PurchaseSuccessful');
-      return;
     }
   }
 
