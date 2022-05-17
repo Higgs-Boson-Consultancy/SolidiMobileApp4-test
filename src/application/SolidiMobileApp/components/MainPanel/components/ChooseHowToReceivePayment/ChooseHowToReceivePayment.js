@@ -68,7 +68,7 @@ let ChooseHowToReceivePayment = () => {
   if (appState.panels.sell.volumeQA == '0') {
     log("TESTING")
     // Create an order.
-    _.assign(appState.panels.sell, {volumeQA: '100.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
+    _.assign(appState.panels.sell, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
     appState.panels.sell.activeOrder = true;
   }
 
@@ -148,6 +148,7 @@ let ChooseHowToReceivePayment = () => {
     // Choose the receive-payment function.
     if (paymentChoice === 'direct_payment') {
       // Make a direct payment to the customer's primary external fiat account.
+      // Note: In this case, the server will perform a withdrawal automatically after filling the order.
       await receivePayment();
     } else {
       // Pay with balance.
@@ -160,62 +161,28 @@ let ChooseHowToReceivePayment = () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'solidi'});
     if (output.error) {
+      log(output)
       // Future: Depending on the error, choose a next state.
     }
-    // Note: Do not exit here if stateChangeID has changed.
-    return; // It looks like the server will handle a withdraw automatically if paymentMethod = solidi.
-    let orderID = appState.panels.sell.orderID;
-    let orderStatus = await waitForOrderToComplete({orderID});
-    if (orderStatus == 'timeout') {
-      // Future: If the order doesn't complete, change to an error page.
+    if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
+    if (output.result == 'PRICE_CHANGE') {
+      await handlePriceChange(output);
+      return;
+    } else {
+      appState.changeState('SaleSuccessful', paymentChoice);
     }
-    // Now that order has completed, make a withdrawal to the user's primary external account.
-    let addressInfo = appState.getDefaultAccountForAsset('GBP');
-    await appState.sendWithdraw({asset:assetQA, volume:totalQA, addressInfo});
-  }
-
-
-  let waitForOrderToComplete = async ({orderID}) => {
-    // Periodically check if order has completed.
-    // Increase the period over time.
-    let intervalSeconds = 1; // Run this function locally every intervalSeconds.
-    let periodSeconds = 2; // Increment this period in order to gradually slow down the rate at which the API is called.
-    let count = 0;
-    let timerID, resolve, reject; // Initialise pieces.
-    let checkFunction = async () => {
-      count += 1;
-      if (count % periodSeconds == 0) {
-        let orderStatus = await appState.fetchOrderStatus({orderID: appState.panels.buy.orderID});
-        if (orderStatus == 'settled') {
-          resolve(orderStatus);
-        }
-      }
-      if (count == 10) periodSeconds = 3;
-      if (count == 20) periodSeconds = 5;
-      if (count == 30) {
-        clearInterval(timerID);
-        resolve('timeout');
-      }
-    }
-    // Set up a promise that finishes when the order completes.
-    return await new Promise((resolve2, reject2) => {
-      resolve = resolve2;
-      reject = reject2;
-      timerID = setInterval(checkFunction, intervalSeconds * 1000);
-    });
+    return;
   }
 
 
   let receivePaymentToBalance = async () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'balance'});
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
     if (output.result == 'PRICE_CHANGE') {
       await handlePriceChange(output);
       return;
     } else {
-      // Change to next state. Check if state has already changed.
-      if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
       appState.changeState('SaleSuccessful', paymentChoice);
     }
   }
