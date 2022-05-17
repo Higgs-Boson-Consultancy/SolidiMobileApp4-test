@@ -146,6 +146,7 @@ let ChooseHowToReceivePayment = () => {
     let totalQA = calculateTotalQA();
     _.assign(appState.panels.sell, {feeQA, totalQA});
     // Choose the receive-payment function.
+    // Note: These functions are currently identical, but may diverge in future. Keep them separate.
     if (paymentChoice === 'direct_payment') {
       // Make a direct payment to the customer's primary external fiat account.
       // Note: In this case, the server will perform a withdrawal automatically after filling the order.
@@ -160,18 +161,17 @@ let ChooseHowToReceivePayment = () => {
   let receivePayment = async () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'solidi'});
-    if (output.error) {
-      log(output)
-      // Future: Depending on the error, choose a next state.
-    }
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
-    if (output.result == 'PRICE_CHANGE') {
-      await handlePriceChange(output);
-      return;
-    } else {
-      appState.changeState('SaleSuccessful', paymentChoice);
+    if (_.has(output, 'result')) {
+      let result = output.result;
+      if (result == 'NO_ACTIVE_ORDER') {
+        setSendOrderMessage('No active order.');
+      } else if (result == 'PRICE_CHANGE') {
+        await handlePriceChange(output);
+      } else {
+        appState.changeState('SaleSuccessful', paymentChoice);
+      }
     }
-    return;
   }
 
 
@@ -179,11 +179,15 @@ let ChooseHowToReceivePayment = () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'balance'});
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
-    if (output.result == 'PRICE_CHANGE') {
-      await handlePriceChange(output);
-      return;
-    } else {
-      appState.changeState('SaleSuccessful', paymentChoice);
+    if (_.has(output, 'result')) {
+      let result = output.result;
+      if (result == 'NO_ACTIVE_ORDER') {
+        setSendOrderMessage('No active order.');
+      } else if (result == 'PRICE_CHANGE') {
+        await handlePriceChange(output);
+      } else {
+        appState.changeState('SaleSuccessful', paymentChoice);
+      }
     }
   }
 
