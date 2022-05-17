@@ -1155,7 +1155,7 @@ class AppStateProvider extends Component {
     this.sendBuyOrder = async (params) => {
       if (! this.state.panels.buy.activeOrder) {
         //log('No active BUY order. Leaving sendBuyOrder.');
-        return;
+        return {result: 'NO_ACTIVE_ORDER'};
       }
       // Ensure that this order only gets processed once.
       this.state.panels.buy.activeOrder = false;
