@@ -39,6 +39,7 @@ let jd = JSON.stringify;
 let domain = 'solidi.co';
 let appName = 'SolidiMobileApp';
 let appAPIVersion = '1';
+let autoLoginOnDev = false;
 
 // Load access information for dev tier.
 let devBasicAuth = (appTier == 'dev') ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
@@ -236,7 +237,7 @@ class AppStateProvider extends Component {
         this.state.assetIconsLoaded = true;
       }
       // Login to a specific user if we're developing.
-      if (this.state.appTier == 'dev') {
+      if (this.state.appTier == 'dev' && autoLoginOnDev) {
         await this.state.login({email: 'johnqfish22@foo.com', password: 'bigFish6'});
       }
     }
