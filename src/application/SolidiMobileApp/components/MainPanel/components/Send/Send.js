@@ -436,7 +436,7 @@ let Send = () => {
   }
 
 
-  let _styleBalanceText = highlightBalance() ? styles.highlightedBalanceText : styles.balanceText;
+  let _styleBalanceText = highlightBalance() ? styles.highlightedBalanceText : {};
 
 
   let calculateTotal = () => {
@@ -472,7 +472,7 @@ let Send = () => {
   }
 
 
-  let _styleFinalBalanceText = highlightFinalBalance() ? styles.highlightedBalanceText : styles.balanceText;
+  let _styleFinalBalanceText = highlightFinalBalance() ? styles.highlightedBalanceText : {};
 
 
   let calculateAmountToSend = () => {
@@ -595,24 +595,24 @@ let Send = () => {
 
       <View style={styles.transferDetailsSection}>
         <View style={styles.transferDetail}>
-          <Text style={_styleBalanceText}>Current balance:</Text>
-          <Text style={[styles.monospaceText, _styleBalanceText]}>{balanceSA} {assetSA}</Text>
+          <Text style={[_styleBalanceText, styles.detailText]}>Current balance:</Text>
+          <Text style={[_styleBalanceText, styles.monospaceText]}>{balanceSA} {assetSA}</Text>
         </View>
         <View style={styles.transferDetail}>
-          <Text>Amount to send:</Text>
+          <Text style={styles.detailText}>Amount to send:</Text>
           <Text style={styles.monospaceText}>{calculateAmountToSend()} {assetSA}</Text>
         </View>
         <View style={styles.transferDetail}>
-          <Text>Network fee:</Text>
+          <Text style={styles.detailText}>Network fee:</Text>
           <Text style={styles.monospaceText}>{appState.getFullDecimalValue({asset:assetSA, value:transferFee, functionName:'Send'})} {assetSA}</Text>
         </View>
         <View style={styles.transferDetail}>
-          <Text>Total to spend: </Text>
+          <Text style={styles.detailText}>Total to spend: </Text>
           <Text style={styles.monospaceText}>{calculateTotal()} {assetSA}</Text>
         </View>
         <View style={styles.transferDetail}>
-          <Text style={_styleFinalBalanceText}>Final balance:</Text>
-          <Text style={[styles.monospaceText, _styleFinalBalanceText]}>{calculateFinalBalance()} {assetSA}</Text>
+          <Text style={[_styleFinalBalanceText, styles.detailText]}>Final balance:</Text>
+          <Text style={[_styleFinalBalanceText, styles.monospaceText]}>{calculateFinalBalance()} {assetSA}</Text>
         </View>
       </View>
 
@@ -734,13 +734,11 @@ let styles = StyleSheet.create({
     // For Android, a second solution may be needed.
     fontVariant: ['tabular-nums'],
   },
-  balanceText: {
-    //borderWidth: 1, // testing
+  detailText: {
     fontSize: normaliseFont(14),
   },
   highlightedBalanceText: {
     color: 'red',
-    fontSize: normaliseFont(14),
   },
   addressPropertiesWrapper: {
     //borderWidth: 1, // testing
