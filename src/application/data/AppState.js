@@ -1254,7 +1254,7 @@ class AppStateProvider extends Component {
       if (data == 'DisplayedError') return;
       // Store the orderID.
       if (data.orderID) {
-        log(`OrderID: ${data.id}`);
+        log(`OrderID: ${data.orderID}`);
         this.state.panels.sell.orderID = data.id;
       }
       return data;
