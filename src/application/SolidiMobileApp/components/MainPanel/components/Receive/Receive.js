@@ -507,7 +507,7 @@ let styleContactUsButton = StyleSheet.create({
 
 let styleCopyButton = StyleSheet.create({
   image: {
-    iconSize: 16,
+    iconSize: normaliseFont(16), // Should match detailText.fontSize.
     iconColor: colors.greyedOutIcon,
   },
   view: {
