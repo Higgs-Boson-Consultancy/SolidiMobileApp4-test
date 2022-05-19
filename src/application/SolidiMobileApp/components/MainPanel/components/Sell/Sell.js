@@ -129,7 +129,6 @@ let Sell = () => {
       setItemsQA(generateQuoteAssetItems());
       setBalanceBA(appState.getBalance(assetBA));
       calculateVolumeBA();
-      setErrorMessage('');
     } catch(err) {
       let msg = `Sell.setup: Error = ${err}`;
       console.log(msg);
@@ -189,6 +188,10 @@ let Sell = () => {
         log(`No change in price (${price}). Stopping recalculation of volumeBA.`);
         return;
       }
+      if (_.isNil(price)) {
+        setErrorMessage('Cannot load prices: Empty market');
+        return;
+      }
       let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
       let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
       // If new value of volumeBA is different, update it.
@@ -198,6 +201,7 @@ let Sell = () => {
       ) {
         log("New base asset volume: " + newVolumeBA);
         setVolumeBA(newVolumeBA);
+        setErrorMessage('');
       }
     }
   }
@@ -230,11 +234,16 @@ let Sell = () => {
         setVolumeQA('[loading]');
         return;
       }
+      if (_.isNil(price)) {
+        setErrorMessage('Cannot load prices: Empty market');
+        return;
+      }
       let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
       let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
       if (Big(newVolumeQA) !== Big(checkVolumeQA)) {
         log("New quote asset volume: " + newVolumeQA);
         setVolumeQA(newVolumeQA);
+        setErrorMessage('');
       }
     }
   }
@@ -299,7 +308,10 @@ let Sell = () => {
     let price = appState.getPrice(market);
     log(`Market price for ${market} market = ${price}`);
     let dp = appState.getAssetInfo(assetQA).decimalPlaces;
-    let priceString = Big(price).toFixed(dp);
+    let priceString = '[loading]';
+    if (misc.isNumericString((price))) {
+      priceString = Big(price).toFixed(dp);
+    }
     let displayStringBA = appState.getAssetInfo(assetBA).displaySymbol;
     let displayStringQA = appState.getAssetInfo(assetQA).displaySymbol;
     let description = `1 ${displayStringBA} = ${priceString} ${displayStringQA}`;
