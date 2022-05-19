@@ -1,12 +1,13 @@
 // React imports
 import React, { useContext } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 // Internal imports
 import { AppStateContext } from 'src/application/data';
 import { colors, mainPanelStates } from 'src/constants';
 import { Button, ImageButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import ImageLookup from 'src/images';
 
 
 
@@ -16,6 +17,8 @@ const Header = (props) => {
   let {style: styleArg} = props;
 
   let appState = useContext(AppStateContext);
+
+  let imageName = 'solidi';
 
   let pinMode = appState.mainPanelState === 'PIN';
 
@@ -58,10 +61,7 @@ const Header = (props) => {
         {includeBackButton ? backButton : blankBackButton}
       </View>
       <View style={styles.buttonWrapper}>
-        <ImageButton imageName='solidi'
-          styles={styleLogoButton}
-          onPress={ () => { changeState('Test') } }
-        />
+        <Image source={ImageLookup[imageName]} style={styles.logo} />
       </View>
       <View style={styles.buttonWrapper}>
         {/*
@@ -88,6 +88,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: 'center',
   },
+  logo: {
+    flex: 1,
+    width: '70%',
+    height: null,
+    resizeMode: 'contain',
+  },
   buttonWrapper: {
     width: '25%',
   },
@@ -103,13 +109,6 @@ const styleBackButton = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normaliseFont(18),
   }
-});
-
-
-const styleLogoButton = StyleSheet.create({
-  image: {
-    width: '60%',
-  },
 });
 
 
