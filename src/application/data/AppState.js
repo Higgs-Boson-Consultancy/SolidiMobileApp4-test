@@ -253,7 +253,9 @@ class AppStateProvider extends Component {
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       let keyNames = 'apiKey, apiSecret'.split(', ');
-      misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
+      if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
+        throw Error('Invalid username or password.')
+      }
       let {apiKey, apiSecret} = data;
       // Store these access values in the global state.
       _.assign(apiClient, {apiKey, apiSecret});
@@ -434,7 +436,11 @@ class AppStateProvider extends Component {
 
     this.authenticateUser = () => {
       // If login credentials (email and password) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
-      if (! this.state.user.loginCredentialsFound) return this.state.changeState('Authenticate');
+      if (! this.state.user.loginCredentialsFound) {
+        if (! this.state.user.isAuthenticated) {
+          return this.state.changeState('Authenticate');
+        }
+      }
       // If login credentials aren't present in memory, go to Login.
       // Note: The PIN is kept in storage even if the user logs out.
       if (! this.state.user.email) return this.state.changeState('Login');
