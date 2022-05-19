@@ -100,6 +100,7 @@ let PIN = () => {
         console.error(msg);
       }
       let keyNames = 'apiKey, apiSecret'.split(', ');
+      // Future: Display an error message on the screen instead of throwing an error.
       misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
       let {apiKey, apiSecret} = data;
       // Store these access values in the global state.
