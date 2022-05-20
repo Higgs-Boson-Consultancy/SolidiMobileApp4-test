@@ -12,7 +12,7 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 // Logger
 import logger from 'src/util/logger';
-let logger2 = logger.extend('Login');
+let logger2 = logger.extend('StandardButton');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
