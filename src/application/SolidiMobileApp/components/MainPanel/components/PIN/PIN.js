@@ -57,17 +57,17 @@ let PIN = () => {
   let _finishProcess = async () => {
     let pinStored = await hasUserSetPinCode(appState.appName);
     if (! pinStored) {
-      log('pin not stored');
-      // Future: Throw error ? In both "enter" and "choose", it should be stored by now.
+      log('PIN not stored');
+      // Future: Throw error ? In both "enter" and "choose", it should have been stored by now.
     }
     // Load PIN from the keychain.
     let credentials = await Keychain.getInternetCredentials(appState.appName);
     let pin = credentials.password;
-    if (pinStatus) {
-      log(`PIN stored: ${pin}`);
-    }
     // Store PIN in global state.
     appState.user.pin = pin;
+    if (pinStored) {
+      log(`PIN stored: ${pin}`);
+    }
     // If the user has entered a PIN, then use it to look up the user's email and password.
     if (pinStatus === 'enter') {
       let loginCredentials = await Keychain.getInternetCredentials(appState.domain);
