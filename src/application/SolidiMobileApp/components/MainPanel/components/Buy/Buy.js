@@ -171,8 +171,8 @@ let Buy = () => {
       ) {
         log("New base asset volume: " + newVolumeBA);
         setVolumeBA(newVolumeBA);
-        setErrorMessage('');
       }
+      setErrorMessage('');
     }
   }
 
