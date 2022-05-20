@@ -3,6 +3,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Platform, StyleSheet, TouchableNativeFeedback, TouchableOpacity } from 'react-native';
 
+// Other imports
+import _ from 'lodash';
+
 // Internal imports
 import { StyledView, StyledText } from './components';
 import { colors } from 'src/constants';
@@ -26,10 +29,16 @@ const Button = ({
     android: TouchableNativeFeedback,
   });
 
-  let styleView = styles.view;
-
-  if (disabled) {
-    styleView = StyleSheet.flatten([styles.view, styleDisabled]);
+  let styleView = defaultStyleView;
+  if (! _.isNil(styles)) {
+    // Add some default styling to the View.
+    if (styles.view) {
+      styleView = StyleSheet.flatten([styleView, styles.view]);
+      // Alter styling of a disabled button.
+      if (disabled) {
+        styleView = StyleSheet.flatten([styleView, styleViewDisabled]);
+      }
+    }
   }
 
   return (
@@ -50,7 +59,14 @@ const Button = ({
 };
 
 
-let styleDisabled = StyleSheet.create({
+let defaultStyleView = StyleSheet.create({
+  // Elevation is set to 0 to avoid a slight drop-shadow on the ImageButton's internal View on Android.
+  elevation: 0,
+  backgroundColor: colors.defaultBackground,
+});
+
+
+let styleViewDisabled = StyleSheet.create({
   backgroundColor: colors.greyedOutIcon,
 });
 
