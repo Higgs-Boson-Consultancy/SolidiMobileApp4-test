@@ -821,8 +821,8 @@ let styles = StyleSheet.create({
 
 let styleMaxButton = StyleSheet.create({
   text: {
-    padding: 0,
-    margin: 0,
+    paddingVertical: 0,
+    marginVertical: 0,
   },
 });
 
