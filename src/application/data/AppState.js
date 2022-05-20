@@ -1090,7 +1090,6 @@ class AppStateProvider extends Component {
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
       let data = await this.state.privateMethod({
-        functionName: 'updateDefaultAccountForAsset',
         apiRoute: `default_account/${asset}/update`,
         params,
         functionName: funcName,
