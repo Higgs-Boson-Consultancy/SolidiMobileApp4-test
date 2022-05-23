@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useState, useEffect } from 'react';
-import { Image, Text, TextInput, StyleSheet, View } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 // Other imports
@@ -365,11 +365,11 @@ let Buy = () => {
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
-      <View>
-
       <View style={styles.heading}>
         <Text style={styles.headingText}>Buy</Text>
       </View>
+
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       <Text style={styles.descriptionText}>I want to spend:</Text>
 
@@ -380,6 +380,7 @@ let Buy = () => {
           value={volumeQA}
         />
         <DropDownPicker
+          listMode="SCROLLVIEW"
           placeholder={appState.getAssetInfo(assetQA).displayString}
           style={styles.quoteAsset}
           containerStyle={styles.quoteAssetContainer}
@@ -406,6 +407,7 @@ let Buy = () => {
           value={volumeBA}
         />
         <DropDownPicker
+          listMode="SCROLLVIEW"
           placeholder={appState.getAssetInfo(assetBA).displayString}
           style={styles.baseAsset}
           containerStyle={styles.baseAssetContainer}
@@ -442,7 +444,7 @@ let Buy = () => {
 
       {newAPIVersion && upgradeRequired()}
 
-      </View>
+      </ScrollView>
 
     </View>
     </View>
