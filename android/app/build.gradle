@@ -227,6 +227,8 @@ task copyDownloadableDepsToLibs(type: Copy) {
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
 
 // FontAwesome icons
+// Source:
+// https://github.com/oblador/react-native-vector-icons#android
 project.ext.vectoricons = [
     iconFontNames: [ 'FontAwesome.ttf' ] // Name of the font files you want to copy
 ]
