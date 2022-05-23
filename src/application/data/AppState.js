@@ -39,7 +39,7 @@ let jd = JSON.stringify;
 let domain = 'solidi.co';
 let appName = 'SolidiMobileApp';
 let appAPIVersion = '1';
-let autoLoginOnDev = false;
+let autoLoginOnDev = true;
 
 // Load access information for dev tier.
 let devBasicAuth = (appTier == 'dev') ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
