@@ -98,6 +98,7 @@ let PersonalDetails = () => {
 
   let setup = async () => {
     try {
+      await appState.generalSetup();
       await appState.loadPersonalDetailOptions();
       await appState.loadInitialStuffAboutUser();
       await appState.loadCountries();
