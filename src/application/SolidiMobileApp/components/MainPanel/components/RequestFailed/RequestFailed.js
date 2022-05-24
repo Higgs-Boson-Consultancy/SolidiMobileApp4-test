@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -30,6 +30,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let RequestFailed = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   // Initial setup.
   useEffect( () => {
@@ -41,9 +42,8 @@ let RequestFailed = () => {
     try {
       /* Example:
       await appState.loadInitialStuffAboutUser();
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      triggerRender(renderCount+1);
       */
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `RequestFailed.setup: Error = ${err}`;
       console.log(msg);
@@ -58,6 +58,8 @@ let RequestFailed = () => {
       <View style={[styles.heading, styles.heading1]}>
         <Text style={styles.headingText}>Request failed</Text>
       </View>
+
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       <View style={styles.spacer1}></View>
 
@@ -74,6 +76,8 @@ let RequestFailed = () => {
           styles={styleContactUsButton}
         />
       </View>
+
+      </ScrollView>
 
     </View>
     </View>
@@ -92,6 +96,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
