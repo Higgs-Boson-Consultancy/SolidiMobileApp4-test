@@ -33,6 +33,7 @@ The Login credentials (username and password) are stored under the domain e.g. "
 let Login = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let [errorMessage, setErrorMessage] = useState(undefined);
 
@@ -55,6 +56,7 @@ let Login = () => {
       }
       // Log in.
       await appState.login({email, password});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       // Change state.
       if (! appState.user.pin) {
         return appState.changeState('PIN', 'choose');
