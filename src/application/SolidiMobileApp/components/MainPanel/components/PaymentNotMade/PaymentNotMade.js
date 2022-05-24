@@ -32,6 +32,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let PaymentNotMade = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default paymentNotReceived'.split(' ');
@@ -39,10 +40,10 @@ let PaymentNotMade = () => {
 
   // Change some values, depending on the pageName.
   let headingText = 'Payment not made';
-  let timePeriod = '30 minutes'
+  let timePeriod = '30 minutes';
   if (pageName == 'paymentNotReceived') {
     headingText = 'Payment not received';
-    timePeriod = '2 hours'
+    timePeriod = '2 hours';
   }
 
   // Testing (for if we load this page directly).
