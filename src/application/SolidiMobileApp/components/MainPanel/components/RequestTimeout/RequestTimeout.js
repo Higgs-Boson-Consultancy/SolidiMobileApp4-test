@@ -24,6 +24,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let RequestTimeout = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   // Set up timer.
   let timeToWaitSeconds = 60;
@@ -51,6 +52,24 @@ let RequestTimeout = () => {
   let tryAgain = () => {
     appState.loadStashedState();
   }
+
+
+  // Initial setup.
+  useEffect( () => {
+    setup();
+  }, []); // Pass empty array so that this only runs once on mount.
+
+
+  let setup = async () => {
+    try {
+      //await appState.generalSetup();
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    } catch(err) {
+      let msg = `RequestTimeout.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
 
   return (
     <View style={styles.panelContainer}>
