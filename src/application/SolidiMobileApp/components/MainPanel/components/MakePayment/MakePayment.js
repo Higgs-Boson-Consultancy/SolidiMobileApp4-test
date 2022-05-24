@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Progress from 'react-native-progress';
 
@@ -125,11 +125,11 @@ let MakePayment = () => {
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
-      {/*
       <View style={[styles.heading, styles.heading1]}>
         <Text style={styles.headingText}>Make payment</Text>
       </View>
-      */}
+
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       <View style={styles.instructionsSection}>
         <View style={styles.instructionItem}>
@@ -221,6 +221,8 @@ let MakePayment = () => {
         </View>
       </View>
 
+      </ScrollView>
+
     </View>
     </View>
 
@@ -239,6 +241,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   instructionsSection: {
     //paddingTop: scaledHeight(20),
@@ -248,8 +252,8 @@ let styles = StyleSheet.create({
     marginBottom: scaledHeight(5),
   },
   timerProgressBar: {
-    marginTop: scaledHeight(15),
-    marginBottom: scaledHeight(20),
+    marginTop: scaledHeight(5),
+    marginBottom: scaledHeight(10),
     flexDirection: 'row',
     justifyContent: 'center',
     width: '100%',
@@ -259,6 +263,7 @@ let styles = StyleSheet.create({
   },
   heading1: {
     marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(10),
   },
   heading2: {
     marginTop: scaledHeight(20),
