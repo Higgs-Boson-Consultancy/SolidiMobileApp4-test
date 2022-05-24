@@ -253,8 +253,9 @@ class AppStateProvider extends Component {
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       let keyNames = 'apiKey, apiSecret'.split(', ');
+      // Future: if error is "cannot_parse_data", return a different error.
       if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
-        throw Error('Invalid username or password.')
+        throw Error('Invalid username or password.');
       }
       let {apiKey, apiSecret} = data;
       // Store these access values in the global state.
