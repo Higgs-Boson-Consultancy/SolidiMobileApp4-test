@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Linking, Text, StyleSheet, View } from 'react-native';
+import { Linking, Text, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -25,6 +25,7 @@ import misc from 'src/util/misc';
 let ContactUs = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
@@ -47,6 +48,7 @@ let ContactUs = () => {
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false); // Causes re-render.
       */
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `ContactUs.setup: Error = ${err}`;
       console.log(msg);
@@ -62,6 +64,8 @@ let ContactUs = () => {
         <Text style={styles.headingText}>Contact Us</Text>
       </View>
 
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+
       <Text style={styles.bold}>Please tap the button below to visit the Contact Us page on our website.</Text>
 
       <View style={styles.buttonSection}>
@@ -76,6 +80,8 @@ let ContactUs = () => {
       {`\u2022  `}Website: {domain}{'\n'}
       {`\u2022  `}Contact Us: {contactURL}
       </Text>
+
+      </ScrollView>
 
     </View>
     </View>
@@ -94,6 +100,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
