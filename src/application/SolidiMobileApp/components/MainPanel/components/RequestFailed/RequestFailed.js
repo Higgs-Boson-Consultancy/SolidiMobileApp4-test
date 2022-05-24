@@ -41,7 +41,7 @@ let RequestFailed = () => {
   let setup = async () => {
     try {
       /* Example:
-      await appState.loadInitialStuffAboutUser();
+      await appState.generalSetup();
       */
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
