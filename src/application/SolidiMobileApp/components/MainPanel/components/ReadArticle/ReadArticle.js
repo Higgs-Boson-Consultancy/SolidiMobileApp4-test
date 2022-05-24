@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Text, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -54,7 +54,7 @@ let ReadArticle = () => {
         <Text style={styles.headingText}>{headingText}</Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       {/* Future: For long articles, add a scrollToEnd button at the top.
       { longArticles.includes(pageName) && scrollToEndButton() }
@@ -98,7 +98,7 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
-  scrollView: {
+  mainScrollView: {
     //borderWidth: 1,
     height: '80%',
   },
