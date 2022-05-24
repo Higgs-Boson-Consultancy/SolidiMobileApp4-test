@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Image, Text, StyleSheet, View } from 'react-native';
+import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 
 // Other imports
@@ -348,6 +348,8 @@ let Receive = () => {
         <Text style={styles.headingText}>Receive</Text>
       </View>
 
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+
       <View style={styles.description1}>
         <Text style={styles.descriptionText}>I want to receive:</Text>
       </View>
@@ -355,6 +357,7 @@ let Receive = () => {
       <View style={styles.chosenAssetWrapper}>
         <View style={styles.chosenAssetWrapper2}>
         <DropDownPicker
+          listMode="SCROLLVIEW"
           placeholder={appState.getAssetInfo(assetCA).displayString}
           style={styles.chosenAssetDropdown}
           containerStyle={styles.chosenAssetDropdownContainer}
@@ -381,6 +384,7 @@ let Receive = () => {
         {getDepositDetails()}
       </View>
 
+      </ScrollView>
 
     </View>
     </View>
@@ -399,6 +403,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     //paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
