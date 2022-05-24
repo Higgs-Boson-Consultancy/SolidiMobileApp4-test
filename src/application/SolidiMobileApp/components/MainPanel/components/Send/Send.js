@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Image, Text, TextInput, StyleSheet, View } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -415,6 +415,7 @@ let Send = () => {
     return (
       <View style={styles.priorityWrapper}>
         <DropDownPicker
+          listMode="SCROLLVIEW"
           placeholder={createPriorityLabel('low')}
           style={styles.priorityDropdown}
           containerStyle={styles.priorityDropdownContainer}
@@ -556,6 +557,8 @@ let Send = () => {
         <Text style={styles.headingText}>Send</Text>
       </View>
 
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+
       <View style={styles.description1}>
         <View>
           <Text style={styles.descriptionText}>I want to send:</Text>
@@ -583,6 +586,7 @@ let Send = () => {
           value={volumeSA}
         />
         <DropDownPicker
+          listMode="SCROLLVIEW"
           placeholder={appState.getAssetInfo(assetSA).displayString}
           style={styles.storedAssetDropdown}
           containerStyle={styles.storedAssetDropdownContainer}
@@ -645,6 +649,8 @@ let Send = () => {
         }
       </View>
 
+      </ScrollView>
+
     </View>
     </View>
   )
@@ -662,6 +668,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     //paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
