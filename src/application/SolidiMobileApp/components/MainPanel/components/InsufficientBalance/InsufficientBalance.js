@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -31,6 +31,7 @@ let InsufficientBalance = () => {
   - trying to make a withdrawal that is too large.
   */
   let pageName = appState.pageName;
+  //if (pageName == 'default') pageName = 'buy'; // For testing.
   let permittedPageNames = 'buy sell withdraw'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'InsufficientBalance');
 
@@ -104,6 +105,8 @@ let InsufficientBalance = () => {
       <View style={[styles.heading, styles.heading1]}>
         <Text style={styles.headingText}>Insufficient balance</Text>
       </View>
+
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       <Text>Order details: {getOrderDetails()}</Text>
 
@@ -197,6 +200,7 @@ let InsufficientBalance = () => {
 
       }
 
+      </ScrollView>
 
     </View>
     </View>
@@ -215,6 +219,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
