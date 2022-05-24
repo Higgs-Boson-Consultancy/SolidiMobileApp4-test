@@ -167,6 +167,7 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(15),
     width: '100%',
     height: '100%',
+    //borderWidth: 1, //testing
   },
   heading: {
     alignItems: 'center',
