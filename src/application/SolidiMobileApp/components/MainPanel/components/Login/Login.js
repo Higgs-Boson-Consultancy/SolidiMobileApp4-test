@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useState } from 'react';
-import { Text, TextInput, StyleSheet, View } from 'react-native';
+import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 import * as Keychain from 'react-native-keychain';
 
 // Other imports
@@ -79,11 +79,11 @@ let Login = () => {
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
-      <View>
-
       <View style={styles.heading}>
         <Text style={styles.headingText}>Login</Text>
       </View>
+
+      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
 
       {errorMessage &&
         <View style={styles.errorWrapper}>
@@ -133,7 +133,7 @@ let Login = () => {
         />
       </View>
 
-      </View>
+      </ScrollView>
 
     </View>
     </View>
@@ -153,6 +153,8 @@ let styles = StyleSheet.create({
   panelSubContainer: {
     paddingTop: scaledHeight(10),
     //paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
   },
   heading: {
     alignItems: 'center',
