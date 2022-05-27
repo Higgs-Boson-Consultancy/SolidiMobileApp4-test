@@ -44,7 +44,8 @@ let Register = () => {
 
   // Settings
   let basicAuth = '';
-  if (appState.appTier == 'dev') {
+  let basicAuthTiers = 'dev stag'.split(' ');
+  if (basicAuthTiers.includes(appState.appTier)) {
     // A dev Solidi instance is behind a basic authentication barrier.
     let username = appState.devBasicAuth.username;
     let password = appState.devBasicAuth.password;

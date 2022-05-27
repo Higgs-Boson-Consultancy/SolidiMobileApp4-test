@@ -18,7 +18,7 @@ import _ from 'lodash';
 import { logger, consoleTransport } from "react-native-logs";
 
 // Internal imports
-import appTier from 'src/constants/appTier';
+import appTier from 'src/application/appTier';
 
 
 
@@ -35,7 +35,9 @@ let extensionColors = {
 
 // Build logger.
 
-let severityLevel = (appTier === 'dev') ? 'debug' : 'error';
+let debugTiers = 'dev stag'.split(' ');
+
+let severityLevel = (debugTiers.includes(appTier)) ? 'debug' : 'error';
 
 const defaultConfig = {
   levels: {
