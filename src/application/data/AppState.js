@@ -24,7 +24,7 @@ import { mainPanelStates, footerButtonList } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
-import appTier from 'src/constants/appTier';
+import appTier from 'src/application/appTier';
 import ImageLookup from 'src/images';
 
 // Logger
@@ -36,13 +36,21 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let jd = JSON.stringify;
 
 // Settings
-let domain = 'solidi.co';
+let domains = {
+  dev: 't3.solidi.co',
+  stag: 't10.solidi.co',
+  prod: 'solidi.co',
+}
+if (! _.has(domains, appTier)) throw new Error(`Unrecognised app tier: ${appTier}`);
+let domain = domains[appTier];
+log(`domain: ${domain}`);
 let appName = 'SolidiMobileApp';
 let appAPIVersion = '1';
-let autoLoginOnDev = true;
+let autoLoginOnDev = false;
 
 // Load access information for dev tier.
-let devBasicAuth = (appTier == 'dev') ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
+let basicAuthTiers = 'dev stag'.split(' ');
+let devBasicAuth = (basicAuthTiers.includes(appTier)) ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
 
 
 
@@ -211,9 +219,6 @@ class AppStateProvider extends Component {
     }
 
     this.generalSetup = async () => {
-      if (this.state.appTier == 'dev') {
-        this.state.domain = 't3.solidi.co';
-      }
       // Create public API client.
       if (! this.state.apiClient) {
         let {userAgent, domain} = this.state;
