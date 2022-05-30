@@ -536,6 +536,7 @@ class AppStateProvider extends Component {
       await Keychain.resetInternetCredentials(this.state.domain);
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
+      this.state.user.loginCredentialsFound = false;
     }
 
     this.lockApp = () => {
