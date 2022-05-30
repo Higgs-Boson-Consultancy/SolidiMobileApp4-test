@@ -418,7 +418,7 @@ class AppStateProvider extends Component {
           // For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
           if (! _.isString(error)) error = JSON.stringify(error);
-          msg += ' ' + String(error);
+          msg += ' Error = ' + String(error);
           this.state.switchToErrorState({message:msg});
           return 'DisplayedError';
         }
@@ -1222,6 +1222,13 @@ class AppStateProvider extends Component {
   "market": "BTC/GBP",
   "quoteAssetVolume": "11.00",
   "result": "PRICE_CHANGE"
+}
+
+      Example result if the address check failed during registration:
+{
+  "result": "error",
+  "details": "ID required",
+  "tradeids": []
 }
 
       Example error:
