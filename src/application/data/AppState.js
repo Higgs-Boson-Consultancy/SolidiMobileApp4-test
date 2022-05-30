@@ -46,7 +46,11 @@ let domain = domains[appTier];
 log(`domain: ${domain}`);
 let appName = 'SolidiMobileApp';
 let appAPIVersion = '1';
-let autoLoginOnDev = false;
+let autoLoginOnDevAndStag = false;
+let autoLoginCredentials = {
+  email: 'johnqfish1@foo.com',
+  password: 'bigFish6',
+}
 
 // Load access information for dev tier.
 let basicAuthTiers = 'dev stag'.split(' ');
@@ -242,8 +246,11 @@ class AppStateProvider extends Component {
         this.state.assetIconsLoaded = true;
       }
       // Login to a specific user if we're developing.
-      if (this.state.appTier == 'dev' && autoLoginOnDev) {
-        await this.state.login({email: 'johnqfish22@foo.com', password: 'bigFish6'});
+      if (basicAuthTiers.includes(this.state.appTier) && autoLoginOnDevAndStag) {
+        await this.state.login({
+          email: autoLoginCredentials['email'],
+          password: autoLoginCredentials['password']
+        });
       }
     }
 
