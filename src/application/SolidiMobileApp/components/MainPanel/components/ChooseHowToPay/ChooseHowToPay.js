@@ -55,8 +55,9 @@ let ChooseHowToPay = () => {
 
   // Misc
   let refScrollView = useRef();
-  let [sendOrderMessage, setSendOrderMessage] = useState('');
   let [priceChangeMessage, setPriceChangeMessage] = useState('');
+  let [errorMessage, setErrorMessage] = useState('');
+  let [sendOrderMessage, setSendOrderMessage] = useState('');
 
   // Testing
   if (appState.panels.buy.volumeQA == '0') {
@@ -134,7 +135,9 @@ let ChooseHowToPay = () => {
   let payDirectly = async () => {
     let output = await appState.sendBuyOrder({paymentMethod: 'solidi'});
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    if (_.has(output, 'result')) {
+    if (_.has(output, 'error')) {
+      setErrorMessage(misc.itemToString(output.error));
+    } else if (_.has(output, 'result')) {
       let result = output.result;
       if (result == 'NO_ACTIVE_ORDER') {
         setSendOrderMessage('No active order.');
@@ -167,7 +170,9 @@ let ChooseHowToPay = () => {
     // Call to the server and instruct it to pay for the order with the user's balance.
     let output = await appState.sendBuyOrder({paymentMethod: 'balance'});
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    if (_.has(output, 'result')) {
+    if (_.has(output, 'error')) {
+      setErrorMessage(misc.itemToString(output.error));
+    } else if (_.has(output, 'result')) {
       let result = output.result;
       if (result == 'NO_ACTIVE_ORDER') {
         setSendOrderMessage('No active order.');
@@ -299,6 +304,10 @@ let ChooseHowToPay = () => {
           <Text style={styles.priceChangeMessageText}>{priceChangeMessage}</Text>
         </View>
 
+        <View style={styles.errorMessage}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+
         <View style={styles.confirmButtonWrapper}>
           <StandardButton title={"Confirm & Pay"}
             onPress={ confirmPaymentChoice }
@@ -412,6 +421,13 @@ let styles = StyleSheet.create({
   priceChangeMessageText: {
     fontSize: normaliseFont(16),
     fontWeight: 'bold',
+    color: 'red',
+  },
+  errorMessage: {
+    //borderWidth: 1, //testing
+    marginTop: scaledHeight(20),
+  },
+  errorMessageText: {
     color: 'red',
   },
   sendOrderMessage: {
