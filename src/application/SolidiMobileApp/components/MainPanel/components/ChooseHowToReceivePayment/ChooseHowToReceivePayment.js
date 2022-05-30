@@ -61,8 +61,9 @@ let ChooseHowToReceivePayment = () => {
 
   // Misc
   let refScrollView = useRef();
-  let [sendOrderMessage, setSendOrderMessage] = useState('');
   let [priceChangeMessage, setPriceChangeMessage] = useState('');
+  let [errorMessage, setErrorMessage] = useState('');
+  let [sendOrderMessage, setSendOrderMessage] = useState('');
 
   // Testing
   if (appState.panels.sell.volumeQA == '0') {
@@ -162,7 +163,9 @@ let ChooseHowToReceivePayment = () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'solidi'});
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
-    if (_.has(output, 'result')) {
+    if (_.has(output, 'error')) {
+      setErrorMessage(misc.itemToString(output.error));
+    } else if (_.has(output, 'result')) {
       let result = output.result;
       if (result == 'NO_ACTIVE_ORDER') {
         setSendOrderMessage('No active order.');
@@ -179,7 +182,9 @@ let ChooseHowToReceivePayment = () => {
     // We send the stored sell order.
     let output = await appState.sendSellOrder({paymentMethod: 'balance'});
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
-    if (_.has(output, 'result')) {
+    if (_.has(output, 'error')) {
+      setErrorMessage(misc.itemToString(output.error));
+    } else if (_.has(output, 'result')) {
       let result = output.result;
       if (result == 'NO_ACTIVE_ORDER') {
         setSendOrderMessage('No active order.');
@@ -313,6 +318,10 @@ let ChooseHowToReceivePayment = () => {
           <Text style={styles.priceChangeMessageText}>{priceChangeMessage}</Text>
         </View>
 
+        <View style={styles.errorMessage}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+
         <View style={styles.confirmButtonWrapper}>
           <StandardButton title="Confirm & Sell"
             onPress={ confirmReceivePaymentChoice }
@@ -420,6 +429,13 @@ let styles = StyleSheet.create({
   priceChangeMessageText: {
     fontSize: normaliseFont(16),
     fontWeight: 'bold',
+    color: 'red',
+  },
+  errorMessage: {
+    //borderWidth: 1, //testing
+    marginTop: scaledHeight(20),
+  },
+  errorMessageText: {
     color: 'red',
   },
   sendOrderMessage: {
