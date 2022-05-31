@@ -27,14 +27,6 @@ import logger from 'src/util/logger';
 let logger2 = logger.extend('PIN');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
-/* Notes
-
-The PIN is stored in the Keychain under the app name e.g. "SolidiMobileApp".
-
-The Login credentials (username and password) are stored under the domain e.g. "solidi.co".
-
-*/
-
 
 
 
@@ -55,33 +47,38 @@ let PIN = () => {
   //log({pinStatus});
 
   let _finishProcess = async () => {
-    let pinStored = await hasUserSetPinCode(appState.appName);
+    let pinStored = await hasUserSetPinCode(appState.pinStorageKey);
     if (! pinStored) {
       log('PIN not stored');
-      // Future: Throw error ? In both "enter" and "choose", it should have been stored by now.
+      // For both "enter" and "choose", the PIN should have been stored in the Keychain by now.
+      // If not, however, switch to an error state.
+      let message = `For an unknown reason, the PIN is not stored in the Keychain.`;
+      this.state.switchToErrorState({message});
+      return;
     }
     // Load PIN from the keychain.
-    let credentials = await Keychain.getInternetCredentials(appState.appName);
+    let credentials = await Keychain.getInternetCredentials(appState.pinStorageKey);
     let pin = credentials.password;
     // Store PIN in global state.
     appState.user.pin = pin;
     if (pinStored) {
-      log(`PIN stored: ${pin}`);
+      log(`PIN found in Keychain: ${pin}`);
     }
-    // If the user has entered a PIN, then use it to look up the user's email and password.
+    // If the user has just entered the PIN successfully, log them in.
     if (pinStatus === 'enter') {
-      let loginCredentials = await Keychain.getInternetCredentials(appState.domain);
+      // Look up the user's email and password using the login credentials key.
+      let loginCredentials = await Keychain.getInternetCredentials(appState.loginCredentialsStorageKey);
       // Example result:
-      // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
+      // {"username":"johnqfish@foo.com","password":"bigFish6","storage":"keychain","server":"LOGIN_dev_SolidiMobileApp_t3.solidi.co"}
       /* Issue:
-      - The user may have previously logged out, in which case the email and password have been deleted.
+      - The user may have previously logged out, in which case the email and password have been deleted from the Keychain.
       In this case:
       - Keychain.getInternetCredentials will return false.
       - We need to stop here and switch to Login page.
       */
       if (! loginCredentials) return appState.changeState('Login');
       let {username: email, password} = loginCredentials;
-      let msg = `loginCredentials (email=${email}, password=${password}) loaded from keychain under ${appState.domain})`;
+      let msg = `loginCredentials (email=${email}, password=${password}) loaded from Keychain under ${appState.loginCredentialsStorageKey})`;
       log(msg);
       // Use the email and password to load the API Key and Secret from the server.
       let {userAgent, domain} = appState;
@@ -92,16 +89,21 @@ let PIN = () => {
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       if (data == 'DisplayedError') return;
       /* Issue:
-      - The email and password may have changed (e.g. via the web application).
+      - The email and password may have changed (e.g. by changes made via the web application).
       In this case, we'll get a particular error. Need to catch it and switch to Login page.
       */
       if (data.error) {
         let msg = `Error in PIN._finishProcess: ${misc.jd(data)}`
-        console.error(msg);
+        console.log(msg);
+        appState.changeState('Login');
+        return;
       }
       let keyNames = 'apiKey, apiSecret'.split(', ');
-      // Future: Display an error message on the screen instead of throwing an error.
-      misc.confirmExactKeys('data', data, keyNames, 'submitLoginRequest');
+      if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
+        let message = `Response from server does not have exactly these keyNames: ${keyNames}. Instead, it has: ${_.keys(data)}.`;
+        this.state.switchToErrorState({message});
+        return;
+      }
       let {apiKey, apiSecret} = data;
       // Store these access values in the global state.
       _.assign(apiClient, {apiKey, apiSecret});
@@ -111,7 +113,7 @@ let PIN = () => {
       // Load user stuff.
       await appState.loadInitialStuffAboutUser();
     }
-    // If we've entered (or chosen) a PIN, and the app was locked, set appLocked to false.
+    // If we've entered / chosen a PIN, and the app was locked, set appLocked to false.
     appState.appLocked = false;
     // Change state.
     if (appState.panels.buy.activeOrder) {
@@ -129,7 +131,7 @@ let PIN = () => {
       <PINCode
         status = {pinStatus}
         // Note: The PINCode component uses the pinCodeKeychainName to store a newly chosen PIN in the Keychain.
-        pinCodeKeychainName = {appState.appName}
+        pinCodeKeychainName = {appState.pinStorageKey}
         touchIDDisabled = {true}
         finishProcess = {() => _finishProcess()}
         delayBetweenAttempts = {0.3}

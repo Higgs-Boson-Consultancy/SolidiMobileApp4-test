@@ -56,6 +56,11 @@ let autoLoginCredentials = {
 let basicAuthTiers = 'dev stag'.split(' ');
 let devBasicAuth = (basicAuthTiers.includes(appTier)) ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
 
+// Keychain storage keys.
+// - We use multiple aspects of the app in the key so that there's no risk of a test version of the app interacting with the storage of the production version.
+let loginCredentialsStorageKey = `LOGIN_${appTier}_${appName}_${domain}`;
+let pinStorageKey = `PIN_${appTier}_${appName}_${domain}`;
+
 
 
 
@@ -276,8 +281,8 @@ class AppStateProvider extends Component {
       this.state.user.isAuthenticated = true;
       _.assign(this.state.user, {email, password});
       // Store the email and password in the secure keychain storage.
-      await Keychain.setInternetCredentials(this.state.domain, email, password);
-      let msg = `loginCredentials (email=${email}, password=${password}) stored in keychain under ${this.state.domain})`;
+      await Keychain.setInternetCredentials(this.state.loginCredentialsStorageKey, email, password);
+      let msg = `loginCredentials (email=${email}, password=${password}) stored in keychain with key = '${this.state.loginCredentialsStorageKey}')`;
       log(msg);
       // Load user stuff.
       await this.state.loadInitialStuffAboutUser();
@@ -497,7 +502,7 @@ class AppStateProvider extends Component {
       - This is async - there will be a slight delay while the data is retrieved.
       -- However: The user would have to be very fast indeed to click Buy on the initial BUY page before this completes.
       */
-      let credentials = await Keychain.getInternetCredentials(this.state.appName);
+      let credentials = await Keychain.getInternetCredentials(this.state.pinStorageKey);
       // Example result:
       // {"password": "1111", "server": "SolidiMobileApp", "storage": "keychain", "username": "SolidiMobileApp"}
       if (! credentials) {
@@ -505,7 +510,7 @@ class AppStateProvider extends Component {
       } else {
         let pin = credentials.password;
         this.state.user.pin = pin;
-        log(`PIN loaded: ${pin}`);
+        log(`PIN loaded from Keychain: ${pin}`);
       }
     }
 
@@ -516,7 +521,7 @@ class AppStateProvider extends Component {
       - This is async - there will be a slight delay while the data is retrieved.
       -- However: The user would have to be very fast indeed to click a button on the initial BUY page to change to a different state before this completes.
       */
-      let credentials = await Keychain.getInternetCredentials(this.state.domain);
+      let credentials = await Keychain.getInternetCredentials(this.state.loginCredentialsStorageKey);
       // Example result:
       // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
       if (credentials) {
@@ -530,10 +535,11 @@ class AppStateProvider extends Component {
     }
 
     this.logout = async () => {
+      // Note: We don't ever delete the PIN from app memory or from the keychain.
       // Delete user's email and password from memory and from keychain.
       this.state.user.email = '';
       this.state.user.password = '';
-      await Keychain.resetInternetCredentials(this.state.domain);
+      await Keychain.resetInternetCredentials(this.state.loginCredentialsStorageKey);
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
       this.state.user.loginCredentialsFound = false;
@@ -1531,7 +1537,10 @@ class AppStateProvider extends Component {
       appName,
       appTier,
       appAPIVersion,
+      basicAuthTiers,
       devBasicAuth,
+      loginCredentialsStorageKey,
+      pinStorageKey,
       userAgent: "Solidi Mobile App 4",
       apiVersionLoaded: false,
       assetsInfoLoaded: false,
