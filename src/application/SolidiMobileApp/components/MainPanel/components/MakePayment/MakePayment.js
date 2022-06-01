@@ -60,7 +60,7 @@ let MakePayment = () => {
   let solidiAccountName = detailsGBP.accountName;
   let solidiSortCode = detailsGBP.sortCode;
   let solidiAccountNumber = detailsGBP.accountNumber;
-  let reference = detailsGBP.reference;
+  let paymentReference = detailsGBP.reference;
 
 
   // Set up progress bar.
@@ -103,11 +103,11 @@ let MakePayment = () => {
 
   let copyToClipboard = async (x) => {
     Clipboard.setString(x);
-    /* For testing */
-    /*
-    let text = await Clipboard.getString();
-    log(`Copy text to clipboard: ${text}`);
-    */
+    let testing = false;
+    if (testing) {
+      let text = await Clipboard.getString();
+      log(`Copy text to clipboard: ${text}`);
+    }
   }
 
   let confirmPayment = async () => {
@@ -146,7 +146,7 @@ let MakePayment = () => {
         </View>
         <View style={styles.importantInfoBox}>
           <Text style={styles.importantInfoBoxText}>You must include this unique reference:</Text>
-          <Text style={styles.importantInfoBoxText}>{reference}</Text>
+          <Text style={styles.importantInfoBoxText}>{paymentReference}</Text>
         </View>
       </View>
 
@@ -202,7 +202,7 @@ let MakePayment = () => {
         <View style={styles.paymentDetailsLine}>
           <Text style={styles.paymentDetailText}>Reference</Text>
           <View style={styles.paymentDetailValue}>
-            <Text style={styles.paymentDetailText}>{reference}</Text>
+            <Text style={styles.paymentDetailText}>{paymentReference}</Text>
             <ImageButton imageName='clone' imageType='icon'
               styles={styleCopyButton}
               onPress={ () => { copyToClipboard(paymentReference) } }
