@@ -18,7 +18,7 @@ let Header = (props) => {
 
   let appState = useContext(AppStateContext);
 
-  let imageName = 'solidi';
+  let logoImageName = 'solidi_logo_landscape_black_1924x493';
 
   let pinMode = appState.mainPanelState === 'PIN';
 
@@ -61,7 +61,7 @@ let Header = (props) => {
         {includeBackButton ? backButton : blankBackButton}
       </View>
       <View style={styles.buttonWrapper}>
-        <Image source={ImageLookup[imageName]} style={styles.logo} />
+        <Image source={ImageLookup[logoImageName]} style={styles.logo} />
       </View>
       <View style={styles.buttonWrapper}>
         {/*
@@ -90,12 +90,15 @@ let styles = StyleSheet.create({
   },
   logo: {
     flex: 1,
-    width: '70%',
+    width: '100%',
     height: null,
     resizeMode: 'contain',
+    //borderWidth: 1, //testing
   },
   buttonWrapper: {
     width: '25%',
+    alignItems: 'center',
+    //borderWidth: 1, //testing
   },
 });
 
@@ -124,13 +127,6 @@ styleSettingsButtonSelected = StyleSheet.create({
     iconColor: colors.selectedIcon,
   },
 });
-
-
-let styleNotificationButton = StyleSheet.create({
-  text: {
-    fontSize: normaliseFont(18),
-  }
-})
 
 
 export default Header;

@@ -100,6 +100,7 @@ let defaultStyle = {
     // Elevation is set to 0 to avoid a slight drop-shadow on the ImageButton's internal View on Android.
     elevation: 0,
     backgroundColor: colors.defaultBackground,
+    //borderWidth: 1, //testing
   }
 }
 
