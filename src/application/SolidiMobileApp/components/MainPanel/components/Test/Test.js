@@ -1,15 +1,19 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Image, Text, StyleSheet, View } from 'react-native';
-import { StandardButton } from 'src/components/atomic';
+import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { mainPanelStates } from 'src/constants';
+import { mainPanelStates, colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-
-//foo
+import { Button, StandardButton, ImageButton } from 'src/components/atomic';
 import ImageLookup from 'src/images';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('Test');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
 
 
 let Test = () => {
@@ -26,7 +30,10 @@ let Test = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      await appState.loadPrices();
+      lj(appState.getDepositDetailsForAsset('GBP'))
+      await appState.loadDepositDetailsForAsset('GBP');
+      //await appState.loadPrices();
+      lj(appState.getDepositDetailsForAsset('GBP'))
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Test.setup: Error = ${err}`;
