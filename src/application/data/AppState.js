@@ -177,18 +177,6 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       return false;
     }
 
-    this.resetStateHistory = () => {
-      this.stateHistoryList = [];
-      if (! this.nonHistoryPanels.includes(this.initialMainPanelState)) {
-        this.state.stateHistoryList = [{
-          mainPanelState: this.initialMainPanelState,
-          pageName: this.initialPageName,
-        }];
-      }
-      let msg = `Reset state history to: ${jd(this.state.stateHistoryList)}`;
-      log(msg);
-    }
-
     this.stashCurrentState = () => {
       this.state.stashState({
         mainPanelState: this.state.mainPanelState,
@@ -211,6 +199,18 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
       log(msg);
       this.state.setMainPanelState(this.state.stashedState, stashed=true);
+    }
+
+    this.resetStateHistory = () => {
+      this.state.stateHistoryList = [];
+      if (! this.nonHistoryPanels.includes(this.initialMainPanelState)) {
+        this.state.stateHistoryList = [{
+          mainPanelState: this.initialMainPanelState,
+          pageName: this.initialPageName,
+        }];
+      }
+      let msg = `Reset state history to: ${jd(this.state.stateHistoryList)}`;
+      log(msg);
     }
 
     this.decrementStateHistory = () => {
@@ -1480,10 +1480,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
       stateHistoryList: [],
-      resetStateHistory: this.resetStateHistory,
       stashCurrentState: this.stashCurrentState,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
+      resetStateHistory: this.resetStateHistory,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
