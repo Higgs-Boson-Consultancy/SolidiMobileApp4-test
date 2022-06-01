@@ -80,7 +80,14 @@ class AppStateProvider extends Component {
     this.numberOfFooterButtonsToDisplay = 3;
     //this.standardPaddingTop = scaledHeight(80); // future ?
     //this.standardPaddingHorizontal = scaledWidth(15); // future ?
-    this.nonHistoryPanels = ['PIN'];
+
+    // nonHistoryPanels are not stored in the stateHistoryList.
+    // Pressing the Back button will not lead to them.
+    this.nonHistoryPanels = `
+PIN
+ChooseHowToPay MakePayment WaitingForPayment
+ChooseHowToReceivePayment
+`.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
 
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
@@ -92,7 +99,17 @@ class AppStateProvider extends Component {
 
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
-      log(`Set state to: ${JSON.stringify(newState)}`);
+      let msg = `Set state to: ${JSON.stringify(newState)}.`;
+      let logEntireStateHistory = false;
+      if (logEntireStateHistory) {
+        msg += '\nState history (most recent at the top):';
+        let n = this.state.stateHistoryList.length;
+        for (let i=n-1; i>=0; i--) {
+          let entry = this.state.stateHistoryList[i];
+          msg += `\n- ${jd(entry)}`;
+        }
+        log(msg);
+      }
       let {mainPanelState, pageName} = newState;
       if (_.isNil(mainPanelState)) {
         let errMsg = "Unknown mainPanelState: " + mainPanelState;
@@ -149,6 +166,18 @@ class AppStateProvider extends Component {
         return true;
       }
       return false;
+    }
+
+    this.resetStateHistory = () => {
+      this.stateHistoryList = [];
+      if (! this.nonHistoryPanels.includes(this.initialMainPanelState)) {
+        this.state.stateHistoryList = [{
+          mainPanelState: this.initialMainPanelState,
+          pageName: this.initialPageName,
+        }];
+      }
+      let msg = `Reset state history to: ${jd(this.state.stateHistoryList)}`;
+      log(msg);
     }
 
     this.stashCurrentState = () => {
@@ -543,6 +572,8 @@ class AppStateProvider extends Component {
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
       this.state.user.loginCredentialsFound = false;
+      // Re-initialise the state history.
+      this.state.resetStateHistory();
     }
 
     this.lockApp = () => {
@@ -1439,6 +1470,7 @@ class AppStateProvider extends Component {
       stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
       stateHistoryList: [],
+      resetStateHistory: this.resetStateHistory,
       stashCurrentState: this.stashCurrentState,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
@@ -1644,16 +1676,10 @@ class AppStateProvider extends Component {
       }
     }
 
-    // Save the initial state to the state history.
-    if (! this.nonHistoryPanels.includes(this.initialMainPanelState)) {
-      this.state.stateHistoryList = [{
-        mainPanelState: this.initialMainPanelState,
-        pageName: this.initialPageName,
-      }];
-    }
-
-
     // Call initial setup functions.
+
+    // Initialise the state history.
+    this.resetStateHistory();
 
     // Load data from keychain.
     this.loadPIN();
