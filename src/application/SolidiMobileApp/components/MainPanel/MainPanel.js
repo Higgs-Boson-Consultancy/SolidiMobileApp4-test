@@ -18,7 +18,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   ReadArticle, ChooseHowToReceivePayment, RequestTimeout,
   SaleSuccessful, PersonalDetails, ContactUs, BankAccounts,
   Security, RequestFailed, Error, SendSuccessful, Authenticate,
-  Register } from './components';
+  Register, SupportTools } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -98,6 +98,8 @@ let MainPanel = (props) => {
       return <Authenticate />
     } else if (appState.mainPanelState === 'Register') {
       return <Register />
+    } else if (appState.mainPanelState === 'SupportTools') {
+      return <SupportTools />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }

@@ -29,6 +29,7 @@ import Error from './Error/Error';
 import SendSuccessful from './SendSuccessful/SendSuccessful';
 import Authenticate from './Authenticate/Authenticate';
 import Register from './Register/Register';
+import SupportTools from './SupportTools/SupportTools';
 
 
 export {
@@ -63,4 +64,5 @@ export {
   SendSuccessful,
   Authenticate,
   Register,
+  SupportTools,
 };

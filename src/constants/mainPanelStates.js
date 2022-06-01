@@ -30,6 +30,7 @@ export const mainPanelStates = [
   'SendSuccessful',
   'Authenticate',
   'Register',
+  'SupportTools',
 ];
 
 export default mainPanelStates;
