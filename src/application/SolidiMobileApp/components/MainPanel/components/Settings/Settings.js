@@ -24,6 +24,32 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let Settings = () => {
 
   let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
+  let firstRender = misc.useFirstRender();
+  let stateChangeID = appState.stateChangeID;
+
+  let pageName = appState.pageName;
+  let permittedPageNames = 'default'.split(' ');
+  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Settings');
+
+
+  // Initial setup.
+  useEffect( () => {
+    setup();
+  }, []); // Pass empty array so that this only runs once on mount.
+
+
+  let setup = async () => {
+    try {
+      //await appState.loadBalances();
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      triggerRender(renderCount+1);
+    } catch(err) {
+      let msg = `Settings.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
 
   return (
     <View style={styles.panelContainer}>
@@ -60,6 +86,12 @@ let Settings = () => {
       <View style={styles.buttonWrapper}>
         <StandardButton title='Contact Us'
           onPress={ () => { appState.changeState('ContactUs'); } }
+        />
+      </View>
+
+      <View style={styles.buttonWrapper}>
+        <StandardButton title='Support Tools'
+          onPress={ () => { appState.changeState('SupportTools'); } }
         />
       </View>
 
@@ -109,13 +141,8 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   buttonWrapper: {
-    paddingRight: scaledWidth(40),
     marginVertical: scaledHeight(10),
     width: '100%',
-  },
-  alignRight: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
   },
 });
 
