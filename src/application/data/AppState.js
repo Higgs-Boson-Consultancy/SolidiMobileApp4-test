@@ -728,7 +728,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
     this.getAssetInfo = (asset) => {
-      if (_.isEmpty(asset)) { console.error('Asset required'); return; }
+      if (_.isNil(asset)) { console.error('Asset required'); return; }
       // Hardcode some standard assets so that we always have something to display.
       let hardcodedAssets = {
         'BTC': {
@@ -1068,7 +1068,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.loadDepositDetailsForAsset = async (asset) => {
       // These are the internal Solidi addresses / accounts that we provide for each user.
       let funcName = 'loadDepositDetailsForAsset';
-      if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
+      if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
       let data = await this.state.privateMethod({
@@ -1098,7 +1098,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     this.getDepositDetailsForAsset = (asset) => {
       let funcName = 'getDepositDetailsForAsset';
-      if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
+      if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { return '[loading]'; }
       if (_.isUndefined(this.state.user.info.depositDetails)) return '[loading]';
@@ -1111,7 +1111,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // These are default accounts for withdrawals. They should be external addresses / accounts held by the user.
       // We use these when the user sells an asset - they may choose to receive the payment into this account.
       let funcName = 'loadDefaultAccountForAsset';
-      if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
+      if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
       let data = await this.state.privateMethod({
@@ -1136,7 +1136,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     this.getDefaultAccountForAsset = (asset) => {
       let funcName = 'getDefaultAccountForAsset';
-      if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
+      if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { return '[loading]'; }
       if (_.isUndefined(this.state.user.info.defaultAccount)) return '[loading]';
@@ -1147,7 +1147,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     this.updateDefaultAccountForAsset = async (asset, params) => {
       let funcName = 'updateDefaultAccountForAsset';
-      if (_.isEmpty(asset)) { console.error(`${funcName}: Asset required`); return; }
+      if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
       let assets = this.state.getAssets();
       if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
       let data = await this.state.privateMethod({
