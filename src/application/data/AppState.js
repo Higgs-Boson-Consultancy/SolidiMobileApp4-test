@@ -782,12 +782,15 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       if (data == 'DisplayedError') return;
       // Tmp: For development:
       // Sample markets.
-      data = [
-        'BTC/GBP',
-        'ETH/GBP',
-        'BTC/EUR',
-        'ETH/EUR',
-      ]
+      let tmpData = false;
+      if (tmpData) {
+        data = [
+          'BTC/GBP',
+          'ETH/GBP',
+          'BTC/EUR',
+          'ETH/EUR',
+        ]
+      }
       // End tmp
       // If the data differs from existing data, save it.
       let msg = "Markets loaded from server.";
