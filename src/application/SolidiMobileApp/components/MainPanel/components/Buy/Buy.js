@@ -26,6 +26,11 @@ We don't use a loading spinner here. Instead, we show '[loading]' for the baseAs
 
 We focus on keeping the fiat quoteAsset volume (usually GBP at the moment) constant, because our target customer thinks in terms of GBP rather than in amounts of a crypto asset.
 
+User changes a value:
+- Either baseAssetVolume or quoteAssetVolume can be changed.
+- We then need to automatically update the other volume.
+- We send the changed volume to the API to query the best available price for this volume (in terms of the other volume).
+
 */
 
 
@@ -36,19 +41,18 @@ let Buy = () => {
   let appState = useContext(AppStateContext);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
-  // priceString is used to trigger a recalculation of volumeBA when the market prices change.
-  let [priceString, setPriceString] = useState('');
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Buy');
 
   // Keep track of the last user action that changed an aspect of the order.
+  // - It's 'volumeQA' at the beginning so that the trigger functions act appropriately.
   let [lastUserInput, setLastUserInput] = useState('volumeQA');
 
   // Defaults.
   let selectedAssetBA = 'BTC';
-  let selectedVolumeBA = '[loading]'; // Later, we calculate this from the price and the volumeQA.
+  let selectedVolumeBA = '[loading]'; // On first render, we send the selectedVolumeQA to the API to get the best price.
   let selectedAssetQA = 'GBP';
   let selectedVolumeQA = '10';
 
@@ -94,7 +98,7 @@ let Buy = () => {
   // More state
   let [newAPIVersion, setNewAPIVersion] = useState(false);
   let [errorMessage, setErrorMessage] = useState('');
-  let [loadingPrices, setLoadingPrices] = useState(true);
+  let [loadingBestPrice, setLoadingBestPrice] = useState(true);
 
 
   // Initial setup.
@@ -106,13 +110,12 @@ let Buy = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      await appState.loadPrices();
+      await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
-      calculateVolumeBA();
       setNewAPIVersion(appState.checkLatestAPIVersion());
-      setLoadingPrices(false);
+      setLoadingBestPrice(false);
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;
       console.log(msg);
@@ -120,115 +123,163 @@ let Buy = () => {
   }
 
 
-  // Handle recalculating volumeBA when:
-  // - the price changes.
-  // - the user changes the volumeQA value.
-  let calculateVolumeBA = (args) => {
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    log(`Check whether volumeBA should be recalculated. assetBA = ${assetBA}`);
-    // Defaults
-    if (_.isNil(args)) args = {};
-    let {priceStringChange, assetChange} = args;
-    if (_.isNil(priceStringChange)) priceStringChange = false
-    if (_.isNil(assetChange)) assetChange = false
-    // Use stored price for this market to recalculate the value of volumeBA.
+  let fetchBestPriceForQuoteAssetVolume = async () => {
+    // We know the quoteAssetVolume. We want to find the best price in terms of baseAssetVolume.
+    log(`START fetchBestPriceForQuoteAssetVolume: volumeQA = ${volumeQA}`);
+    let volumeQA2 = volumeQA; // We may have to edit volumeQA slightly.
+    let invalidVolumeQA = false;
+    if (['[loading]', '[not loaded]'].includes(volumeQA2)) invalidVolumeQA = true;
+    if (volumeQA2 === '') invalidVolumeQA = true;
+    if (volumeQA2.match(/^0+$/)) invalidVolumeQA = true; // only zeros.
+    if (volumeQA2.charAt(0) == '.') volumeQA2 = '0' + volumeQA2; // slight edit.
+    if (volumeQA2.match(/^0+\.0+$/)) invalidVolumeQA = true; // only zeros.
+    if (! misc.isNumericString(volumeQA2)) invalidVolumeQA = true;
+    if (invalidVolumeQA) {
+      log('- invalid volumeQA value');
+      setErrorMessage('');
+      return;
+    }
+    if (lastUserInput == 'volumeBA') {
+      /*
+      - If the user changes volumeQA, this will cause best price (volumeBA) to be fetched.
+      - This clause prevents the volumeBA change from causing best price (volumeQA) to be fetched for a second time (which would then be a recursive event loop).
+      */
+      log(`- lastUserInput = ${lastUserInput}. Stopping here.`);
+      return;
+    }
+    setLoadingBestPrice(true);
+    setVolumeBA('[loading]');
+    appState.abortAllRequests(); // Bit hacky but we'll do this for now to speed up the price updates (by ignoring any requests in the pipeline).
+    // This also avoids any problem with previous requests trying to update the state.
     let market = assetBA + '/' + assetQA;
-    let price = appState.getPrice(market);
-    let prevPrice = appState.getPrevPrice(market);
-    let priceChange = (price !== prevPrice);
-    if (_.isEmpty(volumeQA)) {
-      // pass
-    } else if (lastUserInput == 'volumeBA' && ! priceStringChange && ! assetChange) {
-      /*
-      - If the user changes volumeBA, this will cause volumeQA to be recalculated.
-      - This clause prevents the volumeQA change causing volumeBA to be recalculated for a second time (which would be a recursive event loop).
-      - However, if there has been a change in one of the market prices, or the user has changed an asset, then we should recalculate.
-      */
+    let params = {market, side: 'BUY', baseOrQuoteAsset: 'quote', quoteAssetVolume: volumeQA2};
+    let output = await appState.fetchBestPriceForASpecificVolume(params);
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    if (_.isUndefined(output)) {
+      // Happens if the request was aborted.
+      return;
+    }
+    //lj(output);
+    if (_.has(output, 'error')) {
+      setVolumeBA('[not loaded]');
+      let error = output.error;
+      if (error == "ValidationError: INSUFFICIENT_ORDERBOOK_VOLUME") {
+        let msg = `Unfortunately, we don't currently have enough ${assetBA} in stock to match ${volumeQA2} ${assetQA}.`;
+        let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
+        let minVolumeQA = '0.' + '0'.repeat(quoteDP - 1) + '1'; // e.g. "0.01"
+        if (! (Big(volumeQA2).eq(minVolumeQA))) {
+          msg += ` Please choose a lower ${assetQA} amount.`;
+        } else {
+          msg += ` The ${market} market is currently empty.`;
+        }
+        setErrorMessage(msg);
+      } else if (error == "ValidationError: QUOTE_VOLUME_IS_TOO_SMALL") {
+        let msg = `Unfortunately, ${volumeQA2} ${assetQA} is too small an amount for us to process. Please choose a larger ${assetQA} amount.`;
+        setErrorMessage(msg);
+      } else {
+        setErrorMessage(misc.itemToString(output.error));
+      }
     } else {
-      log('Recalculate base asset volume');
-      let checkVolumeBA = _.isEmpty(volumeBA) ? '0' : volumeBA;
-      if (price === '0') {
-        // Price data has not yet been retrieved from server.
-        setVolumeBA('[loading]');
-        return;
-      }
-      /*
-      Check if: We are triggering based on a price change.
-      But: A price change has not occurred in this specific market.
-      */
-      if (priceStringChange && ! priceChange) {
-        log(`No change in price (${price}). Stopping recalculation of volumeBA.`);
-        return;
-      }
-      if (_.isNil(price)) {
-        setErrorMessage('Cannot load prices: Empty market');
-        return;
-      }
-      let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
-      let newVolumeBA = Big(volumeQA).div(Big(price)).toFixed(baseDP);
-      // If new value of volumeBA is different, update it.
-      if (
-        checkVolumeBA == '[loading]' ||
-        (! Big(newVolumeBA).eq(Big(checkVolumeBA)))
-      ) {
-        log("New base asset volume: " + newVolumeBA);
-        setVolumeBA(newVolumeBA);
-      }
       setErrorMessage('');
     }
+    if (_.has(output, 'price')) {
+      let bestPrice = output.price;
+      log("New baseAssetVolume: " + bestPrice);
+      if (assetBA == 'ETH') bestPrice = Big(bestPrice).toFixed(8); // hacky.
+      setVolumeBA(bestPrice);
+    }
+    setLoadingBestPrice(false);
   }
 
+  // When volumeQA is changed, get a new volumeBA value.
   useEffect(() => {
-    if (! firstRender) calculateVolumeBA();
+    if (! firstRender) fetchBestPriceForQuoteAssetVolume();
   }, [volumeQA]);
 
+  // When either asset is changed, get new volumeBA value. Hold volumeQA steady.
+  // - Exception: If volumeQA isn't a valid numeric string.
   useEffect(() => {
-    if (! firstRender) calculateVolumeBA({priceStringChange:true});
-  }, [priceString]);
-
-
-  // Handle user recalculating volumeQA when:
-  // - the user changes the volumeBA value.
-  let calculateVolumeQA = () => {
-    log(`Check whether volumeQA should be recalculated. assetQA = ${assetQA}`);
-    if (_.isEmpty(volumeBA)) {
-      // pass
-    } else if (lastUserInput == 'volumeQA') {
-      // If the user changes volumeQA, this will cause volumeBA to be recalculated.
-      // This clause prevents the volumeBA change causing volumeQA to be recalculated for a second time (which would be a recursive event loop).
-    } else {
-      log('Recalculate quote asset volume');
-      let checkVolumeQA = _.isEmpty(volumeQA) ? '0' : volumeQA;
-      let market = assetBA + '/' + assetQA;
-      let price = appState.getPrice(market);
-      if (price === '0') {
-        // Price data has not yet been retrieved from server.
-        setVolumeQA('[loading]');
-        return;
-      }
-      if (_.isNil(price)) {
-        setErrorMessage('Cannot load prices: Empty market');
-        return;
-      }
-      let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
-      let newVolumeQA = Big(volumeBA).mul(Big(price)).toFixed(quoteDP);
-      if (! Big(newVolumeQA).eq(Big(checkVolumeQA))) {
-        log("New quote asset volume: " + newVolumeQA);
-        setVolumeQA(newVolumeQA);
-        setErrorMessage('');
+    if (! firstRender) {
+      if (['[loading]', '[not loaded]'].includes(volumeQA)) {
+        fetchBestPriceForBaseAssetVolume();
+      } else {
+        fetchBestPriceForQuoteAssetVolume();
       }
     }
+  }, [assetBA, assetQA]);
+
+
+  let fetchBestPriceForBaseAssetVolume = async () => {
+    // We know the baseAssetVolume. We want to find the best price in terms of quoteAssetVolume.
+    log(`START fetchBestPriceForBaseAssetVolume: volumeBA = ${volumeBA}`);
+    let volumeBA2 = volumeBA; // We may have to edit volumeBA slightly.
+    let invalidVolumeBA = false;
+    if (['[loading]', '[not loaded]'].includes(volumeBA2)) invalidVolumeBA = true;
+    if (volumeBA2 === '') invalidVolumeBA = true;
+    if (volumeBA2.match(/^0+$/)) invalidVolumeBA = true; // only zeros.
+    if (volumeBA2.charAt(0) == '.') volumeBA2 = '0' + volumeBA2; // slight edit.
+    if (volumeBA2.match(/^0+\.0+$/)) invalidVolumeBA = true; // only zeros.
+    if (! misc.isNumericString(volumeBA2)) invalidVolumeBA = true;
+    if (invalidVolumeBA) {
+      log('- invalid volumeBA value');
+      setErrorMessage('');
+      return;
+    }
+    if (lastUserInput == 'volumeQA') {
+      /*
+      - If the user changes volumeBA, this will cause best price (volumeQA) to be fetched.
+      - This clause prevents the volumeQA change from causing best price (volumeBA) to be fetched for a second time (which would then be a recursive event loop).
+      */
+      log(`- lastUserInput = ${lastUserInput}. Stopping here.`);
+      return;
+    }
+    setLoadingBestPrice(true);
+    setVolumeQA('[loading]');
+    appState.abortAllRequests(); // Bit hacky but we'll do this for now to speed up the price updates (by ignoring any requests that currently in the request pipeline).
+    // This also avoids any problem with previous requests trying to update the state.
+    let market = assetBA + '/' + assetQA;
+    let params = {market, side: 'BUY', baseOrQuoteAsset: 'base', baseAssetVolume: volumeBA2};
+    let output = await appState.fetchBestPriceForASpecificVolume(params);
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    if (_.isUndefined(output)) {
+      // Happens if the request was aborted.
+      return;
+    }
+    lj(output);
+    if (_.has(output, 'error')) {
+      setVolumeQA('[not loaded]');
+      let error = output.error;
+      if (error == "ValidationError: INSUFFICIENT_ORDERBOOK_VOLUME") {
+        let msg = `Unfortunately, we don't currently have enough ${assetQA} in stock to match ${volumeBA2} ${assetBA}.`;
+        let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
+        let minVolumeBA = '0.' + '0'.repeat(baseDP - 1) + '1'; // e.g. "0.00000001"
+        if (! (Big(volumeBA2).eq(minVolumeBA))) {
+          msg += ` Please choose a lower ${assetBA} amount.`;
+        } else {
+          msg += ` The ${market} market is currently empty.`;
+        }
+        setErrorMessage(msg);
+      } else if (error == "ValidationError: QUOTE_VOLUME_IS_TOO_SMALL") {
+        let msg = `Unfortunately, ${volumeBA2} ${assetBA} is too small an amount for us to process. Please choose a larger ${assetBA} amount.`;
+        setErrorMessage(msg);
+      } else {
+        setErrorMessage(misc.itemToString(output.error));
+      }
+    } else {
+      setErrorMessage('');
+    }
+    if (_.has(output, 'price')) {
+      let bestPrice = output.price;
+      log("New quoteAssetVolume: " + bestPrice);
+      setVolumeQA(bestPrice);
+    }
+    setLoadingBestPrice(false);
   }
 
+  // When volumeBA is changed, get a new volumeQA value.
   useEffect(() => {
-    if (! firstRender) calculateVolumeQA();
+    if (! firstRender) fetchBestPriceForBaseAssetVolume();
   }, [volumeBA]);
-
-  // Recalculate volumeBA when the assetBA or the assetQA is changed in a dropdown.
-  // Hold the volumeQA constant.
-  useEffect(() => {
-    if (! firstRender) calculateVolumeBA({assetChange:true});
-  }, [assetBA, assetQA]);
 
 
   let validateAndSetVolumeBA = (newVolumeBA) => {
@@ -255,16 +306,19 @@ let Buy = () => {
   let validateAndSetVolumeQA = (newVolumeQA) => {
     setLastUserInput('volumeQA');
     let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
-    // This matches a digit sequence + optional period + optional digit sequence.
+    // This matches a digit sequence + optional (period + digit sequence).
     // The second digit sequence can only be as long as the quoteAsset's decimalPlaces.
     let regexString = `^\\d+(\\.\\d{0,${quoteDP}})?$`;
     let regex = new RegExp(regexString);
+    // This matches a period + digit sequence. (Happens if a user deletes the initial digit sequence).
+    let regexString2 = `^\\.\\d{0,${quoteDP}}$`;
+    let regex2 = new RegExp(regexString2);
     if (! _.isString(newVolumeQA)) {
       // Not sure if this could actually happen.
     } else if (_.isEmpty(newVolumeQA)) {
       // We permit the user to completely empty the input box. It feels better.
       setVolumeQA(newVolumeQA);
-    } else if (! regex.test(newVolumeQA)) {
+    } else if (! regex.test(newVolumeQA) && ! regex2.test(newVolumeQA)) {
       // No need to do anything. The input simply won't accept any non decimal-string input,
       // such as symbols or alphabet characters.
     } else {
@@ -275,47 +329,27 @@ let Buy = () => {
 
 
   let generatePriceDescription = () => {
-    let market = assetBA + '/' + assetQA;
-    let price = appState.getPrice(market);
-    log(`Market price for ${market} market = ${price}`);
-    let dp = appState.getAssetInfo(assetQA).decimalPlaces;
-    let priceString = '[loading]';
-    if (misc.isNumericString((price))) {
-      priceString = Big(price).toFixed(dp);
+    // Calculate price from the ratio of volumeQA to volumeBA.
+    let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
+    let priceString = '';
+    if (! loadingBestPrice) {
+      if (misc.isNumericString(volumeQA) && misc.isNumericString(volumeBA)) {
+        if (
+          ! volumeQA.match(/^0+$/) && ! volumeQA.match(/^0+\.0+$/) &&
+          ! volumeBA.match(/^0+$/) && ! volumeBA.match(/^0+\.0+$/)
+        ) {
+          priceString = Big(volumeQA).div(Big(volumeBA)).toFixed(quoteDP);
+        }
+      }
     }
-    if (loadingPrices) priceString = '[loading]';
-    let displayStringBA = appState.getAssetInfo(assetBA).displaySymbol;
-    let displayStringQA = appState.getAssetInfo(assetQA).displaySymbol;
-    let description = `1 ${displayStringBA} = ${priceString} ${displayStringQA}`;
+    let market = assetBA + '/' + assetQA;
+    //log(`Market price for ${market} market = ${priceString}`);
+    let description = '';
+    if (priceString) {
+      description = `1 ${assetBA} = ${priceString} ${assetQA}`;
+    }
     return description;
   }
-
-
-  // Set an interval timer that periodically reloads the price data from the server.
-  let checkTimeSeconds = 30;
-  checkTimeSeconds = 30000; // For use during development.
-  // Timer function.
-  /*
-  Note: setInterval runs in a separate execution context.
-  - The only way that it can affect the main page is by updating state.
-  - It can't retrieve state from the main page.
-  - So: We update state (and trigger a reload) using the results of the API call.
-  */
-  let checkPrice = async () => {
-    await appState.loadPrices();
-    let newPriceString = JSON.stringify(appState.getPrices());
-    setPriceString(newPriceString);
-  }
-  // Set timer.
-  useEffect(() => {
-    let intervalID = setInterval(() => {
-      checkPrice();
-    }, checkTimeSeconds * 1000);
-    // This cleanup callback is run when the component is unmounted.
-    return () => {
-      clearInterval(intervalID);
-    }
-  }, []); // Run once on start.
 
 
   let startBuyRequest = async () => {
