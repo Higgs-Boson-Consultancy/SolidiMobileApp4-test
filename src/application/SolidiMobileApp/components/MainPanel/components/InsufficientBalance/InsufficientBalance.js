@@ -35,38 +35,40 @@ let InsufficientBalance = () => {
   let permittedPageNames = 'buy sell withdraw'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'InsufficientBalance');
 
-  // Testing:
-  _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
-  _.assign(appState.panels.sell, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC'});
-  _.assign(appState.apiData, {
-    balance: {
-      BTC: "0.00000000",
-      GBP: "8900.00000000",
-    },
-  });
+  // Testing
+  if (appState.panels.buy.volumeQA == '0') {
+    _.assign(appState.panels.buy, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC', feeQA: '0.50', totalQA: '100.50'});
+    _.assign(appState.panels.sell, {volumeQA: '100', assetQA: 'GBP', volumeBA: '0.05', assetBA: 'BTC', feeQA: '0.50', totalQA: '99.50'});
+    _.assign(appState.apiData, {
+      balance: {
+        BTC: "0.00000000",
+        GBP: "8900.00000000",
+      },
+    });
+  }
 
   // Load order details.
-  let volumeQA, volumeBA, assetQA, assetBA;
+  let volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA;
   if (pageName == 'buy') {
-    ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
+    ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
   } else if (pageName == 'sell') {
-    ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.sell);
+    ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.sell);
   }
 
   // We assume that prior to loading this component, (i.e. during previous pageloads), we have retrieved the balances from the API. So, here we can just load them directly.
   let balanceBA = appState.getBalance(assetBA);
   let balanceQA = appState.getBalance(assetQA);
-  let dpBA = appState.getAssetInfo(assetBA).decimalPlaces;
-  let dpQA = appState.getAssetInfo(assetQA).decimalPlaces;
+  let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
+  let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
   let balanceString, volumeString, diffString;
   if (pageName == 'buy') {
-    balanceString = Big(balanceQA).toFixed(dpQA);
-    volumeString = Big(volumeQA).toFixed(dpQA);
-    diffString = Big(volumeQA).minus(Big(balanceQA)).toFixed(dpQA);
+    balanceString = Big(balanceQA).toFixed(quoteDP) + ' ' + assetQA;
+    volumeString = Big(totalQA).toFixed(quoteDP) + ' ' + assetQA;
+    diffString = Big(totalQA).minus(Big(balanceQA)).toFixed(quoteDP) + ' ' + assetQA;
   } else if (pageName == 'sell') {
-    balanceString = Big(balanceBA).toFixed(dpBA);
-    volumeString = Big(volumeBA).toFixed(dpBA);
-    diffString = Big(volumeBA).minus(Big(balanceBA)).toFixed(dpBA);
+    balanceString = Big(balanceBA).toFixed(baseDP) + ' ' + assetBA;
+    volumeString = Big(volumeBA).toFixed(baseDP) + ' ' + assetBA;
+    diffString = Big(volumeBA).minus(Big(balanceBA)).toFixed(baseDP) + ' ' + assetBA;
   }
 
   let payDirectly = () => {
@@ -75,8 +77,8 @@ let InsufficientBalance = () => {
 
   let makeDeposit = () => {
     let asset;
-    if (pageName == 'buy') asset = appState.getAssetInfo(assetQA).displaySymbol;
-    if (pageName == 'sell') asset = appState.getAssetInfo(assetBA).displaySymbol;
+    if (pageName == 'buy') asset = assetQA;
+    if (pageName == 'sell') asset = assetBA;
     //appState.changeState('Receive', asset); // Future
     appState.changeState('Receive');
   }
@@ -86,9 +88,9 @@ let InsufficientBalance = () => {
     let displayStringBA = appState.getAssetInfo(assetBA).displayString;
     let displayStringQA = appState.getAssetInfo(assetQA).displayString;
     if (pageName == 'buy') {
-      details += `Buy ${volumeBA} ${displayStringBA} for ${volumeQA} ${displayStringQA}.`;
+      details += `Buy ${volumeBA} ${displayStringBA} for ${totalQA} ${displayStringQA}.`;
     } else if (pageName == 'sell') {
-      details += `Sell ${volumeBA} ${displayStringBA} to get ${volumeQA} ${displayStringQA}.`;
+      details += `Sell ${volumeBA} ${displayStringBA} to get ${totalQA} ${displayStringQA}.`;
     }
     return details;
   }
@@ -113,15 +115,15 @@ let InsufficientBalance = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your Solidi balance: {balanceString} {assetQA}</Text>
+          <Text style={styles.bold}>{`\u2022  `} Your Solidi balance: {balanceString}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} The required amount: {volumeString} {assetQA}</Text>
+          <Text style={styles.bold}>{`\u2022  `} The required amount: {volumeString}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} The missing amount: {diffString} {assetQA}</Text>
+          <Text style={styles.bold}>{`\u2022  `} The missing amount: {diffString}</Text>
         </View>
 
       </View>
@@ -153,7 +155,7 @@ let InsufficientBalance = () => {
 
             <View style={styles.infoItem}>
               <Text style={styles.bold}>Option 2:</Text>
-              <Text>{'\n'}Increase your {appState.getAssetInfo(assetQA).displaySymbol} balance by making a deposit.</Text>
+              <Text>{'\n'}Increase your {assetQA} balance by making a deposit.</Text>
             </View>
 
             <View style={styles.button}>
