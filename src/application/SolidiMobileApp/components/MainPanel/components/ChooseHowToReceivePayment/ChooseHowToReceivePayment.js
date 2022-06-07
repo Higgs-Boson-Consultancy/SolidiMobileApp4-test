@@ -48,10 +48,10 @@ let ChooseHowToReceivePayment = () => {
 
   // State
   let [paymentChoice, setPaymentChoice] = useState(pageName);
-  let [orderSubmitted, setOrderSubmitted] = useState(false);
+  let [fees, setFees] = useState({});
 
   // Confirm Button state
-  let [disableConfirmButton, setDisableConfirmButton] = useState(false);
+  let [disableConfirmButton, setDisableConfirmButton] = useState(true);
 
   // Load user's external GBP account.
   let externalAccount = appState.getDefaultAccountForAsset('GBP');
@@ -87,8 +87,10 @@ let ChooseHowToReceivePayment = () => {
     try {
       await appState.generalSetup();
       await appState.loadBalances();
-      await appState.loadFees();
+      setFees(await fetchFeesForEachPaymentChoice());
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setErrorMessage('');
+      setDisableConfirmButton(false);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `ChooseHowToReceivePayment.setup: Error = ${err}`;
@@ -97,36 +99,58 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
-  let calculateFeeQA = () => {
-    let fee = appState.getFee({feeType: 'withdraw', asset: 'GBP', priority: 'low'});
-    fee = '0.5'; // testing
-    if (! misc.isNumericString(fee)) return '[loading]';
-    let dp = appState.getAssetInfo(assetQA).decimalPlaces;
-    let newFeeQA = 'error';
-    if (paymentChoice == 'direct_payment') {
-      newFeeQA = Big(fee).toFixed(dp);
-    } else {
-      // We currently don't charge a fee if the user pays with balance.
-      newFeeQA = Big(0).toFixed(dp);
+  let fetchFeesForEachPaymentChoice = async () => {
+    // Fees may differ depending on the volume and on the user (e.g. whether the user has crossed a fee inflection point).
+    // We therefore request the price and fee for each payment choice from the API, using the specific quoteAssetVolume.
+    let market = assetBA + '/' + assetQA;
+    let side = 'SELL';
+    let baseOrQuoteAsset = 'quote';
+    let params = {market, side, quoteAssetVolume: volumeQA, baseOrQuoteAsset};
+    let output = await appState.fetchPricesForASpecificVolume(params);
+    //lj(output);
+    if (_.has(output, 'error')) {
+      logger.error(output.error);
+      return;
     }
-    log(`newFeeQA: ${newFeeQA}`);
-    return newFeeQA;
+    /* Example output:
+    [
+      {"baseAssetVolume":"0.00043209","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"SELL"},
+      {"baseAssetVolume":"0.00043209","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"SELL"}
+    ]
+    */
+    // Now: Produce an object that maps paymentMethods to feeVolumes.
+    let result = _.reduce(output, (obj, x) => {
+      obj[x.paymentMethod] = x.feeVolume;
+      return obj;
+    }, {});
+    // Rename 'solidi' key to 'direct_payment'.
+    result['direct_payment'] = result['solidi'];
+    delete result['solidi'];
+    // Testing
+    //result['direct_payment'] = '0.51';
+    return result;
+  }
+
+
+  let calculateFeeQA = () => {
+    if (_.isEmpty(fees)) return '';
+    let feeVolume = fees[paymentChoice];
+    feeVolume = appState.getFullDecimalValue({asset: assetQA, value: feeVolume, functionName: 'ChooseHowToPay'});
+    log(`Payment method = ${paymentChoice}: Fee = ${feeVolume} ${assetQA}`);
+    return feeVolume;
   }
 
 
   let calculateTotalQA = () => {
-    let feeQA = calculateFeeQA();
-    if (! misc.isNumericString(feeQA)) return '[loading]';
-    let dp = appState.getAssetInfo(assetQA).decimalPlaces;
-    let newTotalQA = 'error';
-    if (paymentChoice == 'direct_payment') {
-      newTotalQA = Big(volumeQA).minus(Big(feeQA)).toFixed(dp);
-    } else {
-      // If user chooses "pay with balance", reset total to be the entire volumeQA.
-      newTotalQA = volumeQA;
-    }
-    log(`newTotalQA: ${newTotalQA}`);
-    return newTotalQA;
+    // Importantly, note that we _subtract_ the fee from the volumeQA.
+    // - Unlike the Buy process, here we charge the fee after the sell order has completed, and we take it from the result that leaves the trade engine.
+    // - In the Buy process, we charge the fee before filling the order, and we add it to the amount that goes into the trade engine.
+    let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'ChooseHowToPay'});
+    let feeVolume = calculateFeeQA();
+    if (_.isEmpty(feeVolume)) return '';
+    let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
+    let total = Big(volumeQA2).minus(Big(feeVolume)).toFixed(quoteDP);
+    return total;
   }
 
 
@@ -233,6 +257,16 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
+  let getBalanceDescription = () => {
+    let balanceQA = appState.getBalance(assetQA);
+    let result = 'Your balance: ' + balanceQA;
+    if (balanceQA != '[loading]') {
+      result += ' ' + assetQA;
+    }
+    return result;
+  }
+
+
   return (
     <View style={styles.panelContainer}>
 
@@ -270,7 +304,7 @@ let ChooseHowToReceivePayment = () => {
           <View style={styles.buttonDetail}>
             <Text style={styles.bold}>{`\u2022  `} Paid to your Solidi balance - No fee!</Text>
             <Text style={styles.bold}>{`\u2022  `} Processed instantly</Text>
-            <Text style={styles.bold}>{`\u2022  `} Your balance: {getBalanceString()}</Text>
+            <Text style={styles.bold}>{`\u2022  `} {getBalanceDescription()}</Text>
           </View>
 
           </RadioButton.Group>
