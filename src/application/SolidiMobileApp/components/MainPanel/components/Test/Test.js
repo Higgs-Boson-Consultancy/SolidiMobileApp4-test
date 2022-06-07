@@ -19,6 +19,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let Test = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
   let [renderCount, triggerRender] = useState(0);
 
 
@@ -30,10 +31,14 @@ let Test = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      lj(appState.getDepositDetailsForAsset('GBP'))
-      await appState.loadDepositDetailsForAsset('GBP');
-      //await appState.loadPrices();
-      lj(appState.getDepositDetailsForAsset('GBP'))
+      let price = await appState.fetchBestPriceForASpecificVolume({
+        market: 'BTC/GBP',
+        side: 'SELL',
+        baseAssetVolume: '1',
+        baseOrQuoteAsset: 'base',
+      });
+      lj({price})
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Test.setup: Error = ${err}`;
