@@ -18,11 +18,6 @@ let logger2 = logger.extend('PurchaseSuccessful');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
-/* Notes
-- We also use this component to display "paymentNotReceived", if the user clicks "I have paid", but 2 hours pass without us receiving the payment.
-*/
-
-
 
 
 let PurchaseSuccessful = () => {
@@ -33,7 +28,7 @@ let PurchaseSuccessful = () => {
   let [isLoading, setIsLoading] = useState(true);
 
   // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
+  ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
 
   let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
 
@@ -90,7 +85,7 @@ let PurchaseSuccessful = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your payment of {volumeQA} {appState.getAssetInfo(assetQA).displayString} has been processed.</Text>
+          <Text style={styles.bold}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} has been processed.</Text>
         </View>
 
         <View style={styles.infoItem}>
