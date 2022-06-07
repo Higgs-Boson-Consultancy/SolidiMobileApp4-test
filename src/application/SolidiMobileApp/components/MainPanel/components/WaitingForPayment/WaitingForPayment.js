@@ -27,7 +27,7 @@ let WaitingForPayment = () => {
   let [paymentReceived, setPaymentReceived] = useState(false);
 
   // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
+  ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
 
   // Set up progress bar.
   // Load deposit account details.
@@ -132,7 +132,7 @@ let WaitingForPayment = () => {
 
         <View style={styles.paymentDetailsLine}>
           <Text style={styles.paymentDetailText}>Amount</Text>
-          <Text style={styles.paymentDetailText}>{volumeQA} {appState.getAssetInfo(assetQA).displaySymbol}</Text>
+          <Text style={styles.paymentDetailText}>{totalQA} {assetQA}</Text>
         </View>
 
         <View style={styles.paymentDetailsLine}>
