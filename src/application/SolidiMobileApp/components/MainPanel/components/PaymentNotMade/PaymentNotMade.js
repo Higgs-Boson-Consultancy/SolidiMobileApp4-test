@@ -49,13 +49,13 @@ let PaymentNotMade = () => {
   // Testing (for if we load this page directly).
   if (appState.panels.buy.volumeQA == '0') {
     // Create an order.
-    _.assign(appState.panels.buy, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
+    _.assign(appState.panels.buy, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC', feeQA: '0.50', totalQA: '10.50'});
     appState.panels.buy.activeOrder = true;
     appState.panels.buy.orderID = 7200;
   }
 
   // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
+  ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
 
 
   // Initial setup.
@@ -105,7 +105,7 @@ let PaymentNotMade = () => {
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Order details: Buy {volumeBA} {appState.getAssetInfo(assetBA).displayString} for {volumeQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
+          <Text style={styles.bold}>{`\u2022  `} Order details: Buy {volumeBA} {appState.getAssetInfo(assetBA).displayString} for {totalQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
         </View>
 
       </View>
