@@ -114,7 +114,8 @@ let useFirstRender = () => {
 
 let isNumericString = (value) => {
   if (! _.isString(value)) return false;
-  // This matches a digit sequence + optional period + optional digit sequence.
+  // This matches a digit sequence + optional (period + digit sequence).
+  // It does not match a digit sequence with a period at the end.
   let regexString = `^-?\\d+(\\.\\d+)?$`;
   let regex = new RegExp(regexString);
   let result = regex.test(value);
