@@ -182,7 +182,7 @@ let History = () => {
           <Text style={_styleOrder}>{orderStatus}</Text>
         </View>
         <Text style={styles.typeField}>{orderSide} Order</Text>
-        <Text>Spent {quoteVolume} {appState.getAssetInfo(quoteAsset).displaySymbol} to get {baseVolume} {appState.getAssetInfo(baseAsset).displaySymbol}.</Text>
+        <Text>Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}.</Text>
       </View>
     );
   }
