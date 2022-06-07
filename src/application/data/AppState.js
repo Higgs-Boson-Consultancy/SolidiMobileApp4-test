@@ -1199,6 +1199,76 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       return balanceString;
     }
 
+    this.fetchPricesForASpecificVolume = async (params) => {
+      /* Notes:
+      - This function is complicated to use.
+      - The prices may differ depending on the payment method.
+      - A "price" is actually the volume of the asset on the other side of the transaction.
+      - Scenarios:
+      1) Available prices (in quoteAsset) for a specific volume of baseAsset that you want to buy.
+      2) Available prices (in quoteAsset) for a specific volume of baseAsset that you want to sell.
+      3) Available prices (in baseAsset) for a specific volume of quoteAsset for which you will sell baseAsset.
+      4) Available prices (in baseAsset) for a specific volume of quoteAsset with which you will buy baseAsset.
+      - Price values do not include fees. Fee values are included separately.
+      */
+      let funcName = 'fetchPricesForASpecificVolume'
+      let {market, side, baseAssetVolume, baseOrQuoteAsset} = params;
+      if (_.isNil(market)) { console.error(`${funcName}: market required`); return; }
+      if (_.isNil(side)) { console.error(`${funcName}: side required`); return; }
+      if (_.isNil(baseAssetVolume)) { console.error(`${funcName}: baseAssetVolume required`); return; }
+      if (_.isNil(baseOrQuoteAsset)) { console.error(`${funcName}: baseOrQuoteAsset required`); return; }
+      let data = await this.state.privateMethod({
+        apiRoute: 'volume_price/' + market,
+        params,
+        functionName: funcName,
+      });
+      if (data == 'DisplayedError') return 'DisplayedError';
+      /* Example output:
+[
+  {
+    "baseAssetVolume": "1.00000000",
+    "feeVolume": "0.00",
+    "market": "BTC/GBP",
+    "paymentMethod": "solidi",
+    "quoteAssetVolume": "24614.32"
+  },
+  {
+    "baseAssetVolume": "1.00000000",
+    "feeVolume": "0.00",
+    "market": "BTC/GBP",
+    "paymentMethod": "balance",
+    "quoteAssetVolume": "24614.32"
+  }
+]
+      */
+     return data;
+    }
+
+    this.fetchBestPriceForASpecificVolume = async (params) => {
+      let funcName = 'fetchBestPriceForASpecificVolume';
+      let {market, side, baseOrQuoteAsset, baseAssetVolume, quoteAssetVolume} = params;
+      if (_.isNil(market)) { console.error(`${funcName}: market required`); return; }
+      if (_.isNil(side)) { console.error(`${funcName}: side required`); return; }
+      if (_.isNil(baseOrQuoteAsset)) { console.error(`${funcName}: baseOrQuoteAsset required`); return; }
+      if (baseOrQuoteAsset == 'base') {
+        if (_.isNil(baseAssetVolume)) { console.error(`${funcName}: baseAssetVolume required`); return; }
+      } else {
+        if (_.isNil(quoteAssetVolume)) { console.error(`${funcName}: quoteAssetVolume required`); return; }
+      }
+      let data = await this.state.privateMethod({
+        apiRoute: 'best_volume_price/' + market,
+        params,
+        functionName: funcName,
+      });
+      lj(params);
+      if (data == 'DisplayedError') return 'DisplayedError';
+      /* Example output:
+      {"price":"24528.64"} (side='BUY', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
+      {"price":"24506.44"} (side='SELL', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
+      */
+      return data;
+    }
+
     this.fetchOrderStatus = async ({orderID}) => {
       // "fetch" means "load from API & get value".
       let data = await this.state.privateMethod({
@@ -1547,6 +1617,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       updateDefaultAccountForAsset: this.updateDefaultAccountForAsset,
       loadBalances: this.loadBalances,
       getBalance: this.getBalance,
+      fetchPricesForASpecificVolume: this.fetchPricesForASpecificVolume,
+      fetchBestPriceForASpecificVolume: this.fetchBestPriceForASpecificVolume,
       fetchOrderStatus: this.fetchOrderStatus,
       sendBuyOrder: this.sendBuyOrder,
       confirmPaymentOfBuyOrder: this.confirmPaymentOfBuyOrder,
