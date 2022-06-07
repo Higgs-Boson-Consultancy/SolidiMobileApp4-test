@@ -358,7 +358,6 @@ let Sell = () => {
 
   let generateBalanceSection = () => {
     let balanceExceeded = false;
-    let volumeBA = volumeBA;
     if (
       misc.isNumericString(balanceBA) && misc.isNumericString(volumeBA) &&
       ! volumeBA.match(/^0+$/) && ! volumeBA.match(/^0+\.0+$/) // zero values
