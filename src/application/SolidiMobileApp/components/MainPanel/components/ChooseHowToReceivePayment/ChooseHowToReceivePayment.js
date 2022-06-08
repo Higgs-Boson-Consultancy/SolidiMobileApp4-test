@@ -105,7 +105,7 @@ let ChooseHowToReceivePayment = () => {
     let market = assetBA + '/' + assetQA;
     let side = 'SELL';
     let baseOrQuoteAsset = 'quote';
-    let params = {market, side, quoteAssetVolume: volumeQA, baseOrQuoteAsset};
+    let params = {market, side, baseOrQuoteAsset, quoteAssetVolume: volumeQA};
     let output = await appState.fetchPricesForASpecificVolume(params);
     //lj(output);
     if (_.has(output, 'error')) {
@@ -227,15 +227,22 @@ let ChooseHowToReceivePayment = () => {
     - Tell the user what's happened and ask them if they'd like to go ahead.
     - Note: We keep baseAssetVolume constant (i.e. the amount the user is selling), so we update quoteAssetVolume.
     */
+    /* Example output:
+      {
+        "baseAssetVolume": "0.00036922",
+        "market": "BTC/GBP",
+        "quoteAssetVolume": "11.00",
+        "result": "PRICE_CHANGE"
+      }
+    */
     let newVolumeQA = output.quoteAssetVolume;
     let priceDown = Big(volumeQA).gt(Big(newVolumeQA));
-    let dpQA = appState.getAssetInfo(assetQA).decimalPlaces;
-    let priceDiff = Big(volumeQA).minus(Big(newVolumeQA)).toFixed(dpQA);
-    newVolumeQA = Big(newVolumeQA).toFixed(dpQA);
+    let quoteDB = appState.getAssetInfo(assetQA).decimalPlaces;
+    let priceDiff = Big(volumeQA).minus(Big(newVolumeQA)).toFixed(quoteDB);
+    newVolumeQA = Big(newVolumeQA).toFixed(quoteDB);
     log(`price change: volumeQA = ${volumeQA}, newVolumeQA = ${newVolumeQA}, priceDiff = ${priceDiff}`);
     // Rewrite the order and save it.
     appState.panels.sell.volumeQA = newVolumeQA;
-    volumeQA = appState.panels.sell.volumeQA;
     appState.panels.sell.activeOrder = true;
     // Note: No need to re-check balances, because the amount that the user is selling has not changed.
     setDisableConfirmButton(false);
@@ -246,14 +253,6 @@ let ChooseHowToReceivePayment = () => {
     setPriceChangeMessage(msg);
     refScrollView.current.scrollToEnd();
     triggerRender(renderCount+1);
-  }
-
-
-  let getBalanceString = () => {
-    let b = appState.getBalance(assetQA);
-    let result = b;
-    if (misc.isNumericString(b)) result += ' ' + assetQA;
-    return result;
   }
 
 
