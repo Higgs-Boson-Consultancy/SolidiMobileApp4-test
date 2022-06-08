@@ -69,7 +69,7 @@ let ChooseHowToReceivePayment = () => {
   if (appState.panels.sell.volumeQA == '0') {
     log("TESTING")
     // Create an order.
-    _.assign(appState.panels.sell, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
+    _.assign(appState.panels.sell, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00040251', assetBA: 'BTC'});
     appState.panels.sell.activeOrder = true;
   }
 
