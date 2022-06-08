@@ -53,12 +53,6 @@ let ChooseHowToReceivePayment = () => {
   // Confirm Button state
   let [disableConfirmButton, setDisableConfirmButton] = useState(true);
 
-  // Load user's external GBP account.
-  let externalAccount = appState.getDefaultAccountForAsset('GBP');
-  let accountName = (! _.has(externalAccount, 'accountName')) ? '[loading]' : externalAccount.accountName;
-  let sortCode = (! _.has(externalAccount, 'sortCode')) ? '[loading]' : externalAccount.sortCode;
-  let accountNumber = (! _.has(externalAccount, 'accountNumber')) ? '[loading]' : externalAccount.accountNumber;
-
   // Misc
   let refScrollView = useRef();
   let [priceChangeMessage, setPriceChangeMessage] = useState('');
@@ -96,6 +90,29 @@ let ChooseHowToReceivePayment = () => {
       let msg = `ChooseHowToReceivePayment.setup: Error = ${err}`;
       console.log(msg);
     }
+  }
+
+
+  let getBankAccount = () => {
+    return appState.getDefaultAccountForAsset('GBP');
+  }
+
+
+  let bankAccountDetailsAreEmpty = () => {
+    // Load user's external GBP account.
+    let account = appState.getDefaultAccountForAsset('GBP');
+    lj(account);
+    let keys = 'accountName sortCode accountNumber'.split(' ');
+    if (keys.every(k => _.has(account, k))) {
+      if (
+        ! _.isEmpty(account.accountName) &&
+        ! _.isEmpty(account.sortCode) &&
+        ! _.isEmpty(account.accountNumber)
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 
 
@@ -175,7 +192,17 @@ let ChooseHowToReceivePayment = () => {
     if (paymentChoice === 'direct_payment') {
       // Choice: Make a direct payment to the customer's primary external fiat account.
       // Note: In this case, the server will perform a withdrawal automatically after filling the order.
-      await receivePayment();
+      // We check if the user has supplied a default account at which they can receive a payment.
+      // If they haven't, stash the current state, and redirect them.
+      // Note: We're only handling GBP at the moment.
+      if (bankAccountDetailsAreEmpty()) {
+        let msg = `No default account found for ${assetQA}. Redirecting so that user can input account details.`;
+        log(msg);
+        appState.stashState({mainPanelState: appState.mainPanelState, pageName: paymentChoice});
+        return appState.changeState('BankAccounts');
+      } else {
+        await receivePayment();
+      }
     } else {
       // Choice: Pay with balance.
       await receivePaymentToBalance();
@@ -290,11 +317,17 @@ let ChooseHowToReceivePayment = () => {
             style={styles.button} labelStyle={styles.buttonLabel} />
 
           <View style={styles.buttonDetail}>
-            <Text style={styles.bold}>{`\u2022  `} Get paid in 8 hours</Text>
-            <Text style={styles.bold}>{`\u2022  `} Paying to: {accountName}</Text>
-            <Text style={styles.bold}>{`\u2022  `} Sort Code: {sortCode}</Text>
-            <Text style={styles.bold}>{`\u2022  `} Account Number: {accountNumber}</Text>
+            <Text style={styles.bold}>{`\u2022  `} Paid to your bank account in 8 hours</Text>
+            { ! bankAccountDetailsAreEmpty() &&
+              <View>
+              <Text style={styles.bold}>{`\u2022  `} Paying to: {getBankAccount().accountName}</Text>
+              <Text style={styles.bold}>{`\u2022  `} Sort Code: {getBankAccount().sortCode}</Text>
+              <Text style={styles.bold}>{`\u2022  `} Account Number: {getBankAccount().accountNumber}</Text>
+              </View>
+            }
           </View>
+
+          <View style={styles.spacer}/>
 
           <RadioButton.Item label="Paid to balance" value="balance"
             color={colors.standardButtonText}
@@ -373,6 +406,8 @@ let ChooseHowToReceivePayment = () => {
 }
 
 
+
+
 let styles = StyleSheet.create({
   panelContainer: {
     paddingHorizontal: scaledWidth(15),
@@ -421,6 +456,9 @@ let styles = StyleSheet.create({
   buttonDetail: {
     marginVertical: scaledHeight(10),
     marginLeft: scaledWidth(15),
+  },
+  spacer: {
+    marginBottom: scaledHeight(10),
   },
   conditionsButtonWrapper: {
     marginBottom: scaledHeight(10),

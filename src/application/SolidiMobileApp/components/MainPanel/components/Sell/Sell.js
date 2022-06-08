@@ -404,19 +404,6 @@ let Sell = () => {
       return setErrorMessage(`Please wait a moment. Price data hasn't been loaded yet.`);
     }
 
-    // Check if the user has supplied a default account at which they can receive a payment.
-    // Note: Not all SELL orders require a receiving external account, but we check here anyway and redirect if necessary.
-    let account = appState.getDefaultAccountForAsset(assetQA);
-    lj({account})
-    // We're only handling GBP at the moment.
-    let {accountName, sortCode, accountNumber} = account;
-    if (_.isEmpty(accountName) || _.isEmpty(sortCode) || _.isEmpty(accountNumber)) {
-      let msg = `No default account found for ${assetQA}. Redirecting so that user can input account details.`;
-      log(msg);
-      appState.stashCurrentState();
-      return appState.changeState('BankAccounts');
-    }
-
     // Save the order details in the global state.
     // We enforce the full decimal value just in case.
     let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'Sell'});
