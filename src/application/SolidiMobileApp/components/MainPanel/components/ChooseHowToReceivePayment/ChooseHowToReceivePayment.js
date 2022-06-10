@@ -66,7 +66,7 @@ let ChooseHowToReceivePayment = () => {
 
   // Testing
   if (appState.panels.sell.volumeQA == '0') {
-    log("TESTING")
+    log("TESTING");
     // Create an order.
     _.assign(appState.panels.sell, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00040251', assetBA: 'BTC'});
     appState.panels.sell.activeOrder = true;
@@ -89,8 +89,10 @@ let ChooseHowToReceivePayment = () => {
       await appState.loadBalances();
       setPaymentChoiceDetails(await fetchPaymentChoiceDetails());
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
-      setSelectedVolumeBA(newVolumeBA);
+      if (! _.has(paymentChoiceDetails, paymentChoice)) {
+        let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+        setSelectedVolumeBA(newVolumeBA);
+      }
       setErrorMessage('');
       setDisableConfirmButton(false);
       setIsLoading(false);
@@ -101,6 +103,7 @@ let ChooseHowToReceivePayment = () => {
     }
   }
 
+
   // When paymentChoice is changed, set selectedVolumeBA to the corresponding value.
   useEffect(() => {
     if (! firstRender) {
@@ -109,8 +112,6 @@ let ChooseHowToReceivePayment = () => {
       setSelectedVolumeBA(newVolumeBA);
     }
   }, [paymentChoice]);
-
-
 
 
   let getBankAccount = () => {
