@@ -52,9 +52,6 @@ let ChooseHowToReceivePayment = () => {
   let [isLoading, setIsLoading] = useState(true);
   let [paymentChoice, setPaymentChoice] = useState(pageName);
   let [paymentChoiceDetails, setPaymentChoiceDetails] = useState({});
-  // - volumeBA may differ depending on the payment choice.
-  // -- If it changes, we should re-render.
-  let [selectedVolumeBA, setSelectedVolumeBA] = useState('');
 
   // Confirm Button state
   let [disableConfirmButton, setDisableConfirmButton] = useState(true);
@@ -91,10 +88,6 @@ let ChooseHowToReceivePayment = () => {
       let details = await fetchPaymentChoiceDetails();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setPaymentChoiceDetails(details);
-      if (_.has(paymentChoiceDetails, paymentChoice)) {
-        let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
-        setSelectedVolumeBA(newVolumeBA);
-      }
       setErrorMessage('');
       setDisableConfirmButton(false);
       setIsLoading(false);
@@ -104,16 +97,6 @@ let ChooseHowToReceivePayment = () => {
       console.log(msg);
     }
   }
-
-
-  // When paymentChoice is changed, set selectedVolumeBA to the corresponding value.
-  useEffect(() => {
-    if (! firstRender) {
-      if (! _.has(paymentChoiceDetails, paymentChoice)) return;
-      let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
-      setSelectedVolumeBA(newVolumeBA);
-    }
-  }, [paymentChoice]);
 
 
   let getBankAccount = () => {
@@ -170,6 +153,16 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
+  let calculateVolumeBA = () => {
+    if (_.isEmpty(paymentChoiceDetails)) return '';
+    if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
+    let baseAssetVolume = paymentChoiceDetails[paymentChoice]['baseAssetVolume'];
+    baseAssetVolume = appState.getFullDecimalValue({asset: assetBA, value: baseAssetVolume, functionName: 'ChooseHowToPay'});
+    //log(`Payment method = ${paymentChoice}: baseAssetVolume = ${baseAssetVolume} ${assetBA}`);
+    return baseAssetVolume;
+  }
+
+
   let calculateFeeQA = () => {
     if (_.isEmpty(paymentChoiceDetails)) return '';
     if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
@@ -209,9 +202,10 @@ let ChooseHowToReceivePayment = () => {
     let feeQA = calculateFeeQA();
     let totalQA = calculateTotalQA();
     _.assign(appState.panels.sell, {feeQA, totalQA});
-    // Save the selectedVolumeBA (selected via paymentChoice from paymentChoiceDetails) in the appState.
-    appState.panels.sell.volumeBA = selectedVolumeBA;
-    volumeBA = selectedVolumeBA;
+    // Get volumeBA.
+    volumeBA = calculateVolumeBA();
+    // Save volumeBA in the appState.
+    appState.panels.sell.volumeBA = volumeBA;
     // Create the order object.
     let sellOrder = {volumeQA, volumeBA, assetQA, assetBA, paymentMethod: paymentChoice};
     // Choose the receive-payment function.
@@ -297,17 +291,15 @@ let ChooseHowToReceivePayment = () => {
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: Check for errors here.
     setPaymentChoiceDetails(details);
-    let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
-    setSelectedVolumeBA(newVolumeBA);
     // priceDown = Did the quoteAssetVolume (that the user would receive) go down ?
     let priceDown = Big(newVolumeQA).lt(Big(volumeQA));
     let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
     let priceDiff = Big(newVolumeQA).minus(Big(volumeQA)).toFixed(baseDP);
     log(`price change: volumeQA = ${volumeQA}, newVolumeQA = ${newVolumeQA}, priceDiff = ${priceDiff}`);
     // Save the new order details.
-    appState.panels.sell.volumeBA = newVolumeBA;
+    volumeBA = calculateVolumeBA();
+    appState.panels.sell.volumeBA = volumeBA;
     appState.panels.sell.activeOrder = true;
-    volumeBA = newVolumeBA;
     setDisableConfirmButton(false);
     setSendOrderMessage('');
     let priceUp = ! priceDown;
@@ -352,7 +344,10 @@ let ChooseHowToReceivePayment = () => {
 
         <View style={styles.selectPaymentMethodSection}>
 
-          <RadioButton.Group onValueChange={x => setPaymentChoice(x)} value={paymentChoice}>
+          <RadioButton.Group onValueChange={x => {
+            log(`paymentChoice selected: ${x}`);
+            setPaymentChoice(x);
+          }} value={paymentChoice}>
 
           <RadioButton.Item label="Paid directly from Solidi" value="solidi"
             color={colors.standardButtonText}
@@ -404,7 +399,7 @@ let ChooseHowToReceivePayment = () => {
 
           <View style={styles.orderDetailsLine}>
             <Text style={styles.bold}>You sell</Text>
-            <Text style={[styles.monospaceText, styles.bold]}>{selectedVolumeBA} {assetBA}</Text>
+            <Text style={[styles.monospaceText, styles.bold]}>{calculateVolumeBA()} {assetBA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
