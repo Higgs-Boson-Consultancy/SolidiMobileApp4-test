@@ -34,18 +34,23 @@ https://callstack.github.io/react-native-paper/radio-button-item.html
 let ChooseHowToPay = () => {
 
   let appState = useContext(AppStateContext);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
   let [renderCount, triggerRender] = useState(0);
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'default direct_payment balance'.split(' ');
+  let permittedPageNames = 'default solidi balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToPay');
-  if (pageName == 'default') pageName = 'direct_payment';
+  if (pageName == 'default') pageName = 'solidi';
   //if (pageName == 'default') pageName = 'balance'; //testing
 
   // State
+  let [isLoading, setIsLoading] = useState(true);
   let [paymentChoice, setPaymentChoice] = useState(pageName);
-  let [fees, setFees] = useState({});
+  let [paymentChoiceDetails, setPaymentChoiceDetails] = useState({});
+  // - volumeBA may differ depending on the payment choice.
+  // -- If it changes, we should re-render.
+  let [selectedVolumeBA, setSelectedVolumeBA] = useState('');
 
   // Confirm Button state
   let [disableConfirmButton, setDisableConfirmButton] = useState(true);
@@ -58,12 +63,14 @@ let ChooseHowToPay = () => {
 
   // Testing
   if (appState.panels.buy.volumeQA == '0') {
+    log("TESTING");
     // Create an order.
     _.assign(appState.panels.buy, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
     appState.panels.buy.activeOrder = true;
   }
 
   // Load order details.
+  // - Note: We ignore the volumeBA chosen earlier by the fetchBestPrice function, and select only from the volumeBA values returned by the fetchPrices function.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
 
@@ -75,13 +82,18 @@ let ChooseHowToPay = () => {
 
   let setup = async () => {
     try {
-      setErrorMessage('Loading...');
       await appState.generalSetup();
       await appState.loadBalances();
-      setFees(await fetchFeesForEachPaymentChoice());
+      let details = await fetchPaymentChoiceDetails();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setPaymentChoiceDetails(details);
+      if (_.has(paymentChoiceDetails, paymentChoice)) {
+        let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+        setSelectedVolumeBA(newVolumeBA);
+      }
       setErrorMessage('');
       setDisableConfirmButton(false);
+      setIsLoading(false);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `ChooseHowToPay.setup: Error = ${err}`;
@@ -90,13 +102,23 @@ let ChooseHowToPay = () => {
   }
 
 
-  let fetchFeesForEachPaymentChoice = async () => {
+  // When paymentChoice is changed, set selectedVolumeBA to the corresponding value.
+  useEffect(() => {
+    if (! firstRender) {
+      if (! _.has(paymentChoiceDetails, paymentChoice)) return;
+      let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+      setSelectedVolumeBA(newVolumeBA);
+    }
+  }, [paymentChoice]);
+
+
+  let fetchPaymentChoiceDetails = async () => {
     // Fees may differ depending on the volume and on the user (e.g. whether the user has crossed a fee inflection point).
-    // We therefore request the price and fee for each payment choice from the API, using the specific baseAssetVolume.
+    // We therefore request the details for each payment choice from the API, using the specific quoteAssetVolume.
     let market = assetBA + '/' + assetQA;
     let side = 'BUY';
-    let baseOrQuoteAsset = 'base';
-    let params = {market, side, baseOrQuoteAsset, baseAssetVolume: volumeBA};
+    let baseOrQuoteAsset = 'quote';
+    let params = {market, side, baseOrQuoteAsset, quoteAssetVolume: volumeQA};
     let output = await appState.fetchPricesForASpecificVolume(params);
     //lj(output);
     if (_.has(output, 'error')) {
@@ -104,28 +126,27 @@ let ChooseHowToPay = () => {
       return;
     }
     /* Example output:
-    [
-      {"baseAssetVolume":"0.00036922","baseOrQuoteAsset":"base","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"9.06","side":"BUY"},
-      {"baseAssetVolume":"0.00036922","baseOrQuoteAsset":"base","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"9.06","side":"BUY"}
-    ]
+    {
+      "balance":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"BUY"},
+      "solidi":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"BUY"}
+    }
     */
-    // Now: Produce an object that maps paymentMethods to feeVolumes.
-    let result = _.reduce(output, (obj, x) => {
-      obj[x.paymentMethod] = x.feeVolume;
-      return obj;
-    }, {});
-    // Rename 'solidi' key to 'direct_payment'.
-    result['direct_payment'] = result['solidi'];
-    delete result['solidi'];
-    // Testing
-    //result['direct_payment'] = '0.55';
-    return result;
+   paymentChoiceDetails = output;
+   // Testing
+   testTweaks = false;
+   if (testTweaks) {
+     paymentChoiceDetails['solidi'].feeVolume = '0.32';
+     paymentChoiceDetails['solidi'].baseAssetVolume = '0.00039000';
+   }
+   lj({paymentChoiceDetails})
+   return paymentChoiceDetails;
   }
 
 
   let calculateFeeQA = () => {
-    if (_.isEmpty(fees)) return '';
-    let feeVolume = fees[paymentChoice];
+    if (_.isEmpty(paymentChoiceDetails)) return '';
+    if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
+    let feeVolume = paymentChoiceDetails[paymentChoice]['feeVolume'];
     feeVolume = appState.getFullDecimalValue({asset: assetQA, value: feeVolume, functionName: 'ChooseHowToPay'});
     return feeVolume;
   }
@@ -144,10 +165,10 @@ let ChooseHowToPay = () => {
   let balanceTooSmall = () => {
     let balanceQA = appState.getBalance(assetQA);
     if (! misc.isNumericString(balanceQA)) return;
-    let total = calculateTotalQA();
-    if (! misc.isNumericString(total)) return;
-    if(Big(total).gt(Big(balanceQA))) {
-      //log(`Order total (${total} ${assetQA}) is greater than the balance (${balanceQA} ${assetQA}).`);
+    let totalQA = calculateTotalQA();
+    if (! misc.isNumericString(totalQA)) return;
+    if(Big(totalQA).gt(Big(balanceQA))) {
+      //log(`Order total (${totalQA} ${assetQA}) is greater than the balance (${balanceQA} ${assetQA}).`);
       return true;
     }
   }
@@ -171,20 +192,26 @@ let ChooseHowToPay = () => {
     let feeQA = calculateFeeQA();
     let totalQA = calculateTotalQA();
     _.assign(appState.panels.buy, {feeQA, totalQA});
+    // Save the selectedVolumeBA (selected via paymentChoice from paymentChoiceDetails) in the appState.
+    appState.panels.buy.volumeBA = selectedVolumeBA;
+    log("appState.panels.buy.volumeBA: " + appState.panels.buy.volumeBA);
+    volumeBA = selectedVolumeBA;
+    let buyOrder = {volumeQA, volumeBA, assetQA, assetBA, paymentMethod: paymentChoice};
     // Select the correct payment function.
-    if (paymentChoice === 'direct_payment') {
+    if (paymentChoice === 'solidi') {
       // Choice: Pay directly from external fiat account.
-      await payDirectly();
+      await payDirectly(buyOrder);
     } else {
       // Choice: Pay with balance.
-      await payWithBalance();
+      await payWithBalance(buyOrder);
     }
   }
 
 
-  let payDirectly = async () => {
-    let output = await appState.sendBuyOrder({paymentMethod: 'solidi'});
+  let payDirectly = async (buyOrder) => {
+    let output = await appState.sendBuyOrder(buyOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    lj(output)
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -200,26 +227,28 @@ let ChooseHowToPay = () => {
   }
 
 
-  let payWithBalance = async () => {
+  let payWithBalance = async (buyOrder) => {
     // We already disabled the "Pay with balance" button earlier if the balance wasn't large enough, but we still double-check the balance value here.
     // We reload the balances just in case they have changed in the meantime.
     await appState.loadBalances();
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     let balanceQA = appState.getBalance(assetQA);
     let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
-    if (Big(balanceQA).lt(Big(volumeQA))) {
-      let diffString = Big(volumeQA).minus(Big(balanceQA)).toFixed(quoteDP);
+    let totalQA = calculateTotalQA();
+    if (Big(balanceQA).lt(Big(totalQA))) {
+      let diffString = Big(totalQA).minus(Big(balanceQA)).toFixed(quoteDP);
       let balanceString = Big(balanceQA).toFixed(quoteDP);
-      let volumeString = Big(volumeQA).toFixed(quoteDP);
-      let msg = `User wants to pay with balance, but: ${assetQA} balance = ${balanceString} and specified volume is ${volumeString}. Difference = ${diffString} ${assetQA}.`;
+      let totalVolumeString = Big(totalQA).toFixed(quoteDP);
+      let msg = `User wants to pay with balance, but: ${assetQA} balance = ${balanceString} and specified volume is ${totalVolumeString}. Difference = ${diffString} ${assetQA}.`;
       log(msg);
       // Next step
       appState.changeState('InsufficientBalance', 'buy');
       return;
     }
     // Call to the server and instruct it to pay for the order with the user's balance.
-    let output = await appState.sendBuyOrder({paymentMethod: 'balance'});
+    let output = await appState.sendBuyOrder(buyOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    lj(output)
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -241,7 +270,7 @@ let ChooseHowToPay = () => {
     - Tell the user what's happened and ask them if they'd like to go ahead.
     - We don't want to change the amount the user is spending (because that's what they expect to spend), so we update baseAssetVolume.
     */
-    /* Example output: (where quoteAssetVolume was originally "10.00")
+    /* Example output: (where the quoteAssetVolume we sent in was "10.00")
       {
         "baseAssetVolume": "0.00036922",
         "market": "BTC/GBP",
@@ -249,21 +278,23 @@ let ChooseHowToPay = () => {
         "result": "PRICE_CHANGE"
       }
     */
-    // We actually ignore the price change result, and re-query the API using the original quoteAssetVolume.
-    let market = assetBA + '/' + assetQA;
-    let params = {market, side: 'BUY', baseOrQuoteAsset: 'quote', quoteAssetVolume: volumeQA};
-    let output = await appState.fetchBestPriceForASpecificVolume(params);
-    //lj(output); // Example: {"price":"0.00040100"}
+    let newVolumeQA = priceChange.quoteAssetVolume;
+    // We re-query the API using the original quoteAssetVolume.
+    let details = await fetchPaymentChoiceDetails();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: Check for errors here.
-    let newVolumeBA = output.price;
-    // priceDown = Did we, for the same quoteAssetVolume, get more baseAssetVolume ?
-    let priceDown = Big(newVolumeBA).gt(Big(volumeBA));
+    setPaymentChoiceDetails(details);
+    let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+    setSelectedVolumeBA(newVolumeBA);
+    // priceDown = Did the required quoteAssetVolume go down ?
+    let priceDown = Big(newVolumeQA).lt(Big(volumeQA));
     let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
-    let priceDiff = Big(newVolumeBA).minus(Big(volumeBA)).toFixed(baseDP);
-    log(`price change: volumeBA = ${volumeBA}, newVolumeBA = ${newVolumeBA}, priceDiff = ${priceDiff}`);
-    // Rewrite the order and save it.
+    let priceDiff = Big(newVolumeQA).minus(Big(volumeQA)).toFixed(baseDP);
+    log(`price change: volumeQA = ${volumeQA}, newVolumeQA = ${newVolumeQA}, priceDiff = ${priceDiff}`);
+    // Save the new order details.
     appState.panels.buy.volumeBA = newVolumeBA;
     appState.panels.buy.activeOrder = true;
+    volumeBA = newVolumeBA;
     setDisableConfirmButton(false);
     setSendOrderMessage('');
     let suffix = priceDown ? ' in your favour!' : '.';
@@ -302,11 +333,17 @@ let ChooseHowToPay = () => {
 
       <ScrollView ref={refScrollView} showsVerticalScrollIndicator={true}>
 
+        { isLoading &&
+          <View style={styles.loadingMessage}>
+            <Text style={styles.loadingMessageText}>Loading...</Text>
+          </View>
+        }
+
         <View style={styles.selectPaymentMethodSection}>
 
           <RadioButton.Group onValueChange={x => setPaymentChoice(x)} value={paymentChoice}>
 
-            <RadioButton.Item label="Pay directly to Solidi" value="direct_payment"
+            <RadioButton.Item label="Pay directly to Solidi" value="solidi"
               color={colors.standardButtonText}
               style={styles.button}
               labelStyle={styles.buttonLabel}
@@ -352,7 +389,7 @@ let ChooseHowToPay = () => {
 
           <View style={styles.orderDetailsLine}>
             <Text style={styles.bold}>You buy</Text>
-            <Text style={[styles.monospaceText, styles.bold]}>{volumeBA} {assetBA}</Text>
+            <Text style={[styles.monospaceText, styles.bold]}>{selectedVolumeBA} {assetBA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
@@ -487,6 +524,14 @@ let styles = StyleSheet.create({
   monospaceText: {
     // For Android, a second solution may be needed.
     fontVariant: ['tabular-nums'],
+  },
+  loadingMessage: {
+    //borderWidth: 1, //testing
+    marginTop: scaledHeight(20),
+    paddingHorizontal: scaledWidth(30),
+  },
+  loadingMessageText: {
+    color: 'red',
   },
   priceChangeMessage: {
     //borderWidth: 1, //testing
