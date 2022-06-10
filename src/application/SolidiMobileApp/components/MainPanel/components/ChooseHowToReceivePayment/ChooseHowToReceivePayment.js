@@ -46,6 +46,7 @@ let ChooseHowToReceivePayment = () => {
   let permittedPageNames = 'default solidi balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToReceivePayment');
   if (pageName == 'default') pageName = 'balance';
+  //pageName = 'solidi'; //testing
 
   // State
   let [isLoading, setIsLoading] = useState(true);
@@ -87,8 +88,9 @@ let ChooseHowToReceivePayment = () => {
     try {
       await appState.generalSetup();
       await appState.loadBalances();
-      setPaymentChoiceDetails(await fetchPaymentChoiceDetails());
+      let details = await fetchPaymentChoiceDetails();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setPaymentChoiceDetails(details);
       if (_.has(paymentChoiceDetails, paymentChoice)) {
         let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
         setSelectedVolumeBA(newVolumeBA);
@@ -107,7 +109,7 @@ let ChooseHowToReceivePayment = () => {
   // When paymentChoice is changed, set selectedVolumeBA to the corresponding value.
   useEffect(() => {
     if (! firstRender) {
-      if (!_.has(paymentChoiceDetails, paymentChoice)) return;
+      if (! _.has(paymentChoiceDetails, paymentChoice)) return;
       let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
       setSelectedVolumeBA(newVolumeBA);
     }
@@ -162,7 +164,7 @@ let ChooseHowToReceivePayment = () => {
     if (testTweaks) {
       paymentChoiceDetails['solidi'].feeVolume = '0.51';
       paymentChoiceDetails['solidi'].baseAssetVolume = '0.00043000';
-    lj({paymentChoiceDetails})
+    lj({paymentChoiceDetails});
     }
     return paymentChoiceDetails;
   }
@@ -207,9 +209,11 @@ let ChooseHowToReceivePayment = () => {
     let feeQA = calculateFeeQA();
     let totalQA = calculateTotalQA();
     _.assign(appState.panels.sell, {feeQA, totalQA});
-    // Choose the volumeBA value from the paymentChoiceDetails result for the selected paymentChoice.
-    // Save it in the appState.
+    // Save the selectedVolumeBA (selected via paymentChoice from paymentChoiceDetails) in the appState.
     appState.panels.sell.volumeBA = selectedVolumeBA;
+    volumeBA = selectedVolumeBA;
+    // Create the order object.
+    let sellOrder = {volumeQA, volumeBA, assetQA, assetBA, paymentMethod: paymentChoice};
     // Choose the receive-payment function.
     // Note: These functions are currently identical, but may diverge in future. Keep them separate.
     if (paymentChoice === 'solidi') {
@@ -224,19 +228,20 @@ let ChooseHowToReceivePayment = () => {
         appState.stashState({mainPanelState: appState.mainPanelState, pageName: paymentChoice});
         return appState.changeState('BankAccounts');
       } else {
-        await receivePayment();
+        await receivePayment(sellOrder);
       }
     } else {
       // Choice: Pay with balance.
-      await receivePaymentToBalance();
+      await receivePaymentToBalance(sellOrder);
     }
   }
 
 
-  let receivePayment = async () => {
+  let receivePayment = async (sellOrder) => {
     // We send the stored sell order.
-    let output = await appState.sendSellOrder({paymentMethod: 'solidi'});
+    let output = await appState.sendSellOrder(sellOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
+    lj(output);
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -252,10 +257,11 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
-  let receivePaymentToBalance = async () => {
+  let receivePaymentToBalance = async (sellOrder) => {
     // We send the stored sell order.
-    let output = await appState.sendSellOrder({paymentMethod: 'balance'});
+    let output = await appState.sendSellOrder(sellOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID, 'ChooseHowToReceivePayment')) return;
+    lj(output);
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -271,11 +277,11 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
-  let handlePriceChange = async (output) => {
+  let handlePriceChange = async (priceChange) => {
     /* If the price has changed, we'll:
     - Update the stored order values and re-render.
     - Tell the user what's happened and ask them if they'd like to go ahead.
-    - Note: We keep baseAssetVolume constant (i.e. the amount the user is selling), so we update quoteAssetVolume.
+    - We don't want to change the amount the user is selling for (because that's what they expect to receive), so we update baseAssetVolume.
     */
     /* Example output:
       {
@@ -285,16 +291,23 @@ let ChooseHowToReceivePayment = () => {
         "result": "PRICE_CHANGE"
       }
     */
-    let newVolumeQA = output.quoteAssetVolume;
-    let priceDown = Big(volumeQA).gt(Big(newVolumeQA));
-    let quoteDB = appState.getAssetInfo(assetQA).decimalPlaces;
-    let priceDiff = Big(volumeQA).minus(Big(newVolumeQA)).toFixed(quoteDB);
-    newVolumeQA = Big(newVolumeQA).toFixed(quoteDB);
+    let newVolumeQA = priceChange.quoteAssetVolume;
+    // We re-query the API using the original quoteAssetVolume.
+    let details = await fetchPaymentChoiceDetails();
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    // Future: Check for errors here.
+    setPaymentChoiceDetails(details);
+    let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+    setSelectedVolumeBA(newVolumeBA);
+    // priceDown = Did the quoteAssetVolume (that the user would receive) go down ?
+    let priceDown = Big(newVolumeQA).lt(Big(volumeQA));
+    let baseDP = appState.getAssetInfo(assetBA).decimalPlaces;
+    let priceDiff = Big(newVolumeQA).minus(Big(volumeQA)).toFixed(baseDP);
     log(`price change: volumeQA = ${volumeQA}, newVolumeQA = ${newVolumeQA}, priceDiff = ${priceDiff}`);
-    // Rewrite the order and save it.
-    appState.panels.sell.volumeQA = newVolumeQA;
+    // Save the new order details.
+    appState.panels.sell.volumeBA = newVolumeBA;
     appState.panels.sell.activeOrder = true;
-    // Note: No need to re-check balances, because the amount that the user is selling has not changed.
+    volumeBA = newVolumeBA;
     setDisableConfirmButton(false);
     setSendOrderMessage('');
     let priceUp = ! priceDown;
@@ -343,7 +356,9 @@ let ChooseHowToReceivePayment = () => {
 
           <RadioButton.Item label="Paid directly from Solidi" value="solidi"
             color={colors.standardButtonText}
-            style={styles.button} labelStyle={styles.buttonLabel} />
+            style={styles.button}
+            labelStyle={styles.buttonLabel}
+          />
 
           <View style={styles.buttonDetail}>
             <Text style={styles.bold}>{`\u2022  `} Paid to your bank account in 8 hours</Text>
@@ -360,7 +375,9 @@ let ChooseHowToReceivePayment = () => {
 
           <RadioButton.Item label="Paid to balance" value="balance"
             color={colors.standardButtonText}
-            style={styles.button} labelStyle={styles.buttonLabel} />
+            style={styles.button}
+            labelStyle={styles.buttonLabel}
+          />
 
           <View style={styles.buttonDetail}>
             <Text style={styles.bold}>{`\u2022  `} Paid to your Solidi balance - No fee!</Text>

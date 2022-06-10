@@ -1232,6 +1232,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         params,
         functionName: funcName,
       });
+      lj({params});
       if (data == 'DisplayedError') return 'DisplayedError';
       /* Example output:
 [
@@ -1304,15 +1305,16 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       return orderStatus;
     }
 
-    this.sendBuyOrder = async (params) => {
+    this.sendBuyOrder = async (buyOrder) => {
       if (! this.state.panels.buy.activeOrder) {
         //log('No active BUY order. Leaving sendBuyOrder.');
         return {result: 'NO_ACTIVE_ORDER'};
       }
       // Ensure that this order only gets processed once.
       this.state.panels.buy.activeOrder = false;
-      let {paymentMethod} = params;
-      ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.buy);
+      // Unpack and save the order.
+      let {volumeQA, volumeBA, assetQA, assetBA, paymentMethod} = buyOrder;
+      _.assign(this.state.panels.buy, {volumeQA, assetQA, volumeBA, assetBA});
       let market = assetBA + '/' + assetQA;
       let orderType = 'IMMEDIATE_OR_CANCEL';
       let msg = `Send order to server: [${market}] BUY ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`;
@@ -1387,15 +1389,16 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       */
     }
 
-    this.sendSellOrder = async (params) => {
+    this.sendSellOrder = async (sellOrder) => {
       if (! this.state.panels.sell.activeOrder) {
         log('No active SELL order. Leaving sendSellOrder.');
         return {result: 'NO_ACTIVE_ORDER'};
       }
       // Ensure that this order only gets processed once.
       this.state.panels.sell.activeOrder = false;
-      let {paymentMethod} = params;
-      ({volumeQA, volumeBA, assetQA, assetBA} = this.state.panels.sell);
+      // Unpack and save the order.
+      let {volumeQA, volumeBA, assetQA, assetBA, paymentMethod} = sellOrder;
+      _.assign(this.state.panels.sell, {volumeQA, assetQA, volumeBA, assetBA});
       let market = assetBA + '/' + assetQA;
       let orderType = 'IMMEDIATE_OR_CANCEL';
       let msg = `Send order to server: [${market}] SELL ${volumeBA} ${assetBA} for ${volumeQA} ${assetQA} - ${orderType}`;
