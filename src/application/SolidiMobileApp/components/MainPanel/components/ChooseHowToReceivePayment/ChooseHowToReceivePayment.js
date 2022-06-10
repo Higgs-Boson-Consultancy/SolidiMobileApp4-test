@@ -89,7 +89,7 @@ let ChooseHowToReceivePayment = () => {
       await appState.loadBalances();
       setPaymentChoiceDetails(await fetchPaymentChoiceDetails());
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      if (! _.has(paymentChoiceDetails, paymentChoice)) {
+      if (_.has(paymentChoiceDetails, paymentChoice)) {
         let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
         setSelectedVolumeBA(newVolumeBA);
       }
