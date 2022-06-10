@@ -38,17 +38,22 @@ Future: People may want to be paid directly with crypto, not just fiat.
 let ChooseHowToReceivePayment = () => {
 
   let appState = useContext(AppStateContext);
-  let [renderCount, triggerRender] = useState(0);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
+  let [renderCount, triggerRender] = useState(0);
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'default direct_payment balance'.split(' ');
+  let permittedPageNames = 'default solidi balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToReceivePayment');
   if (pageName == 'default') pageName = 'balance';
 
   // State
+  let [isLoading, setIsLoading] = useState(true);
   let [paymentChoice, setPaymentChoice] = useState(pageName);
-  let [fees, setFees] = useState({});
+  let [paymentChoiceDetails, setPaymentChoiceDetails] = useState({});
+  // - volumeBA may differ depending on the payment choice.
+  // -- If it changes, we should re-render.
+  let [selectedVolumeBA, setSelectedVolumeBA] = useState('');
 
   // Confirm Button state
   let [disableConfirmButton, setDisableConfirmButton] = useState(true);
@@ -68,6 +73,7 @@ let ChooseHowToReceivePayment = () => {
   }
 
    // Load order details.
+   // - Note: We ignore the volumeBA chosen earlier by the fetchBestPrice function, and select only from the volumeBA values returned by the fetchPrices function.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.sell);
 
 
@@ -81,16 +87,30 @@ let ChooseHowToReceivePayment = () => {
     try {
       await appState.generalSetup();
       await appState.loadBalances();
-      setFees(await fetchFeesForEachPaymentChoice());
+      setPaymentChoiceDetails(await fetchPaymentChoiceDetails());
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+      setSelectedVolumeBA(newVolumeBA);
       setErrorMessage('');
       setDisableConfirmButton(false);
+      setIsLoading(false);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `ChooseHowToReceivePayment.setup: Error = ${err}`;
       console.log(msg);
     }
   }
+
+  // When paymentChoice is changed, set selectedVolumeBA to the corresponding value.
+  useEffect(() => {
+    if (! firstRender) {
+      if (!_.has(paymentChoiceDetails, paymentChoice)) return;
+      let newVolumeBA = paymentChoiceDetails[paymentChoice].baseAssetVolume;
+      setSelectedVolumeBA(newVolumeBA);
+    }
+  }, [paymentChoice]);
+
+
 
 
   let getBankAccount = () => {
@@ -101,7 +121,7 @@ let ChooseHowToReceivePayment = () => {
   let bankAccountDetailsAreEmpty = () => {
     // Load user's external GBP account.
     let account = appState.getDefaultAccountForAsset('GBP');
-    lj(account);
+    //lj(account);
     let keys = 'accountName sortCode accountNumber'.split(' ');
     if (keys.every(k => _.has(account, k))) {
       if (
@@ -116,9 +136,9 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
-  let fetchFeesForEachPaymentChoice = async () => {
+  let fetchPaymentChoiceDetails = async () => {
     // Fees may differ depending on the volume and on the user (e.g. whether the user has crossed a fee inflection point).
-    // We therefore request the price and fee for each payment choice from the API, using the specific quoteAssetVolume.
+    // We therefore request the details for each payment choice from the API, using the specific quoteAssetVolume.
     let market = assetBA + '/' + assetQA;
     let side = 'SELL';
     let baseOrQuoteAsset = 'quote';
@@ -130,30 +150,29 @@ let ChooseHowToReceivePayment = () => {
       return;
     }
     /* Example output:
-    [
-      {"baseAssetVolume":"0.00043209","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"SELL"},
-      {"baseAssetVolume":"0.00043209","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"SELL"}
-    ]
+    {
+      "balance":{"baseAssetVolume":"0.00042782","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"SELL"},
+      "solidi":{"baseAssetVolume":"0.00042782","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"SELL"}
+    }
     */
-    // Now: Produce an object that maps paymentMethods to feeVolumes.
-    let result = _.reduce(output, (obj, x) => {
-      obj[x.paymentMethod] = x.feeVolume;
-      return obj;
-    }, {});
-    // Rename 'solidi' key to 'direct_payment'.
-    result['direct_payment'] = result['solidi'];
-    delete result['solidi'];
+    paymentChoiceDetails = output;
     // Testing
-    //result['direct_payment'] = '0.51';
-    return result;
+    testTweaks = false;
+    if (testTweaks) {
+      paymentChoiceDetails['solidi'].feeVolume = '0.51';
+      paymentChoiceDetails['solidi'].baseAssetVolume = '0.00043000';
+    lj({paymentChoiceDetails})
+    }
+    return paymentChoiceDetails;
   }
 
 
   let calculateFeeQA = () => {
-    if (_.isEmpty(fees)) return '';
-    let feeVolume = fees[paymentChoice];
+    if (_.isEmpty(paymentChoiceDetails)) return '';
+    if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
+    let feeVolume = paymentChoiceDetails[paymentChoice]['feeVolume'];
     feeVolume = appState.getFullDecimalValue({asset: assetQA, value: feeVolume, functionName: 'ChooseHowToPay'});
-    log(`Payment method = ${paymentChoice}: Fee = ${feeVolume} ${assetQA}`);
+    //log(`Payment method = ${paymentChoice}: Fee = ${feeVolume} ${assetQA}`);
     return feeVolume;
   }
 
@@ -187,9 +206,12 @@ let ChooseHowToReceivePayment = () => {
     let feeQA = calculateFeeQA();
     let totalQA = calculateTotalQA();
     _.assign(appState.panels.sell, {feeQA, totalQA});
+    // Choose the volumeBA value from the paymentChoiceDetails result for the selected paymentChoice.
+    // Save it in the appState.
+    appState.panels.sell.volumeBA = selectedVolumeBA;
     // Choose the receive-payment function.
     // Note: These functions are currently identical, but may diverge in future. Keep them separate.
-    if (paymentChoice === 'direct_payment') {
+    if (paymentChoice === 'solidi') {
       // Choice: Make a direct payment to the customer's primary external fiat account.
       // Note: In this case, the server will perform a withdrawal automatically after filling the order.
       // We check if the user has supplied a default account at which they can receive a payment.
@@ -308,11 +330,17 @@ let ChooseHowToReceivePayment = () => {
 
       <ScrollView ref={refScrollView} showsVerticalScrollIndicator={true}>
 
+        { isLoading &&
+          <View style={styles.loadingMessage}>
+            <Text style={styles.loadingMessageText}>Loading...</Text>
+          </View>
+        }
+
         <View style={styles.selectPaymentMethodSection}>
 
           <RadioButton.Group onValueChange={x => setPaymentChoice(x)} value={paymentChoice}>
 
-          <RadioButton.Item label="Paid directly from Solidi" value="direct_payment"
+          <RadioButton.Item label="Paid directly from Solidi" value="solidi"
             color={colors.standardButtonText}
             style={styles.button} labelStyle={styles.buttonLabel} />
 
@@ -358,7 +386,7 @@ let ChooseHowToReceivePayment = () => {
 
           <View style={styles.orderDetailsLine}>
             <Text style={styles.bold}>You sell</Text>
-            <Text style={[styles.monospaceText, styles.bold]}>{volumeBA} {assetBA}</Text>
+            <Text style={[styles.monospaceText, styles.bold]}>{selectedVolumeBA} {assetBA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
@@ -492,6 +520,14 @@ let styles = StyleSheet.create({
   monospaceText: {
     // For Android, a second solution may be needed.
     fontVariant: ['tabular-nums'],
+  },
+  loadingMessage: {
+    //borderWidth: 1, //testing
+    marginTop: scaledHeight(20),
+    paddingHorizontal: scaledWidth(30),
+  },
+  loadingMessageText: {
+    color: 'red',
   },
   priceChangeMessage: {
     //borderWidth: 1, //testing
