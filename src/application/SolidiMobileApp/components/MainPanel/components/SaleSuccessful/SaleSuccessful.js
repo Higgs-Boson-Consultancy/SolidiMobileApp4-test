@@ -29,7 +29,7 @@ let SaleSuccessful = () => {
 
   // Note: Never add "default" to the list of pageNames. One of the two options must be chosen explicitly.
   let pageName = appState.pageName;
-  let permittedPageNames = 'direct_payment balance'.split(' ');
+  let permittedPageNames = 'solidi balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SaleSuccessful');
 
   // Load order details.
@@ -112,7 +112,7 @@ let SaleSuccessful = () => {
 
         }
 
-        { (pageName == 'direct_payment') &&
+        { (pageName == 'solidi') &&
 
           <View style={styles.infoItem}>
             <Text style={styles.bold}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} should arrive within 8 hours.</Text>

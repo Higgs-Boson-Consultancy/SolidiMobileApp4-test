@@ -72,7 +72,7 @@ let InsufficientBalance = () => {
   }
 
   let payDirectly = () => {
-    appState.changeState('ChooseHowToPay', 'direct_payment');
+    appState.changeState('ChooseHowToPay', 'solidi');
   }
 
   let makeDeposit = () => {
