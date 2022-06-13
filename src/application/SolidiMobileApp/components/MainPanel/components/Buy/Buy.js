@@ -397,7 +397,7 @@ let Buy = () => {
         <Text style={styles.headingText}>Buy</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={styles.descriptionText}>I want to spend:</Text>
 
@@ -527,11 +527,11 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(15),
   },
   quoteAssetContainer: {
-    width: scaledWidth(220),
+    width: scaledWidth(219),
   },
   quoteAsset: {
     height: scaledHeight(40),
-    width: scaledWidth(220),
+    width: scaledWidth(219),
   },
   baseAssetWrapper: {
     paddingVertical: scaledHeight(20),
@@ -552,12 +552,12 @@ let styles = StyleSheet.create({
     //borderWidth: 1, //testing
   },
   baseAssetContainer: {
-    width: scaledWidth(220),
+    width: scaledWidth(219),
     //borderWidth: 1, //testing
   },
   baseAsset: {
     height: scaledHeight(40),
-    width: scaledWidth(220),
+    width: scaledWidth(219),
     //borderWidth: 1, //testing
   },
   priceWrapper: {
