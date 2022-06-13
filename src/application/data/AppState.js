@@ -921,7 +921,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Get the ticker price held in the appState.
       if (_.isUndefined(this.state.apiData.ticker[market])) return null;
       if (_.isUndefined(this.state.apiData.ticker[market].price)) return null;
-      return this.state.apiData.ticker[market].price;
+      let price = this.state.apiData.ticker[market].price;
+      return {price};
     }
 
     this.getPreviousTickerForMarket = (market) => {
@@ -1099,7 +1100,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       */
      let details = data;
       // If the data differs from existing data, save it.
-      msg = `Deposit details for asset=${asset} loaded from server.`;
+      let msg = `Deposit details for asset=${asset} loaded from server.`;
       if (jd(details) === jd(this.state.user.info.depositDetails[asset])) {
         log(msg + " No change.");
       } else {
@@ -1137,7 +1138,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       */
       // If the data differs from existing data, save it.
       let account = data;
-      msg = `Default account for asset=${asset} loaded from server.`;
+      let msg = `Default account for asset=${asset} loaded from server.`;
       if (jd(account) === jd(this.state.user.info.defaultAccount[asset])) {
         log(msg + " No change.");
       } else {
@@ -1266,16 +1267,29 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       } else {
         if (_.isNil(quoteAssetVolume)) { console.error(`${funcName}: quoteAssetVolume required`); return; }
       }
-      let data = await this.state.privateMethod({
-        apiRoute: 'best_volume_price/' + market,
-        params,
-        functionName: funcName,
-      });
+      // The Buy page is accessible immediately without the user having logged in.
+      // With a non-authenticated user, we call the public GET endpoint.
+      let data;
+      if (! this.state.user.isAuthenticated && this.state.mainPanelState == 'Buy') {
+        let assetVolume = (baseOrQuoteAsset == 'base') ? baseAssetVolume : quoteAssetVolume;
+        let argString = '/' + side + '/' + baseOrQuoteAsset + '/' + assetVolume;
+        data = await this.state.publicMethod({
+          httpMethod: 'GET',
+          apiRoute: 'best_volume_price/' + market + argString,
+          functionName: funcName,
+        });
+      } else {
+        data = await this.state.privateMethod({
+          apiRoute: 'best_volume_price/' + market,
+          params,
+          functionName: funcName,
+        });
+      }
       //lj(params);
       if (data == 'DisplayedError') return 'DisplayedError';
       /* Example output:
-      {"price":"24528.64"} (side='BUY', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
-      {"price":"24506.44"} (side='SELL', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
+      {"price":"24528.64"} (For side='BUY', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
+      {"price":"24506.44"} (For side='SELL', baseAssetVolume: '1', baseOrQuoteAsset: 'base')
       */
       return data;
     }
