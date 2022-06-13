@@ -348,14 +348,13 @@ let Receive = () => {
         <Text style={styles.headingText}>Receive</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.description1}>
         <Text style={styles.descriptionText}>I want to receive:</Text>
       </View>
 
       <View style={styles.chosenAssetWrapper}>
-        <View style={styles.chosenAssetWrapper2}>
         <DropDownPicker
           listMode="SCROLLVIEW"
           placeholder={appState.getAssetInfo(assetCA).displayString}
@@ -373,7 +372,7 @@ let Receive = () => {
           }}
           maxHeight={scaledHeight(300)}
         />
-        </View>
+
       </View>
 
       <View style={styles.description1}>
@@ -432,17 +431,11 @@ let styles = StyleSheet.create({
   },
   chosenAssetWrapper: {
     paddingVertical: scaledHeight(20),
-    width: '100%',
-    flexDirection: "row",
-    justifyContent: 'center',
-    zIndex: 2,
-    //borderWidth: 1, // testing
-  },
-  chosenAssetWrapper2: {
     width: '80%',
+    marginLeft: '10%',
   },
   chosenAssetDropdown: {
-    height: 40,
+    height: scaledHeight(40),
   },
   chosenAssetDropdownContainer: {
     //borderWidth: 1, // testing
