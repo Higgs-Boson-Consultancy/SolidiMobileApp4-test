@@ -54,7 +54,7 @@ let ReadArticle = () => {
         <Text style={styles.headingText}>{headingText}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} style={styles.mainScrollView} >
 
       {/* Future: For long articles, add a scrollToEnd button at the top.
       { longArticles.includes(pageName) && scrollToEndButton() }

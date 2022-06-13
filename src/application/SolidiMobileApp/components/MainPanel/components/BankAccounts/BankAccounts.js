@@ -115,7 +115,7 @@ let BankAccounts = () => {
         <Text style={styles.headingText}>Bank Account</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       { isLoading && <Spinner/> }
 

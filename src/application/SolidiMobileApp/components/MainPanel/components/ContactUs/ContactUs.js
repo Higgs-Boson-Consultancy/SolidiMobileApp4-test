@@ -64,7 +64,7 @@ let ContactUs = () => {
         <Text style={styles.headingText}>Contact Us</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={styles.bold}>Please tap the button below to visit the Contact Us page on our website.</Text>
 

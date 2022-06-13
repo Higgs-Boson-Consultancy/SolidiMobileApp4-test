@@ -92,7 +92,7 @@ let PaymentNotMade = () => {
         <Text style={styles.headingText}>{headingText}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.infoSection}>
 

@@ -557,7 +557,7 @@ let Send = () => {
         <Text style={styles.headingText}>Send</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.description1}>
         <View>

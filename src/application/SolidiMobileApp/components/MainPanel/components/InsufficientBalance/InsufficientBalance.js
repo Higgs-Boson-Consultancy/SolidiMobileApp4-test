@@ -108,7 +108,7 @@ let InsufficientBalance = () => {
         <Text style={styles.headingText}>Insufficient balance</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text>Order details: {getOrderDetails()}</Text>
 

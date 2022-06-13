@@ -196,7 +196,7 @@ address1 address2 address3 address4 postcode country
         <Text style={styles.headingText}>Personal Details</Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }} >
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionHeadingText}>Basic Details</Text>

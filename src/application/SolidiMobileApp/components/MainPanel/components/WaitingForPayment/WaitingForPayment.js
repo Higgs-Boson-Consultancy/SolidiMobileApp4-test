@@ -122,7 +122,7 @@ let WaitingForPayment = () => {
         <Text style={styles.headingText}>Waiting for your payment</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.textItem}>
         <Text style={styles.bold}>Thank you for sending your payment.</Text>

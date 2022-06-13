@@ -75,7 +75,7 @@ let Login = () => {
         <Text style={styles.headingText}>Login</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       {errorMessage &&
         <View style={styles.errorWrapper}>

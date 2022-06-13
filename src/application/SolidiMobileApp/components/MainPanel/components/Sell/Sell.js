@@ -435,7 +435,7 @@ let Sell = () => {
         <Text style={styles.headingText}>Sell</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={styles.descriptionText}>I want to get:</Text>
 

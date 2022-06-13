@@ -65,7 +65,7 @@ let Error = () => {
         <Text style={styles.headingText}>Error</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={styles.bold}>{'\n'}Unfortunately, an error has occurred.</Text>
 

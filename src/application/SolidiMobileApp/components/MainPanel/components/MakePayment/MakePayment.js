@@ -129,7 +129,7 @@ let MakePayment = () => {
         <Text style={styles.headingText}>Make payment</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.instructionsSection}>
         <View style={styles.instructionItem}>

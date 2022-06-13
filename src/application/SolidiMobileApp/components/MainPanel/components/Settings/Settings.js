@@ -59,7 +59,7 @@ let Settings = () => {
         <Text style={styles.headingText}>Settings</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.buttonWrapper}>
         <StandardButton title='Lock App' onPress={ () => { appState.lockApp(); } } />

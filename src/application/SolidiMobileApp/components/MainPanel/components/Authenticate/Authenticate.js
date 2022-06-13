@@ -67,7 +67,7 @@ let Authenticate = () => {
         <Text style={styles.headingText}>Authenticate</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       { appState.panels.buy.activeOrder &&
 

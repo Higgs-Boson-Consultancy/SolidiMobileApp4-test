@@ -88,7 +88,7 @@ let SaleSuccessful = () => {
         <Text style={styles.headingText}>Sale successful!</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.infoSection}>
 

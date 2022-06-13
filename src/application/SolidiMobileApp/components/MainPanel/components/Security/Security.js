@@ -80,7 +80,7 @@ let Security = () => {
         <Text style={styles.headingText}>Security</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.detail}>
         <View style={styles.detailName}>

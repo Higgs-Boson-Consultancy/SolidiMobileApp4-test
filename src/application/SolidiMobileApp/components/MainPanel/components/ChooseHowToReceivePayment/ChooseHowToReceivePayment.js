@@ -334,7 +334,7 @@ let ChooseHowToReceivePayment = () => {
 
       <View style={[styles.horizontalRule, styles.horizontalRule1]}/>
 
-      <ScrollView ref={refScrollView} showsVerticalScrollIndicator={true}>
+      <ScrollView ref={refScrollView} showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
         { isLoading &&
           <View style={styles.loadingMessage}>

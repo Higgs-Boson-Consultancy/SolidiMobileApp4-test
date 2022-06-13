@@ -79,7 +79,7 @@ let RequestTimeout = () => {
         <Text style={styles.headingText}>Request timed out</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.spacer1}></View>
 

@@ -69,7 +69,7 @@ let SupportTools = () => {
         <Text style={styles.headingText}>Support Tools</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} style={styles.mainScrollView}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.buttonWrapper}>
         <StandardButton title='Register without auto-login'
@@ -121,8 +121,6 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
-  },
-  mainScrollView: {
   },
   bold: {
     fontWeight: 'bold',
