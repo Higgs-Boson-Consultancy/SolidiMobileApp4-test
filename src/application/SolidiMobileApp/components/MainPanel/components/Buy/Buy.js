@@ -408,7 +408,7 @@ let Buy = () => {
           value={volumeQA}
         />
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetQA).displayString}
           style={styles.quoteAsset}
           containerStyle={styles.quoteAssetContainer}
@@ -435,7 +435,7 @@ let Buy = () => {
           value={volumeBA}
         />
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetBA).displayString}
           style={styles.baseAsset}
           containerStyle={styles.baseAssetContainer}
@@ -528,11 +528,11 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(15),
   },
   quoteAssetContainer: {
-    width: scaledWidth(219),
+    width: scaledWidth(220),
   },
   quoteAsset: {
     height: scaledHeight(40),
-    width: scaledWidth(219),
+    width: scaledWidth(220),
   },
   baseAssetWrapper: {
     paddingVertical: scaledHeight(20),
@@ -553,12 +553,12 @@ let styles = StyleSheet.create({
     //borderWidth: 1, //testing
   },
   baseAssetContainer: {
-    width: scaledWidth(219),
+    width: scaledWidth(220),
     //borderWidth: 1, //testing
   },
   baseAsset: {
     height: scaledHeight(40),
-    width: scaledWidth(219),
+    width: scaledWidth(220),
     //borderWidth: 1, //testing
   },
   priceWrapper: {

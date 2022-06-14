@@ -446,7 +446,7 @@ let Sell = () => {
           value={volumeQA}
         />
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetQA).displayString}
           style={styles.quoteAsset}
           containerStyle={styles.quoteAssetContainer}
@@ -473,7 +473,7 @@ let Sell = () => {
           value={volumeBA}
         />
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetBA).displayString}
           style={styles.baseAsset}
           containerStyle={styles.baseAssetContainer}

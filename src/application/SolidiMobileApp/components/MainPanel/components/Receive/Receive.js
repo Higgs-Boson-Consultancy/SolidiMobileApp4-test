@@ -356,7 +356,7 @@ let Receive = () => {
 
       <View style={styles.chosenAssetWrapper}>
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetCA).displayString}
           style={styles.chosenAssetDropdown}
           containerStyle={styles.chosenAssetDropdownContainer}
@@ -431,13 +431,19 @@ let styles = StyleSheet.create({
   },
   chosenAssetWrapper: {
     paddingVertical: scaledHeight(20),
-    width: '80%',
-    marginLeft: '10%',
+    width: '100%',
+    flexDirection: "row",
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+    //borderWidth: 1, // testing
   },
   chosenAssetDropdown: {
     height: scaledHeight(40),
+    width: scaledWidth(280),
   },
   chosenAssetDropdownContainer: {
+    width: scaledWidth(280),
     //borderWidth: 1, // testing
   },
   depositDetailsSection: {

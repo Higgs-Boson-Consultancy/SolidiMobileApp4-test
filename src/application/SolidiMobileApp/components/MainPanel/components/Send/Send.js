@@ -586,7 +586,7 @@ let Send = () => {
           value={volumeSA}
         />
         <DropDownPicker
-          listMode="SCROLLVIEW"
+          listMode="MODAL"
           placeholder={appState.getAssetInfo(assetSA).displayString}
           style={styles.storedAssetDropdown}
           containerStyle={styles.storedAssetDropdownContainer}
