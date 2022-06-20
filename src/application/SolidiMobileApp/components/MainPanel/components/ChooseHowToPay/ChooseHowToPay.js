@@ -214,6 +214,9 @@ let ChooseHowToPay = () => {
         setSendOrderMessage('No active order.');
       } else if (result == 'PRICE_CHANGE') {
         await handlePriceChange(output);
+      } else if (result == 'EXCEEDS_LIMITS') {
+        appState.panels.buy.output = output;
+        appState.changeState('LimitsExceeded', 'buy');
       } else {
         appState.changeState('MakePayment');
       }
@@ -251,8 +254,14 @@ let ChooseHowToPay = () => {
         setSendOrderMessage('No active order.');
       } else if (result == 'PRICE_CHANGE') {
         await handlePriceChange(output);
-      } else {
+      } else if (result == 'FILLED') {
         appState.changeState('PurchaseSuccessful');
+      } else if (result == 'EXCEEDS_LIMITS') {
+        appState.panels.buy.output = output;
+        appState.changeState('LimitsExceeded', 'buy');
+      } else {
+        setErrorMessage(misc.itemToString(output));
+        setSendOrderMessage('');
       }
     }
   }
