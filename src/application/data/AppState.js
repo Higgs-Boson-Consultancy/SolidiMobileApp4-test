@@ -200,7 +200,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       if (_.isEmpty(this.state.stashedState)) return;
       let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
       log(msg);
-      this.state.setMainPanelState(this.state.stashedState, stashed=true);
+      let stashed = true;
+      this.state.setMainPanelState(this.state.stashedState, stashed);
     }
 
     this.resetStateHistory = () => {
