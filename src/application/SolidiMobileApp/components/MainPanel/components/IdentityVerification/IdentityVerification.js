@@ -7,8 +7,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {launchCamera} from 'react-native-image-picker';
-//import RNFS from 'react-native-fs';
-let RNFS = null;
+import RNFS from 'react-native-fs';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
