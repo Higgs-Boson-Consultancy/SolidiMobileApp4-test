@@ -223,15 +223,23 @@ let IdentityVerification = () => {
       cameraType: 'back',
     }
     let result = await launchCamera(options);
+    // Future: Handle the case where the user clicks "Cancel" after going into the Camera app.
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    //lj(result);
+    //lj({result});
     // Note from docs: Image/video captured via camera will be stored in temporary folder so will be deleted any time, so don't expect it to persist.
-    // Example result:
+    // Example results:
     /*
-    {"assets":[{"fileSize":5169332,"height":4032,"uri":"file:///var/mobile/Containers/Data/Application/6B354087-5CA1-4560-A7E3-237CB8504DA4/tmp/EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","type":"image/jpg","fileName":"EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","width":3024}]}
+    iOS
+{"assets":[{"fileSize":5169332,"height":4032,"uri":"file:///var/mobile/Containers/Data/Application/6B354087-5CA1-4560-A7E3-237CB8504DA4/tmp/EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","type":"image/jpg","fileName":"EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","width":3024}]}
+
+    Android:
+{"assets":[{"height":4160,"width":3120,"type":"image/jpeg","fileName":"rn_image_picker_lib_temp_1505c1a0-e458-455e-a038-7959e521cc95.jpg","fileSize":3564018,"uri":"file:///data/user/0/com.solidimobileapp4/cache/rn_image_picker_lib_temp_1505c1a0-e458-455e-a038-7959e521cc95.jpg"}]}
     */
-    // Future: Check for errors.
+    // If user cancels out of Camera app: result = {"didCancel":true}}
+    if (_.has(result, 'didCancel') && result.didCancel) return;
+    // Future: Check for any more errors.
     let image = result.assets[0];
+    //lj({image});
     // Save result in app state (more resilient than page state).
     if (documentCategory == 'identity') {
       appState.panels.identityVerification.photo1 = image;
@@ -314,7 +322,8 @@ let IdentityVerification = () => {
     }
     lj({photo})
     let fileExtension = ''; // An empty fileExtension will trigger an error on the server.
-    if (_.has(photo, 'type') && photo.type == 'image/jpg') fileExtension = '.jpg';
+    jpgTypes = 'image/jpg image/jpeg'.split(' ');
+    if (_.has(photo, 'type') && jpgTypes.includes(photo.type)) fileExtension = '.jpg';
     // Load the file data from the photo object's uri.
     let fileURI = photo.uri;
     // Example fileURI:
