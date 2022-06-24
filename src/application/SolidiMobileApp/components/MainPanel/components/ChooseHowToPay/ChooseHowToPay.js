@@ -141,14 +141,19 @@ let ChooseHowToPay = () => {
     if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
     let feeVolume = paymentChoiceDetails[paymentChoice]['feeVolume'];
     feeVolume = appState.getFullDecimalValue({asset: assetQA, value: feeVolume, functionName: 'ChooseHowToPay'});
+    //log(`Payment method = ${paymentChoice}: Fee = ${feeVolume} ${assetQA}`);
     return feeVolume;
   }
 
 
-  let calculateTotalQA = () => {
+  let calculateTotalQA = (params) => {
+    let feeVolume;
+    if (! _.isNil(params)) {
+      ({feeVolume} = params);
+    }
+    if (_.isNil(feeVolume)) feeVolume = calculateFeeQA();
+    if (_.isEmpty(feeVolume)) return ''; // We can't know the total without the fee.
     let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'ChooseHowToPay'});
-    let feeVolume = calculateFeeQA();
-    if (_.isEmpty(feeVolume)) return '';
     let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
     let total = Big(volumeQA2).plus(Big(feeVolume)).toFixed(quoteDP);
     return total;
@@ -206,6 +211,7 @@ let ChooseHowToPay = () => {
     let output = await appState.sendBuyOrder(buyOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     lj(output);
+    appState.panels.buy.output = output;
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -217,7 +223,13 @@ let ChooseHowToPay = () => {
       } else if (result == 'EXCEEDS_LIMITS') {
         appState.panels.buy.output = output;
         appState.changeState('LimitsExceeded', 'buy');
-      } else {
+      } else { // 'FILLED'
+        // Retrieve feeVolume from order result, calculate totalVolume, and store the results in the app memory.
+        let feeVolume = output.fees;
+        let totalVolumeQA = calculateTotalQA({feeVolume});
+        lj({feeVolume, totalVolumeQA})
+        appState.panels.buy.feeQA = feeVolume;
+        appState.panels.buy.totalQA = totalVolumeQA;
         appState.changeState('MakePayment');
       }
     }
@@ -246,6 +258,7 @@ let ChooseHowToPay = () => {
     let output = await appState.sendBuyOrder(buyOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     lj(output);
+    appState.panels.buy.output = output;
     if (_.has(output, 'error')) {
       setErrorMessage(misc.itemToString(output.error));
     } else if (_.has(output, 'result')) {
@@ -255,9 +268,14 @@ let ChooseHowToPay = () => {
       } else if (result == 'PRICE_CHANGE') {
         await handlePriceChange(output);
       } else if (result == 'FILLED') {
+        // Retrieve feeVolume from order result, calculate totalVolume, and store the results in the app memory.
+        let feeVolume = output.fees;
+        let totalVolumeQA = calculateTotalQA({feeVolume});
+        //lj({feeVolume, totalVolumeQA})
+        appState.panels.buy.feeQA = feeVolume;
+        appState.panels.buy.totalQA = totalVolumeQA;
         appState.changeState('PurchaseSuccessful');
       } else if (result == 'EXCEEDS_LIMITS') {
-        appState.panels.buy.output = output;
         appState.changeState('LimitsExceeded', 'buy');
       } else {
         setErrorMessage(misc.itemToString(output));
