@@ -119,6 +119,7 @@ let styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent : 'space-between',
     alignItems: 'center',
+    //borderWidth: 1, // testing
   },
   leftButtonWrapper: {
     width: '15%',
@@ -149,7 +150,8 @@ let styles = StyleSheet.create({
 })
 
 let styleEmptyFooter = StyleSheet.create({
-
+  //borderWidth: 1, // testing
+  //backgroundColor: 'red', // testing
 });
 
 let styleLeftButton = StyleSheet.create({
