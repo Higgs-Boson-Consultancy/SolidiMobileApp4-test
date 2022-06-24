@@ -31,6 +31,8 @@ export const mainPanelStates = [
   'Authenticate',
   'Register',
   'SupportTools',
+  'LimitsExceeded',
+  'IdentityVerification',
 ];
 
 export default mainPanelStates;

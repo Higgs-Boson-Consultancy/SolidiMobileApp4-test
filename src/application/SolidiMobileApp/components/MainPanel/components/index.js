@@ -30,6 +30,8 @@ import SendSuccessful from './SendSuccessful/SendSuccessful';
 import Authenticate from './Authenticate/Authenticate';
 import Register from './Register/Register';
 import SupportTools from './SupportTools/SupportTools';
+import LimitsExceeded from './LimitsExceeded/LimitsExceeded';
+import IdentityVerification from './IdentityVerification/IdentityVerification';
 
 
 export {
@@ -65,4 +67,6 @@ export {
   Authenticate,
   Register,
   SupportTools,
+  LimitsExceeded,
+  IdentityVerification,
 };
