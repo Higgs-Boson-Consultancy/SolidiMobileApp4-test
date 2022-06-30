@@ -156,6 +156,10 @@ let styles = StyleSheet.create({
   bold: {
     fontWeight: 'bold',
   },
+  descriptionText: {
+    fontWeight: 'bold',
+    fontSize: normaliseFont(18),
+  },
   errorWrapper: {
     marginBottom: scaledHeight(30),
   },
