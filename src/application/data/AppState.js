@@ -733,34 +733,91 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         apiRoute: 'asset_info',
         params: {},
       });
+      //log(data);
+      /* Example output:
+{
+  "BTC": {
+    "addressProperties": [
+      "address"
+    ],
+    "confirmationsRequired": 3,
+    "decimalPlaces": 8,
+    "depositEnabled": 1,
+    "displayString": "BTC (Bitcoin)",
+    "displaySymbol": "BTC",
+    "name": "Bitcoin",
+    "type": "crypto",
+    "withdrawEnabled": 1
+  },
+  "ETH": {
+    "addressProperties": [
+      "address"
+    ],
+    "confirmationsRequired": 30,
+    "decimalPlaces": 18,
+    "depositEnabled": 1,
+    "displayString": "ETH (Ethereum)",
+    "displaySymbol": "ETH",
+    "name": "Ethereum",
+    "type": "crypto",
+    "withdrawEnabled": 1
+  },
+  "GBP": {
+    "addressProperties": [
+      "accountName",
+      "sortCode",
+      "accountNumber"
+    ],
+    "confirmationsRequired": 1,
+    "decimalPlaces": 2,
+    "depositEnabled": 1,
+    "displayString": "GBP (UK Pound)",
+    "displaySymbol": "GBP",
+    "name": "UK Pound",
+    "type": "fiat",
+    "withdrawEnabled": 1
+  },
+  "LINK": {
+    "addressProperties": [],
+    "confirmationsRequired": 30,
+    "decimalPlaces": 8,
+    "depositEnabled": 0,
+    "displayString": "LINK (Chainlink)",
+    "displaySymbol": "LINK",
+    "name": "Chainlink",
+    "type": "crypto",
+    "withdrawEnabled": 1
+  },
+  "LTC": {
+    "addressProperties": [
+      "address"
+    ],
+    "confirmationsRequired": 12,
+    "decimalPlaces": 8,
+    "depositEnabled": 1,
+    "displayString": "LTC (Litecoin)",
+    "displaySymbol": "LTC",
+    "name": "Litecoin",
+    "type": "crypto",
+    "withdrawEnabled": 1
+  },
+  "XRP": {
+    "addressProperties": [
+      "address",
+      "destinationTag"
+    ],
+    "confirmationsRequired": 1,
+    "decimalPlaces": 6,
+    "depositEnabled": 1,
+    "displayString": "XRP (Ripple)",
+    "displaySymbol": "XRP",
+    "name": "Ripple",
+    "type": "crypto",
+    "withdrawEnabled": 1
+  }
+}
+      */
       if (data == 'DisplayedError') return;
-      // Tmp: For development:
-      _.assign(data, {
-        'ETH': {
-          name: 'Ethereum',
-          type: 'crypto',
-          decimalPlaces: 8,
-          displaySymbol: 'ETH',
-          displayString: 'ETH (Ethereum)',
-          addressProperties: 'address'.split(' '),
-        },
-        'EUR': {
-          name: 'Euro',
-          type: 'fiat',
-          decimalPlaces: 2,
-          displaySymbol: 'EUR',
-          displayString: 'EUR (Euro)',
-          addressProperties: 'accountName BIC IBAN'.split(' '),
-        },
-        'XRP': {
-          name: 'Ripple',
-          type: 'crypto',
-          decimalPlaces: 6,
-          displaySymbol: 'XRP',
-          displayString: 'XRP (Ripple)',
-          addressProperties: 'address destinationTag'.split(' '),
-        },
-      });
       // If the data differs from existing data, save it.
       let msg = "Asset info loaded from server.";
       if (jd(data) === jd(this.state.apiData.asset_info)) {
