@@ -27,12 +27,16 @@ let Login = () => {
   let appState = useContext(AppStateContext);
   let stateChangeID = appState.stateChangeID;
 
-  let [errorMessage, setErrorMessage] = useState(undefined);
-
+  let [errorMessage, setErrorMessage] = useState('');
+  let [uploadMessage, setUploadMessage] = useState('');
   let [email, setEmail] = useState('');
   let [password, setPassword] = useState('');
+  let [disableLoginButton, setDisableLoginButton] = useState(false);
+
 
   let submitLoginRequest = async () => {
+    setDisableLoginButton(true);
+    setErrorMessage('');
     try {
       if (! (email && password) ) {
         let msg;
@@ -44,9 +48,11 @@ let Login = () => {
           msg = 'Email and password are required.';
         }
         setErrorMessage(msg);
+        setDisableLoginButton(false);
         return;
       }
       // Log in.
+      setUploadMessage('Logging in...');
       await appState.login({email, password});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       // Change state.
@@ -63,6 +69,8 @@ let Login = () => {
     } catch(err) {
       log(err);
       setErrorMessage(err.message);
+      setUploadMessage('');
+      setDisableLoginButton(false);
     }
   }
 
@@ -77,7 +85,7 @@ let Login = () => {
 
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-      {errorMessage &&
+      {! _.isEmpty(errorMessage) &&
         <View style={styles.errorWrapper}>
           <Text style={styles.errorText}>
             <Text style={styles.errorTextBold}>Error: </Text>
@@ -110,7 +118,13 @@ let Login = () => {
       </View>
 
       <View style={styles.loginButtonWrapper}>
-        <StandardButton title="Log in" onPress={ submitLoginRequest } />
+        <StandardButton title="Log in"
+          onPress={ submitLoginRequest }
+          disabled={disableLoginButton}
+        />
+        <View style={styles.uploadMessage}>
+          <Text style={styles.uploadMessageText}>{uploadMessage}</Text>
+        </View>
       </View>
 
       <View style={styles.buttonWrapper}>
@@ -200,10 +214,21 @@ let styles = StyleSheet.create({
   loginButtonWrapper: {
     marginTop: scaledHeight(20),
     marginBottom: scaledHeight(10),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    //borderWidth: 1, // testing
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
     //borderWidth: 1, // testing
+  },
+  uploadMessage: {
+    //borderWidth: 1, //testing
+    paddingRight: scaledWidth(10),
+  },
+  uploadMessageText: {
+    color: 'red',
   },
 })
 
