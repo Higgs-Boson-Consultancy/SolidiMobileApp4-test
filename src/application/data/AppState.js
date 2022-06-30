@@ -134,8 +134,11 @@ Authenticate Login PIN
       let endJourneyList = `
 PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 `.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
-      if (endJourneyList.includes(currentState.mainPanelState)) {
-        this.resetStateHistory();
+      if (! _.isEmpty(currentState)) {
+        // currentState can be empty if we're testing and start on the Login page, which is not saved into the stateHistoryList.
+        if (endJourneyList.includes(currentState.mainPanelState)) {
+          this.resetStateHistory();
+        }
       }
       stateHistoryList = this.state.stateHistoryList; // Reload variable.
       /*
