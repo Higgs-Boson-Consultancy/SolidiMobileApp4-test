@@ -114,13 +114,19 @@ let Login = () => {
       </View>
 
       <View style={styles.buttonWrapper}>
-        <Button title="Don't have an account? Click here."
+        <Button title="Forgot password?"
+          onPress={ () => { appState.changeState('ResetPassword') } }
+        />
+      </View>
+
+      <View style={styles.buttonWrapper}>
+        <Button title="Don't have an account?"
           onPress={ () => { appState.changeState('Register') } }
         />
       </View>
 
       <View style={styles.buttonWrapper}>
-        <Button title="Any problems? Contact us."
+        <Button title="Any other problem? Contact us."
           onPress={ () => { appState.changeState('ContactUs') } }
         />
       </View>
@@ -164,7 +170,7 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(18),
   },
   errorWrapper: {
-    marginBottom: 30,
+    marginBottom: scaledHeight(30),
   },
   errorText: {
     color: 'red',
@@ -192,12 +198,12 @@ let styles = StyleSheet.create({
     marginRight: scaledWidth(20),
   },
   loginButtonWrapper: {
-    marginTop: scaledHeight(30),
-    marginBottom: scaledHeight(40),
+    marginTop: scaledHeight(20),
+    marginBottom: scaledHeight(10),
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
-    // borderWidth: 1, // testing
+    //borderWidth: 1, // testing
   },
 })
 
