@@ -164,6 +164,7 @@ let Send = () => {
 
   // Derive dropdown properties from a priority list.
   let createPriorityLabel = ({priority, asset}) => {
+    if (priority == 'none') return '[loading]';
     let label = misc.capitalise(priority) + ' Priority';
     let fee = selectFee({priority, asset});
     if (misc.isNumericString(fee)) {
