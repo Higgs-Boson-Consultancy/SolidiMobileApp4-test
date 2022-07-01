@@ -87,8 +87,8 @@ let Send = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Send');
 
- // Function that derives dropdown properties from an asset list.
- let deriveAssetItems = (assets) => {
+  // Function that derives dropdown properties from an asset list.
+  let deriveAssetItems = (assets) => {
     return assets.map(asset => {
       let info = appState.getAssetInfo(asset);
       let assetIcon = appState.getAssetIcon(asset);
