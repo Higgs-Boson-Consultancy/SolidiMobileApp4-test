@@ -818,6 +818,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 }
       */
       if (data == 'DisplayedError') return;
+      // For now, we're going to treat ETH as if it only has 8 decimal places, instead of 18.
+      if (_.has(data, 'ETH')) {
+        data.ETH.decimalPlaces = 8;
+      }
       // If the data differs from existing data, save it.
       let msg = "Asset info loaded from server.";
       if (jd(data) === jd(this.state.apiData.asset_info)) {
