@@ -110,6 +110,7 @@ let Send = () => {
   // Initial state:
   let selectedAssetSA = 'BTC';
   let [volumeSA, setVolumeSA] = useState('');
+  let [disableSendButton, setDisableSendButton] = useState(true);
 
   // Dropdown state: Select asset
   // SA = Stored Asset
@@ -175,7 +176,6 @@ let Send = () => {
 
   // Dropdown state: Select priority
   let [priority, setPriority] = useState(selectLowestAvailablePriority(assetSA));
-  //let [priority, setPriority] = useState('none');
   let [openPriority, setOpenPriority] = useState(false);
   let [itemsPriority, setItemsPriority] = useState(generatePriorityItemsForAsset(assetSA));
   let [transferFee, setTransferFee] = useState(selectFee({priority: 'low', asset: assetSA}));
@@ -193,6 +193,7 @@ let Send = () => {
       await appState.loadBalances();
       await appState.loadFees();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setDisableSendButton(false);
       setBalanceSA(appState.getBalance(assetSA));
       setItemsSA(generateStoredAssetItems());
       setItemsPriority(generatePriorityItemsForAsset(assetSA));
@@ -668,7 +669,10 @@ let Send = () => {
       </View>
 
       <View style={styles.sendButtonWrapper}>
-        <StandardButton title="Send now" onPress={ startSendRequest } />
+        <StandardButton title="Send now"
+          onPress={ startSendRequest }
+          disabled={disableSendButton}
+        />
         {(! _.isEmpty(errorMessage)) &&
           <View style={styles.errorMessage}>
             <Text style={styles.errorMessageText}>{errorMessage}</Text>
