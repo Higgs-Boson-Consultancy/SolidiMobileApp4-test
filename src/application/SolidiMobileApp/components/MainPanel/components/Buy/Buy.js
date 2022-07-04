@@ -531,6 +531,7 @@ let styles = StyleSheet.create({
   },
   quoteAssetContainer: {
     width: scaledWidth(220),
+    //borderWidth: 1, // testing
   },
   quoteAsset: {
     height: scaledHeight(40),
