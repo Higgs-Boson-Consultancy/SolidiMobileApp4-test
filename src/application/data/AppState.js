@@ -12,8 +12,9 @@
 
 // React imports
 import React, { Component, useContext } from 'react';
+import {BackHandler} from 'react-native';
 import * as Keychain from 'react-native-keychain';
-import {deleteUserPinCode} from '@haskkor/react-native-pincode'
+import {deleteUserPinCode} from '@haskkor/react-native-pincode';
 
 // Other imports
 import _ from 'lodash';
@@ -103,19 +104,22 @@ Authenticate Login PIN
     }
 
 
+    this.logEntireStateHistory = () => {
+      let msg = 'State history (most recent at the top):';
+      let n = this.state.stateHistoryList.length;
+      for (let i=n-1; i>=0; i--) {
+        let entry = this.state.stateHistoryList[i];
+        msg += `\n- ${jd(entry)}`;
+      }
+      log(msg);
+    }
+
+
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
       let msg = `Set state to: ${JSON.stringify(newState)}.`;
-      let logEntireStateHistory = false;
-      if (logEntireStateHistory) {
-        msg += '\nState history (most recent at the top):';
-        let n = this.state.stateHistoryList.length;
-        for (let i=n-1; i>=0; i--) {
-          let entry = this.state.stateHistoryList[i];
-          msg += `\n- ${jd(entry)}`;
-        }
-        log(msg);
-      }
+      log(msg);
+      //this.state.logEntireStateHistory();
       let {mainPanelState, pageName} = newState;
       if (_.isNil(mainPanelState)) {
         let errMsg = "Unknown mainPanelState: " + mainPanelState;
@@ -234,7 +238,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.decrementStateHistory = () => {
       let stateHistoryList = this.state.stateHistoryList;
       if (stateHistoryList.length == 1) {
-        // No previous state.
+        // No previous state. Only the current state is in the history list.
         return;
       }
       this.cancelTimers();
@@ -248,11 +252,11 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // If this state appears in the footerButtonList, set the footerIndex appropriately.
       // Note: This sets the index of the first button to be displayed in the footer. The highlighting of the selected button occurs separately.
       if (footerButtonList.includes(mainPanelState)) {
-        lj({prevState});
+        //lj({prevState});
         let index = footerButtonList.indexOf(mainPanelState);
         let steps = Math.floor(index / this.numberOfFooterButtonsToDisplay);
         let newFooterIndex = steps * this.numberOfFooterButtonsToDisplay;
-        log(JSON.stringify({newFooterIndex}))
+        lj({newFooterIndex});
         this.setFooterIndex(newFooterIndex);
       }
       // Check if we need to authenticate prior to moving to this previous state.
@@ -286,6 +290,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     this.generalSetup = async () => {
+      this.state.logEntireStateHistory();
+      // Create a new event listener for the Android Back Button.
+      // This needs to occur on every page.
+      this.state.androidBackButtonHandler = BackHandler.addEventListener("hardwareBackPress", this.state.androidBackButtonAction);
       // Create public API client.
       if (! this.state.apiClient) {
         let {userAgent, domain} = this.state;
@@ -1821,6 +1829,32 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
 
+    /* More functions */
+
+
+
+
+    this.androidBackButtonAction = () => {
+      log(`Android Back Button pressed.`);
+      // If there is at least one state in the state history, move back one state.
+      if (this.state.stateHistoryList.length > 1) {
+        this.state.decrementStateHistory();
+        return true;
+      } else {
+        // Exit the app.
+        BackHandler.exitApp();
+        return false;
+      }
+    }
+
+
+
+
+    /* End more functions */
+
+
+
+
     // The actual state object of the app.
     // This must be declared towards the end of the constructor.
     this.state = {
@@ -1828,6 +1862,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       mainPanelState: this.initialMainPanelState,
       pageName: this.initialPageName,
       changeState: this.changeState,
+      logEntireStateHistory: this.logEntireStateHistory,
       setMainPanelState: this.setMainPanelState,
       stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
@@ -1911,6 +1946,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       uploadDocument: this.uploadDocument,
       resetPassword: this.resetPassword,
       /* END Private API methods */
+      /* More functions */
+      androidBackButtonAction: this.androidBackButtonAction,
+      androidBackButtonHandler: null,
+      /* End more functions */
       stateChangeID: 0,
       abortControllers: {},
       appLocked: false,
