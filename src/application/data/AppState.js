@@ -290,6 +290,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     this.generalSetup = async () => {
+      // Note: This method needs to be called in every page, so that the Android back button always works.
+      // (Obviously the back button handler could be called separately, but that's less convenient overall.)
       this.state.logEntireStateHistory();
       // Create a new event listener for the Android Back Button.
       // This needs to occur on every page.
