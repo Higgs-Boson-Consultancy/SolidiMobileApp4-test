@@ -134,6 +134,12 @@ let History = () => {
     let baseDP = appState.getAssetInfo(baseAsset).decimalPlaces;
     let baseAssetVolume = Big(item['baseAssetVolume']).toFixed(baseDP);
     let reference = item['reference'];
+    try {
+      reference = JSON.parse(reference);
+    } catch(err) {}
+    // Example reference:
+    // {"ref":"CKF2NM7","paymeth":8,"txntype":"standard"}
+    if (_.has(reference, 'ref')) reference = reference.ref;
     return (
       <View style={styles.flatListItem}>
         <Text>{txnDate} {txnTime}</Text>
@@ -181,7 +187,7 @@ let History = () => {
           <Text>{item['date']} {item['time']}</Text>
           <Text style={_styleOrder}>{orderStatus}</Text>
         </View>
-        <Text style={styles.typeField}>{orderSide} Order</Text>
+        <Text style={styles.typeField}>{orderSide}</Text>
         <Text>Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}.</Text>
       </View>
     );
