@@ -538,17 +538,28 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     this.authenticateUser = () => {
       // If login credentials (email and password) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
+      let msg = "authenticateUser";
+      msg += `\n- this.state.user.loginCredentialsFound = ${this.state.user.loginCredentialsFound}`;
+      msg += `\n- this.state.user.isAuthenticated = ${this.state.user.isAuthenticated}`;
+      msg += `\n- this.state.user.email = ${this.state.user.email}`;
+      msg += `\n- this.state.user.pin = ${this.state.user.pin}`;
+      log(msg);
       if (! this.state.user.loginCredentialsFound) {
         if (! this.state.user.isAuthenticated) {
+          log("authenticateUser (1) -> Authenticate");
           return this.state.changeState('Authenticate');
         }
       }
-      // If login credentials aren't present in memory, go to Login.
+      // If the Keychain contains both PIN and login credentials, go to PIN entry.
+      // After the user enters the PIN, the app will load the login credentials and log in automatically.
       // Note: The PIN is kept in storage even if the user logs out.
-      if (! this.state.user.email) return this.state.changeState('Login');
-      // Otherwise, if we have a PIN, go to PIN entry.
-      if (this.state.user.pin) return this.state.changeState('PIN');
+      // Note 2: A logOut action will delete the login credentials, so in this case a new logIn action will be required, in which the user enters their username and password.
+      if (this.state.user.loginCredentialsFound && this.state.user.pin) {
+        log("authenticateUser (2) -> PIN");
+        return this.state.changeState('PIN');
+      }
       // Otherwise, go to Login.
+      log("authenticateUser (3) -> Login");
       return this.state.changeState('Login');
     }
 
@@ -614,7 +625,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
       if (credentials) {
         if (_.has(credentials, 'username') && _.has(credentials, 'password')) {
-          log(`Stored login credentials found in Keychain (but not loaded into memory).`);
+          log(`Stored login credentials (username and password) found in Keychain (but not loaded into memory).`);
           this.state.user.loginCredentialsFound = true;
           return;
         }
