@@ -52,7 +52,7 @@ let Header = (props) => {
   // If we're connected to the test server (with no cryptocurrency), then display this fact visibly in a way that is easily seen on every page.
   // In prod, don't show a title.
   // In dev, don't show any difference from prod.
-  let titleSettingsButton = appState.appTier == 'stag' ? 'Test Server' : '';
+  let titleSettingsButton = appState.appTier == 'stag' ? 'Test' : '';
 
 
   let changeState = (mainPanelState) => {
