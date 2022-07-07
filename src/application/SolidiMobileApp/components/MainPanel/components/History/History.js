@@ -139,7 +139,12 @@ let History = () => {
     } catch(err) {}
     // Example reference:
     // {"ref":"CKF2NM7","paymeth":8,"txntype":"standard"}
-    if (_.has(reference, 'ref')) reference = reference.ref;
+    if (_.has(reference, 'ref')) {
+      reference = reference.ref;
+    } else {
+      reference = '[none]';
+    }
+    if (! _.isString(reference)) reference = JSON.stringify(reference); // just in case.
     return (
       <View style={styles.flatListItem}>
         <Text>{txnDate} {txnTime}</Text>
