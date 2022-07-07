@@ -149,6 +149,10 @@ styleSettingsButtonSelected = StyleSheet.create({
     width: '100%',
     //borderWidth: 1, //testing
   },
+  text: {
+    fontWeight: 'bold',
+    //color: 'black',
+  }
 });
 
 
