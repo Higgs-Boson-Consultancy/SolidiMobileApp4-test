@@ -44,8 +44,8 @@ let initialMainPanelState = 'Buy';
 let initialPageName = 'default';
 
 // Settings: Various
-//let appName = 'SolidiMobileApp';
-let appName = 'SolidiMobileAppTest'; // Test version
+let appName = 'SolidiMobileApp';
+if (appTier == 'stag') appName = 'SolidiMobileAppTest'; // necessary ?
 let appAPIVersion = '1';
 let domains = {
   dev: 't3.solidi.co',
