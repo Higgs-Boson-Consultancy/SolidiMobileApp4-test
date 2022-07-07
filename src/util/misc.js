@@ -3,6 +3,7 @@
 
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 
 // Imports
@@ -185,6 +186,14 @@ let getCurrentDate = () => {
 }
 
 
+let getFlatListIconResizeMode = () => {
+  return Platform.select({
+    ios: 'contain',
+    android: 'center',
+  });
+}
+
+
 
 
 let misc = {
@@ -205,6 +214,7 @@ let misc = {
   removeFinalDecimalPointIfItExists,
   itemToString,
   getCurrentDate,
+  getFlatListIconResizeMode,
 }
 
 
