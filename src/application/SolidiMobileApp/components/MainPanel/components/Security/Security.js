@@ -197,6 +197,7 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   detailValue: {
+    fontSize: normaliseFont(14),
     paddingLeft: scaledWidth(10),
     paddingVertical: scaledHeight(10),
     minWidth: '65%',
