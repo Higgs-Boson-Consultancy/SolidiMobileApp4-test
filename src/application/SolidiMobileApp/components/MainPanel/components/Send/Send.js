@@ -866,6 +866,7 @@ let styles = StyleSheet.create({
     width: '50%',
   },
   errorMessageText: {
+    fontSize: normaliseFont(16),
     color: 'red',
   },
 });
@@ -873,7 +874,6 @@ let styles = StyleSheet.create({
 
 let styleMaxButton = StyleSheet.create({
   text: {
-    fontSize: normaliseFont(10),
     paddingVertical: 0,
     marginVertical: 0,
   },
