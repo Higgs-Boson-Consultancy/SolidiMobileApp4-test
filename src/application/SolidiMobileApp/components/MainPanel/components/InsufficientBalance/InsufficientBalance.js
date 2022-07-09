@@ -24,6 +24,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let InsufficientBalance = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   /* We can arrive at this component due to:
   - trying to submit an buy order and pay with our balance, and we don't have enough.
@@ -130,27 +131,27 @@ let InsufficientBalance = () => {
 
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-      <Text>Order details: {getOrderDetails()}</Text>
+      <Text style={styles.basicText}>Order details: {getOrderDetails()}</Text>
 
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your Solidi balance: {balanceString}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi balance: {balanceString}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} The required amount: {volumeString}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} The required amount: {volumeString}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} The missing amount: {diffString}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} The missing amount: {diffString}</Text>
         </View>
 
       </View>
 
       <View style={styles.infoSection}>
         <View style={styles.infoItem}>
-          <Text>Sorry!</Text>
+          <Text style={styles.basicText}>Sorry!</Text>
         </View>
       </View>
 
@@ -161,8 +162,8 @@ let InsufficientBalance = () => {
           <View style={styles.infoSection}>
 
             <View style={styles.infoItem}>
-              <Text style={styles.bold}>Option 1:</Text>
-              <Text>{'\n'}Go back and pay for the order using your online banking.</Text>
+              <Text style={[styles.basicText, styles.bold]}>Option 1:</Text>
+              <Text style={styles.basicText}>{'\n'}Go back and pay for the order using your online banking.</Text>
             </View>
 
             <View style={styles.button}>
@@ -174,8 +175,8 @@ let InsufficientBalance = () => {
           <View style={styles.infoSection}>
 
             <View style={styles.infoItem}>
-              <Text style={styles.bold}>Option 2:</Text>
-              <Text>{'\n'}Increase your {assetQA} balance by making a deposit.</Text>
+              <Text style={[styles.basicText, styles.bold]}>Option 2:</Text>
+              <Text style={styles.basicText}>{'\n'}Increase your {assetQA} balance by making a deposit.</Text>
             </View>
 
             <View style={styles.button}>
@@ -195,8 +196,8 @@ let InsufficientBalance = () => {
           <View style={styles.infoSection}>
 
             <View style={styles.infoItem}>
-              <Text style={styles.bold}>Option 1:</Text>
-              <Text>{'\n'}Go back and change the amount you wish to sell.</Text>
+              <Text style={[styles.basicText, styles.bold]}>Option 1:</Text>
+              <Text style={styles.basicText}>{'\n'}Go back and change the amount you wish to sell.</Text>
             </View>
 
             <View style={styles.button}>
@@ -208,8 +209,8 @@ let InsufficientBalance = () => {
           <View style={styles.infoSection}>
 
             <View style={styles.infoItem}>
-              <Text style={styles.bold}>Option 2:</Text>
-              <Text>{'\n'}Increase your {assetBA} balance by making a deposit.</Text>
+              <Text style={[styles.basicText, styles.bold]}>Option 2:</Text>
+              <Text style={styles.basicText}>{'\n'}Increase your {assetBA} balance by making a deposit.</Text>
             </View>
 
             <View style={styles.button}>
@@ -254,6 +255,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
