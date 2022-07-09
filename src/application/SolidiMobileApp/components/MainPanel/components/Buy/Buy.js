@@ -480,7 +480,7 @@ let Buy = () => {
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
         </View>
       }
 
@@ -582,8 +582,8 @@ let styles = StyleSheet.create({
     marginVertical: scaledHeight(10),
   },
   priceText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
-    fontSize: normaliseFont(16),
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
@@ -592,7 +592,8 @@ let styles = StyleSheet.create({
     marginTop: scaledHeight(20),
     marginBottom: scaledHeight(20),
   },
-  errorText: {
+  errorMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   upgradeRequired: {
@@ -600,6 +601,7 @@ let styles = StyleSheet.create({
     marginHorizontal: scaledWidth(30),
   },
   upgradeRequiredText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
     color: 'red',
   },
