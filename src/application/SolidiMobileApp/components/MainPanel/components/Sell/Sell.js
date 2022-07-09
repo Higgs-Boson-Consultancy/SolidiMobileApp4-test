@@ -375,7 +375,7 @@ let Sell = () => {
     let _styleBalanceText = balanceExceeded ? {color: 'red'} : {};
     return (
       <View style={styles.balanceWrapper}>
-        <Text style={[_styleBalanceText, styles.descriptionText2]}>Your balance: {balanceBA} {(balanceBA != '[loading]') && assetBA}</Text>
+        <Text style={[_styleBalanceText, styles.priceText]}>Your balance: {balanceBA} {(balanceBA != '[loading]') && assetBA}</Text>
       </View>
     )
   }
@@ -510,7 +510,7 @@ let Sell = () => {
       {generateBalanceSection()}
 
       <View style={styles.priceWrapper}>
-        <Text style={styles.descriptionText2}>Current price: {generatePriceDescription()}</Text>
+        <Text style={styles.priceText}>Current price: {generatePriceDescription()}</Text>
       </View>
 
       <View style={styles.buttonWrapper}>
@@ -519,7 +519,7 @@ let Sell = () => {
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
         </View>
       }
 
@@ -553,7 +553,10 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
-  boldText: {
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
+  bold: {
     fontWeight: 'bold',
   },
   descriptionText: {
@@ -614,9 +617,9 @@ let styles = StyleSheet.create({
   priceWrapper: {
     marginTop: scaledHeight(20),
   },
-  descriptionText2: {
+  priceText: {
     fontWeight: 'bold',
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
@@ -625,7 +628,8 @@ let styles = StyleSheet.create({
     marginTop: scaledHeight(20),
     marginBottom: scaledHeight(20),
   },
-  errorText: {
+  errorMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
 });
