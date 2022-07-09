@@ -127,23 +127,23 @@ let LimitsExceeded = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.importantText}>{'\n'} {`\u2022  `} Unfortunately, your order has exceeded your transfer limits.</Text>
+          <Text style={[styles.basicText, styles.importantText]}>{'\n'} {`\u2022  `} Unfortunately, your order has exceeded your transfer limits.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} {generateOrderDescription()}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} {generateOrderDescription()}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} {generateLimitDescription()}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} {generateLimitDescription()}</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Option 1: You can wait for your transfer limit to refresh.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Option 1: You can wait for your transfer limit to refresh.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Option 2: You can increase your limits by clicking the button below.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Option 2: You can increase your limits by clicking the button below.</Text>
         </View>
 
       </View>
@@ -184,6 +184,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
