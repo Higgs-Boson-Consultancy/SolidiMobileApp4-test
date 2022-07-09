@@ -570,6 +570,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -596,7 +599,7 @@ let styles = StyleSheet.create({
     minWidth: '40%', // Expands with length of detail name.
   },
   detailNameText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
   },
   detailValue: {
@@ -606,14 +609,14 @@ let styles = StyleSheet.create({
     //borderWidth: 1, // testing
   },
   detailValueText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     //borderWidth: 1, // testing
   },
   editableTextInput: {
     borderWidth: 1,
     borderRadius: 16,
     borderColor: colors.greyedOutIcon,
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
   },
   dropdownWrapper: {
 
@@ -624,7 +627,7 @@ let styles = StyleSheet.create({
     height: scaledHeight(40),
   },
   detailDropdownText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
   },
   horizontalRule: {
     borderWidth: 1,
@@ -647,7 +650,7 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(15),
   },
   errorDisplayText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     color: 'red',
   }
 });
