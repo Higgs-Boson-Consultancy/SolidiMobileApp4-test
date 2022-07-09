@@ -520,13 +520,13 @@ let styleContactUsButton = StyleSheet.create({
 
 let styleCopyButton = StyleSheet.create({
   image: {
-    iconSize: normaliseFont(16), // Should match detailText.fontSize.
+    iconSize: normaliseFont(14), // Should match detailText.fontSize.
     iconColor: colors.greyedOutIcon,
   },
   view: {
     marginLeft: scaledWidth(5),
     //borderWidth: 1, // testing
-    height: scaledHeight(20),
+    height: scaledHeight(25),
   }
 });
 
