@@ -197,7 +197,7 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
-  boldText: {
+  bold: {
     fontWeight: 'bold',
   },
   descriptionText: {

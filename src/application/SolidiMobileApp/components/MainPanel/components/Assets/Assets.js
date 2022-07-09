@@ -107,7 +107,7 @@ let Assets = () => {
             //borderWidth: 1, //testing
             alignItems: 'center',
           }}>
-          <Text style={[styles.boldText, styles.assetText]}>{name} - {symbol}</Text>
+          <Text style={[styles.bold, styles.assetText]}>{name} - {symbol}</Text>
           <Image source={appState.getAssetIcon(asset)} style={{
               width: scaledWidth(27),
               height: scaledHeight(27),
@@ -183,6 +183,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  bold: {
+    fontWeight: 'bold',
+  },
   controls: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -213,9 +216,6 @@ let styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: "space-between",
-  },
-  boldText: {
-    fontWeight: 'bold',
   },
   assetText: {
     fontSize: normaliseFont(16),
