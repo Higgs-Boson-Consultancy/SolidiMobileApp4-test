@@ -91,11 +91,11 @@ let SendSuccessful = () => {
       <View style={[styles.infoSection, styles.infoSection1]}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your transfer of {volume} {appState.getAssetInfo(asset).displayString} has been processed.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your transfer of {volume} {appState.getAssetInfo(asset).displayString} has been processed.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
         </View>
 
       </View>
@@ -111,59 +111,59 @@ let SendSuccessful = () => {
         {_.has(addressProperties, 'address') &&
           /* The address is quite long, so put its heading on the previous line. */
           <View style={[styles.transferDetailsLine, {justifyContent:'flex-start'}]}>
-            <Text>Address:</Text>
+            <Text style={styles.basicText}>Address:</Text>
           </View>
         }
         {_.has(addressProperties, 'address') &&
           <View style={[styles.transferDetailsLine, {justifyContent:'flex-end'}]}>
-            <Text style={styles.bold}>{addressProperties.address}</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.address}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'accountName') &&
           <View style={styles.transferDetailsLine}>
-            <Text>Account Name:</Text>
-            <Text style={styles.bold}>{addressProperties.accountName}</Text>
+            <Text style={styles.basicText}>Account Name:</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.accountName}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'sortCode') &&
           <View style={styles.transferDetailsLine}>
-            <Text>Sort Code:</Text>
-            <Text style={styles.bold}>{addressProperties.sortCode}</Text>
+            <Text style={styles.basicText}>Sort Code:</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.sortCode}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'accountNumber') &&
           <View style={styles.transferDetailsLine}>
-            <Text>Account Number:</Text>
-            <Text style={styles.bold}>{addressProperties.accountNumber}</Text>
+            <Text style={styles.basicText}>Account Number:</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.accountNumber}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'destinationTag') &&
           <View style={styles.transferDetailsLine}>
-            <Text>Destination Tag:</Text>
-            <Text style={styles.bold}>{addressProperties.destinationTag}</Text>
+            <Text style={styles.basicText}>Destination Tag:</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.destinationTag}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'BIC') &&
           <View style={styles.transferDetailsLine}>
-            <Text>BIC:</Text>
-            <Text style={styles.bold}>{addressProperties.BIC}</Text>
+            <Text style={styles.basicText}>BIC:</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.BIC}</Text>
           </View>
         }
 
         {_.has(addressProperties, 'IBAN') &&
           /* The IBAN is quite long, so put its heading on the previous line. */
           <View style={[styles.transferDetailsLine, {justifyContent:'flex-start'}]}>
-            <Text>IBAN:</Text>
+            <Text style={styles.basicText}>IBAN:</Text>
           </View>
         }
         {_.has(addressProperties, 'IBAN') &&
           <View style={[styles.transferDetailsLine, {justifyContent:'flex-end'}]}>
-            <Text style={styles.bold}>{addressProperties.IBAN}</Text>
+            <Text style={[styles.basicText, styles.bold]}>{addressProperties.IBAN}</Text>
           </View>
         }
 
@@ -213,6 +213,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
