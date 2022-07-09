@@ -180,7 +180,7 @@ let Receive = () => {
             </View>
 
             <View style={styles.scanMessage}>
-              <Text style={styles.bold}>Scan this QR code to deposit {assetString}</Text>
+              <Text style={[styles.bold, styles.scanMessageText]}>Scan this QR code to deposit {assetString}</Text>
             </View>
 
           </View>
@@ -371,6 +371,9 @@ let Receive = () => {
             maxLength: 15
           }}
           maxHeight={scaledHeight(300)}
+          textStyle={{
+            fontSize: normaliseFont(10),
+          }}
         />
       </View>
 
@@ -451,6 +454,7 @@ let styles = StyleSheet.create({
     height: '60%', // bad practice ?
   },
   errorMessageText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
     color: 'red',
   },
@@ -459,12 +463,16 @@ let styles = StyleSheet.create({
     marginTop: scaledHeight(10),
     alignItems: 'center',
   },
+  scanMessageText: {
+    fontSize: normaliseFont(14),
+  },
   warningMessage: {
     //borderWidth: 1, // testing
     marginTop: scaledHeight(5),
     alignItems: 'center',
   },
   warningMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   infoMessage: {
@@ -472,6 +480,7 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoMessageText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
   },
   detailWrapper: {
