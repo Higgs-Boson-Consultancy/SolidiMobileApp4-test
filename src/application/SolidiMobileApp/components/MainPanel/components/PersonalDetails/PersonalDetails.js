@@ -602,7 +602,7 @@ let styles = StyleSheet.create({
   detailValue: {
     paddingLeft: scaledWidth(10),
     paddingVertical: scaledHeight(10),
-    minWidth: '60%',
+    minWidth: '59%', // slightly reduced in width so that the right-hand border is never cut off.
     //borderWidth: 1, // testing
   },
   detailValueText: {
