@@ -21,15 +21,15 @@ let PaymentConditions = () => {
 
   return (
     <View>
-      <Text style={styles.bold}>{`\u2022  `} You are using your REAL name.</Text>
-      <Text style={styles.bold}>{`\u2022  `} You are paying from/to your own bank account.</Text>
-      <Text style={styles.bold}>{`\u2022  `} You are 18 or over.</Text>
-      <Text style={styles.bold}>{`\u2022  `} You have only one Solidi account.</Text>
+      <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You are using your REAL name.</Text>
+      <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You are paying from/to your own bank account.</Text>
+      <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You are 18 or over.</Text>
+      <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You have only one Solidi account.</Text>
       <View style={styles.buttonSection}>
-        <Text style={styles.bold}>{`\u2022  `} You agree to our </Text>
+        <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You agree to our </Text>
         <Button title="Terms & Conditions" onPress={ readTermsAndConditions }
           styles={styleConditionButton}/>
-        <Text style={styles.bold}>.</Text>
+        <Text style={[styles.basicText, styles.bold]}>.</Text>
       </View>
     </View>
   )
@@ -38,6 +38,9 @@ let PaymentConditions = () => {
 
 
 let styles = StyleSheet.create({
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
