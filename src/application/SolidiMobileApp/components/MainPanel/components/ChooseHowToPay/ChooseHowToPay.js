@@ -331,7 +331,7 @@ let ChooseHowToPay = () => {
       result += ' ' + assetQA;
     }
     return (
-      <Text style={styles.bold}>{`\u2022  `} {result}</Text>
+      <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} {result}</Text>
     )
   }
 
@@ -372,8 +372,8 @@ let ChooseHowToPay = () => {
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={styles.bold}>{`\u2022  `} Fast & Easy - No fee!</Text>
-              <Text style={styles.bold}>{`\u2022  `} Usually processed in under a minute</Text>
+              <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Fast & Easy - No fee!</Text>
+              <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Usually processed in under a minute</Text>
             </View>
 
             <RadioButton.Item label="Pay with balance" value="balance"
@@ -384,8 +384,8 @@ let ChooseHowToPay = () => {
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
-              <Text style={balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText}>{`\u2022  `} Processed instantly</Text>
+              <Text style={[styles.basicText, balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText]}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
+              <Text style={[styles.basicText, balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText]}>{`\u2022  `} Processed instantly</Text>
               {getBalanceDescriptionLine()}
               {balanceTooSmall() &&
                 <Text style={styles.balanceLowText}>{`\u2022  `} (Balance is too low for this option)</Text>
@@ -410,22 +410,22 @@ let ChooseHowToPay = () => {
         <View style={styles.orderDetailsSection}>
 
           <View style={styles.orderDetailsLine}>
-            <Text style={styles.bold}>You buy</Text>
+            <Text style={[styles.basicText, styles.bold]}>You buy</Text>
             <Text style={[styles.monospaceText, styles.bold]}>{calculateVolumeBA()} {assetBA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
-            <Text style={styles.bold}>You spend</Text>
+            <Text style={[styles.basicText, styles.bold]}>You spend</Text>
             <Text style={[styles.monospaceText, styles.bold]}>{appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'ChooseHowToPay'})} {assetQA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
-            <Text style={styles.bold}>Fee</Text>
+            <Text style={[styles.basicText, styles.bold]}>Fee</Text>
             <Text style={[styles.monospaceText, styles.bold]}>{calculateFeeQA()} {assetQA}</Text>
           </View>
 
           <View style={styles.orderDetailsLine}>
-            <Text style={styles.bold}>Total</Text>
+            <Text style={[styles.basicText, styles.bold]}>Total</Text>
             <Text style={[styles.monospaceText, styles.bold]}>{calculateTotalQA()} {assetQA}</Text>
           </View>
 
@@ -499,6 +499,7 @@ let styles = StyleSheet.create({
     backgroundColor: colors.standardButton,
   },
   buttonLabel: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
     color: colors.standardButtonText,
   },
@@ -527,6 +528,9 @@ let styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -540,10 +544,12 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
   balanceLowText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
     color: 'red',
   },
   monospaceText: {
+    fontSize: normaliseFont(14),
     // For Android, a second solution may be needed.
     fontVariant: ['tabular-nums'],
   },
@@ -553,6 +559,7 @@ let styles = StyleSheet.create({
     paddingHorizontal: scaledWidth(30),
   },
   loadingMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   priceChangeMessage: {
@@ -571,12 +578,14 @@ let styles = StyleSheet.create({
     paddingHorizontal: scaledWidth(30),
   },
   errorMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   sendOrderMessage: {
     //borderWidth: 1, //testing
   },
   sendOrderMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
 });
