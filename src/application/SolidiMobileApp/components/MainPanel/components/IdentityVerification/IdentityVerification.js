@@ -384,7 +384,7 @@ let IdentityVerification = () => {
 
         <View>
 
-        <Text style={styles.bold}>{generateTaskDescriptionString()}</Text>
+        <Text style={[styles.basicText, styles.bold]}>{generateTaskDescriptionString()}</Text>
 
 
         <View style={[styles.horizontalRule, styles.horizontalRule1]}/>
@@ -399,7 +399,7 @@ let IdentityVerification = () => {
 
         <View>
 
-        <Text style={styles.bold}>{`\u2022  `} Identity Document:</Text>
+        <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Identity Document:</Text>
 
         <View style={styles.idTypeDropdownWrapper}>
           <DropDownPicker
@@ -413,6 +413,9 @@ let IdentityVerification = () => {
             setValue={setIDType}
             setItems={setItemsIDType}
             searchable={true}
+            textStyle={{
+              fontSize: normaliseFont(10),
+            }}
           />
         </View>
 
@@ -448,7 +451,7 @@ let IdentityVerification = () => {
 
         <View>
 
-        <Text style={styles.bold}>{`\u2022  `} Proof of Address:</Text>
+        <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Proof of Address:</Text>
 
         <View style={styles.adTypeDropdownWrapper}>
           <DropDownPicker
@@ -462,6 +465,9 @@ let IdentityVerification = () => {
             setValue={setADType}
             setItems={setItemsADType}
             searchable={true}
+            textStyle={{
+              fontSize: normaliseFont(10),
+            }}
           />
         </View>
 
@@ -525,6 +531,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -534,6 +543,7 @@ let styles = StyleSheet.create({
     //paddingHorizontal: scaledWidth(30),
   },
   errorMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   horizontalRule: {
@@ -564,6 +574,7 @@ let styles = StyleSheet.create({
 
   },
   photoMessageText: {
+    fontSize: normaliseFont(14),
     color: 'red',
   },
   uploadPhotoButtonWrapper: {
