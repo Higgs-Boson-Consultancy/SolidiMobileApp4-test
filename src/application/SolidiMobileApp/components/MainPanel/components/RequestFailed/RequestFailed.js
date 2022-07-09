@@ -66,12 +66,12 @@ let RequestFailed = () => {
 
       <View style={styles.infoSection}>
         <View style={styles.infoItem}>
-          <Text>Sorry! The server didn't respond. We weren't able to load the {appState.stashedState.mainPanelState} page.</Text>
+          <Text style={styles.basicText}>Sorry! The server didn't respond. We weren't able to load the {appState.stashedState.mainPanelState} page.</Text>
         </View>
       </View>
 
       <View style={styles.infoSection}>
-        <Text>Please check your network connection. If your device is connected to the internet, then {'\n'}</Text>
+        <Text style={styles.basicText}>Please check your network connection. If your device is connected to the internet, then {'\n'}</Text>
         <Button title="Contact Us"
           onPress={ () => { appState.changeState('ContactUs') } }
           styles={styleContactUsButton}
@@ -112,6 +112,9 @@ let styles = StyleSheet.create({
   },
   spacer1: {
     marginBottom: scaledHeight(20),
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
