@@ -133,13 +133,13 @@ let MakePayment = () => {
 
       <View style={styles.instructionsSection}>
         <View style={styles.instructionItem}>
-          <Text style={styles.bold}>{`\u2022  `} You are buying {volumeBA} {appState.getAssetInfo(assetBA).displayString} for {appState.getFullDecimalValue({asset: assetQA, value: totalQA, functionName: 'MakePayment'})} {appState.getAssetInfo(assetQA).displayString}.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You are buying {volumeBA} {appState.getAssetInfo(assetBA).displayString} for {appState.getFullDecimalValue({asset: assetQA, value: totalQA, functionName: 'MakePayment'})} {appState.getAssetInfo(assetQA).displayString}.</Text>
         </View>
         <View style={styles.instructionItem}>
-          <Text style={styles.bold}>{`\u2022  `} Send payment now using your online or telephone banking.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Send payment now using your online or telephone banking.</Text>
         </View>
         <View style={styles.instructionItem}>
-          <Text style={styles.bold}>{`\u2022  `} You have 30 minutes to send the payment.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} You have 30 minutes to send the payment.</Text>
           </View>
         <View style={styles.timerProgressBar}>
           <Progress.Bar progress={timeElapsedMarker} height={scaledHeight(8)} width={scaledWidth(200)} />
@@ -214,7 +214,7 @@ let MakePayment = () => {
 
       <View style={styles.paymentButtonSection}>
         <View>
-          <Text style={styles.bold}>Once you have made the payment, click the button below.</Text>
+          <Text style={[styles.basicText, styles.bold]}>Once you have made the payment, click the button below.</Text>
         </View>
         <View style={styles.confirmPaymentButton}>
           <StandardButton title="I have paid" onPress={ confirmPayment } />
@@ -272,6 +272,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -283,6 +286,7 @@ let styles = StyleSheet.create({
     backgroundColor: colors.lightgrey,
   },
   importantInfoBoxText: {
+    fontSize: normaliseFont(14),
     fontWeight: 'bold',
   },
   paymentDetailsSection: {
@@ -320,7 +324,7 @@ let styles = StyleSheet.create({
 
 let styleCopyButton = StyleSheet.create({
   image: {
-    iconSize: 16,
+    iconSize: scaledWidth(14),
     iconColor: colors.greyedOutIcon,
   },
   view: {
