@@ -108,7 +108,7 @@ let SaleSuccessful = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>{`\u2022  `} Your sale of {volumeBA} {appState.getAssetInfo(assetBA).displayString} has been processed.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your sale of {volumeBA} {appState.getAssetInfo(assetBA).displayString} has been processed.</Text>
         </View>
 
         { (pageName == 'balance') &&
@@ -116,11 +116,11 @@ let SaleSuccessful = () => {
           <View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.bold}>{`\u2022  `} Your Solidi account has been credited with {totalQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
+            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi account has been credited with {totalQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.bold}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
+            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your new balance is: {getBalanceString()}</Text>
           </View>
 
           </View>
@@ -130,7 +130,7 @@ let SaleSuccessful = () => {
         { (pageName == 'solidi') &&
 
           <View style={styles.infoItem}>
-            <Text style={styles.bold}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} should arrive within 8 hours.</Text>
+            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} should arrive within 8 hours.</Text>
           </View>
 
         }
@@ -156,7 +156,7 @@ let SaleSuccessful = () => {
       <View style={styles.infoSection2}>
 
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>Every review helps build trust with our new customers. Tap the Trustpilot logo below to review us. Thanks!</Text>
+          <Text style={[styles.basicText, styles.bold]}>Every review helps build trust with our new customers. Tap the Trustpilot logo below to review us. Thanks!</Text>
         </View>
 
       </View>
@@ -202,6 +202,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
