@@ -73,14 +73,14 @@ let Authenticate = () => {
 
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
-            <Text style={styles.bold}>Your order has been saved.{'\n'}</Text>
+            <Text style={[styles.basicText, styles.bold]}>Your order has been saved.{'\n'}</Text>
           </View>
         </View>
       }
 
       <View style={styles.infoSection}>
         <View style={styles.infoItem}>
-          <Text style={styles.bold}>To continue, please log in or register.</Text>
+          <Text style={[styles.basicText, styles.bold]}>To continue, please log in or register.</Text>
         </View>
       </View>
 
@@ -133,6 +133,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
