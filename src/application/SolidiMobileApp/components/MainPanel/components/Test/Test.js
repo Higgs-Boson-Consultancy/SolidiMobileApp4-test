@@ -52,7 +52,9 @@ let Test = () => {
   return (
     <View style={styles.panelContainer}>
 
-      <Text style={styles.headingText}>BlankExampleComponent2</Text>
+      <View style={[styles.heading, styles.heading1]}>
+        <Text style={styles.headingText}>BlankExampleComponent2</Text>
+      </View>
 
       <Image source={appState.getAssetIcon('EUR')} style={{
           width: scaledWidth(27),
@@ -61,7 +63,7 @@ let Test = () => {
           borderWidth: 1,
         }}/>
 
-      <Text>Status: </Text>
+      <Text style={styles.basicText}>Status: </Text>
       <StandardButton title='Log out' style={styleButton}
         onPress={ () => { appState.logout(); } }
       />
@@ -81,6 +83,32 @@ let styles = StyleSheet.create({
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
+  },
+  panelSubContainer: {
+    paddingTop: scaledHeight(10),
+    paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
+  },
+  heading: {
+    alignItems: 'center',
+  },
+  heading1: {
+    marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(10),
+  },
+  heading2: {
+    marginTop: scaledHeight(20),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
+  bold: {
+    fontWeight: 'bold',
   },
 });
 
