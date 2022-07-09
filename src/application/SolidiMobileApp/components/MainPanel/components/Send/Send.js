@@ -721,6 +721,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -807,7 +810,7 @@ let styles = StyleSheet.create({
 
   },
   fullWidthTextInput: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     marginTop: scaledHeight(10),
     height: scaledHeight(40),
     width: '99%',
@@ -831,14 +834,14 @@ let styles = StyleSheet.create({
   },
   inputLabelText: {
     //fontWeight: 'bold',
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
   },
   halfWidthTextInputWrapper: {
     //borderWidth: 1, // testing
     width: '50%',
   },
   halfWidthTextInput: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     height: scaledHeight(40),
     width: '100%',
     borderWidth: 1,
@@ -853,7 +856,7 @@ let styles = StyleSheet.create({
     justifyContent: 'center',
   },
   importantMessageText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     textDecorationLine: 'underline'
   },
   sendButtonWrapper: {
@@ -866,7 +869,7 @@ let styles = StyleSheet.create({
     width: '50%',
   },
   errorMessageText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
     color: 'red',
   },
 });
