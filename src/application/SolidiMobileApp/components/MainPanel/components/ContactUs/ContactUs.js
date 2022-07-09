@@ -110,11 +110,11 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
-  bold: {
-    fontWeight: 'bold',
-  },
   basicText: {
     fontSize: normaliseFont(14),
+  },
+  bold: {
+    fontWeight: 'bold',
   },
   buttonSection: {
     marginVertical: scaledHeight(80),
