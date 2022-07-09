@@ -183,6 +183,9 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -218,7 +221,7 @@ let styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   assetText: {
-    fontSize: normaliseFont(16),
+    fontSize: normaliseFont(14),
   },
 });
 
