@@ -150,7 +150,7 @@ let WaitingForPayment = () => {
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.textItem}>
-        <Text style={styles.bold}>Thank you for sending your payment.</Text>
+        <Text style={[styles.basicText, styles.bold]}>Thank you for sending your payment.</Text>
       </View>
 
       <View style={styles.paymentDetailsSection}>
@@ -183,7 +183,7 @@ let WaitingForPayment = () => {
       </View>
 
       <View style={styles.textItem}>
-        <Text style={styles.bold}>We are now checking for this payment. Please be patient.</Text>
+        <Text style={[styles.basicText, styles.bold]}>We are now checking for this payment. Please be patient.</Text>
       </View>
 
       <View style={styles.timerProgressBar}>
@@ -191,12 +191,12 @@ let WaitingForPayment = () => {
       </View>
 
       <View style={styles.textItem}>
-        <Text style={styles.bold}>Time Remaining: {timeRemainingString}</Text>
+        <Text style={[styles.basicText, styles.bold]}>Time Remaining: {timeRemainingString}</Text>
       </View>
 
       <View>
-        <Text>{`\u2022  `} The UK Faster Payments System can sometimes take up to 2 hours to complete a payment.</Text>
-        <Text>{`\u2022  `} If your payment has not been registered after 2 hours, please contact us.</Text>
+        <Text style={styles.basicText}>{`\u2022  `} The UK Faster Payments System can sometimes take up to 2 hours to complete a payment.</Text>
+        <Text style={styles.basicText}>{`\u2022  `} If your payment has not been registered after 2 hours, please contact us.</Text>
       </View>
 
       </ScrollView>
@@ -230,6 +230,9 @@ let styles = StyleSheet.create({
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
   },
   bold: {
     fontWeight: 'bold',
