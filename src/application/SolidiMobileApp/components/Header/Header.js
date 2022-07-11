@@ -113,7 +113,7 @@ let styles = StyleSheet.create({
 
 let styleBackButton = StyleSheet.create({
   image: {
-    iconSize: scaledWidth(22),
+    iconSize: scaledWidth(27),
     iconColor: colors.greyedOutIcon,
   },
   text: {
@@ -128,7 +128,7 @@ let styleBackButton = StyleSheet.create({
 
 styleSettingsButton = StyleSheet.create({
   image: {
-    iconSize: scaledWidth(22),
+    iconSize: scaledWidth(27),
     iconColor: colors.greyedOutIcon,
   },
   view: {
@@ -143,7 +143,7 @@ styleSettingsButton = StyleSheet.create({
 
 styleSettingsButtonSelected = StyleSheet.create({
   image: {
-    iconSize: scaledWidth(22),
+    iconSize: scaledWidth(27),
     iconColor: colors.selectedIcon,
   },
   view: {
