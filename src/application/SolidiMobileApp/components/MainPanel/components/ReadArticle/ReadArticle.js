@@ -25,9 +25,11 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let ReadArticle = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
   let permittedPageNames = 'payment_conditions terms_and_conditions'.split(' ');
+  if (pageName == 'default') pageName = 'payment_conditions'; //testing
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ReadArticle');
 
   let headingText = pageName.split('_').map(misc.capitalise).reduce((a,b) => a + ' ' + b);

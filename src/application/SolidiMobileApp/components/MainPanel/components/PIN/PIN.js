@@ -33,6 +33,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let PIN = () => {
 
   let appState = useContext(AppStateContext);
+  let stateChangeID = appState.stateChangeID;
 
   /* By default, this will be the "Enter PIN" page.
   - If we can't find a PIN stored in the keychain, redirect to login page to authenticate the user.
@@ -44,7 +45,7 @@ let PIN = () => {
   if (appState.pageName === 'choose') {
     pinStatus = 'choose';
   }
-  //log({pinStatus});
+  log(`pinStatus = '${pinStatus}'`);
 
 
 
