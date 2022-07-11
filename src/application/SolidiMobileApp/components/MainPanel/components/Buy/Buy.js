@@ -431,9 +431,7 @@ let Buy = () => {
             maxLength: 15
           }}
           maxHeight={scaledHeight(300)}
-          textStyle={{
-            fontSize: normaliseFont(10),
-          }}
+          textStyle={styles.dropdownText}
         />
       </View>
 
@@ -464,9 +462,7 @@ let Buy = () => {
             maxLength: 15
           }}
           maxHeight={scaledHeight(300)}
-          textStyle={{
-            fontSize: normaliseFont(10),
-          }}
+          textStyle={styles.dropdownText}
         />
       </View>
 
@@ -520,6 +516,9 @@ let styles = StyleSheet.create({
   basicText: {
     fontSize: normaliseFont(14),
   },
+  dropdownText: {
+    fontSize: normaliseFont(14),
+  },
   bold: {
     fontWeight: 'bold',
   },
@@ -537,7 +536,7 @@ let styles = StyleSheet.create({
     //borderWidth: 1, // testing
   },
   volumeQA: {
-    fontSize: scaledHeight(16),
+    fontSize: normaliseFont(16),
     height: scaledHeight(40),
     width: scaledWidth(125),
     borderWidth: 1,
@@ -563,7 +562,7 @@ let styles = StyleSheet.create({
     //borderWidth: 1, //testing
   },
   volumeBA: {
-    fontSize: scaledHeight(16),
+    fontSize: normaliseFont(16),
     height: scaledHeight(40),
     width: scaledWidth(125),
     borderWidth: 1,
@@ -585,7 +584,7 @@ let styles = StyleSheet.create({
     marginVertical: scaledHeight(10),
   },
   priceText: {
-    fontSize: normaliseFont(14),
+    fontSize: normaliseFont(16),
     fontWeight: 'bold',
   },
   buttonWrapper: {

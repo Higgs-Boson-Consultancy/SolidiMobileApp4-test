@@ -86,9 +86,7 @@ let History = () => {
             setOpen={setOpen}
             setValue={setCategory}
             setItems={setCategoryItems}
-            textStyle={{
-              fontSize: normaliseFont(10),
-            }}
+            textStyle={styles.dropdownText}
           />
         </View>
         <Button title='Reload' onPress={ setup } />
@@ -150,10 +148,10 @@ let History = () => {
     if (! _.isString(reference)) reference = JSON.stringify(reference); // just in case.
     return (
       <View style={styles.flatListItem}>
-        <Text style={styles.basicText}>{txnDate} {txnTime}</Text>
-        <Text style={[styles.basicText, styles.typeField]}>{codeToType(txnCode)}</Text>
-        <Text style={styles.basicText}>{baseAssetVolume} {appState.getAssetInfo(baseAsset).displayString}</Text>
-        <Text style={styles.basicText}>Reference: {reference}</Text>
+        <Text style={styles.mediumText}>{txnDate} {txnTime}</Text>
+        <Text style={[styles.mediumText, styles.typeField]}>{codeToType(txnCode)}</Text>
+        <Text style={styles.mediumText}>{baseAssetVolume} {appState.getAssetInfo(baseAsset).displayString}</Text>
+        <Text style={styles.mediumText}>Reference: {reference}</Text>
       </View>
     );
   }
@@ -192,11 +190,11 @@ let History = () => {
     return (
       <View style={styles.flatListItem}>
         <View style={styles.orderTopWrapper}>
-          <Text style={styles.basicText}>{item['date']} {item['time']}</Text>
-          <Text style={[styles.basicText, _styleOrder]}>{orderStatus}</Text>
+          <Text style={styles.mediumText}>{item['date']} {item['time']}</Text>
+          <Text style={[styles.mediumText, _styleOrder]}>{orderStatus}</Text>
         </View>
-        <Text style={[styles.basicText, styles.typeField]}>{orderSide}</Text>
-        <Text style={styles.basicText}>Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}.</Text>
+        <Text style={[styles.mediumText, styles.typeField]}>{orderSide}</Text>
+        <Text style={styles.mediumText}>Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}.</Text>
       </View>
     );
   }
@@ -245,8 +243,14 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
-  basicText: { // Note: basicText size is normally 16.
-    fontSize: normaliseFont(10),
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
+  mediumText: {
+    fontSize: normaliseFont(16),
+  },
+  dropdownText: {
+    fontSize: normaliseFont(14),
   },
   historySection: {
     height: '100%',

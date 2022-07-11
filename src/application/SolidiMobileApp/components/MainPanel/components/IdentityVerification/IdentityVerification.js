@@ -413,9 +413,7 @@ let IdentityVerification = () => {
             setValue={setIDType}
             setItems={setItemsIDType}
             searchable={true}
-            textStyle={{
-              fontSize: normaliseFont(10),
-            }}
+            textStyle={styles.dropdownText}
           />
         </View>
 
@@ -465,9 +463,7 @@ let IdentityVerification = () => {
             setValue={setADType}
             setItems={setItemsADType}
             searchable={true}
-            textStyle={{
-              fontSize: normaliseFont(10),
-            }}
+            textStyle={styles.dropdownText}
           />
         </View>
 
@@ -532,6 +528,9 @@ let styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   basicText: {
+    fontSize: normaliseFont(14),
+  },
+  dropdownText: {
     fontSize: normaliseFont(14),
   },
   bold: {

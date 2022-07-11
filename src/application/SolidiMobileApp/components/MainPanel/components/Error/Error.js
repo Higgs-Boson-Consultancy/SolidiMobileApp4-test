@@ -138,7 +138,6 @@ let styleContactUsButton = StyleSheet.create({
   text: {
     margin: 0,
     padding: 0,
-    fontSize: normaliseFont(14),
   },
 });
 

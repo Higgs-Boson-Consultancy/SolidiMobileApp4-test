@@ -75,9 +75,7 @@ let Assets = () => {
             setOpen={setOpen}
             setValue={setCategory}
             setItems={setCategoryItems}
-            textStyle={{
-              fontSize: normaliseFont(10),
-            }}
+            textStyle={styles.dropdownText}
           />
         </View>
         <Button title='Reload' onPress={ setup } />
@@ -202,6 +200,9 @@ let styles = StyleSheet.create({
   assetCategory: {
     height: scaledHeight(40),
   },
+  dropdownText: {
+    fontSize: normaliseFont(14),
+  },
   flatListWrapper: {
     height: '80%',
     //borderWidth: 1, // testing
@@ -221,7 +222,7 @@ let styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   assetText: {
-    fontSize: normaliseFont(14),
+    fontSize: normaliseFont(16),
   },
 });
 

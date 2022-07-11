@@ -515,11 +515,11 @@ let styles = StyleSheet.create({
   },
   button: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: scaledWidth(18),
     backgroundColor: colors.standardButton,
   },
   buttonLabel: {
-    fontSize: normaliseFont(14),
+    fontSize: normaliseFont(16),
     fontWeight: 'bold',
     color: colors.standardButtonText,
   },
@@ -576,6 +576,7 @@ let styles = StyleSheet.create({
   priceChangeMessage: {
     //borderWidth: 1, //testing
     marginTop: scaledHeight(20),
+    paddingHorizontal: scaledWidth(30),
   },
   priceChangeMessageText: {
     fontSize: normaliseFont(16),
@@ -585,6 +586,7 @@ let styles = StyleSheet.create({
   errorMessage: {
     //borderWidth: 1, //testing
     marginTop: scaledHeight(20),
+    paddingHorizontal: scaledWidth(30),
   },
   errorMessageText: {
     fontSize: normaliseFont(14),
