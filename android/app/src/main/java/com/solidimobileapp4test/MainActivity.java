@@ -1,4 +1,4 @@
-package com.solidimobileapp4;
+package com.solidimobileapp4test;
 
 import com.facebook.react.ReactActivity;
 
