@@ -72,8 +72,12 @@ let Error = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={[styles.bold, styles.basicText]}>Error message:</Text>
-          <Text style={styles.basicText}>{'\n'}{appState.error.message}</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Domain: {appState.domain}</Text>
+        </View>
+
+        <View style={styles.infoItem}>
+          <Text style={[styles.bold, styles.basicText]}>{`\u2022  `} Error message:</Text>
+          <Text style={styles.basicText}>{appState.error.message}</Text>
         </View>
 
       </View>

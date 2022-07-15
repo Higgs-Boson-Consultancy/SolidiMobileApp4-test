@@ -71,6 +71,14 @@ let SupportTools = () => {
 
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
+      <View style={styles.infoSection}>
+
+        <View style={styles.infoItem}>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Connected to: {appState.domain}</Text>
+        </View>
+
+      </View>
+
       <View style={styles.buttonWrapper}>
         <StandardButton title='Register without auto-login'
           onPress={ () => { appState.changeState('Register', 'nonAuto'); } }
@@ -128,6 +136,13 @@ let styles = StyleSheet.create({
   buttonWrapper: {
     marginVertical: scaledHeight(10),
     width: '100%',
+  },
+  infoSection: {
+    paddingTop: scaledHeight(20),
+    alignItems: 'flex-start',
+  },
+  infoItem: {
+    marginBottom: scaledHeight(5),
   },
 });
 
