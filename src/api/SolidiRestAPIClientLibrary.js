@@ -180,7 +180,7 @@ export default class SolidiRestAPIClientLibrary {
     }
     //log({postData})
     // Abort the request if it takes longer than maxTimeSeconds.
-    let maxTimeSeconds = 10;
+    let maxTimeSeconds = 20;
     let timeout = false;
     let timerID = setTimeout(() => {
         abortController.abort();
