@@ -389,7 +389,6 @@ let Buy = () => {
           <Text style={styles.upgradeRequiredText}>If you have any trouble, please </Text>
           <Button title="Contact Us" onPress={ () => { appState.changeState('ContactUs') } }
             styles={styleContactUsButton}/>
-          <Text style={styles.upgradeRequiredText}>.</Text>
         </View>
       </View>
     )
