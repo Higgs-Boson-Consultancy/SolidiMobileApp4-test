@@ -79,10 +79,12 @@ let ChooseHowToPay = () => {
 
   let setup = async () => {
     try {
+      setSendOrderMessage('Loading...');
       await appState.generalSetup();
       await appState.loadBalances();
       let details = await fetchPaymentChoiceDetails();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setSendOrderMessage('');
       setPaymentChoiceDetails(details);
       setErrorMessage('');
       setDisableConfirmButton(false);
@@ -352,12 +354,6 @@ let ChooseHowToPay = () => {
 
       <ScrollView ref={refScrollView} showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-        { isLoading &&
-          <View style={styles.loadingMessage}>
-            <Text style={styles.loadingMessageText}>Loading...</Text>
-          </View>
-        }
-
         <View style={styles.selectPaymentMethodSection}>
 
           <RadioButton.Group onValueChange={x => {
@@ -553,15 +549,6 @@ let styles = StyleSheet.create({
     // For Android, a second solution may be needed.
     fontVariant: ['tabular-nums'],
   },
-  loadingMessage: {
-    //borderWidth: 1, //testing
-    marginTop: scaledHeight(20),
-    paddingHorizontal: scaledWidth(30),
-  },
-  loadingMessageText: {
-    fontSize: normaliseFont(14),
-    color: 'red',
-  },
   priceChangeMessage: {
     //borderWidth: 1, //testing
     marginTop: scaledHeight(20),
@@ -593,13 +580,13 @@ let styles = StyleSheet.create({
 
 let styleBalanceButton = StyleSheet.create({
   borderWidth: 1,
-  borderRadius: 18,
+  borderRadius: scaledWidth(18),
   backgroundColor: colors.standardButton,
 });
 
 let styleBalanceButtonDisabled = StyleSheet.create({
   borderWidth: 1,
-  borderRadius: 18,
+  borderRadius: scaledWidth(18),
   backgroundColor: colors.greyedOutIcon,
 });
 
