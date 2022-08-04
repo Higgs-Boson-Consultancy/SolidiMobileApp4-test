@@ -213,6 +213,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // A state consists of a mainPanelState and a pageName.
       let expected = 'mainPanelState pageName'.split(' ');
       misc.confirmExactKeys('stateX', stateX, expected, 'stashState');
+      // Don't stash the RequestTimeout page. Instead, it should continually reload the existing stashed state.
+      if (stateX.mainPanelState == 'RequestTimeout') return;
       let msg = `Stashing state: ${JSON.stringify(stateX)}`;
       log(msg);
       this.state.stashedState = stateX;
