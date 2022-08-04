@@ -229,6 +229,11 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    this.deleteStashedState = () => {
+      this.state.stashedState = {};
+    }
+
+
     this.resetStateHistory = () => {
       this.state.stateHistoryList = [];
       if (! this.nonHistoryPanels.includes(this.initialMainPanelState)) {
@@ -652,8 +657,11 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
       this.state.user.loginCredentialsFound = false;
-      // Re-initialise the state history.
-      this.state.resetStateHistory();
+      // Wipe the state history and any stashed state.
+      this.state.stateHistoryList = [];
+      this.deleteStashedState();
+      // Change to Buy state.
+      this.changeState('Buy');
     }
 
 
@@ -1899,6 +1907,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       stashCurrentState: this.stashCurrentState,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
+      deleteStashedState: this.deleteStashedState,
       resetStateHistory: this.resetStateHistory,
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
