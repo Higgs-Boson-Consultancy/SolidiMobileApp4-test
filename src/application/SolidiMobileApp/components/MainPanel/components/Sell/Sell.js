@@ -503,11 +503,11 @@ let Sell = () => {
         />
       </View>
 
-      {generateBalanceSection()}
-
       <View style={styles.priceWrapper}>
         <Text style={styles.priceText}>Current price: {generatePriceDescription()}</Text>
       </View>
+
+      {generateBalanceSection()}
 
       <View style={styles.buttonWrapper}>
         <StandardButton title="Sell now" onPress={ startSellRequest } />
@@ -611,10 +611,10 @@ let styles = StyleSheet.create({
     width: scaledWidth(220),
   },
   balanceWrapper: {
-    //marginBottom: scaledHeight(10),
+    marginVertical: scaledHeight(10),
   },
   priceWrapper: {
-    marginTop: scaledHeight(20),
+    marginVertical: scaledHeight(10),
   },
   priceText: {
     fontWeight: 'bold',
