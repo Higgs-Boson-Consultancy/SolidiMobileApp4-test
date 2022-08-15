@@ -370,7 +370,7 @@ address1 address2 address3 address4 postcode country
             <Text style={styles.detailNameText}>Email</Text>
           </View>
           <View style={styles.detailValue}>
-            <Text style={styles.detailValueText}>{appState.getUserInfo('email')}</Text>
+            <Text style={styles.detailValueText}>{`\u2022  `}{appState.getUserInfo('email')}</Text>
           </View>
         </View>
 
