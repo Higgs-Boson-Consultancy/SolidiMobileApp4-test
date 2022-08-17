@@ -1279,15 +1279,19 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         apiRoute: `deposit_details/${asset}`,
       });
       if (data == 'DisplayedError') return;
-      // Example result for GBP:
       /*
+      - Example result for GBP:
       {
         "sortCode": "040476",
         "accountNumber": "00001036",
         "accountName": "Solidi",
         "reference": "SHMPQKC"
       }
+
+      - Example error result:
+      {"error":"Could not retrieve deposit details"}
       */
+      // If an error occurs, we don't raise it here. There are many currencies. At any given time, a coin subsystem may be down, and the server won't be able to return deposit details for it. This shouldn't cause the app to completely halt. Handle the lack of deposit details on the relevant page.
      let details = data;
       // If the data differs from existing data, save it.
       let msg = `Deposit details for asset=${asset} loaded from server.`;
