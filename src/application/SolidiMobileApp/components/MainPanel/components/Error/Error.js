@@ -76,7 +76,7 @@ let Error = () => {
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={[styles.bold, styles.basicText]}>{`\u2022  `} Error message:</Text>
+          <Text style={[styles.bold, styles.basicText]}>{`\u2022  `} Error details:</Text>
           <Text style={styles.basicText}>{appState.error.message}</Text>
         </View>
 
