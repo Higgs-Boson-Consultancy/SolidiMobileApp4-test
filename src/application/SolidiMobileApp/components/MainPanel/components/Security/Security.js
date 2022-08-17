@@ -63,12 +63,6 @@ let Security = () => {
   }
 
 
-  let getPasswordButtonTitle = () => {
-    let title = passwordVisible ? 'Hide password' : 'Show password';
-    return title;
-  }
-
-
   let getPINButtonTitle = () => {
     let title = pinVisible ? 'Hide PIN' : 'Show PIN';
     return title;
@@ -84,34 +78,6 @@ let Security = () => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
-
-      <View style={styles.detail}>
-        <View style={styles.detailName}>
-          <Text style={styles.detailNameText}>{`\u2022  `}Password</Text>
-        </View>
-        <View>
-          <TextInput
-            name='password'
-            value={appState.user.password}
-            style={[styles.detailValue, styles.secretTextInput]}
-            onEndEditing = {event => {
-              let value = event.nativeEvent.text;
-              //updateUserData({detail:'password', value});
-            }}
-            autoCapitalize='none'
-            autoCorrect={false}
-            textContentType='newPassword'
-            secureTextEntry={! passwordVisible}
-            editable={false}
-          />
-        </View>
-      </View>
-
-      <View style={styles.buttonWrapper}>
-        <StandardButton title={getPasswordButtonTitle()}
-          onPress={ () => { setPasswordVisible(! passwordVisible) } }
-        />
-      </View>
 
       <View style={styles.detail}>
         <View style={styles.detailName}>
