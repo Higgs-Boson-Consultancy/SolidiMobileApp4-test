@@ -300,6 +300,7 @@ let Send = () => {
             //placeholder={'52'}
             //placeholderTextColor={colors.placeHolderTextColor}
             autoCorrect={false}
+            keyboardType='number-pad'
           />
         </View>
       </View>
@@ -340,6 +341,7 @@ let Send = () => {
             placeholder={'12-34-56'}
             placeholderTextColor={colors.placeHolderTextColor}
             autoCorrect={false}
+            keyboardType='numbers-and-punctuation'
           />
         </View>
       </View>
@@ -361,6 +363,7 @@ let Send = () => {
             placeholder={'123456789'}
             placeholderTextColor={colors.placeHolderTextColor}
             autoCorrect={false}
+            keyboardType='number-pad'
           />
         </View>
       </View>
@@ -616,6 +619,7 @@ let Send = () => {
           style={styles.volumeSA}
           onChangeText={validateAndSetVolumeSA}
           value={volumeSA}
+          keyboardType='decimal-pad'
         />
         <DropDownPicker
           listMode="MODAL"

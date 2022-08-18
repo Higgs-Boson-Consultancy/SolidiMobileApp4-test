@@ -428,6 +428,7 @@ let Buy = () => {
           style={styles.volumeQA}
           onChangeText={validateAndSetVolumeQA}
           value={volumeQA}
+          keyboardType='decimal-pad'
         />
         <DropDownPicker
           listMode="MODAL"
@@ -456,6 +457,7 @@ let Buy = () => {
           style={styles.volumeBA}
           onChangeText={validateAndSetVolumeBA}
           value={volumeBA}
+          keyboardType='decimal-pad'
         />
         <DropDownPicker
           listMode="MODAL"
