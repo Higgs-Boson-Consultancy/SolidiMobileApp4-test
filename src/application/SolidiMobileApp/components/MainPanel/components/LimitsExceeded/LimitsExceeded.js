@@ -87,7 +87,7 @@ let LimitsExceeded = () => {
 
   let generateOrderDescription = () => {
     let s = 'Your order: ';
-    if (isLoading) return s;
+    if (isLoading) return s + '[loading]';
     let assetBAString = appState.getAssetInfo(assetBA).displayString;
     let assetQAString = appState.getAssetInfo(assetQA).displayString;
     s += `${misc.capitalise(side)} ${volumeBA} ${assetBAString} for ${volumeQA} ${assetQAString}`;
