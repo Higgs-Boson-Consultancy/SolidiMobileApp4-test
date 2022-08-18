@@ -1,6 +1,8 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ScrollView } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
@@ -65,7 +67,7 @@ let BlankExampleComponent = () => {
         <Text style={styles.headingText}>BlankExampleComponent</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={[styles.basicText, styles.bold]}>{'\n'} {`\u2022  `} [some text]</Text>
 
@@ -77,7 +79,7 @@ let BlankExampleComponent = () => {
 
       </View>
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>
