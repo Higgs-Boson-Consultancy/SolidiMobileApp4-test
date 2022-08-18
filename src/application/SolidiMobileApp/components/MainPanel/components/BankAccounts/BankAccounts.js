@@ -160,6 +160,7 @@ let BankAccounts = () => {
                 style={[styles.detailValue, styles.editableTextInput]}
                 onChangeText={setSortCode}
                 autoCompleteType='off'
+                placeholder='XX-XX-XX'
               />
             </View>
           </View>
@@ -173,6 +174,7 @@ let BankAccounts = () => {
                 style={[styles.detailValue, styles.editableTextInput]}
                 onChangeText={setAccountNumber}
                 autoCompleteType='off'
+                placeholder='01230123'
               />
             </View>
           </View>
