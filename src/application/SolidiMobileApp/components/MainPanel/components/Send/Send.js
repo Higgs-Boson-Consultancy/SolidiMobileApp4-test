@@ -1,9 +1,10 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
-import DropDownPicker from 'react-native-dropdown-picker';
 import _ from 'lodash';
 import Big from 'big.js';
 
@@ -588,7 +589,7 @@ let Send = () => {
         <Text style={styles.headingText}>Send</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <View style={styles.description1}>
         <View>
@@ -684,7 +685,7 @@ let Send = () => {
         }
       </View>
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>

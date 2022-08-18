@@ -2,6 +2,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
@@ -442,7 +443,7 @@ let Sell = () => {
         <Text style={styles.headingText}>Sell</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       <Text style={styles.descriptionText}>I want to get:</Text>
 
@@ -519,7 +520,7 @@ let Sell = () => {
         </View>
       }
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>

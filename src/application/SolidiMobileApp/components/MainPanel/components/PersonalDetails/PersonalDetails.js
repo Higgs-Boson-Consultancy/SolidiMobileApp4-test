@@ -1,9 +1,10 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, TextInput, ScrollView, StyleSheet, View } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
-import DropDownPicker from 'react-native-dropdown-picker';
 import _ from 'lodash';
 import Big from 'big.js';
 
@@ -195,7 +196,7 @@ address1 address2 address3 address4 postcode country
         <Text style={styles.headingText}>Personal Details</Text>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }} >
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionHeadingText}>Basic Details</Text>
@@ -534,7 +535,7 @@ address1 address2 address3 address4 postcode country
         </View>
 
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>

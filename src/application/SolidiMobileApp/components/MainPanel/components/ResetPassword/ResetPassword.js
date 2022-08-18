@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
@@ -72,7 +73,7 @@ let ResetPassword = () => {
         <Text style={styles.headingText}>Reset Password</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       {! _.isEmpty(errorMessage) &&
         <View style={styles.errorWrapper}>
@@ -122,7 +123,7 @@ let ResetPassword = () => {
         </View>
       }
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>

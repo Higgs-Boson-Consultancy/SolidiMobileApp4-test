@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
@@ -115,7 +116,7 @@ let BankAccounts = () => {
         <Text style={styles.headingText}>Bank Account</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       { isLoading && <Spinner/> }
 
@@ -196,7 +197,7 @@ let BankAccounts = () => {
 
       }
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>

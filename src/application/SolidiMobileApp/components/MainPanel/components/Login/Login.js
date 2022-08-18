@@ -1,10 +1,11 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
-import * as Keychain from 'react-native-keychain';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
+import * as Keychain from 'react-native-keychain';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
@@ -104,7 +105,7 @@ let Login = () => {
         <Text style={styles.headingText}>Login</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
       {! _.isEmpty(errorMessage) &&
         <View style={styles.errorWrapper}>
@@ -166,7 +167,7 @@ let Login = () => {
         />
       </View>
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>
