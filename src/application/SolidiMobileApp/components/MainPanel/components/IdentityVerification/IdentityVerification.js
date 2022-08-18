@@ -1,13 +1,13 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import {launchCamera} from 'react-native-image-picker';
+import RNFS from 'react-native-fs';
 
 // Other imports
 import _ from 'lodash';
 import Big from 'big.js';
-import DropDownPicker from 'react-native-dropdown-picker';
-import {launchCamera} from 'react-native-image-picker';
-import RNFS from 'react-native-fs';
 
 // Internal imports
 import AppStateContext from 'src/application/data';

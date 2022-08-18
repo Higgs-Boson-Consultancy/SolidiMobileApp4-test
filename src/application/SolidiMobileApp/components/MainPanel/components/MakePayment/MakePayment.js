@@ -6,6 +6,7 @@ import * as Progress from 'react-native-progress';
 
 // Other imports
 import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';

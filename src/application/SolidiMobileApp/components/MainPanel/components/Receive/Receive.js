@@ -1,11 +1,11 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import Clipboard from '@react-native-clipboard/clipboard';
+import QRCode from 'react-native-qrcode-svg';
 
 // Other imports
-import DropDownPicker from 'react-native-dropdown-picker';
-import QRCode from 'react-native-qrcode-svg';
 import _ from 'lodash';
 import Big from 'big.js';
 

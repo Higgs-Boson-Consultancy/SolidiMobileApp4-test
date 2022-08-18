@@ -1,9 +1,9 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { FlatList, Text, StyleSheet, View } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 // Other imports
-import DropDownPicker from 'react-native-dropdown-picker';
 import _ from 'lodash';
 import Big from 'big.js';
 

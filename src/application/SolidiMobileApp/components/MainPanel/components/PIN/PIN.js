@@ -1,17 +1,12 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  StyleSheet,
-  Dimensions,
-  Text,
-  View
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import PINCode, { hasUserSetPinCode } from '@haskkor/react-native-pincode';
 import * as Keychain from 'react-native-keychain';
 
 // Other imports
 import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import { screenWidth, screenHeight } from 'src/util/dimensions';
