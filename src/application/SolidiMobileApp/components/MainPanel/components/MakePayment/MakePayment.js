@@ -56,7 +56,8 @@ let MakePayment = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      checkDepositDetails();
+      //await appState.loadInitialStuffAboutUser(); // direct testing
+      checkDepositDetails(); // Comment this out when directly testing this page.
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `MakePayment.setup: Error = ${err}`;
