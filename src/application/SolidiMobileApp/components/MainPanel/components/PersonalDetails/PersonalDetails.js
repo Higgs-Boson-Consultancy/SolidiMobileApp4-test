@@ -325,6 +325,7 @@ address1 address2 address3 address4 postcode country
                 updateUserData({detail:'dateOfBirth', value});
               }}
               autoCompleteType='off'
+              keyboardType='numbers-and-punctuation'
             />
           </View>
         </View>
@@ -390,6 +391,7 @@ address1 address2 address3 address4 postcode country
               }}
               autoCompleteType='off'
               autoCapitalize='none'
+              keyboardType='numbers-and-punctuation' // May have plus sign and hyphen in it, not just digits.
             />
           </View>
         </View>

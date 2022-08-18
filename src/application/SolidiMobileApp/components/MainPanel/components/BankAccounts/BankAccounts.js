@@ -161,6 +161,7 @@ let BankAccounts = () => {
                 onChangeText={setSortCode}
                 autoCompleteType='off'
                 placeholder='XX-XX-XX'
+                keyboardType='numbers-and-punctuation'
               />
             </View>
           </View>
@@ -175,6 +176,7 @@ let BankAccounts = () => {
                 onChangeText={setAccountNumber}
                 autoCompleteType='off'
                 placeholder='01230123'
+                keyboardType='number-pad'
               />
             </View>
           </View>
