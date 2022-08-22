@@ -17,15 +17,15 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="solidi" translatesAutoresizingMaskIntoConstraints="NO" id="sW2-5r-4RZ">
-                                <rect key="frame" x="55" y="73" width="210" height="282"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" misplaced="YES" image="solidi" translatesAutoresizingMaskIntoConstraints="NO" id="sW2-5r-4RZ">
+                                <rect key="frame" x="55" y="66" width="210" height="334"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="d5f-mz-cFW"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="sW2-5r-4RZ" firstAttribute="top" secondItem="d5f-mz-cFW" secondAttribute="top" constant="73" id="N4F-DQ-bb0"/>
-                            <constraint firstItem="d5f-mz-cFW" firstAttribute="bottom" secondItem="sW2-5r-4RZ" secondAttribute="bottom" constant="125" id="ahq-Sj-bGs"/>
+                            <constraint firstItem="sW2-5r-4RZ" firstAttribute="top" secondItem="d5f-mz-cFW" secondAttribute="top" constant="65" id="N4F-DQ-bb0"/>
+                            <constraint firstItem="d5f-mz-cFW" firstAttribute="bottom" secondItem="sW2-5r-4RZ" secondAttribute="bottom" constant="80" id="ahq-Sj-bGs"/>
                             <constraint firstItem="sW2-5r-4RZ" firstAttribute="leading" secondItem="d5f-mz-cFW" secondAttribute="leading" constant="55" id="lQX-ki-POW"/>
                             <constraint firstItem="d5f-mz-cFW" firstAttribute="trailing" secondItem="sW2-5r-4RZ" secondAttribute="trailing" constant="55" id="mxe-f9-Z1l"/>
                         </constraints>
@@ -37,7 +37,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="solidi" width="1600" height="1305"/>
+        <image name="solidi" width="300" height="300"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
