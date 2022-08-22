@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "solidi_logo_portrait_black_on_white_background_1600x1305.png",
+      "filename" : "solidi_logo_portrait.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "solidi_logo_portrait@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "solidi_logo_portrait@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
