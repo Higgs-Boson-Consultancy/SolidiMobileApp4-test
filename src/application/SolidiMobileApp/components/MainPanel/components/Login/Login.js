@@ -26,6 +26,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let Login = () => {
 
   let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
 
   let [errorMessage, setErrorMessage] = useState('');
@@ -33,6 +34,8 @@ let Login = () => {
   let [email, setEmail] = useState('');
   let [password, setPassword] = useState('');
   let [disableLoginButton, setDisableLoginButton] = useState(false);
+
+  let [passwordVisible, setPasswordVisible] = useState(false);
 
 
 
@@ -47,10 +50,17 @@ let Login = () => {
     try {
       await appState.generalSetup();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Login.setup: Error = ${err}`;
       console.log(msg);
     }
+  }
+
+
+  let getPasswordButtonTitle = () => {
+    let title = passwordVisible ? 'Hide password' : 'Show password';
+    return title;
   }
 
 
@@ -116,7 +126,9 @@ let Login = () => {
         </View>
       }
 
-      <Text style={styles.descriptionText}>Email address:</Text>
+      <View style={styles.emailLineWrapper}>
+        <Text style={styles.descriptionText}>Email address:</Text>
+      </View>
 
       <View style={styles.wideTextInputWrapper}>
         <TextInput
@@ -128,11 +140,17 @@ let Login = () => {
         />
       </View>
 
-      <Text style={styles.descriptionText}>Password:</Text>
+      <View style={styles.passwordLineWrapper}>
+        <Text style={styles.descriptionText}>Password:</Text>
+        <Button title={getPasswordButtonTitle()}
+          onPress={ () => { setPasswordVisible(! passwordVisible) } }
+        />
+      </View>
+
 
       <View style={styles.wideTextInputWrapper}>
         <TextInput
-          secureTextEntry={true}
+          secureTextEntry={! passwordVisible}
           style={styles.wideTextInput}
           onChangeText={setPassword}
           value={password}
@@ -234,6 +252,16 @@ let styles = StyleSheet.create({
     borderRadius: scaledWidth(8),
     paddingHorizontal: scaledWidth(10),
     marginRight: scaledWidth(20),
+  },
+  emailLineWrapper: {
+    paddingVertical: scaledHeight(5),
+    //borderWidth: 1, // testing
+  },
+  passwordLineWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    //borderWidth: 1, // testing
   },
   loginButtonWrapper: {
     marginTop: scaledHeight(20),
