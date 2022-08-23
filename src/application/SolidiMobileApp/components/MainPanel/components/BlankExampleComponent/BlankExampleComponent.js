@@ -40,6 +40,9 @@ let BlankExampleComponent = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'BlankExampleComponent');
 
+  // More state
+  let [errorMessage, setErrorMessage] = useState('');
+
 
   // Initial setup.
   useEffect( () => {
@@ -66,6 +69,12 @@ let BlankExampleComponent = () => {
       <View style={[styles.heading, styles.heading1]}>
         <Text style={styles.headingText}>BlankExampleComponent</Text>
       </View>
+
+      {!! errorMessage &&
+        <View style={styles.errorWrapper}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+      }
 
       <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
@@ -120,6 +129,14 @@ let styles = StyleSheet.create({
   },
   bold: {
     fontWeight: 'bold',
+  },
+  errorWrapper: {
+    //marginTop: scaledHeight(20),
+    marginBottom: scaledHeight(20),
+  },
+  errorMessageText: {
+    fontSize: normaliseFont(14),
+    color: 'red',
   },
   infoSection: {
     paddingTop: scaledHeight(20),
