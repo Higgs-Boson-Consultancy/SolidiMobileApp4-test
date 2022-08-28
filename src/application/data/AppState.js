@@ -66,9 +66,9 @@ let devBasicAuth = (basicAuthTiers.includes(appTier)) ? require('src/access/valu
 
 // Keychain storage keys.
 // - We use multiple aspects of the app in the key so that there's no risk of a test version of the app interacting with the storage of the production version.
-let loginCredentialsStorageKey = `LOGIN_${appTier}_${appName}_${domain}`;
+let apiCredentialsStorageKey = `API_${appTier}_${appName}_${domain}`;
 let pinStorageKey = `PIN_${appTier}_${appName}_${domain}`;
-log(`- Keychain: loginCredentialsStorageKey = ${loginCredentialsStorageKey}`);
+log(`- Keychain: apiCredentialsStorageKey = ${apiCredentialsStorageKey}`);
 log(`- Keychain: pinStorageKey = ${pinStorageKey}`);
 
 
@@ -352,6 +352,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let params = {password};
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
+      //lj(data);
       let keyNames = 'apiKey, apiSecret'.split(', ');
       // Future: if error is "cannot_parse_data", return a different error.
       if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
@@ -363,13 +364,13 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       this.state.apiClient = apiClient;
       this.state.user.isAuthenticated = true;
       _.assign(this.state.user, {email, password});
-      // Store the email and password in the secure keychain storage.
-      await Keychain.setInternetCredentials(this.state.loginCredentialsStorageKey, email, password);
-      let msg = `loginCredentials (email=${email}, password=${password}) stored in keychain with key = '${this.state.loginCredentialsStorageKey}')`;
+      // Store the API Key and Secret in the secure keychain storage.
+      await Keychain.setInternetCredentials(this.state.apiCredentialsStorageKey, apiKey, apiSecret);
+      let msg = `apiCredentials (apiKey=${apiKey}, apiSecret=${apiSecret}) stored in keychain with key = '${this.state.apiCredentialsStorageKey}')`;
       log(msg);
-      // Save the fact that the email & password have been stored.
-      this.state.user.loginCredentialsFound = true;
-      let msg2 = `Set this.state.user.loginCredentialsFound = true`;
+      // Save the fact that the API Key and Secret have been stored.
+      this.state.user.apiCredentialsFound = true;
+      let msg2 = `Set this.state.user.apiCredentialsFound = true`;
       log(msg2);
       log(`apiKey: ${apiKey}`);
       log(`apiSecret: ${apiSecret}`);
@@ -557,24 +558,24 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     this.authenticateUser = () => {
-      // If login credentials (email and password) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
+      // If API credentials (API Key and Secret) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
       let msg = "authenticateUser";
-      msg += `\n- this.state.user.loginCredentialsFound = ${this.state.user.loginCredentialsFound}`;
+      msg += `\n- this.state.user.apiCredentialsFound = ${this.state.user.apiCredentialsFound}`;
       msg += `\n- this.state.user.isAuthenticated = ${this.state.user.isAuthenticated}`;
       msg += `\n- this.state.user.email = ${this.state.user.email}`;
       msg += `\n- this.state.user.pin = ${this.state.user.pin}`;
       log(msg);
-      if (! this.state.user.loginCredentialsFound) {
+      if (! this.state.user.apiCredentialsFound) {
         if (! this.state.user.isAuthenticated) {
           log("authenticateUser (1) -> Authenticate");
           return this.state.changeState('Authenticate');
         }
       }
-      // If the Keychain contains both PIN and login credentials, go to PIN entry.
-      // After the user enters the PIN, the app will load the login credentials and log in automatically.
+      // If the Keychain contains both the PIN and the API credentials, go to PIN entry.
+      // After the user enters the PIN, the app will load the API credentials automatically.
       // Note: The PIN is kept in storage even if the user logs out.
-      // Note 2: A logOut action will delete the login credentials, so in this case a new logIn action will be required, in which the user enters their username and password.
-      if (this.state.user.loginCredentialsFound && this.state.user.pin) {
+      // Note 2: A logOut action will delete the API credentials, so in this case a new logIn action will be required, in which the user enters their username and password.
+      if (this.state.user.apiCredentialsFound && this.state.user.pin) {
         log("authenticateUser (2) -> PIN");
         return this.state.changeState('PIN');
       }
@@ -634,40 +635,54 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
-    this.checkForLoginCredentials = async () => {
+    this.checkForAPICredentials = async () => {
       /*
-      - We check if login credentials (email and password) are stored in the keychain.
+      - We check if API credentials (API Key and Secret) are stored in the keychain.
       - We don't actually load them into the app's memory here. (We do that only once the user has entered the correct PIN value.)
       - This is async - there will be a slight delay while the data is retrieved.
       -- However: The user would have to be very fast indeed to click a button on the initial BUY page to change to a different state before this completes.
       */
-      let credentials = await Keychain.getInternetCredentials(this.state.loginCredentialsStorageKey);
-      // Example result:
-      // {"password": "mrfishsayshelloN6", "server": "t3.solidi.co", "storage": "keychain", "username": "johnqfish@foo.com"}
+      let credentials = await Keychain.getInternetCredentials(this.state.apiCredentialsStorageKey);
+      //log({credentials});
+      /* Example result:
+      - Note: The username is the API Key and the password is the API Secret.
+{
+  "credentials": {
+    "username": "9goCIpzzw1V8WIOU1dAmVMyb7thF05NUAoZ0QmXcnRy7KLrltcgKMad5",
+    "password": "6wiWs6DW0zOsJI3oThk1N5ASMoIwNrqJONDxTAh4Z0Tjr2KArqhAgoOEGRTikYwYkItUPjuvzPlM2bANbckzcPTB",
+    "storage": "keychain",
+    "server": "API_dev_SolidiMobileApp_t3.solidi.co"
+  }
+}
+      */
       if (credentials) {
         if (_.has(credentials, 'username') && _.has(credentials, 'password')) {
-          log(`Stored login credentials (username and password) found in Keychain (but not loaded into memory).`);
-          this.state.user.loginCredentialsFound = true;
+          log(`Stored API credentials (API Key and Secret) found in Keychain (but not loaded into memory).`);
+          this.state.user.apiCredentialsFound = true;
           return;
         }
       }
-      log(`No login credentials found in Keychain.`);
+      log(`No API credentials found in Keychain.`);
     }
 
 
     this.logout = async () => {
       log("Start: logout");
       // Note: We don't ever delete the PIN from app memory or from the keychain.
-      // Delete user's email and password from memory and from keychain.
+      // Delete user's email and password from memory.
       this.state.user.email = '';
       this.state.user.password = '';
-      await Keychain.resetInternetCredentials(this.state.loginCredentialsStorageKey);
+      // Delete user's API Key and Secret from memory and from the keychain.
+      this.state.apiClient.apiKey = '';
+      this.state.apiClient.apiSecret = '';
+      await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
-      this.state.user.loginCredentialsFound = false;
+      this.state.user.apiCredentialsFound = false;
       // Wipe the state history and any stashed state.
       this.state.stateHistoryList = [];
       this.deleteStashedState();
+      log("Logout complete.");
       // Change to Buy state.
       this.changeState('Buy');
     }
@@ -1937,7 +1952,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       deletePIN: this.deletePIN,
       choosePIN: this.choosePIN,
       loadPIN: this.loadPIN,
-      checkForLoginCredentials: this.checkForLoginCredentials,
+      checkForAPICredentials: this.checkForAPICredentials,
       logout: this.logout,
       lockApp: this.lockApp,
       resetLockAppTimer: this.resetLockAppTimer,
@@ -2029,7 +2044,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       appAPIVersion,
       basicAuthTiers,
       devBasicAuth,
-      loginCredentialsStorageKey,
+      apiCredentialsStorageKey,
       pinStorageKey,
       userAgent: "Solidi Mobile App 4",
       apiVersionLoaded: false,
@@ -2041,7 +2056,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         email: '',
         password: '',
         pin: '',
-        loginCredentialsFound: false,
+        apiCredentialsFound: false,
         info: {
           // In info, we store a lot of user-specific data retrieved from the API.
           // It is often restructured into a new form, but remains partitioned by API route.
@@ -2148,7 +2163,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     // Load data from keychain.
     this.loadPIN();
-    this.checkForLoginCredentials();
+    this.checkForAPICredentials();
 
     // Start the lock-app timer.
     this.resetLockAppTimer();

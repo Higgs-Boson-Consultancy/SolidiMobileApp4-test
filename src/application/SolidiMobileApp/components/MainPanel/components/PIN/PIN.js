@@ -82,52 +82,57 @@ let PIN = () => {
     if (pinStored) {
       log(`PIN found in Keychain: ${pin}`);
     }
-    // If the user has just entered the PIN successfully, log them in.
+    // If the user has just entered the PIN successfully, load the API credentials from the Keychain.
     if (pinStatus === 'enter') {
-      // Look up the user's email and password using the login credentials key.
-      let loginCredentials = await Keychain.getInternetCredentials(appState.loginCredentialsStorageKey);
-      // Example result:
-      // {"username":"johnqfish@foo.com","password":"bigFish6","storage":"keychain","server":"LOGIN_dev_SolidiMobileApp_t3.solidi.co"}
+      // Look up the user's API credentials using the API credentials key.
+      let apiCredentials = await Keychain.getInternetCredentials(appState.apiCredentialsStorageKey);
+      //log({apiCredentials});
+      /* Example result:
+      - Note: The username is the API Key and the password is the API Secret.
+{
+  "apiCredentials": {
+    "username": "9goCIpzzw1V8WIOU1dAmVMyb7thF05NUAoZ0QmXcnRy7KLrltcgKMad5",
+    "password": "6wiWs6DW0zOsJI3oThk1N5ASMoIwNrqJONDxTAh4Z0Tjr2KArqhAgoOEGRTikYwYkItUPjuvzPlM2bANbckzcPTB",
+    "storage": "keychain",
+    "server": "API_dev_SolidiMobileApp_t3.solidi.co"
+  }
+}
+      */
       /* Issue:
-      - The user may have previously logged out, in which case the email and password have been deleted from the Keychain.
+      - The user may have previously logged out, in which case the API Key and Secret will have been deleted from the Keychain.
       In this case:
       - Keychain.getInternetCredentials will return false.
-      - We need to stop here and switch to Login page.
+      - We need to stop here and switch to the Login page.
       */
-      if (! loginCredentials) return appState.changeState('Login');
-      let {username: email, password} = loginCredentials;
-      let msg = `loginCredentials (email=${email}, password=${password}) loaded from Keychain under ${appState.loginCredentialsStorageKey})`;
+      if (! apiCredentials) return appState.changeState('Login');
+      let {username: apiKey, password: apiSecret} = apiCredentials;
+      let msg = `apiCredentials (apiKey=${apiKey}, apiSecret=${apiSecret}) loaded from Keychain under ${appState.apiCredentialsStorageKey})`;
       log(msg);
-      // Use the email and password to load the API Key and Secret from the server.
-      let {userAgent, domain} = appState;
-      let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
-      let apiRoute = 'login_mobile' + `/${email}`;
-      let params = {password};
-      let abortController = appState.createAbortController();
-      let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
-      if (data == 'DisplayedError') return;
       /* Issue:
-      - The email and password may have changed (e.g. by changes made via the web application).
-      In this case, we'll get a particular error. Need to catch it and switch to Login page.
+      - The API Secret may have expired.
+      In this case:
+      - We'll get a particular error. Need to catch it and switch to Login page.
+      - We'll test by making a private API call and checking for errors.
       */
+      // Build a new API client.
+      let {userAgent, domain} = appState;
+      let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey, apiSecret, domain});
+      // Make the test API call.
+      let apiRoute = 'user';
+      let params = {};
+      let abortController = appState.createAbortController();
+      let data = await apiClient.privateMethod({httpMethod: 'POST', apiRoute, params, abortController});
+      if (data == 'DisplayedError') return;
       if (data.error) {
         let msg = `Error in PIN._finishProcess: ${misc.jd(data)}`
         console.log(msg);
         appState.changeState('Login');
         return;
       }
-      let keyNames = 'apiKey, apiSecret'.split(', ');
-      if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
-        let message = `Response from server does not have exactly these keyNames: ${keyNames}. Instead, it has: ${_.keys(data)}.`;
-        this.state.switchToErrorState({message});
-        return;
-      }
-      let {apiKey, apiSecret} = data;
       // Store these access values in the global state.
       _.assign(apiClient, {apiKey, apiSecret});
       appState.apiClient = apiClient;
       appState.user.isAuthenticated = true;
-      _.assign(appState.user, {email, password});
       // Load user stuff.
       await appState.loadInitialStuffAboutUser();
     }
