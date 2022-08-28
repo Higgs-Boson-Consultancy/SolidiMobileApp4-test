@@ -205,7 +205,11 @@ export default class SolidiRestAPIClientLibrary {
       log(msg);
       let response = await fetch(uri, options);
       let responseData = await response.text();
-      //log("Response: " + responseData);
+      let responseDataStr = responseData;
+      if (responseDataStr.length > 200) {
+        responseDataStr = responseDataStr.substring(0, 200) + ' ... ';
+      }
+      log("Response: " + responseDataStr);
       // Catch and handle timeouts:
 /*
 <html>
