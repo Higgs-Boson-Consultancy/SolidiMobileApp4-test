@@ -28,16 +28,14 @@ let PurchaseSuccessful = () => {
   let stateChangeID = appState.stateChangeID;
   let [isLoading, setIsLoading] = useState(true);
 
+  // State
+  let [order, setOrder] = useState({});
+
   // Testing
   if (appState.appTier == 'dev' && appState.panels.buy.volumeQA == '0') {
-    // Create an order.
-    _.assign(appState.panels.buy, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC'});
-    appState.panels.buy.activeOrder = true;
-    appState.panels.buy.orderID = 7200;
+    appState.panels.buy.orderID = 7179; // Need to adjust this to be the orderID of an actual order in the database.
+    appState.changeStateParameters.orderID = appState.panels.buy.orderID;
   }
-
-  // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
 
   let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
 
@@ -53,13 +51,51 @@ let PurchaseSuccessful = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
+      await appState.loadOrders();
+      let order = appState.getOrder({orderID: appState.changeStateParameters.orderID});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setOrder(order);
       triggerRender(renderCount+1);
       setIsLoading(false);
     } catch(err) {
       let msg = `PurchaseSuccessful.setup: Error = ${err}`;
       console.log(msg);
     }
+  }
+
+
+  let getTotalQAStr = () => {
+    /* We get the volumeQA value.
+    - Within Solidi, the fees are subtracted from this value, but this doesn't change the "total amount paid" from the user's point of view here.
+    */
+    let s = '';
+    let requiredKeys = 'market baseVolume quoteVolume'.split(' ');
+    if (requiredKeys.every(k => k in order)) {
+      let [assetBA, assetQA] = order.market.split('/');
+      let assetInfo = appState.getAssetInfo(assetQA);
+      let volumeQA = order.quoteVolume;
+      s += appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'getTotalQAStr'});
+      s += ' ' + assetInfo.displayString;
+    } else {
+      s = '[loading]';
+    }
+    return s;
+  }
+
+
+  let getVolumeBAStr = () => {
+    let s = '';
+    let requiredKeys = 'market baseVolume quoteVolume'.split(' ');
+    if (requiredKeys.every(k => k in order)) {
+      let [assetBA, assetQA] = order.market.split('/');
+      let assetInfo = appState.getAssetInfo(assetBA);
+      let volumeBA = order.baseVolume;
+      s += appState.getFullDecimalValue({asset: assetBA, value: volumeBA, functionName: 'getTotalBAStr'});
+      s += ' ' + assetInfo.displayString;
+    } else {
+      s = '[loading]';
+    }
+    return s;
   }
 
 
@@ -87,11 +123,11 @@ let PurchaseSuccessful = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} has been processed.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your payment of {getTotalQAStr()} has been processed.</Text>
         </View>
 
         <View style={styles.infoItem}>
-          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi account has been credited with {volumeBA} {appState.getAssetInfo(assetBA).displayString}.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi account has been credited with {getVolumeBAStr()}.</Text>
         </View>
 
       </View>
