@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { FlatList, Text, StyleSheet, View } from 'react-native';
+import { TouchableNativeFeedback, TouchableOpacity } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 // Other imports
@@ -18,6 +19,12 @@ import misc from 'src/util/misc';
 import logger from 'src/util/logger';
 let logger2 = logger.extend('History');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+
+let Touchable = Platform.select({
+  ios: TouchableOpacity,
+  android: TouchableNativeFeedback,
+});
 
 
 
@@ -176,6 +183,7 @@ let History = () => {
 
 
   let renderOrderItem = ({ item }) => {
+    let orderID = item['id'];
     let market = item['market'];
     let orderSide = item['side'];
     let [baseAsset, quoteAsset] = market.split('/');
@@ -188,14 +196,24 @@ let History = () => {
     if (orderStatus == 'LIVE') _styleOrder = styles.liveOrderStatus;
     if (orderStatus == 'CANCELLED') _styleOrder = styles.cancelledOrderStatus;
     return (
-      <View style={styles.flatListItem}>
+      <Touchable style={styles.flatListItem} onPress = {() => {
+        if (orderStatus != 'SETTLED') return;
+        // Move to order-specific page.
+        let side = orderSide.toLowerCase();
+        appState.changeStateParameters.orderID = orderID;
+        if (side == 'buy') {
+          appState.changeState('PurchaseSuccessful');
+        } else {
+          appState.changeState('SaleSuccessful');
+        }
+      }}>
         <View style={styles.orderTopWrapper}>
           <Text style={styles.mediumText}>{item['date']} {item['time']}</Text>
           <Text style={[styles.mediumText, _styleOrder]}>{orderStatus}</Text>
         </View>
         <Text style={[styles.mediumText, styles.typeField]}>{orderSide}</Text>
         <Text style={styles.mediumText}>Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}.</Text>
-      </View>
+      </Touchable>
     );
   }
 
