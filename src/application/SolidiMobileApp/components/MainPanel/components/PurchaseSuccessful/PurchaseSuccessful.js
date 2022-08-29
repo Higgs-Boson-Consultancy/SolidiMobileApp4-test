@@ -55,8 +55,8 @@ let PurchaseSuccessful = () => {
       let order = appState.getOrder({orderID: appState.changeStateParameters.orderID});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setOrder(order);
-      triggerRender(renderCount+1);
       setIsLoading(false);
+      triggerRender(renderCount+1);
     } catch(err) {
       let msg = `PurchaseSuccessful.setup: Error = ${err}`;
       console.log(msg);
