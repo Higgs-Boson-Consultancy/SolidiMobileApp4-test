@@ -28,22 +28,19 @@ let SaleSuccessful = () => {
   let stateChangeID = appState.stateChangeID;
   let [isLoading, setIsLoading] = useState(true);
 
-  // Note: Never add "default" to the list of pageNames. One of the two options must be chosen explicitly.
   let pageName = appState.pageName;
-  //if (pageName == 'default') pageName = 'balance'; //testing
+  if (pageName == 'default') pageName = 'balance';
   let permittedPageNames = 'solidi balance'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SaleSuccessful');
 
+  // State
+  let [order, setOrder] = useState({});
+
   // Testing (for if we load this page directly).
   if (appState.appTier == 'dev' && appState.panels.sell.volumeQA == '0') {
-    // Create an order.
-    _.assign(appState.panels.sell, {volumeQA: '10.00', assetQA: 'GBP', volumeBA: '0.00036922', assetBA: 'BTC', feeQA: '0.50', totalQA: '10.50'});
-    appState.panels.sell.activeOrder = true;
-    appState.panels.sell.orderID = 7200;
+    appState.panels.sell.orderID = 7177; // Need to adjust this to be the orderID of an actual order in the database.
+    appState.changeStateParameters.orderID = appState.panels.sell.orderID;
   }
-
-  // Load order details.
-  ({volumeQA, volumeBA, assetQA, assetBA, totalQA} = appState.panels.sell);
 
   let trustpilotURL = 'https://www.trustpilot.com/evaluate/solidi.co?stars=5';
 
@@ -59,13 +56,52 @@ let SaleSuccessful = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
+      await appState.loadOrders();
+      let order = appState.getOrder({orderID: appState.changeStateParameters.orderID});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setOrder(order);
       setIsLoading(false);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `SaleSuccessful.setup: Error = ${err}`;
       console.log(msg);
     }
+  }
+
+
+  let getTotalQAStr = () => {
+    /* We get the volumeQA value.
+    - Future: Confirm whether or not the fee value has been subtracted within the API from this value.
+    -- If so, the order info needs to change to include the fee value and the totalQA value, and we need to return the totalQA value from this function.
+    */
+    let s = '';
+    let requiredKeys = 'market baseVolume quoteVolume'.split(' ');
+    if (requiredKeys.every(k => k in order)) {
+      let [assetBA, assetQA] = order.market.split('/');
+      let assetInfo = appState.getAssetInfo(assetQA);
+      let volumeQA = order.quoteVolume;
+      s += appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'getTotalQAStr'});
+      s += ' ' + assetInfo.displayString;
+    } else {
+      s = '[loading]';
+    }
+    return s;
+  }
+
+
+  let getVolumeBAStr = () => {
+    let s = '';
+    let requiredKeys = 'market baseVolume quoteVolume'.split(' ');
+    if (requiredKeys.every(k => k in order)) {
+      let [assetBA, assetQA] = order.market.split('/');
+      let assetInfo = appState.getAssetInfo(assetBA);
+      let volumeBA = order.baseVolume;
+      s += appState.getFullDecimalValue({asset: assetBA, value: volumeBA, functionName: 'getTotalBAStr'});
+      s += ' ' + assetInfo.displayString;
+    } else {
+      s = '[loading]';
+    }
+    return s;
   }
 
 
@@ -98,13 +134,13 @@ let SaleSuccessful = () => {
       <View style={styles.infoSection}>
 
         <View style={styles.infoItem}>
-          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your sale of {volumeBA} {appState.getAssetInfo(assetBA).displayString} has been processed.</Text>
+          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your sale of {getVolumeBAStr()} has been processed.</Text>
         </View>
 
         { (pageName == 'balance') &&
 
           <View style={styles.infoItem}>
-            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi account has been credited with {totalQA} {appState.getAssetInfo(assetQA).displayString}.</Text>
+            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your Solidi account has been credited with {getTotalQAStr()}.</Text>
           </View>
 
         }
@@ -112,7 +148,7 @@ let SaleSuccessful = () => {
         { (pageName == 'solidi') &&
 
           <View style={styles.infoItem}>
-            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your payment of {totalQA} {appState.getAssetInfo(assetQA).displayString} should arrive within 8 hours.</Text>
+            <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Your payment of {getTotalQAStr()} should arrive within 8 hours.</Text>
           </View>
 
         }
