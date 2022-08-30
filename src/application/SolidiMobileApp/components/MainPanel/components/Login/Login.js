@@ -29,10 +29,12 @@ let Login = () => {
   let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
 
+  let [challenges, setChallenges] = useState(['email', 'password']);
   let [errorMessage, setErrorMessage] = useState('');
   let [uploadMessage, setUploadMessage] = useState('');
   let [email, setEmail] = useState('');
   let [password, setPassword] = useState('');
+  let [tfa, setTFA] = useState(''); // TFA = Two-Factor Authentication (Authenticator app on phone)
   let [disableLoginButton, setDisableLoginButton] = useState(false);
 
   let [passwordVisible, setPasswordVisible] = useState(false);
@@ -85,8 +87,15 @@ let Login = () => {
       }
       // Log in.
       setUploadMessage('Logging in...');
-      await appState.login({email, password});
+      let output = await appState.login({email, password, tfa});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      // Check for security blocks.
+      if (output == 'TFA_REQUIRED') {
+        setChallenges('tfa');
+        setUploadMessage('');
+        setDisableLoginButton(false);
+        return;
+      }
       // Change state.
       if (! appState.user.pin) {
         return appState.changeState('PIN', 'choose');
@@ -126,36 +135,60 @@ let Login = () => {
 
       <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-      <View style={styles.emailLineWrapper}>
-        <Text style={styles.descriptionText}>Email address:</Text>
-      </View>
+      { challenges.includes('email') &&
+        <View style={styles.emailLineWrapper}>
+          <Text style={styles.descriptionText}>Email address:</Text>
+        </View>
+      }
 
-      <View style={styles.wideTextInputWrapper}>
-        <TextInput
-          style={styles.wideTextInput}
-          onChangeText={setEmail}
-          value={email}
-          autoCapitalize={'none'}
-          autoCorrect={false}
-        />
-      </View>
+      { challenges.includes('email') &&
+        <View style={styles.wideTextInputWrapper}>
+          <TextInput
+            style={styles.wideTextInput}
+            onChangeText={setEmail}
+            value={email}
+            autoCapitalize={'none'}
+            autoCorrect={false}
+          />
+        </View>
+      }
 
-      <View style={styles.passwordLineWrapper}>
-        <Text style={styles.descriptionText}>Password:</Text>
-        <Button title={getPasswordButtonTitle()}
-          onPress={ () => { setPasswordVisible(! passwordVisible) } }
-        />
-      </View>
+      { challenges.includes('password') &&
+        <View style={styles.passwordLineWrapper}>
+          <Text style={styles.descriptionText}>Password:</Text>
+          <Button title={getPasswordButtonTitle()}
+            onPress={ () => { setPasswordVisible(! passwordVisible) } }
+          />
+        </View>
+      }
 
+      { challenges.includes('password') &&
+        <View style={styles.wideTextInputWrapper}>
+          <TextInput
+            secureTextEntry={! passwordVisible}
+            style={styles.wideTextInput}
+            onChangeText={setPassword}
+            value={password}
+          />
+        </View>
+      }
 
-      <View style={styles.wideTextInputWrapper}>
-        <TextInput
-          secureTextEntry={! passwordVisible}
-          style={styles.wideTextInput}
-          onChangeText={setPassword}
-          value={password}
-        />
-      </View>
+      { challenges.includes('tfa') &&
+        <View style={styles.emailLineWrapper}>
+          <Text style={styles.descriptionText}>TFA (Two-Factor Authentication):</Text>
+          <Text>{'\n'}Please switch to the Google Authenticator app and look up the TFA code for your Solidi account.</Text>
+        </View>
+      }
+
+      { challenges.includes('tfa') &&
+        <View style={styles.wideTextInputWrapper}>
+          <TextInput
+            style={styles.wideTextInput}
+            onChangeText={setTFA}
+            value={tfa}
+          />
+        </View>
+      }
 
       <View style={styles.loginButtonWrapper}>
         <StandardButton title="Log in"
