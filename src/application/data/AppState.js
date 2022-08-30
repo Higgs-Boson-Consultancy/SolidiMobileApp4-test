@@ -342,17 +342,26 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
-    this.login = async ({email, password}) => {
+    this.login = async ({email, password, tfa}) => {
       if (this.state.user.isAuthenticated) return;
       // Create public API client.
       let {userAgent, domain} = this.state;
       let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
       // Use the email and password to load the API Key and Secret from the server.
       let apiRoute = 'login_mobile' + `/${email}`;
-      let params = {password};
+      let params = {password, tfa};
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       //lj(data);
+      // Issue: We may get a security block here, e.g.
+      // {"error":{"code":400,"message":"Error in login","details":{"tfa_required":true}}}
+      if (data.error) {
+        if (data.error.code == 400 && data.error.details) {
+          if (data.error.details.tfa_required) {
+            return "TFA_REQUIRED";
+          }
+        }
+      }
       let keyNames = 'apiKey, apiSecret'.split(', ');
       // Future: if error is "cannot_parse_data", return a different error.
       if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
@@ -376,6 +385,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       log(`apiSecret: ${apiSecret}`);
       // Load user stuff.
       await this.state.loadInitialStuffAboutUser();
+      return "SUCCESS";
     }
 
 
