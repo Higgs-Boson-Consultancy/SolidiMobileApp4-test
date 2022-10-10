@@ -342,7 +342,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
-    this.login = async ({email, password, tfa}) => {
+    this.login = async ({email, password, tfa = ''}) => {
       if (this.state.user.isAuthenticated) return;
       // Create public API client.
       let {userAgent, domain} = this.state;
