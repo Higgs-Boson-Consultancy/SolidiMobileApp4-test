@@ -113,6 +113,7 @@ let ChooseHowToPay = () => {
     /* Example output:
     {
       "balance":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"BUY"},
+      "openbank":{"error":"Payment Method Disabled"},
       "solidi":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"BUY"}
     }
     */
@@ -171,6 +172,13 @@ let ChooseHowToPay = () => {
       //log(`Order total (${totalQA} ${assetQA}) is greater than the balance (${balanceQA} ${assetQA}).`);
       return true;
     }
+  }
+
+
+  let openBankingDisabled = () => {
+    let openBankingDetails = paymentChoiceDetails.openbank;
+    if (_.has(openBankingDetails, 'error')) return true;
+    return false;
   }
 
 
@@ -378,19 +386,34 @@ let ChooseHowToPay = () => {
               <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Usually processed in under a minute</Text>
             </View>
 
-            <RadioButton.Item label="Pay with balance" value="balance"
+            <RadioButton.Item label="Mobile bank app" value="openbank"
               color={colors.standardButtonText}
-              disabled={balanceTooSmall()}
-              style={balanceTooSmall() ? styleBalanceButtonDisabled : styleBalanceButton}
+              disabled={openBankingDisabled()}
+              style={openBankingDisabled() ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
               labelStyle={styles.buttonLabel}
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={[styles.basicText, balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText]}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
-              <Text style={[styles.basicText, balanceTooSmall() ? styleBalanceButtonAdditionalTextDisabled : styleBalanceButtonAdditionalText]}>{`\u2022  `} Processed instantly</Text>
+              <Text style={[styles.basicText, openBankingDisabled() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Authorise the payment via your mobile banking app - No fee!</Text>
+              <Text style={[styles.basicText, openBankingDisabled() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Usually processed in seconds</Text>
+              {openBankingDisabled() &&
+                <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} This payment option is inactive</Text>
+              }
+            </View>
+
+            <RadioButton.Item label="Solidi balance" value="balance"
+              color={colors.standardButtonText}
+              disabled={balanceTooSmall()}
+              style={balanceTooSmall() ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
+              labelStyle={styles.buttonLabel}
+            />
+
+            <View style={styles.buttonDetail}>
+              <Text style={[styles.basicText, balanceTooSmall() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
+              <Text style={[styles.basicText, balanceTooSmall() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Processed instantly</Text>
               {getBalanceDescriptionLine()}
               {balanceTooSmall() &&
-                <Text style={styles.balanceLowText}>{`\u2022  `} (Balance is too low for this option)</Text>
+                <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} Balance is too low for this option</Text>
               }
             </View>
 
@@ -545,7 +568,7 @@ let styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  balanceLowText: {
+  paymentOptionDisabledText: {
     fontSize: normaliseFont(14),
     fontWeight: 'bold',
     color: 'red',
@@ -584,24 +607,24 @@ let styles = StyleSheet.create({
 });
 
 
-let styleBalanceButton = StyleSheet.create({
+let stylePaymentOptionButton = StyleSheet.create({
   borderWidth: 1,
   borderRadius: scaledWidth(18),
   backgroundColor: colors.standardButton,
 });
 
-let styleBalanceButtonDisabled = StyleSheet.create({
+let stylePaymentOptionButtonDisabled = StyleSheet.create({
   borderWidth: 1,
   borderRadius: scaledWidth(18),
   backgroundColor: colors.greyedOutIcon,
 });
 
 
-let styleBalanceButtonAdditionalText = StyleSheet.create({
+let stylePaymentOptionButtonAdditionalText = StyleSheet.create({
   fontWeight: 'bold',
 });
 
-let styleBalanceButtonAdditionalTextDisabled = StyleSheet.create({
+let stylePaymentOptionButtonAdditionalTextDisabled = StyleSheet.create({
   fontWeight: 'bold',
   color: colors.greyedOutIcon,
 });
