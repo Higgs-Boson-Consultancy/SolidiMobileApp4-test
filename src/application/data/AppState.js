@@ -15,6 +15,7 @@ import React, { Component, useContext } from 'react';
 import {BackHandler} from 'react-native';
 import * as Keychain from 'react-native-keychain';
 import {deleteUserPinCode} from '@haskkor/react-native-pincode';
+import { getIpAddressesForHostname } from 'react-native-dns-lookup';
 
 // Other imports
 import _ from 'lodash';
@@ -331,6 +332,12 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       if (! this.state.assetsIconsLoaded) {
         await this.state.loadAssetsIcons();
         this.state.assetsIconsLoaded = true;
+      }
+      if (! this.state.ipAddressLoaded) {
+        let ipAddresses = await getIpAddressesForHostname(this.state.domain);
+        let ipAddress = ipAddresses[0];
+        log(`Domain IP address: ${ipAddress}`);
+        this.state.ipAddressLoaded = true;
       }
       // Login to a specific user if we're developing.
       if (basicAuthTiers.includes(this.state.appTier) && autoLoginOnDevAndStag) {
@@ -2078,6 +2085,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       assetsInfoLoaded: false,
       marketsLoaded: false,
       assetsIconsLoaded: false,
+      ipAddressLoaded: false,
       changeStateParameters: {
         orderID: null,
       },
