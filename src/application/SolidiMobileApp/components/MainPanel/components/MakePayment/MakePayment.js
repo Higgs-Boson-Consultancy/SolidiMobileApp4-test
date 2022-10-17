@@ -95,7 +95,10 @@ Incomplete deposit details for ${appState.getAssetInfo('GBP').displayString}
   let intervalSeconds = 3;
   let incrementTimeElapsed = async () => {
     // Note: This function is a closure. It's holding the old values of several variables that (outside this function) get reset when the component is re-rendered.
-    if (appState.stateChangeIDHasChanged(stateChangeID, 'MakePayment')) return;
+    if (appState.stateChangeIDHasChanged(stateChangeID, 'MakePayment')) {
+      clearInterval(appState.panels.makePayment.timerID);
+      return;
+    }
     timeElapsedSeconds += intervalSeconds;
     let newMarkerValue = timeElapsedSeconds / parseFloat(maxTimeAllowedSeconds);
     setTimeElapsedMarker(newMarkerValue);
@@ -154,7 +157,7 @@ Incomplete deposit details for ${appState.getAssetInfo('GBP').displayString}
     <View style={styles.panelSubContainer}>
 
       <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Make payment</Text>
+        <Text style={styles.headingText}>Pay by bank transfer</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
