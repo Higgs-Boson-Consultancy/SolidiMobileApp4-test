@@ -33,6 +33,7 @@ import SupportTools from './SupportTools/SupportTools';
 import LimitsExceeded from './LimitsExceeded/LimitsExceeded';
 import IdentityVerification from './IdentityVerification/IdentityVerification';
 import ResetPassword from './ResetPassword/ResetPassword';
+import MakePaymentOpenBanking from './MakePaymentOpenBanking/MakePaymentOpenBanking';
 
 
 export {
@@ -71,4 +72,5 @@ export {
   LimitsExceeded,
   IdentityVerification,
   ResetPassword,
+  MakePaymentOpenBanking,
 };

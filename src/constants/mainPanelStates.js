@@ -34,6 +34,7 @@ export const mainPanelStates = [
   'LimitsExceeded',
   'IdentityVerification',
   'ResetPassword',
+  'MakePaymentOpenBanking',
 ];
 
 export default mainPanelStates;

@@ -19,7 +19,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   SaleSuccessful, PersonalDetails, ContactUs, BankAccounts,
   Security, RequestFailed, Error, SendSuccessful, Authenticate,
   Register, SupportTools, LimitsExceeded, IdentityVerification,
-  ResetPassword } from './components';
+  ResetPassword, MakePaymentOpenBanking } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -107,6 +107,8 @@ let MainPanel = (props) => {
       return <IdentityVerification />
     } else if (appState.mainPanelState === 'ResetPassword') {
       return <ResetPassword />
+    } else if (appState.mainPanelState === 'MakePaymentOpenBanking') {
+      return <MakePaymentOpenBanking />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }
