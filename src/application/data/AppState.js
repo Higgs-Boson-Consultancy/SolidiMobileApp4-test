@@ -1631,6 +1631,15 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         log(`sendBuyOrder orderID: ${data.orderID}`);
         this.state.panels.buy.orderID = data.orderID;
       }
+      // Store the settlementID.
+      if (data.settlements) {
+        // Hacky: Choose the first settlement.
+        // Future: Under what conditions would there be two settlements ?
+        // - And, if we're making a payment via openbanking, which one do we use to retrieve an openbanking payment URL ?
+        let settlement = data.settlements[0];
+        settlementID = settlement.settlementID;
+        this.state.panels.buy.settlementID = settlementID;
+      }
       // Currently, in several different pages, we assume that the fee returned by the API during the buy process was the fee that was actually applied when the order went through the trade engine.
       // Future: Get fees from data, calculate total, store fees & total in panels.buy.
       return data;
@@ -1921,6 +1930,43 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    this.getOpenBankingPaymentStatusFromSettlement = async (params) => {
+      let {settlementID} = params;
+      let url = `settlement/${settlementID}/open_banking_payment_status`;
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: url,
+        params: {},
+        functionName: 'getOpenBankingPaymentStatusFromSettlement',
+      });
+      if (data == 'DisplayedError') return;
+      /*
+      Possible status values for a Tink payment:
+      - NOTFOUND
+      - CANCELLED
+      - SENT
+      - SETTLED
+      - UNKNOWN
+      */
+     return data;
+    }
+
+
+    this.getOpenBankingPaymentURLFromSettlement = async (params) => {
+      let {settlementID} = params;
+      let url = `settlement/${settlementID}/open_banking_payment_url`;
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: url,
+        params: {},
+        functionName: 'getOpenBankingPaymentURLFromSettlement',
+      });
+      if (data == 'DisplayedError') return;
+      /* Example Tink link for a payment to Solidi:
+      https://link.tink.com/1.0/pay/direct?client_id=c831beab1dcb48e3a44f769dfd402939&redirect_uri=https://t3.solidi.co/tinkhook&market=GB&locale=en_GB&payment_request_id=adf5cd304d9011ed9d58a70f033bb3df
+      */
+      return data;
+    }
 
 
     /* END Private API methods */
@@ -2046,6 +2092,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       fetchIdentityVerificationDetails: this.fetchIdentityVerificationDetails,
       uploadDocument: this.uploadDocument,
       resetPassword: this.resetPassword,
+      getOpenBankingPaymentStatusFromSettlement: this.getOpenBankingPaymentStatusFromSettlement,
+      getOpenBankingPaymentURLFromSettlement: this.getOpenBankingPaymentURLFromSettlement,
       /* END Private API methods */
       /* More functions */
       androidBackButtonAction: this.androidBackButtonAction,
@@ -2088,6 +2136,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       ipAddressLoaded: false,
       changeStateParameters: {
         orderID: null,
+        settlementID: null,
       },
       user: {
         isAuthenticated: false,
@@ -2142,6 +2191,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         buy: {
           activeOrder: false,
           orderID: null,
+          settlementID: null,
           volumeQA: '0',
           symbolQA: '',
           volumeBA: '0',
@@ -2178,6 +2228,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         identityVerification: {
           photo1: null,
           photo2: null,
+        },
+        makePaymentOpenBanking: {
+          timerID: null,
         },
       },
       fees: {
