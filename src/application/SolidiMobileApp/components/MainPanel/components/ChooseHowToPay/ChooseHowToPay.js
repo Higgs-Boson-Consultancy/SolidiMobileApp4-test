@@ -39,10 +39,10 @@ let ChooseHowToPay = () => {
   let [renderCount, triggerRender] = useState(0);
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'default solidi balance'.split(' ');
+  let permittedPageNames = 'default solidi balance openbank'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToPay');
   if (pageName == 'default') pageName = 'solidi';
-  //pageName = 'balance'; //testing
+  //pageName = 'openbank'; //testing
 
   // State
   let [isLoading, setIsLoading] = useState(true);
@@ -110,12 +110,15 @@ let ChooseHowToPay = () => {
       logger.error(output.error);
       return;
     }
-    /* Example output:
+    /*
+    Example output:
     {
       "balance":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"balance","quoteAssetVolume":"10.00","side":"BUY"},
-      "openbank":{"error":"Payment Method Disabled"},
+      "openbank":{"baseAssetVolume":"0.00056688","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"openbank","quoteAssetVolume":"10.00","side":"BUY"},
       "solidi":{"baseAssetVolume":"0.00040586","baseOrQuoteAsset":"quote","feeVolume":"0.00","market":"BTC/GBP","paymentMethod":"solidi","quoteAssetVolume":"10.00","side":"BUY"}
     }
+    If the OpenBanking method were disabled, we would receive:
+    "openbank":{"error":"Payment Method Disabled"},
     */
    paymentChoiceDetails = output;
    // Testing
@@ -207,9 +210,11 @@ let ChooseHowToPay = () => {
     // Create the order object.
     let buyOrder = {volumeQA, volumeBA, assetQA, assetBA, paymentMethod: paymentChoice};
     // Select the correct payment function.
-    if (paymentChoice === 'solidi') {
-      // Choice: Pay directly from external fiat account.
-      await payDirectly(buyOrder);
+    if (paymentChoice === 'solidi' || paymentChoice === 'openbank') {
+      // Choice: Pay directly by bank transfer.
+      // Choice: Pay directly using mobile banking app.
+      // We create a new variable to hold the paymentChoice value, just in case the user is able to click another paymentChoice button before we move to a new page.
+      await payDirectly({buyOrder, selectedPaymentChoice: paymentChoice});
     } else {
       // Choice: Pay with balance.
       await payWithBalance(buyOrder);
@@ -217,7 +222,7 @@ let ChooseHowToPay = () => {
   }
 
 
-  let payDirectly = async (buyOrder) => {
+  let payDirectly = async ({buyOrder, selectedPaymentChoice}) => {
     let output = await appState.sendBuyOrder(buyOrder);
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     lj(output);
@@ -242,10 +247,16 @@ let ChooseHowToPay = () => {
         // Retrieve feeVolume from order result, calculate totalVolume, and store the results in the app memory.
         let feeVolume = output.fees;
         let totalVolumeQA = calculateTotalQA({feeVolume});
-        lj({feeVolume, totalVolumeQA})
+        //lj({feeVolume, totalVolumeQA})
         appState.panels.buy.feeQA = feeVolume;
         appState.panels.buy.totalQA = totalVolumeQA;
-        appState.changeState('MakePayment');
+        if (selectedPaymentChoice === 'solidi') {
+          appState.changeState('MakePayment');
+        } else {
+          // selectedPaymentChoice === 'openbank'
+          appState.changeStateParameters.settlementID = appState.panels.buy.settlementID;
+          appState.changeState('MakePaymentOpenBanking');
+        }
       }
     }
   }
@@ -286,7 +297,7 @@ let ChooseHowToPay = () => {
         // Retrieve feeVolume from order result, calculate totalVolume, and store the results in the app memory.
         let feeVolume = output.fees;
         let totalVolumeQA = calculateTotalQA({feeVolume});
-        lj({feeVolume, totalVolumeQA});
+        //lj({feeVolume, totalVolumeQA});
         appState.panels.buy.feeQA = feeVolume;
         appState.panels.buy.totalQA = totalVolumeQA;
         appState.changeStateParameters.orderID = appState.panels.buy.orderID;
