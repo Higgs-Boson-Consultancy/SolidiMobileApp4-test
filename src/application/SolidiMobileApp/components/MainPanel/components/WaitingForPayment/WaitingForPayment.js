@@ -30,7 +30,6 @@ let WaitingForPayment = () => {
   // Load order details.
   ({volumeQA, volumeBA, assetQA, assetBA, feeQA, totalQA} = appState.panels.buy);
 
-  // Set up progress bar.
   // Load deposit account details.
   let detailsGBP = appState.user.info.depositDetails.GBP;
   let reference = detailsGBP.reference;
@@ -38,6 +37,7 @@ let WaitingForPayment = () => {
   let solidiAccountNumber = detailsGBP.accountNumber;
   let solidiAccountName = detailsGBP.accountName;
 
+  // Set up progress bar.
   /* Notes:
   - Check for "payment received" status on the server every 2 seconds, 5 times. (10 seconds cumulative total time.)
   - Then check every 5 seconds, 10 times. (1 minute total time.)
@@ -52,7 +52,10 @@ let WaitingForPayment = () => {
   let intervalSeconds = 2;
   let incrementTimeElapsed = async () => {
     // Note: This function is a closure. It's holding the old values of several variables that (outside this function) get reset when the component is re-rendered.
-    if (appState.stateChangeIDHasChanged(stateChangeID, 'WaitingForPayment')) return;
+    if (appState.stateChangeIDHasChanged(stateChangeID, 'WaitingForPayment')) {
+      clearInterval(appState.panels.waitingForPayment.timerID);
+      return;
+    }
     count += 1;
     timeElapsedSeconds += intervalSeconds;
     //log(`count: ${count}, intervalSeconds: ${intervalSeconds}, timeElapsedSeconds: ${timeElapsedSeconds}.`)
@@ -93,7 +96,7 @@ let WaitingForPayment = () => {
     if (timeElapsedSeconds >= maxTimeAllowedSeconds) {
       // Change to next state.
       clearInterval(appState.panels.waitingForPayment.timerID);
-      appState.changeState('PaymentNotReceived');
+      appState.changeState('PaymentNotMade', 'paymentNotReceived');
     }
     // Call the server to check if the payment has arrived (if it has, the order will have settled).
     // If we're testing (we've loaded this page directly during development), stop here without checking.
