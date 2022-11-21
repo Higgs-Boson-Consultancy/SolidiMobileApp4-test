@@ -334,10 +334,15 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         this.state.assetsIconsLoaded = true;
       }
       if (! this.state.ipAddressLoaded) {
-        let ipAddresses = await getIpAddressesForHostname(this.state.domain);
-        let ipAddress = ipAddresses[0];
-        log(`Domain IP address: ${ipAddress}`);
-        this.state.ipAddressLoaded = true;
+        try {
+          let ipAddresses = await getIpAddressesForHostname(this.state.domain);
+          let ipAddress = ipAddresses[0];
+          log(`Domain IP address: ${ipAddress}`);
+          this.state.ipAddressLoaded = true;
+        } catch(err) {
+          logger.error(err);
+          logger.error(`Unable to load IP address for hostname=${this.state.domain}, probably because of a poor or non-existent internet connection.`);
+        }
       }
       // Login to a specific user if we're developing.
       if (basicAuthTiers.includes(this.state.appTier) && autoLoginOnDevAndStag) {
