@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ScrollView } from 'react-native';
+import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -42,6 +42,9 @@ let SupportTools = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SupportTools');
 
+  let [userID, setUserID] = useState('');
+  let [loggingIn, setLoggingIn] = useState(false);
+
 
   // Initial setup.
   useEffect( () => {
@@ -58,6 +61,13 @@ let SupportTools = () => {
       let msg = `SupportTools.setup: Error = ${err}`;
       console.log(msg);
     }
+  }
+
+
+  let callLoginAsDifferentUser = async ({userID}) => {
+    setLoggingIn(true);
+    await appState.loginAsDifferentUser({userID});
+    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
   }
 
 
@@ -95,6 +105,43 @@ let SupportTools = () => {
           } }
         />
       </View>
+
+      {appState.getUserStatus('supportLevel2') === '[loading]' &&
+        <Spinner/>
+      }
+
+      {appState.getUserStatus('supportLevel2') === true &&
+        <View style={styles.buttonWrapper}>
+          <StandardButton title='Log in with different userID'
+            onPress={ async () => { await callLoginAsDifferentUser({userID}); } }
+          />
+        </View>
+      }
+
+      {appState.getUserStatus('supportLevel2') === true &&
+        <View style={styles.fullWidthLabelledInputWrapper}>
+          <View style={styles.inputLabel}>
+            <Text style={styles.inputLabelText}>UserID:</Text>
+          </View>
+          <View style={styles.halfWidthTextInputWrapper}>
+            <TextInput
+              style={styles.halfWidthTextInput}
+              onChangeText={setUserID}
+              value={userID}
+              placeholder={'2'}
+              placeholderTextColor={colors.placeHolderTextColor}
+              autoCorrect={false}
+              keyboardType='number-pad'
+            />
+          </View>
+        </View>
+      }
+
+      { loggingIn &&
+        <View style={styles.loginMessageDisplay}>
+          <Text style={styles.loginMessageDisplayText}>Logging in...</Text>
+        </View>
+      }
 
       </ScrollView>
 
@@ -143,6 +190,44 @@ let styles = StyleSheet.create({
   infoItem: {
     marginBottom: scaledHeight(5),
   },
+  fullWidthLabelledInputWrapper: {
+    //borderWidth: 1, // testing
+    marginTop: scaledHeight(10),
+    width: '99%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    //justifyContent: 'space-between',
+  },
+  inputLabel: {
+    //borderWidth: 1, // testing
+    justifyContent: 'center',
+    paddingRight: scaledWidth(20),
+  },
+  inputLabelText: {
+    //fontWeight: 'bold',
+    fontSize: normaliseFont(14),
+  },
+  halfWidthTextInputWrapper: {
+    //borderWidth: 1, // testing
+    width: '50%',
+  },
+  halfWidthTextInput: {
+    fontSize: normaliseFont(14),
+    height: scaledHeight(40),
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: scaledWidth(10),
+    flexDirection: "row",
+  },
+  loginMessageDisplay: {
+    paddingHorizontal: scaledHeight(15),
+    paddingVertical: scaledHeight(15),
+  },
+  loginMessageDisplayText: {
+    fontSize: normaliseFont(14),
+    color: 'red',
+  }
 });
 
 
