@@ -411,6 +411,42 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    this.loginAsDifferentUser = async ({userID}) => {
+      // Note: The PIN is local to the phone, so your own PIN will stay the same.
+      // - You can't change the other user's PIN.
+      if (! this.getUserStatus('supportLevel2') === true) {
+        // Don't throw a visible error.
+        return;
+      }
+      if (userID === '') return;
+      if (! misc.isNumericString(userID)) return;
+      userID = Number(userID);
+      if (userID < 0) return;
+      log(`loginAsDifferentUser: Attempting to log in as userID = ${userID}.`);
+      // Step 1: Save credentials of current user.
+      log(`loginAsDifferentUser: Step 1: Save credentials of current user.`);
+      let {apiKey, apiSecret} = this.state.apiClient;
+      _.assign(this.state.originalUser, {apiKey, apiSecret});
+      // Step 2: Request credentials of new user.
+      log(`loginAsDifferentUser: Step 2: Request credentials of new user.`);
+      let data = await this.state.privateMethod({
+        functionName: 'loginAsDifferentUser',
+        apiRoute: `credentials/${userID}`,
+      });
+      if (data == 'DisplayedError') return;
+      //lj({data});
+      // Sample data:
+      // "data":{"active":1,"apiKey":"Jh7L3AAcKwiqNdXGJ64kM6OIUcpQ9UEssowapmWCEhvCXCQmN6XuZAqH","apiSecret":"PXPUdrmU3XKnxZCDMuluYOXwcUSNoZpIxbQGayorbWEgOjhMF3Cgm3H0sjGsd081PLvssLKTBFhVuDM9wnxNNdpc","name":"default"}
+      ({apiKey, apiSecret} = data);
+      //lj({apiKey, apiSecret})
+      log(`loginAsDifferentUser: Step 3: Use new user's credentials to log in as that user.`);
+      await this.state.loginWithAPIKeyAndSecret({apiKey, apiSecret});
+      if (this.state.stateChangeIDHasChanged(this.state.stateChangeID)) return;
+      // We go to the user's history, instead of the Buy page, so that it's less likely that we accidentally create an order while using their account.
+      this.state.changeState('History');
+    }
+
+
     this.createAbortController = (params) => {
       // Prepare for cancelling requests if the user changes screen.
       // Note: Some API requests should not be aborted if we change screen, so we have an optional noAbort parameter.
@@ -452,6 +488,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     // Note: publicMethod and privateMethod have to be kept in sync.
     // Future: Perhaps they could be refactored into a single function with two wrapper functions.
+
 
     this.publicMethod = async (args) => {
       let {functionName, httpMethod, apiRoute, params, keyNames, noAbort} = args;
@@ -715,6 +752,23 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       this.state.stateHistoryList = [];
       this.deleteStashedState();
       log("Logout complete.");
+      /*
+      - Check to see if an original user's credentials are stored.
+      - This means that we have logged in as a different user, and are now logging out.
+      - We should return to being logged in as the original user.
+      */
+      let originalUser = this.state.originalUser;
+      if (! _.isNil(originalUser)) {
+        if (_.has(originalUser, 'apiKey')) {
+          let {apiKey, apiSecret} = originalUser;
+          log(`loginAsDifferentUser: Step 4: Load original user's credentials and log in.`);
+          log(`loginAsDifferentUser: Step 4: Credentials: ${jd(originalUser)}`);
+          this.state.originalUser = null;
+          await this.state.loginWithAPIKeyAndSecret({apiKey, apiSecret});
+          this.state.changeState('Settings');
+          return;
+        }
+      }
       // Change to Buy state.
       this.changeState('Buy');
     }
@@ -2037,6 +2091,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       setFooterIndex: this.setFooterIndex,
       generalSetup: this.generalSetup,
       login: this.login,
+      loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
+      loginAsDifferentUser: this.loginAsDifferentUser,
       createAbortController: this.createAbortController,
       abortAllRequests: this.abortAllRequests,
       publicMethod: this.publicMethod,
@@ -2179,6 +2235,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
             },
           },
         },
+      },
+      originalUser: {
+        apiKey: null,
+        apiSecret: null,
       },
       authRequired: [
         'Assets',
