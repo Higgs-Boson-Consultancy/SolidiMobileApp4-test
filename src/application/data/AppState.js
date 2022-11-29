@@ -758,17 +758,21 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       - We should return to being logged in as the original user.
       */
       let originalUser = this.state.originalUser;
-      if (! _.isNil(originalUser)) {
+      if (! _.isNil(originalUser.apiKey) && ! _.isNil(originalUser.apiSecret)) {
         if (_.has(originalUser, 'apiKey')) {
           let {apiKey, apiSecret} = originalUser;
           log(`loginAsDifferentUser: Step 4: Load original user's credentials and log in.`);
           log(`loginAsDifferentUser: Step 4: Credentials: ${jd(originalUser)}`);
-          this.state.originalUser = null;
+          this.state.originalUser = {
+            apiKey: null,
+            apiSecret: null,
+          }
           await this.state.loginWithAPIKeyAndSecret({apiKey, apiSecret});
           this.state.changeState('Settings');
           return;
         }
       }
+      // Note: The user's data is still actually stored on the phone, when they've logged out. Future: Delete some of it when they log out ? E.g. the user status info.
       // Change to Buy state.
       this.changeState('Buy');
     }
