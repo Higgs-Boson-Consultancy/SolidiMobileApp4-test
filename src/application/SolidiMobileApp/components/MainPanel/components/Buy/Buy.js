@@ -492,7 +492,9 @@ let Buy = () => {
         <Text style={styles.priceText}>Current price: {generatePriceDescription()}</Text>
       </View>
 
-      {appState.getUserStatus('supportLevel2') === true &&
+      {
+        appState.getUserStatus('supportLevel2') === true &&
+        appState.user.isAuthenticated == true &&
         <View style={styles.websiteWrapper}>
           <Text style={styles.priceText}>Domain: {getDomain()}</Text>
         </View>
