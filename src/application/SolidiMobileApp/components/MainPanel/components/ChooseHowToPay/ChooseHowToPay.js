@@ -68,6 +68,7 @@ let ChooseHowToPay = () => {
 
   // Load order details.
   // - Note: We ignore the volumeBA chosen earlier by the fetchBestPrice function, and select only from the volumeBA values returned by the fetchPrices function.
+  // -- Update: In the unusual case where all the payment methods are disabled (this occurs if somehow the user has not undergone any ID verification), we use the volumeBA value from here.
   ({volumeQA, volumeBA, assetQA, assetBA} = appState.panels.buy);
 
 
@@ -135,6 +136,7 @@ let ChooseHowToPay = () => {
   let calculateVolumeBA = () => {
     if (_.isEmpty(paymentChoiceDetails)) return '';
     if (! _.has(paymentChoiceDetails, paymentChoice)) return '';
+    if (! _.has(paymentChoiceDetails[paymentChoice], 'baseAssetVolume')) return volumeBA;
     let baseAssetVolume = paymentChoiceDetails[paymentChoice]['baseAssetVolume'];
     baseAssetVolume = appState.getFullDecimalValue({asset: assetBA, value: baseAssetVolume, functionName: 'ChooseHowToPay'});
     log(`Payment method = ${paymentChoice}: baseAssetVolume = ${baseAssetVolume} ${assetBA}`);
