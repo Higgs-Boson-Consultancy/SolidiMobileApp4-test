@@ -178,9 +178,12 @@ let ChooseHowToPay = () => {
   }
 
 
-  let openBankingDisabled = () => {
-    let openBankingDetails = paymentChoiceDetails.openbank;
-    if (_.has(openBankingDetails, 'error')) return true;
+  let paymentOptionDisabled = (option) => {
+    if (! _.has(paymentChoiceDetails, option)) {
+      return false;
+    }
+    let optionDetails = paymentChoiceDetails[option];
+    if (_.has(optionDetails, 'error')) return true;
     return false;
   }
 
@@ -399,15 +402,15 @@ let ChooseHowToPay = () => {
 
             <RadioButton.Item label="Mobile bank app" value="openbank"
               color={colors.standardButtonText}
-              disabled={openBankingDisabled()}
-              style={openBankingDisabled() ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
+              disabled={paymentOptionDisabled('openbank')}
+              style={paymentOptionDisabled('openbank') ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
               labelStyle={styles.buttonLabel}
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={[styles.basicText, openBankingDisabled() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Authorise the payment via your mobile banking app - No fee!</Text>
-              <Text style={[styles.basicText, openBankingDisabled() ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Usually processed in seconds</Text>
-              {openBankingDisabled() &&
+              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Authorise the payment via your mobile banking app - No fee!</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Usually processed in seconds</Text>
+              {paymentOptionDisabled('openbank') &&
                 <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} This payment option is inactive</Text>
               }
             </View>
