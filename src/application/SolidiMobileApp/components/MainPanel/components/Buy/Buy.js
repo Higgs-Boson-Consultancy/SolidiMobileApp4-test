@@ -383,15 +383,8 @@ let Buy = () => {
 
 
   let getDomain = () => {
-    // Remove the "www." prefix, if it exists.
-    // Note: It doesn't exist during dev testing or staging.
     let domain = appState.domain;
     log(`getDomain: domain = ${domain}`);
-    return domain; //tmp
-    let domain2 = domain.substring(0, 4);
-    if (domain2 == 'www.') {
-      domain = domain.substring(4, domain.length);
-    }
     return domain;
   }
 
