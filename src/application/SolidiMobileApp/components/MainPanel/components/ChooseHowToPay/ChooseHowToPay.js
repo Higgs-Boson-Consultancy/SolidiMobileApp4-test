@@ -121,15 +121,15 @@ let ChooseHowToPay = () => {
     If the OpenBanking method were disabled, we would receive:
     "openbank":{"error":"Payment Method Disabled"},
     */
-   paymentChoiceDetails = output;
-   // Testing
-   testTweaks = false;
-   if (testTweaks) {
-     paymentChoiceDetails['solidi'].feeVolume = '0.32';
-     paymentChoiceDetails['solidi'].baseAssetVolume = '0.00039000';
-   }
-   lj({paymentChoiceDetails});
-   return paymentChoiceDetails;
+    paymentChoiceDetails = output;
+    // Testing
+    testTweaks = false;
+    if (testTweaks) {
+      paymentChoiceDetails['solidi'].feeVolume = '0.32';
+      paymentChoiceDetails['solidi'].baseAssetVolume = '0.00039000';
+    }
+    lj({paymentChoiceDetails});
+    return paymentChoiceDetails;
   }
 
 
