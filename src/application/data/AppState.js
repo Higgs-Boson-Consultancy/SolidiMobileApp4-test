@@ -781,6 +781,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.lockApp = () => {
       log("Start: lockApp");
       this.state.appLocked = true;
+      // Note: cancelTimers calls resetLockAppTimer.
       this.cancelTimers();
       this.abortAllRequests();
       this.state.stashCurrentState();
@@ -789,24 +790,38 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     this.resetLockAppTimer = async () => {
+      log(`Begin: resetLockAppTimer()`);
       let currentTimerID = this.state.lockAppTimerID;
+      log(`- currentTimerID = ${currentTimerID}`);
       // If there's an active timer, stop it.
       if (! _.isNil(currentTimerID)) {
         clearTimeout(currentTimerID);
       }
-      let waitTimeMinutes = 120; // Future: Set to 30 mins.
+      let waitTimeMinutes = 30;
       let waitTimeSeconds = waitTimeMinutes * 60;
-      let callLockApp = () => {
-        // Don't lock app if we're currently on the PIN page.
-        if (this.state.mainPanelState !== 'PIN') {
-          let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
-          log(msg);
-          this.state.lockApp();
+      let lockAppTimer = () => {
+        log(`Begin: lockAppTimer()`);
+        let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
+        // Don't lock app if user has logged out already.
+        if (this.state.user.isAuthenticated === false) {
+          log(`${msg} The app is in a logged-out state. Resetting timer and exiting here.`);
+          this.state.resetLockAppTimer();
+          return;
         }
+        // Don't lock app if we're currently on the PIN page.
+        if (this.state.mainPanelState === 'PIN') {
+          log(`${msg} The app is already on the PIN page. Resetting timer and exiting here.`);
+          this.state.resetLockAppTimer();
+          return;
+        }
+        // Lock the app.
+        log(`${msg} Conditions met for locking the app. Calling lockApp().`);
+        this.state.lockApp();
       }
       // Start new timer.
-      let timerID = setTimeout(callLockApp, waitTimeSeconds * 1000);
+      let timerID = setTimeout(lockAppTimer, waitTimeSeconds * 1000);
       this.state.lockAppTimerID = timerID;
+      log(`- newTimerID = ${timerID}`);
     }
 
 
