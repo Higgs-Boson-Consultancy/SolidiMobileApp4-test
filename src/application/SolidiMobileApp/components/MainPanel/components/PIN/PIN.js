@@ -174,9 +174,12 @@ let PIN = () => {
         stylePinCodeDeleteButtonColorHideUnderlay = 'rgb(50, 50, 100)'
         stylePinCodeDeleteButtonText = {styles.stylePinCodeDeleteButtonText}
       />
-      <View style={styles.resetButtonWrapper}>
+      <View style={styles.textButtonWrapper}>
         { pinStatus == 'enter' &&
-          <Button title="Reset PIN" styles={stylesResetButton} onPress={ () => { appState.choosePIN(); } } />
+          <>
+            <Button title="Reset PIN" styles={styleTextButton} onPress={ () => { appState.choosePIN(); } } />
+            <Button title="Log out" styles={styleTextButton} onPress={ () => { appState.logout(); } } />
+          </>
         }
       </View>
     </View>
@@ -212,14 +215,16 @@ let styles = StyleSheet.create({
   stylePinCodeDeleteButtonText: {
     fontWeight: '500',
   },
-  resetButtonWrapper: {
+  textButtonWrapper: {
     height: scaledHeight(60),
     //borderWidth: 1, //testing
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 })
 
 
-let stylesResetButton = StyleSheet.create({
+let styleTextButton = StyleSheet.create({
   view: {
     marginTop: scaledHeight(0),
     height: '100%',
