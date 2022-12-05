@@ -168,6 +168,7 @@ let ChooseHowToPay = () => {
     if (_.isNil(feeVolume)) feeVolume = calculateFeeQA();
     if (_.isEmpty(feeVolume)) return ''; // We can't know the total without the fee.
     let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'ChooseHowToPay'});
+    if (_.isNil(assetQA) || _.isEmpty(assetQA)) return '';
     let quoteDP = appState.getAssetInfo(assetQA).decimalPlaces;
     let total = Big(volumeQA2).plus(Big(feeVolume)).toFixed(quoteDP);
     return total;
