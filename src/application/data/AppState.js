@@ -1,14 +1,11 @@
 // Goal: Store the current state of the app in a Context.
 
+
 /*
 - The MainPanel state
 - The history stack of previous MainPanel states
 */
 
-/* Note:
-- We use the appName as the "username" (i.e. key) for storing the PIN in the keychain.
-- We use the domain (e.g. "solidi.co") for storing the email & password in the keychain.
-*/
 
 // React imports
 import React, { Component, useContext } from 'react';
