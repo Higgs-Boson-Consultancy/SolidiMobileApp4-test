@@ -2320,6 +2320,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         'SendSuccessful',
         'Settings',
         'WaitingForPayment',
+        'SolidiAccount',
       ],
       apiClient: null,
       lockAppTimerID: null,

@@ -19,7 +19,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   SaleSuccessful, PersonalDetails, ContactUs, BankAccounts,
   Security, RequestFailed, Error, SendSuccessful, Authenticate,
   Register, SupportTools, LimitsExceeded, IdentityVerification,
-  ResetPassword, MakePaymentOpenBanking } from './components';
+  ResetPassword, MakePaymentOpenBanking, SolidiAccount } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -109,6 +109,8 @@ let MainPanel = (props) => {
       return <ResetPassword />
     } else if (appState.mainPanelState === 'MakePaymentOpenBanking') {
       return <MakePaymentOpenBanking />
+    } else if (appState.mainPanelState === 'SolidiAccount') {
+      return <SolidiAccount />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }

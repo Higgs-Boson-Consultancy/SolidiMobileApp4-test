@@ -97,6 +97,12 @@ let Settings = () => {
       </View>
 
       <View style={styles.buttonWrapper}>
+        <StandardButton title='Solidi Account'
+          onPress={ () => { appState.changeState('SolidiAccount'); } }
+        />
+      </View>
+
+      <View style={styles.buttonWrapper}>
         <StandardButton title='Security'
           onPress={ () => { appState.changeState('Security'); } }
         />

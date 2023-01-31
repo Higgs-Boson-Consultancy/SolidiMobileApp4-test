@@ -35,6 +35,7 @@ export const mainPanelStates = [
   'IdentityVerification',
   'ResetPassword',
   'MakePaymentOpenBanking',
+  'SolidiAccount',
 ];
 
 export default mainPanelStates;

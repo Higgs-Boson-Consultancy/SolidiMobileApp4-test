@@ -34,6 +34,7 @@ import LimitsExceeded from './LimitsExceeded/LimitsExceeded';
 import IdentityVerification from './IdentityVerification/IdentityVerification';
 import ResetPassword from './ResetPassword/ResetPassword';
 import MakePaymentOpenBanking from './MakePaymentOpenBanking/MakePaymentOpenBanking';
+import SolidiAccount from './SolidiAccount/SolidiAccount';
 
 
 export {
@@ -73,4 +74,5 @@ export {
   IdentityVerification,
   ResetPassword,
   MakePaymentOpenBanking,
+  SolidiAccount,
 };
