@@ -39,6 +39,7 @@ import appTier from 'src/application/appTier'; // dev / stag / prod.
 
 // Settings: Initial page
 let initialMainPanelState = 'Buy';
+//initialMainPanelState = 'CloseSolidiAccount'; // Dev work
 let initialPageName = 'default';
 
 // Settings: Various
@@ -2096,6 +2097,22 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    this.closeSolidiAccount = async () => {
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'request_account_deletion',
+        params: {},
+        functionName: 'closeSolidiAccount',
+      });
+      if (data == 'DisplayedError') return;
+      lj({data})
+      /* Example response:
+
+      */
+      await this.state.logout();
+    }
+
+
     /* END Private API methods */
 
 
@@ -2225,6 +2242,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       resetPassword: this.resetPassword,
       getOpenBankingPaymentStatusFromSettlement: this.getOpenBankingPaymentStatusFromSettlement,
       getOpenBankingPaymentURLFromSettlement: this.getOpenBankingPaymentURLFromSettlement,
+      closeSolidiAccount: this.closeSolidiAccount,
       /* END Private API methods */
       /* More functions */
       androidBackButtonAction: this.androidBackButtonAction,

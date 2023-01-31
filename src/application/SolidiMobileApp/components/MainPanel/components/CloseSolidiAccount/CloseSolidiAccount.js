@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
@@ -16,7 +17,7 @@ import misc from 'src/util/misc';
 
 // Logger
 import logger from 'src/util/logger';
-let logger2 = logger.extend('SolidiAccount');
+let logger2 = logger.extend('CloseSolidiAccount');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
@@ -28,16 +29,19 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 
-let SolidiAccount = () => {
+let CloseSolidiAccount = () => {
 
   let appState = useContext(AppStateContext);
   let [renderCount, triggerRender] = useState(0);
+  let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
-  let [isLoading, setIsLoading] = useState(true);
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
-  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SolidiAccount');
+  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'CloseSolidiAccount');
+
+  // More state
+  let [errorMessage, setErrorMessage] = useState('');
 
 
   // Initial setup.
@@ -49,12 +53,10 @@ let SolidiAccount = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      await appState.loadInitialStuffAboutUser();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      setIsLoading(false);
       triggerRender(renderCount+1);
     } catch(err) {
-      let msg = `SolidiAccount.setup: Error = ${err}`;
+      let msg = `CloseSolidiAccount.setup: Error = ${err}`;
       console.log(msg);
     }
   }
@@ -65,18 +67,27 @@ let SolidiAccount = () => {
     <View style={styles.panelSubContainer}>
 
       <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Solidi Account</Text>
+        <Text style={styles.headingText}>Close Solidi Account</Text>
       </View>
+
+      {!! errorMessage &&
+        <View style={styles.errorWrapper}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+      }
 
       <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-
-      <View style={styles.buttonWrapper}>
-        <StandardButton title='Close Account'
-          onPress={ () => { appState.changeState('CloseSolidiAccount') } }
-        />
+      <View style={styles.question}>
+      <Text style={[styles.basicText, styles.bold]}>Are you sure that you want to close your account?</Text>
       </View>
 
+      <View style={styles.buttonWrapper}>
+        <StandardButton title='Close my Solidi account'
+          onPress={ () => { appState.closeSolidiAccount() } }
+          styles={styleCloseAccountButton}
+        />
+      </View>
 
       </KeyboardAwareScrollView>
 
@@ -104,33 +115,41 @@ let styles = StyleSheet.create({
     alignItems: 'center',
   },
   heading1: {
+    marginTop: scaledHeight(10),
     marginBottom: scaledHeight(40),
-  },
-  heading2: {
-    marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
   },
   headingText: {
     fontSize: normaliseFont(20),
     fontWeight: 'bold',
   },
+  question: {
+    marginBottom: scaledHeight(40),
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
+  mediumText: {
+    fontSize: normaliseFont(16),
+  },
   bold: {
     fontWeight: 'bold',
   },
-  horizontalRule: {
-    borderWidth: 1,
-    borderBottomColor: 'black',
-    borderBottomWidth: 1,
-    marginTop: scaledWidth(20),
-    marginHorizontal: scaledWidth(20),
+  errorWrapper: {
+    //marginTop: scaledHeight(20),
+    marginBottom: scaledHeight(20),
   },
-  buttonWrapper: {
-    marginTop: scaledHeight(20),
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  errorMessageText: {
+    fontSize: normaliseFont(14),
+    color: 'red',
   },
 });
 
 
-export default SolidiAccount;
+let styleCloseAccountButton = StyleSheet.create({
+  view: {
+    backgroundColor: 'red',
+  },
+});
+
+
+export default CloseSolidiAccount;
