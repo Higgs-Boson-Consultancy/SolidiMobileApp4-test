@@ -1,6 +1,8 @@
 # VSCode workspace
 workspace.code-workspace
 
+# package-lock.json causes trouble because we use some packages with legacy peer dependencies.
+
 node_modules/
 .expo/
 dist/
