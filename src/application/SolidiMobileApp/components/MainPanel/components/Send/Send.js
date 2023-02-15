@@ -872,7 +872,7 @@ let styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   errorMessageWrapper: {
-    borderWidth: 1, // testing
+    //borderWidth: 1, // testing
     marginBottom: scaledHeight(20),
     paddingLeft: scaledWidth(5),
     flexDirection: 'row',
