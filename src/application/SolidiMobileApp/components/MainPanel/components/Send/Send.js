@@ -876,7 +876,6 @@ let styles = StyleSheet.create({
     marginBottom: scaledHeight(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignContent: 'top',
     width: '100%',
   },
   errorMessage: {
