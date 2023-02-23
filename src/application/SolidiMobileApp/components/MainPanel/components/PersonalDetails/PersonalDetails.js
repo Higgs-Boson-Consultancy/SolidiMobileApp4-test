@@ -141,7 +141,7 @@ let PersonalDetails = () => {
 title firstName middleNames lastName
 dateOfBirth gender citizenship
 email mobile
-address1 address2 address3 address4 postcode country
+address_1 address_2 address_3 address_4 postcode country
 `;
     userDataDetails = misc.splitStringIntoArray(userDataDetails);
     if (! userDataDetails.includes(detail)) {
@@ -406,18 +406,18 @@ address1 address2 address3 address4 postcode country
           <Text style={styles.sectionHeadingText}>Address Details</Text>
         </View>
 
-        {renderError('address1')}
+        {renderError('address_1')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Address</Text>
           </View>
           <View>
-            <TextInput defaultValue={appState.getUserInfo('address1')}
+            <TextInput defaultValue={appState.getUserInfo('address_1')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address1', value});
+                updateUserData({detail:'address_1', value});
               }}
               autoComplete={'off'}
               autoCompleteType='off'
@@ -427,18 +427,18 @@ address1 address2 address3 address4 postcode country
           </View>
         </View>
 
-        {renderError('address2')}
+        {renderError('address_2')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={appState.getUserInfo('address2')}
+          <TextInput defaultValue={appState.getUserInfo('address_2')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address2', value});
+                updateUserData({detail:'address_2', value});
               }}
               autoComplete={'off'}
               autoCompleteType='off'
@@ -448,18 +448,18 @@ address1 address2 address3 address4 postcode country
           </View>
         </View>
 
-        {renderError('address3')}
+        {renderError('address_3')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={appState.getUserInfo('address3')}
+          <TextInput defaultValue={appState.getUserInfo('address_3')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address3', value});
+                updateUserData({detail:'address_3', value});
               }}
               autoComplete={'off'}
               autoCompleteType='off'
@@ -469,18 +469,18 @@ address1 address2 address3 address4 postcode country
           </View>
         </View>
 
-        {renderError('address4')}
+        {renderError('address_4')}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}></Text>
           </View>
           <View>
-          <TextInput defaultValue={appState.getUserInfo('address4')}
+          <TextInput defaultValue={appState.getUserInfo('address_4')}
               style={[styles.detailValue, styles.editableTextInput]}
               onEndEditing = {event => {
                 let value = event.nativeEvent.text;
-                updateUserData({detail:'address4', value});
+                updateUserData({detail:'address_4', value});
               }}
               autoComplete={'off'}
               autoCompleteType='off'
