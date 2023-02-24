@@ -124,6 +124,7 @@ let PersonalDetails = () => {
     Every time the user selects a new value:
     - We send an update to the server.
     - If the update is successful, we update the appState with the new value.
+    - If unsuccessful, we update the error display on this particular page, rather than moving to an error page. That's why this function is here instead of in AppState.js.
     */
     // Only update if the value has definitely changed.
     if (value == '[loading]') return;
@@ -134,7 +135,7 @@ let PersonalDetails = () => {
       return;
     }
     // Proceed with update.
-    functionName = 'updateUserData';
+    let functionName = 'updateUserData';
     let info = appState.user.info;
     // Check if we recognise the detail.
     let userDataDetails = `
