@@ -29,6 +29,8 @@ const Button = ({
     android: TouchableNativeFeedback,
   });
 
+  //log('Inside Button constructor');
+
   let styleView = defaultStyleView;
   if (! _.isNil(styles)) {
     // Add some default styling to the View.
