@@ -114,17 +114,15 @@ let styles = StyleSheet.create({
     marginTop: scaledWidth(20),
     marginHorizontal: scaledWidth(20),
   },
-    parent: {
-        width: '100%',
-        height: 500,
-        margin: 10,
+  parent: {
+    width: '100%',
+    height: 500,
+    margin: 10,
     alignItems: 'center',
-
-    },
-   view: {
+  },
+  view: {
     width: '70%',
-    maginLeft: '15%',
-
+    marginLeft: '15%',
   }, 
 });
 

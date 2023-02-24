@@ -11,7 +11,7 @@ import Big from 'big.js';
 // Internal imports
 import AppStateContext from 'src/application/data';
 import { mainPanelStates, colors } from 'src/constants';
-import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions'; 
+import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, FixedWidthButton,  ImageButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
@@ -82,7 +82,7 @@ let CloseSolidiAccount = () => {
       <View style={styles.question}>
       <Text style={[styles.basicText, styles.bold]}>We're sorry you wish to delete your account. If there is a problem, please contact the support team.</Text>
       <Text style={[styles.basicText, styles.bold]}></Text>
-     <View style={styles.buttonWrapper}>
+      <View style={styles.buttonWrapper}>
         <FixedWidthButton title="Contact Support"
           onPress={ () => { Linking.openURL(supportURL) } }
           styles={styleNormalButton}
@@ -96,7 +96,7 @@ let CloseSolidiAccount = () => {
       <Text style={[styles.basicText, styles.bold]}></Text>
       <Text style={[styles.basicText, styles.bold]}>To find out more about account deletion, please read our blog post - </Text>
       <Text style={[styles.basicText, styles.bold]}></Text>
-     <View style={styles.buttonWrapper}>
+      <View style={styles.buttonWrapper}>
         <FixedWidthButton title="Read the blog post"
           onPress={ () => { Linking.openURL(blogURL) } }
           styles={styleNormalButton}
@@ -132,7 +132,6 @@ let styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     textAlign: 'center',
-
   },
   panelSubContainer: {
     paddingTop: scaledHeight(10),
@@ -175,14 +174,12 @@ let styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
    },
-  
-  });
+});
 
 
 let styleNormalButton = StyleSheet.create({
   view: {
     width: '70%',
-
   },
 });
 
@@ -190,7 +187,6 @@ let styleCloseAccountButton = StyleSheet.create({
   view: {
     backgroundColor: 'red',
     width: '70%',
-
   },
 });
 

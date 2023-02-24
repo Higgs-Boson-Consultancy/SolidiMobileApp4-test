@@ -178,14 +178,12 @@ let styles = StyleSheet.create({
     marginVertical: scaledHeight(10),
     width: '100%',
     alignItems: 'center',
-
   },
 });
 
 let styleButton = StyleSheet.create({
   view: {
     width: '70%',
-
   },
 });
 
