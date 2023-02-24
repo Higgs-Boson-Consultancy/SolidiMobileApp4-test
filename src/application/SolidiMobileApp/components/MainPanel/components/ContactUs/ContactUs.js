@@ -33,7 +33,7 @@ let ContactUs = () => {
 
   let domain = appState.domain;
   let tier = appState.appTier;
-  if(tier=="prod") {
+  if (tier=="prod") {
     tier = "";
   }
   let appVersion = appState.appVersion+"-"+tier;
