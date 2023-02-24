@@ -151,7 +151,7 @@ address_1 address_2 address_3 address_4 postcode country
     // Send the update.
     log(`API request: Update user: Change ${detail} from '${prevValue}' to '${value}'.`);
     let apiRoute = 'user/update';
-    let params = { user: {[detail]: value} }
+    let params = { userData: {[detail]: value} }
     let result = await appState.privateMethod({ functionName, apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: The error should be an object with 'code' and 'message' properties.
