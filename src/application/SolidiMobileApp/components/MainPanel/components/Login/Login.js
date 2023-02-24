@@ -108,7 +108,7 @@ let Login = () => {
         return appState.changeState('Buy');
       }
     } catch(err) {
-      log(err);
+      logger.error(err);
       setErrorMessage(err.message);
       setUploadMessage('');
       setDisableLoginButton(false);
