@@ -2289,6 +2289,21 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         orderID: null,
         settlementID: null,
       },
+      userData: {},
+      /* userData fields:
+firstName
+lastName
+email
+password
+mobile
+dateOfBirth
+gender
+citizenship
+mobileNumber
+emailPreferences
+emailCode
+mobileNumberCode
+*/
       user: {
         isAuthenticated: false,
         email: '',
