@@ -42,7 +42,7 @@ let Register = () => {
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'default nonAuto'.split(' ');
+  let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Register');
 
 
@@ -50,7 +50,7 @@ let Register = () => {
   let defaultEmailPreferences = {
     'systemAnnouncements': true,
     'newsAndUpdates': true,
-    'specialOffers': true,
+    'promotionsAndSpecialOffers': true,
   }
   let [userData, setUserData] = useState({
     emailPreferences: defaultEmailPreferences,
@@ -127,7 +127,7 @@ let Register = () => {
       // Send the request.
       let functionName = 'submitRegisterRequest';
       let params = {userData};
-      result = await appState.publicMethod({ functionName, apiRoute, params });
+      result = await appState.publicMethod({functionName, apiRoute, params});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       logger.error(err);
@@ -160,7 +160,7 @@ emailPreferences
       detailNames = misc.splitStringIntoArray(detailNames);
       for (let detailName of detailNames) {
         let selector = `ValidationError: [${detailName}]: `;
-        log(error.startsWith(selector))
+        //log(error.startsWith(selector))
         if (error.startsWith(selector)) {
           detailNameError = detailName;
           errorMessage = error.replace(selector, '');
@@ -169,10 +169,11 @@ emailPreferences
       // If error is a string, display the error message above the specific setting.
       setErrorDisplay({...errorDisplay, [detailNameError]: errorMessage});
     } else { // No errors.
-      // TO DO - Update the appState.
-      // TO DO - Move to next page ?
-      // Reset any existing error ?
-      setErrorDisplay({...errorDisplay, detail: null});
+      // Save the data that we sent to the server.
+      _.assign(appState, userData);
+      // Move to next page.
+      appState.changeStateParameters.
+      appState.changeState('UpdateAccount', 'confirm_email');
     }
     setUploadMessage('');
     setDisableRegisterButton(false);
@@ -457,14 +458,14 @@ emailPreferences
                 setUserData({...userData, emailPreferences: {...userData.emailPreferences, newsAndUpdates: newValue}});
               }}
             />
-            <Checkbox.Item label="Special Offers"
-              status={userData.emailPreferences.specialOffers? "checked" : "unchecked"}
+            <Checkbox.Item label="Promotions & Special Offers"
+              status={userData.emailPreferences.promotionsAndSpecialOffers? "checked" : "unchecked"}
               style={styleCheckbox}
               onPress={() => {
-                let currentValue = userData.emailPreferences.specialOffers;
+                let currentValue = userData.emailPreferences.promotionsAndSpecialOffers;
                 let newValue = ! currentValue;
-                log(`Changing userData.emailPreferences.specialOffers from ${currentValue} to ${newValue}`);
-                setUserData({...userData, emailPreferences: {...userData.emailPreferences, specialOffers: newValue}});
+                log(`Changing userData.emailPreferences.promotionsAndSpecialOffers from ${currentValue} to ${newValue}`);
+                setUserData({...userData, emailPreferences: {...userData.emailPreferences, promotionsAndSpecialOffers: newValue}});
               }}
             />
           </View>
