@@ -20,7 +20,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   Security, RequestFailed, Error, SendSuccessful, Authenticate,
   Register, SupportTools, LimitsExceeded, IdentityVerification,
   ResetPassword, MakePaymentOpenBanking, SolidiAccount,
-  CloseSolidiAccount } from './components';
+  CloseSolidiAccount, AccountUpdate } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -114,6 +114,8 @@ let MainPanel = (props) => {
       return <SolidiAccount />
     } else if (appState.mainPanelState === 'CloseSolidiAccount') {
       return <CloseSolidiAccount />
+    } else if (appState.mainPanelState === 'AccountUpdate') {
+      return <AccountUpdate />
     } else {
       return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }
