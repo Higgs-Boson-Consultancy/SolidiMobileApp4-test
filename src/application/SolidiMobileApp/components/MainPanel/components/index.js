@@ -36,6 +36,7 @@ import ResetPassword from './ResetPassword/ResetPassword';
 import MakePaymentOpenBanking from './MakePaymentOpenBanking/MakePaymentOpenBanking';
 import SolidiAccount from './SolidiAccount/SolidiAccount';
 import CloseSolidiAccount from './CloseSolidiAccount/CloseSolidiAccount';
+import RegisterConfirm from './RegisterConfirm/RegisterConfirm';
 import AccountUpdate from './AccountUpdate/AccountUpdate';
 
 
@@ -78,5 +79,6 @@ export {
   MakePaymentOpenBanking,
   SolidiAccount,
   CloseSolidiAccount,
+  RegisterConfirm,
   AccountUpdate,
 };
