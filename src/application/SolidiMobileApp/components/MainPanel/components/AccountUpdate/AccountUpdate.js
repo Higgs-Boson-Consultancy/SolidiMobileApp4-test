@@ -17,7 +17,7 @@ import misc from 'src/util/misc';
 
 // Logger
 import logger from 'src/util/logger';
-let logger2 = logger.extend('AccountUpdate');
+let logger2 = logger.extend('RegisterConfirm');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 // Shortcuts
@@ -32,7 +32,7 @@ let jd = JSON.stringify;
 
 
 
-let AccountUpdate = () => {
+let RegisterConfirm = () => {
 
   let appState = useContext(AppStateContext);
   let [renderCount, triggerRender] = useState(0);
@@ -41,7 +41,7 @@ let AccountUpdate = () => {
 
   let pageName = appState.pageName;
   let permittedPageNames = 'confirm_email confirm_mobile_phone'.split(' ');
-  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'AccountUpdate');
+  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'RegisterConfirm');
 
   let pageTitle = misc.snakeCaseToCapitalisedWords(pageName);
 
@@ -78,7 +78,7 @@ let AccountUpdate = () => {
       setMobileCodeRequested(true);
       triggerRender(renderCount+1);
     } catch(err) {
-      let msg = `AccountUpdate.setup: Error = ${err}`;
+      let msg = `RegisterConfirm.setup: Error = ${err}`;
       console.log(msg);
     }
   }
@@ -131,7 +131,7 @@ let AccountUpdate = () => {
       }
       setErrorMessage(errorMessage);
     } else {
-      appState.changeState('AccountUpdate', 'confirm_mobile_phone');
+      appState.changeState('RegisterConfirm', 'confirm_mobile_phone');
     }
     //setUploadMessage('');
     setDisableConfirmEmailButton(false);
@@ -405,4 +405,4 @@ let styleContactButton = StyleSheet.create({
 });
 
 
-export default AccountUpdate;
+export default RegisterConfirm;
