@@ -83,12 +83,7 @@ let AccountUpdate = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      // When this page is loaded, we request a mobile code to be sent via text, but only the first time (not on subsequent renders).
-      if (pageName === 'confirm_mobile_phone' && ! mobileCodeRequested) {
-        await requestMobileCode();
-      }
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      setMobileCodeRequested(true);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `AccountUpdate.setup: Error = ${err}`;
