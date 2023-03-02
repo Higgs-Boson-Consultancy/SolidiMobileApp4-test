@@ -25,7 +25,11 @@ let Footer = (props) => {
 
   let appState = useContext(AppStateContext);
 
-  let hideFooter = appState.mainPanelState === 'PIN';
+  let statesWhereFooterIsHidden = [
+    'PIN',
+    'AccountUpdate',
+  ]
+  let hideFooter = statesWhereFooterIsHidden.includes(appState.mainPanelState);
 
   let footerIndex = AppStateContext._currentValue.footerIndex;
   let footerEndIndex = footerIndex + appState.numberOfFooterButtonsToDisplay - 1;
