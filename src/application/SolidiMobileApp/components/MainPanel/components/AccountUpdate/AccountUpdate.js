@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -40,7 +40,7 @@ let AccountUpdate = () => {
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'confirm_email confirm_mobile_phone submit_extra_information'.split(' ');
+  let permittedPageNames = 'confirm_email confirm_mobile_phone'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'AccountUpdate');
 
   let pageTitle = misc.snakeCaseToCapitalisedWords(pageName);
@@ -48,8 +48,17 @@ let AccountUpdate = () => {
   // Basic
   let [errorMessage, setErrorMessage] = useState('');
   let [uploadMessage, setUploadMessage] = useState('');
+
+  // Input state
   let [emailCode, setEmailCode] = useState();
   let [disableConfirmEmailButton, setDisableConfirmEmailButton] = useState(false);
+  let [mobileCode, setMobileCode] = useState();
+  let [disableConfirmMobileButton, setDisableConfirmMobileButton] = useState(false);
+
+  // Action state
+  let [mobileCodeRequested, setMobileCodeRequested] = useState(false);
+
+
 
 
   // Initial setup.
@@ -61,7 +70,12 @@ let AccountUpdate = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
+      // When this page is loaded, we request a mobile code to be sent via text, but only the first time (not on subsequent renders).
+      if (pageName === 'confirm_mobile_phone' && ! mobileCodeRequested) {
+        await requestMobileCode();
+      }
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setMobileCodeRequested(true);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `AccountUpdate.setup: Error = ${err}`;
@@ -89,7 +103,7 @@ let AccountUpdate = () => {
     apiRoute += `/${email}/${emailCode}`;
     try {
       log(`API request: Confirm user email: emailCode = ${emailCode}.`);
-      setUploadMessage('Confirming...');
+      //setUploadMessage('Confirming...');
       // Send the request.
       let functionName = 'confirmEmail';
       let params = {};
@@ -119,8 +133,84 @@ let AccountUpdate = () => {
     } else {
       appState.changeState('AccountUpdate', 'confirm_mobile_phone');
     }
-    setUploadMessage('');
+    //setUploadMessage('');
     setDisableConfirmEmailButton(false);
+  }
+
+
+  let confirmMobile = async () => {
+    setDisableConfirmMobileButton(true);
+    setErrorMessage();
+    if (_.isEmpty(mobileCode)) {
+      errorMessage = 'Mobile code is empty.';
+      setErrorMessage(errorMessage);
+      setDisableConfirmMobileButton(false);
+      return;
+    }
+    let result;
+    let email = appState.userData.email;
+    email = 'johnqfish@foo.com'; // dev
+    let apiRoute = 'confirm_mobile';
+    apiRoute += `/${email}/${mobileCode}`;
+    try {
+      log(`API request: Confirm user mobile: mobileCode = ${mobileCode}.`);
+      //setUploadMessage('Confirming...');
+      // Send the request.
+      let functionName = 'confirmMobile';
+      let params = {};
+      result = await appState.publicMethod({httpMethod: 'PUT', functionName, apiRoute, params});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    } catch(err) {
+      logger.error(err);
+    }
+    lj({result})
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      log(`Error returned from API request ${apiRoute}: ${jd(error)}`);
+      if (_.isObject(error)) {
+        if (_.isEmpty(error)) {
+          error = 'Received an empty error object ({}) from the server.'
+        } else {
+          error = jd(error);
+        }
+      }
+      let detailName = 'mobileCode';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorMessage(errorMessage);
+    } else {
+      appState.changeState('AccountUpdate', 'address');
+    }
+    //setUploadMessage('');
+    setDisableConfirmMobileButton(false);
+  }
+
+
+  let requestMobileCode = async () => {
+    let email = appState.userData.email;
+    email = 'johnqfish@foo.com'; // dev
+    let apiRoute = 'request_mobile_code';
+    apiRoute += `/${email}`;
+    try {
+      log(`API request: Request new mobile code to be sent to user via text.`);
+      // Send the request.
+      let functionName = 'requestMobileCode';
+      let params = {};
+      result = await appState.publicMethod({httpMethod: 'GET', functionName, apiRoute, params});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    } catch(err) {
+      logger.error(err);
+    }
+    //lj({result})
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      let errorMessage = jd(error);
+      log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
+      setErrorMessage(errorMessage);
+    }
   }
 
 
@@ -138,7 +228,9 @@ let AccountUpdate = () => {
         </View>
       }
 
+
       <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+
 
         { pageName === 'confirm_email' &&
         
@@ -151,7 +243,7 @@ let AccountUpdate = () => {
               <TextInput defaultValue={''}
                 style={[styles.detailValueFullWidth, styles.editableTextInput]}
                 onChangeText = {value => {
-                  log(`Code: ${value}`);
+                  log(`Email code: ${value}`);
                   setEmailCode(value);
                 }}
                 autoCompleteType='off'
@@ -173,8 +265,52 @@ let AccountUpdate = () => {
 
         }
 
+
+        { pageName === 'confirm_mobile_phone' &&
+        
+          <View>
+
+            <Text style={styles.basicText}>We have sent a text to your mobile phone.</Text>
+            <Text style={styles.basicText}>{'\n'}Please enter the 4-digit code contained in this text to verify your mobile phone number.</Text>
+
+            <View style={styles.emailCodeBox}>
+              <TextInput defaultValue={''}
+                style={[styles.detailValueFullWidth, styles.editableTextInput]}
+                onChangeText = {value => {
+                  log(`Mobile code: ${value}`);
+                  setMobileCode(value);
+                }}
+                autoCompleteType='off'
+                autoCapitalize='none'
+                keyboardType='number-pad'
+                placeholder='1234'
+                placeholderTextColor='grey'
+              />
+            </View>
+
+            <View style={styles.confirmEmailButtonWrapper}>
+              <FixedWidthButton title="Confirm mobile phone"
+                onPress={ confirmMobile }
+                disabled={disableConfirmMobileButton}
+              />
+            </View>
+
+          </View>
+
+        }
+
+
         <View style={styles.uploadMessage}>
           <Text style={styles.uploadMessageText}>{uploadMessage}</Text>
+        </View>
+
+        <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
+
+        <View style={styles.buttonWrapper}>
+          <FixedWidthButton title="Contact Support"
+            onPress={ () => { Linking.openURL(appState.supportURL) } }
+            styles={styleContactButton}
+          />
         </View>
 
       </KeyboardAwareScrollView>
@@ -234,6 +370,11 @@ let styles = StyleSheet.create({
   infoItem: {
     marginBottom: scaledHeight(5),
   },
+  detailValue: {
+    paddingLeft: scaledWidth(10),
+    paddingVertical: scaledHeight(10),
+    width: '50%',
+  },
   detailValueFullWidth: {
     paddingLeft: scaledWidth(10),
     paddingVertical: scaledHeight(10),
@@ -249,7 +390,17 @@ let styles = StyleSheet.create({
     marginTop: scaledHeight(30),
   },
   confirmEmailButtonWrapper: {
-    marginVertical: scaledHeight(30),
+    marginVertical: scaledHeight(20),
+  },
+  buttonWrapper: {
+    marginVertical: scaledHeight(20),
+  },
+});
+
+
+let styleContactButton = StyleSheet.create({
+  view: {
+    width: '70%',
   },
 });
 
