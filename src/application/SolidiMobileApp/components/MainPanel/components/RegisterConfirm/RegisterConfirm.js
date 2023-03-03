@@ -47,7 +47,6 @@ let RegisterConfirm = () => {
 
   // Basic
   let [errorMessage, setErrorMessage] = useState('');
-  let [uploadMessage, setUploadMessage] = useState('');
 
   // Input state
   let [emailCode, setEmailCode] = useState();
@@ -95,7 +94,6 @@ let RegisterConfirm = () => {
     apiRoute += `/${email}/${emailCode}`;
     try {
       log(`API request: Confirm user email: emailCode = ${emailCode}.`);
-      //setUploadMessage('Confirming...');
       // Send the request.
       let functionName = 'confirmEmail';
       let params = {};
@@ -122,11 +120,10 @@ let RegisterConfirm = () => {
         errorMessage = error.replace(selector, '');
       }
       setErrorMessage(errorMessage);
+      setDisableConfirmEmailButton(false);
     } else {
       appState.changeState('RegisterConfirm', 'confirm_mobile_phone');
     }
-    //setUploadMessage('');
-    setDisableConfirmEmailButton(false);
   }
 
 
@@ -140,13 +137,13 @@ let RegisterConfirm = () => {
       return;
     }
     let result;
-    let email = appState.userData.email;
+    let {email, password} = appState.userData;
     email = 'johnqfish@foo.com'; // dev
+    password = 'bigFish6'; // dev
     let apiRoute = 'confirm_mobile';
     apiRoute += `/${email}/${mobileCode}`;
     try {
       log(`API request: Confirm user mobile: mobileCode = ${mobileCode}.`);
-      //setUploadMessage('Confirming...');
       // Send the request.
       let functionName = 'confirmMobile';
       let params = {};
@@ -173,11 +170,14 @@ let RegisterConfirm = () => {
         errorMessage = error.replace(selector, '');
       }
       setErrorMessage(errorMessage);
+      setDisableConfirmMobileButton(false);
     } else {
+      // Log in.
+      let output = await appState.login({email, password});
+      lj({output})
+      // Change state.
       appState.changeState('AccountUpdate', 'address');
     }
-    //setUploadMessage('');
-    setDisableConfirmMobileButton(false);
   }
 
 
@@ -266,10 +266,6 @@ let RegisterConfirm = () => {
 
         }
 
-
-        <View style={styles.uploadMessage}>
-          <Text style={styles.uploadMessageText}>{uploadMessage}</Text>
-        </View>
 
         <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
 
