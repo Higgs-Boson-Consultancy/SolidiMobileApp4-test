@@ -22,6 +22,7 @@ let Header = (props) => {
 
   let statesWhereBackButtonIsHidden = [
     'PIN',
+    'RegisterConfirm',
     'AccountUpdate',
   ]
   let hideBackButton = statesWhereBackButtonIsHidden.includes(appState.mainPanelState);
@@ -29,6 +30,7 @@ let Header = (props) => {
   let pinMode = appState.mainPanelState === 'PIN';
 
   let statesWhereSettingsButtonIsHidden = [
+    'RegisterConfirm',
     'AccountUpdate',
   ]
   let hideSettingsButton = statesWhereSettingsButtonIsHidden.includes(appState.mainPanelState);
