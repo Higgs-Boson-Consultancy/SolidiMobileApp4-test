@@ -408,7 +408,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let msg2 = `Set this.state.user.apiCredentialsFound = true`;
       log(msg2);
       log(`apiKey: ${apiKey}`);
-      if (tier === 'dev') {
+      if (appTier === 'dev') {
         log(`apiSecret: ${apiSecret}`);
       }
       // Load user stuff.
