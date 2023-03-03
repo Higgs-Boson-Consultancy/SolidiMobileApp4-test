@@ -27,6 +27,7 @@ let Footer = (props) => {
 
   let statesWhereFooterIsHidden = [
     'PIN',
+    'RegisterConfirm',
     'AccountUpdate',
   ]
   let hideFooter = statesWhereFooterIsHidden.includes(appState.mainPanelState);
