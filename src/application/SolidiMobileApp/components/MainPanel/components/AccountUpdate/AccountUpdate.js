@@ -93,15 +93,21 @@ let AccountUpdate = () => {
 
 
   let searchPostcode = async () => {
-    let email = appState.userData.email;
+    setDisableSearchPostcodeButton(true);
+    setErrorMessage();
+    if (_.isEmpty(postcode)) {
+      errorMessage = 'Postcode is empty.';
+      setErrorMessage(errorMessage);
+      setDisableSearchPostcodeButton(false);
+      return;
+    }
+    let result;
     let apiRoute = 'search_postcode';
-    apiRoute += `/postcode/${postcode}`;
+    apiRoute += `/${postcode}`;
     try {
-      log(`API request: Request new mobile code to be sent to user via text.`);
       // Send the request.
       let functionName = 'searchPostcode';
-      let params = {};
-      result = await appState.publicMethod({httpMethod: 'GET', functionName, apiRoute, params});
+      result = await appState.privateMethod({httpMethod: 'POST', functionName, apiRoute});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       logger.error(err);
@@ -111,7 +117,16 @@ let AccountUpdate = () => {
       let error = result.error;
       let errorMessage = jd(error);
       log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
+      let detailName = 'postcode';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
       setErrorMessage(errorMessage);
+      setDisableSearchPostcodeButton(false);
+    } else {
+      setDisableSearchPostcodeButton(false);
     }
   }
 
@@ -163,7 +178,7 @@ let AccountUpdate = () => {
             </View>
 
             <View style={styles.searchPostcodeButtonWrapper}>
-              <StandardButton title="Search Postcode"
+              <StandardButton title="Search postcode"
                 onPress={ searchPostcode }
                 disabled={disableSearchPostcodeButton}
               />
