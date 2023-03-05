@@ -47,7 +47,6 @@ let AccountUpdate = () => {
 
   // Basic
   let [errorMessage, setErrorMessage] = useState('');
-  let [uploadMessage, setUploadMessage] = useState('');
 
   // Input state
   let [postcode, setPostcode] = useState('');
@@ -61,15 +60,21 @@ let AccountUpdate = () => {
   let [disableConfirmAddressButton, setDisableConfirmAddressButton] = useState(false);
 
   // foundAddress dropdown
+  let initialSelectedAddress = '[no addresses listed]';
+  let [selectedAddress, setSelectedAddress] = useState(initialSelectedAddress);
   let [foundAddresses, setFoundAddresses] = useState([]);
-  let initialFoundAddress = '[none]';
-  let [foundAddress, setFoundAddress] = useState(initialFoundAddress);
-  let generateFoundAddressList = () => {
-    let foundAddressList2 = foundAddresses.map(x => ({label: x, value: x}) );
-    return foundAddressList2;
+  let generateSelectAddressList = ({addresses}) => {
+    let selectAddressList = addresses.map(x => (
+      {
+        label: x.solidiFormatShort,
+        value: x.solidiFormatShort,
+      }
+    ));
+    //lj({selectAddressList})
+    return selectAddressList;
   }
-  let [foundAddressList, setFoundAddressList] = useState(generateFoundAddressList());
-  let [openFoundAddress, setOpenFoundAddress] = useState(false);
+  let [selectAddressList, setSelectAddressList] = useState([]);
+  let [openSelectAddress, setOpenSelectAddress] = useState(false);
 
 
 
@@ -128,6 +133,45 @@ let AccountUpdate = () => {
     } else {
       setDisableSearchPostcodeButton(false);
     }
+    // Take the results and use them to populate the dropdown.
+    let addresses = result.addresses;
+    if (addresses.length === 0) {
+      var msg = `Sorry, we can't find any addresses for this postcode. Please enter your address manually.`;
+      setErrorMessage(msg);
+      return;
+    }
+    /* Example output:
+{
+  "addresses": [
+    {
+      "formatted_address": [
+        "1830 Somwhere Rd",
+        "",
+        "",
+        "Over, The Rainbow",
+        "Cambridgeshire"
+      ],
+      "solidiFormat": [
+        "1830 Somwhere Rd",
+        "Over, The Rainbow",
+        "Cambridgeshire"
+      ],
+      "solidiFormatShort": "1830 Somwhere Rd, Over, The Rainbow, Cambridgeshire"
+    }
+  ]
+}
+    */
+    /* Notes:
+    - We'll use solidiFormatShort as the ID of the address.
+    - We'll use solidiFormat as the separate lines of the address that we use to fill out the addressLine Views.
+    */
+    setFoundAddresses(addresses);
+    let addressList = generateSelectAddressList({addresses});
+    //lj({addressList})
+    setSelectAddressList(addressList);
+    let plural = addresses.length > 1 ? 'es': '';
+    var msg = `${addresses.length} address${plural} found. Click to select.`;
+    setSelectedAddress(msg);
   }
 
 
@@ -192,21 +236,33 @@ let AccountUpdate = () => {
               <DropDownPicker
                 listMode="SCROLLVIEW"
                 scrollViewProps={{nestedScrollEnabled: true}}
-                placeholder={foundAddress}
-                open={openFoundAddress}
-                value={foundAddress}
-                items={foundAddressList}
-                setOpen={setOpenFoundAddress}
-                setValue={setFoundAddress}
+                placeholder={selectedAddress}
+                open={openSelectAddress}
+                value={selectedAddress}
+                items={selectAddressList}
+                setOpen={setOpenSelectAddress}
+                setValue={setSelectedAddress}
                 style={[styles.detailDropdown]}
                 textStyle = {styles.detailDropdownText}
-                onChangeValue = { (foundAddress) => {
-                  // fill out the address fields with the selected foundAddress.
-                  /*
+                onChangeValue = { (value) => {
+                  log(`Selected address: ${value}`);
+                  if (value === '[no addresses listed]') return;
+                  if (value.includes('Click to select.')) return;
+                  // User has selected an address from the list.
+                  // Populate the address lines with this address.
+                  //lj({foundAddresses})
+                  let foundAddress = foundAddresses.find(a => {
+                    return a.solidiFormatShort === value;
+                  });
+                  //lj({foundAddress})
+                  let addressLines = foundAddress.solidiFormat;
+                  //lj({addressLines})
                   setAddress({
-                    address_1: ,
+                    address_1: addressLines[0],
+                    address_2: addressLines[1],
+                    address_3: addressLines[2],
+                    address_4: addressLines[3],
                   })
-                  */
                 }}
               />
             </View>
@@ -223,6 +279,7 @@ let AccountUpdate = () => {
                 autoCapitalize={'none'}
                 autoCorrect={false}
                 placeholder={'Address line 1'}
+                value={address.address_1}
               />
             </View>
 
@@ -238,6 +295,7 @@ let AccountUpdate = () => {
                 autoCapitalize={'none'}
                 autoCorrect={false}
                 placeholder={'Address line 2'}
+                value={address.address_2}
               />
             </View>
 
@@ -253,6 +311,7 @@ let AccountUpdate = () => {
                 autoCapitalize={'none'}
                 autoCorrect={false}
                 placeholder={'Address line 3'}
+                value={address.address_3}
               />
             </View>
 
@@ -268,6 +327,7 @@ let AccountUpdate = () => {
                 autoCapitalize={'none'}
                 autoCorrect={false}
                 placeholder={'Address line 4'}
+                value={address.address_4}
               />
             </View>
 
@@ -284,10 +344,6 @@ let AccountUpdate = () => {
 
       }
 
-
-        <View style={styles.uploadMessage}>
-          <Text style={styles.uploadMessageText}>{uploadMessage}</Text>
-        </View>
 
         <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
 
@@ -390,6 +446,7 @@ let styles = StyleSheet.create({
   },
   confirmButtonWrapper: {
     marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(10),
   },
 });
 
