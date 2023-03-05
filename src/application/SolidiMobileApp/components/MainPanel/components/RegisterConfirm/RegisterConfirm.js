@@ -97,7 +97,7 @@ let RegisterConfirm = () => {
       // Send the request.
       let functionName = 'confirmEmail';
       let params = {};
-      result = await appState.publicMethod({httpMethod: 'PUT', functionName, apiRoute, params});
+      result = await appState.publicMethod({functionName, apiRoute, params});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return; // needed ?
     } catch(err) {
       logger.error(err);
@@ -147,7 +147,7 @@ let RegisterConfirm = () => {
       // Send the request.
       let functionName = 'confirmMobile';
       let params = {};
-      result = await appState.publicMethod({httpMethod: 'PUT', functionName, apiRoute, params});
+      result = await appState.publicMethod({functionName, apiRoute, params});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       logger.error(err);
