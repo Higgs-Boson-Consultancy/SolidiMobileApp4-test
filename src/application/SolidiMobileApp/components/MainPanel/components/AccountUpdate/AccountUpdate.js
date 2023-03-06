@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Checkbox } from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -26,6 +27,7 @@ let jd = JSON.stringify;
 
 /* Notes
 
+We check to see if we need the user to supply extra information.
 
 */
 
@@ -40,41 +42,23 @@ let AccountUpdate = () => {
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'address extra_information'.split(' ');
+  let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'AccountUpdate');
 
-  let pageTitle = misc.snakeCaseToCapitalisedWords(pageName);
-
   // Basic
+  let pageTitle = 'Account Update';
   let [errorMessage, setErrorMessage] = useState('');
+  let [isLoading, setIsLoading] = useState(true);
 
   // Input state
-  let [postcode, setPostcode] = useState('');
-  let [address, setAddress] = useState({
-    address_1: '',
-    address_2: '',
-    address_3: '',
-    address_4: '',
-  });
-  let [disableSearchPostcodeButton, setDisableSearchPostcodeButton] = useState(false);
-  let [disableConfirmAddressButton, setDisableConfirmAddressButton] = useState(false);
-
-  // foundAddress dropdown
-  let initialSelectedAddress = '[no addresses listed]';
-  let [selectedAddress, setSelectedAddress] = useState(initialSelectedAddress);
-  let [foundAddresses, setFoundAddresses] = useState([]);
-  let generateSelectAddressList = ({addresses}) => {
-    let selectAddressList = addresses.map(x => (
-      {
-        label: x.solidiFormatShort,
-        value: x.solidiFormatShort,
-      }
-    ));
-    //lj({selectAddressList})
-    return selectAddressList;
-  }
-  let [selectAddressList, setSelectAddressList] = useState([]);
-  let [openSelectAddress, setOpenSelectAddress] = useState(false);
+  let [remaining, setRemaining] = useState('');
+  let [category, setCategory] = useState('');
+  let [multipleChoice, setMultipleChoice] = useState(false);
+  let [description, setDescription] = useState('');
+  let [prompt, setPrompt] = useState('');
+  let [options, setOptions] = useState([]);
+  let [choices, setChoices] = useState({});
+  let [disableConfirmButton, setDisableConfirmButton] = useState(false);
 
 
 
@@ -88,7 +72,9 @@ let AccountUpdate = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      await checkIfExtraInformationRequired();
+      //if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      setIsLoading(false);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `AccountUpdate.setup: Error = ${err}`;
@@ -97,91 +83,58 @@ let AccountUpdate = () => {
   }
 
 
-  let searchPostcode = async () => {
-    setDisableSearchPostcodeButton(true);
-    setErrorMessage();
-    if (_.isEmpty(postcode)) {
-      errorMessage = 'Postcode is empty.';
-      setErrorMessage(errorMessage);
-      setDisableSearchPostcodeButton(false);
-      return;
-    }
-    let result;
-    let apiRoute = 'search_postcode';
-    apiRoute += `/${postcode}`;
-    try {
-      // Send the request.
-      let functionName = 'searchPostcode';
-      result = await appState.privateMethod({functionName, apiRoute});
-    } catch(err) {
-      logger.error(err);
-    }
-    //lj({result})
-    if (_.has(result, 'error')) {
-      let error = result.error;
-      let errorMessage = jd(error);
-      log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
-      let detailName = 'postcode';
-      let selector = `ValidationError: [${detailName}]: `;
-      errorMessage = error;
-      if (error.startsWith(selector)) {
-        errorMessage = error.replace(selector, '');
-      }
-      setErrorMessage(errorMessage);
-      setDisableSearchPostcodeButton(false);
-    } else {
-      setDisableSearchPostcodeButton(false);
-    }
-    // Take the results and use them to populate the dropdown.
-    let addresses = result.addresses;
-    if (addresses.length === 0) {
-      var msg = `Sorry, we can't find any addresses for this postcode. Please enter your address manually.`;
-      setErrorMessage(msg);
-      return;
-    }
-    /* Example output:
-{
-  "addresses": [
-    {
-      "formatted_address": [
-        "1830 Somwhere Rd",
-        "",
-        "",
-        "Over, The Rainbow",
-        "Cambridgeshire"
-      ],
-      "solidiFormat": [
-        "1830 Somwhere Rd",
-        "Over, The Rainbow",
-        "Cambridgeshire"
-      ],
-      "solidiFormatShort": "1830 Somwhere Rd, Over, The Rainbow, Cambridgeshire"
-    }
-  ]
-}
-    */
-    /* Notes:
-    - We'll use solidiFormatShort as the ID of the address.
-    - We'll use solidiFormat as the separate lines of the address that we use to fill out the addressLine Views.
-    */
-    setFoundAddresses(addresses);
-    let addressList = generateSelectAddressList({addresses});
-    //lj({addressList})
-    setSelectAddressList(addressList);
-    let plural = addresses.length > 1 ? 'es': '';
-    var msg = `${addresses.length} address${plural} found. Click to select.`;
-    setSelectedAddress(msg);
+  let generateRemainingUpdatesText = ({n}) => {
+    if (n === 0) return '';
+    let plural = (n) === 1 ? '': 's';
+    let text = `\n(${n} update${plural} remaining)`;
+    return text;
   }
 
 
-  let confirmAddress = async () => {
-    setDisableConfirmAddressButton(true);
-    setErrorMessage();
+  let checkIfExtraInformationRequired = async () => {
+    let apiRoute = 'user/extra_information/check';
     let result;
-    let apiRoute = 'provide_address';
     try {
-      let functionName = 'confirmAddress';
+      let functionName = 'checkIfExtraInformationRequired';
       result = await appState.privateMethod({functionName, apiRoute});
+    } catch(err) {
+      logger.error(err);
+    }
+    //lj({result})
+    let n = result.length;
+    if (n === 0) {
+      let msg = `No extra information required.`;
+      log(msg);
+      appState.changeState('Buy');
+      return;
+    } else {
+      let item = result[0]; // We display one item at a time, with its available options.
+      setRemaining(generateRemainingUpdatesText({n}));
+      setMultipleChoice(item.multiple_choice);
+      setCategory(item.category);
+      setDescription(item.description);
+      setPrompt(item.prompt);
+      setOptions(item.options);
+      let newChoices = {};
+      item.options.forEach( (x) => { newChoices[x.option_name] = false } );
+      setChoices(newChoices);
+    }
+  }
+
+
+  let confirmOption = async () => {
+    setDisableConfirmButton(true);
+    setErrorMessage('');
+    let apiRoute = `user/extra_information/submit`;
+    let choices2 = {
+      category,
+      option_names: _.keys(choices).filter(k => choices[k] === true)
+    }
+    let params = {choices: [choices2]};
+    let result;
+    try {
+      let functionName = 'confirmOption';
+      result = await appState.privateMethod({functionName, apiRoute, params});
     } catch(err) {
       logger.error(err);
     }
@@ -190,19 +143,57 @@ let AccountUpdate = () => {
       let error = result.error;
       let errorMessage = jd(error);
       log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
-      let detailName = 'address';
+      let detailName = 'extra_information';
       let selector = `ValidationError: [${detailName}]: `;
       errorMessage = error;
       if (error.startsWith(selector)) {
         errorMessage = error.replace(selector, '');
       }
       setErrorMessage(errorMessage);
-      setDisableConfirmAddressButton(false);
-      // Change state.
-
+      setDisableConfirmButton(false);
     } else {
-      setDisableConfirmAddressButton(false);
+      // Keep reloading the page until we have no more updates to make.
+      //appState.changeState('AccountUpdate');
+      setDisableConfirmButton(false);
+      setup();
     }
+  }
+
+
+  let generateOptionsCheckboxList = () => {
+    return (
+      <View style={styles.OptionsWrapper}>
+        {
+          options.map( (option, i) => {
+            //lj({option})
+            let optionText = option.description;
+            let optionValue = choices[option.option_name];
+            let optionID = `option_${i}`;
+            return (
+              <View key={optionID} style={styles.optionWrapper}>
+                <Checkbox.Item
+                  label={optionText}
+                  status={optionValue ? 'checked' : 'unchecked'}
+                  style={styleCheckbox}
+                  onPress={ () => {
+                    let option_name = option.option_name;
+                    let newValue = ! choices[option_name];
+                    var msg = `option '${option_name}' set to ${newValue}`;
+                    log(msg);
+                    if (multipleChoice === false) {
+                      setChoices({[option_name]: newValue});
+                    } else {
+                      setChoices({...choices, [option_name]: newValue});
+                    }
+                  }}
+                />
+              </View>
+            )
+          })
+        }
+      </View>
+    );
+
   }
 
 
@@ -212,6 +203,7 @@ let AccountUpdate = () => {
 
       <View style={[styles.heading, styles.heading1]}>
         <Text style={styles.headingText}>{pageTitle}</Text>
+        <Text style={styles.mediumText}>{remaining}</Text>
       </View>
 
       {!! errorMessage &&
@@ -221,164 +213,45 @@ let AccountUpdate = () => {
       }
 
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1, margin: 20 }} >
 
+        { isLoading &&
+          <Spinner/>
+        }
 
-      { pageName === 'address' &&
-        
-        <View>
+        { ! isLoading &&
 
-          <Text style={styles.basicText}>Please confirm your address.{'\n'}</Text>
+          <>
 
           <View>
 
-            <View style={styles.addressLine}>
-              <TextInput
-                style={[styles.detailValue, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Postcode: ${value}`);
-                  setPostcode(value);
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                placeholder={'Postcode'}
-              />
-            </View>
+            <Text style={[styles.mediumText, styles.bold]}>{description}{'\n'}</Text>
 
-            <View style={styles.searchPostcodeButtonWrapper}>
-              <StandardButton title="Search postcode"
-                onPress={ searchPostcode }
-                disabled={disableSearchPostcodeButton}
-              />
-            </View>
+            <Text style={styles.basicText}>{prompt}{'\n'}</Text>
 
-            <View style={[
-              styles.detailValueFullWidth,
-              {zIndex:2},
-              {paddingTop: 5, paddingBottom: 10, paddingLeft: 0}
-            ]}>
-              <DropDownPicker
-                listMode="SCROLLVIEW"
-                scrollViewProps={{nestedScrollEnabled: true}}
-                placeholder={selectedAddress}
-                open={openSelectAddress}
-                value={selectedAddress}
-                items={selectAddressList}
-                setOpen={setOpenSelectAddress}
-                setValue={setSelectedAddress}
-                style={[styles.detailDropdown]}
-                textStyle = {styles.detailDropdownText}
-                onChangeValue = { (value) => {
-                  log(`Selected address: ${value}`);
-                  if (value === '[no addresses listed]') return;
-                  if (value.includes('Click to select.')) return;
-                  // User has selected an address from the list.
-                  // Populate the address lines with this address.
-                  //lj({foundAddresses})
-                  let foundAddress = foundAddresses.find(a => {
-                    return a.solidiFormatShort === value;
-                  });
-                  //lj({foundAddress})
-                  let addressLines = foundAddress.solidiFormat;
-                  //lj({addressLines})
-                  setAddress({
-                    address_1: addressLines[0],
-                    address_2: addressLines[1],
-                    address_3: addressLines[2],
-                    address_4: addressLines[3],
-                  })
-                }}
-              />
-            </View>
+            {generateOptionsCheckboxList()}
 
-            <View style={styles.addressLine}>
-              <TextInput
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Address line 1: ${value}`);
-                  setAddress({...address, address_1: value});
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                placeholder={'Address line 1'}
-                value={address.address_1}
-              />
-            </View>
-
-            <View style={styles.addressLine}>
-              <TextInput
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Address line 2: ${value}`);
-                  setAddress({...address, address_2: value});
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                placeholder={'Address line 2'}
-                value={address.address_2}
-              />
-            </View>
-
-            <View style={styles.addressLine}>
-              <TextInput
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Address line 3: ${value}`);
-                  setAddress({...address, address_3: value});
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                placeholder={'Address line 3'}
-                value={address.address_3}
-              />
-            </View>
-
-            <View style={styles.addressLine}>
-              <TextInput
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Address line 4: ${value}`);
-                  setAddress({...address, address_3: value});
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                placeholder={'Address line 4'}
-                value={address.address_4}
+            <View style={styles.confirmButtonWrapper}>
+              <FixedWidthButton title="Confirm"
+                onPress={ confirmOption }
+                disabled={disableConfirmButton}
               />
             </View>
 
           </View>
 
-          <View style={styles.confirmButtonWrapper}>
-            <FixedWidthButton title="Confirm address"
-              onPress={ confirmAddress }
-              disabled={disableConfirmAddressButton}
+          <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
+
+          <View style={styles.buttonWrapper}>
+            <FixedWidthButton title="Contact Support"
+              onPress={ () => { Linking.openURL(appState.supportURL) } }
+              styles={styleContactButton}
             />
           </View>
 
-        </View>
+          </>
 
-      }
-
-
-        <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
-
-        <View style={styles.buttonWrapper}>
-          <FixedWidthButton title="Contact Support"
-            onPress={ () => { Linking.openURL(appState.supportURL) } }
-            styles={styleContactButton}
-          />
-        </View>
+        }
 
       </KeyboardAwareScrollView>
 
@@ -395,10 +268,11 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(5),
     width: '100%',
     height: '100%',
+    //borderWidth: 1, // testing
   },
   panelSubContainer: {
     paddingTop: scaledHeight(10),
-    paddingHorizontal: scaledWidth(30),
+    paddingHorizontal: scaledWidth(10),
     height: '100%',
     //borderWidth: 1, // testing
   },
@@ -407,7 +281,7 @@ let styles = StyleSheet.create({
   },
   heading1: {
     marginTop: scaledHeight(10),
-    marginBottom: scaledHeight(40),
+    marginBottom: scaledHeight(10),
   },
   headingText: {
     fontSize: normaliseFont(20),
@@ -430,13 +304,6 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(14),
     color: 'red',
   },
-  infoSection: {
-    paddingTop: scaledHeight(20),
-    alignItems: 'flex-start',
-  },
-  infoItem: {
-    marginBottom: scaledHeight(5),
-  },
   detailValue: {
     paddingLeft: scaledWidth(10),
     paddingVertical: scaledHeight(10),
@@ -447,34 +314,30 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(10),
     minWidth: '99%',
   },
-  editableTextInput: {
-    borderWidth: 1,
-    borderRadius: 16,
-    borderColor: colors.greyedOutIcon,
-    fontSize: normaliseFont(14),
-  },
   buttonWrapper: {
     marginVertical: scaledHeight(20),
   },
-  addressLine: {
-    marginVertical: scaledHeight(5),
+  OptionsWrapper: {
+    //borderWidth: 1, //testing
   },
-  searchPostcodeButtonWrapper: {
-    marginVertical: scaledHeight(10),
-  },
-  detailDropdown: {
-    borderWidth: 1,
-    maxWidth: '100%',
-    height: scaledHeight(40),
-  },
-  detailDropdownText: {
-    fontSize: normaliseFont(14),
+  optionWrapper: {
+    marginBottom: scaledHeight(10),
   },
   confirmButtonWrapper: {
     marginTop: scaledHeight(10),
-    marginBottom: scaledHeight(10),
+    marginBottom: scaledHeight(30),
   },
 });
+
+
+let styleCheckbox = StyleSheet.create({
+  //width: '100%',
+  //alignItems: 'center',
+  borderWidth: 1, //testing
+  borderRadius: scaledWidth(10),
+  paddingVertical: scaledHeight(0),
+  //justifyContent: 'center',
+})
 
 
 let styleContactButton = StyleSheet.create({
