@@ -20,7 +20,8 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   Security, RequestFailed, Error, SendSuccessful, Authenticate,
   Register, SupportTools, LimitsExceeded, IdentityVerification,
   ResetPassword, MakePaymentOpenBanking, SolidiAccount,
-  CloseSolidiAccount, RegisterConfirm, AccountUpdate } from './components';
+  CloseSolidiAccount, RegisterConfirm, RegisterConfirm2,
+  AccountUpdate } from './components';
 import AppStateContext from 'src/application/data';
 
 
@@ -116,6 +117,8 @@ let MainPanel = (props) => {
       return <CloseSolidiAccount />
     } else if (appState.mainPanelState === 'RegisterConfirm') {
       return <RegisterConfirm />
+    } else if (appState.mainPanelState === 'RegisterConfirm2') {
+      return <RegisterConfirm2 />
     } else if (appState.mainPanelState === 'AccountUpdate') {
       return <AccountUpdate />
     } else {

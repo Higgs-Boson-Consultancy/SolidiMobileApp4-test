@@ -38,6 +38,7 @@ export const mainPanelStates = [
   'SolidiAccount',
   'CloseSolidiAccount',
   'RegisterConfirm',
+  'RegisterConfirm2',
   'AccountUpdate',
 ];
 
