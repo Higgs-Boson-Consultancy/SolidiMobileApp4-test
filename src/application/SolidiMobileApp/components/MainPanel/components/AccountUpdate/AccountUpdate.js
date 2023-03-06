@@ -112,8 +112,7 @@ let AccountUpdate = () => {
     try {
       // Send the request.
       let functionName = 'searchPostcode';
-      result = await appState.privateMethod({httpMethod: 'POST', functionName, apiRoute});
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      result = await appState.privateMethod({functionName, apiRoute});
     } catch(err) {
       logger.error(err);
     }
@@ -176,7 +175,34 @@ let AccountUpdate = () => {
 
 
   let confirmAddress = async () => {
+    setDisableConfirmAddressButton(true);
+    setErrorMessage();
+    let result;
+    let apiRoute = 'provide_address';
+    try {
+      let functionName = 'confirmAddress';
+      result = await appState.privateMethod({functionName, apiRoute});
+    } catch(err) {
+      logger.error(err);
+    }
+    //lj({result})
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      let errorMessage = jd(error);
+      log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
+      let detailName = 'address';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorMessage(errorMessage);
+      setDisableConfirmAddressButton(false);
+      // Change state.
 
+    } else {
+      setDisableConfirmAddressButton(false);
+    }
   }
 
 
