@@ -89,7 +89,6 @@ let RegisterConfirm = () => {
     }
     let result;
     let email = appState.userData.email;
-    email = 'johnqfish@foo.com'; // dev
     let apiRoute = 'confirm_email';
     apiRoute += `/${email}/${emailCode}`;
     try {
@@ -138,8 +137,6 @@ let RegisterConfirm = () => {
     }
     let result;
     let {email, password} = appState.userData;
-    email = 'johnqfish@foo.com'; // dev
-    password = 'bigFish6'; // dev
     let apiRoute = 'confirm_mobile';
     apiRoute += `/${email}/${mobileCode}`;
     try {
