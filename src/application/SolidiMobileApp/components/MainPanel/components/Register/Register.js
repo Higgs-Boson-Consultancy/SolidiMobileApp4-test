@@ -91,7 +91,7 @@ let Register = () => {
       await appState.generalSetup();
       await appState.loadPersonalDetailOptions();
       await appState.loadCountries();
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      //if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setGenderOptionsList(generateGenderOptionsList());
       setCitizenshipOptionsList(generateCitizenshipOptionsList());
       triggerRender(renderCount+1);
