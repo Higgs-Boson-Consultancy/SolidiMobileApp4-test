@@ -200,7 +200,7 @@ let RegisterConfirm2 = () => {
       setErrorMessage(errorMessage);
       setDisableConfirmAddressButton(false);
       // Change state.
-
+      appState.changeState('AccountUpdate');
     } else {
       setDisableConfirmAddressButton(false);
     }
