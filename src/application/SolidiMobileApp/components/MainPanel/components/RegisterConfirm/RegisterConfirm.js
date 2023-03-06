@@ -173,7 +173,7 @@ let RegisterConfirm = () => {
       let output = await appState.login({email, password});
       lj({output})
       // Change state.
-      appState.changeState('AccountUpdate', 'address');
+      appState.changeState('RegisterConfirm2', 'address');
     }
   }
 
