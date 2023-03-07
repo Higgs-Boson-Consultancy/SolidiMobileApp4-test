@@ -100,8 +100,9 @@ class AppStateProvider extends Component {
     // Pressing the Back button will not lead to them.
     this.nonHistoryPanels = `
 Authenticate Login PIN
-Register RegisterConfirm RegisterConfirm2 AccountUpdate
+RegisterConfirm RegisterConfirm2 AccountUpdate
 `.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
+    // We store Register, because it has a link to ReadArticle, which uses the History stack.
 
 
     // Shortcut function for changing the mainPanelState.
@@ -2297,21 +2298,22 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         orderID: null,
         settlementID: null,
       },
-      userData: {},
-      /* userData fields:
-firstName
-lastName
-email
-password
-mobile
-dateOfBirth
-gender
-citizenship
-mobileNumber
-emailPreferences
-emailCode
-mobileNumberCode
-*/
+      // userData is used during Register journey.
+      userData: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        mobile: '',
+        dateOfBirth: '',
+        gender: '',
+        citizenship: '',
+        emailPreferences: {
+          systemAnnouncements: true,
+          newsAndUpdates: true,
+          promotionsAndSpecialOffers: true,
+        },
+      },
       user: {
         isAuthenticated: false,
         email: '',
