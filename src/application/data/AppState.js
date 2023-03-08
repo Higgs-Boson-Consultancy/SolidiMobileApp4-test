@@ -319,10 +319,13 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       }
       // Load public info that rarely changes.
       this.state.appVersion = pkgversion;
+      // Arguably we should check the API version here and not continue if it doesn't match
       if (! this.state.apiVersionLoaded) {
         await this.state.loadLatestAPIVersion();
         this.state.apiVersionLoaded = true;
       }
+      await this.state.loadTerms();
+
       if (! this.state.assetsInfoLoaded) {
         await this.state.loadAssetsInfo();
         this.state.assetsInfoLoaded = true;
@@ -865,6 +868,20 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       this.state.changeState('Error');
     }
 
+
+    /* Non API network methods */
+    this.loadTerms = async() => {
+      let {domain} = this.state;
+      let url = "https://"+domain+"/legal/terms.txt";
+      log(`Loading terms from ${url}`);
+      const response = await fetch(url);
+      let terms = "";
+      if(response.ok) {
+        terms = await response.text();
+      }
+      this.state.apiData.terms['general'] = terms;
+
+    }
 
 
 
@@ -2186,6 +2203,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       resetLockAppTimer: this.resetLockAppTimer,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
+      /* Misc network methods */
+      loadTerms: this.loadTerms,
       /* Public API methods */
       loadLatestAPIVersion: this.loadLatestAPIVersion,
       checkLatestAPIVersion: this.checkLatestAPIVersion,
@@ -2259,6 +2278,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Note: Need to be careful about which are arrays and which are objects with keyed values.
       apiData: {
         api_latest_version: null,
+        terms: {},
         asset_icon: {},
         balance: {},
         country: [],
