@@ -23,7 +23,7 @@ import { Test, Buy, Sell, Send, Receive, Assets, History,
   CloseSolidiAccount } from './components';
 import AppStateContext from 'src/application/data';
 
-
+import * as allcomponents from './components';
 
 
 let MainPanel = (props) => {
@@ -33,90 +33,28 @@ let MainPanel = (props) => {
   let appState = useContext(AppStateContext);
 
   let selectPanelComponent = () => {
-    if (appState.mainPanelState === 'Test') {
-      return <Test />
-    } else if (appState.mainPanelState === 'Buy') {
-      return <Buy />
-    } else if (appState.mainPanelState === 'Sell') {
-      return <Sell />
-    } else if (appState.mainPanelState === 'Send') {
-      return <Send />
-    } else if (appState.mainPanelState === 'Receive') {
-      return <Receive />
-    } else if (appState.mainPanelState === 'Assets') {
-      return <Assets />
-    } else if (appState.mainPanelState === 'History') {
-      return <History />
-    } else if (appState.mainPanelState === 'Notifications') {
-      return <Notifications />
-    } else if (appState.mainPanelState === 'Settings') {
-      return <Settings />
-    } else if (appState.mainPanelState === 'Login') {
-      return <Login />
-    } else if (appState.mainPanelState === 'PIN') {
+
+    // JDM - 2023-03-07 - Do we need to use mainPanelState here? We've already check this in AppState.changeState.
+    if (mainPanelStates.indexOf(appState.mainPanelState)==-1) {
+      return <Text>Early Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
+    }
+    // JDM - 2023-03-07 - Alternative way to check for valid components (maybe too flexible?)
+    if(!Object.keys(allcomponents).includes(appState.mainPanelState)) {
+      return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
+    }
+
+    // Special cases
+    if (appState.mainPanelState === 'PIN') {
       if (appState.pageName == 'default') {
         if (! appState.user.pin) {
           return <Login />
         }
       }
-      return <PIN />
-    } else if (appState.mainPanelState === 'ChooseHowToPay') {
-      return <ChooseHowToPay />
-    } else if (appState.mainPanelState === 'MakePayment') {
-      return <MakePayment />
-    } else if (appState.mainPanelState === 'WaitingForPayment') {
-      return <WaitingForPayment />
-    } else if (appState.mainPanelState === 'BlankExampleComponent') {
-      return <BlankExampleComponent />
-    } else if (appState.mainPanelState === 'PaymentNotMade') {
-      return <PaymentNotMade />
-    } else if (appState.mainPanelState === 'PurchaseSuccessful') {
-      return <PurchaseSuccessful />
-    } else if (appState.mainPanelState === 'InsufficientBalance') {
-      return <InsufficientBalance />
-    } else if (appState.mainPanelState === 'ReadArticle') {
-      return <ReadArticle />
-    } else if (appState.mainPanelState === 'ChooseHowToReceivePayment') {
-      return <ChooseHowToReceivePayment />
-    } else if (appState.mainPanelState === 'RequestTimeout') {
-      return <RequestTimeout />
-    } else if (appState.mainPanelState === 'SaleSuccessful') {
-      return <SaleSuccessful />
-    } else if (appState.mainPanelState === 'PersonalDetails') {
-      return <PersonalDetails />
-    } else if (appState.mainPanelState === 'ContactUs') {
-      return <ContactUs />
-    } else if (appState.mainPanelState === 'BankAccounts') {
-      return <BankAccounts />
-    } else if (appState.mainPanelState === 'Security') {
-      return <Security />
-    } else if (appState.mainPanelState === 'RequestFailed') {
-      return <RequestFailed />
-    } else if (appState.mainPanelState === 'Error') {
-      return <Error />
-    } else if (appState.mainPanelState === 'SendSuccessful') {
-      return <SendSuccessful />
-    } else if (appState.mainPanelState === 'Authenticate') {
-      return <Authenticate />
-    } else if (appState.mainPanelState === 'Register') {
-      return <Register />
-    } else if (appState.mainPanelState === 'SupportTools') {
-      return <SupportTools />
-    } else if (appState.mainPanelState === 'LimitsExceeded') {
-      return <LimitsExceeded />
-    } else if (appState.mainPanelState === 'IdentityVerification') {
-      return <IdentityVerification />
-    } else if (appState.mainPanelState === 'ResetPassword') {
-      return <ResetPassword />
-    } else if (appState.mainPanelState === 'MakePaymentOpenBanking') {
-      return <MakePaymentOpenBanking />
-    } else if (appState.mainPanelState === 'SolidiAccount') {
-      return <SolidiAccount />
-    } else if (appState.mainPanelState === 'CloseSolidiAccount') {
-      return <CloseSolidiAccount />
-    } else {
-      return <Text>Error in MainPanel.js: Unknown mainPanelState: {appState.mainPanelState}</Text>
     }
+    // Get the component that the mainpanel is set to (text string) from all the components.
+    // and then create the JSX element and return it.
+    let targetcomponent = allcomponents[appState.mainPanelState]
+    return React.createElement(targetcomponent);
   }
 
   return (
