@@ -27,6 +27,7 @@ export const mainPanelStates = [
   'Security',
   'RequestFailed',
   'Error',
+  'Maintenance',
   'SendSuccessful',
   'Authenticate',
   'Register',

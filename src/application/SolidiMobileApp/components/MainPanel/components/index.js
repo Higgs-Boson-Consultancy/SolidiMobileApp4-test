@@ -26,6 +26,7 @@ import BankAccounts from './BankAccounts/BankAccounts';
 import Security from './Security/Security';
 import RequestFailed from './RequestFailed/RequestFailed';
 import Error from './Error/Error';
+import Maintenance from './Maintenance/Maintenance';
 import SendSuccessful from './SendSuccessful/SendSuccessful';
 import Authenticate from './Authenticate/Authenticate';
 import Register from './Register/Register';
@@ -68,6 +69,7 @@ export {
   Security,
   RequestFailed,
   Error,
+  Maintenance,
   SendSuccessful,
   Authenticate,
   Register,

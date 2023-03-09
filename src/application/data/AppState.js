@@ -9,6 +9,15 @@
 import { version } from "../../../package.json"
 let pkgversion = version;
 
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Header, MainPanel, Footer } from 'src/application/SolidiMobileApp/components';
+import { Maintenance } from 'src/application/SolidiMobileApp/components/MainPanel/components';
+
 // React imports
 import React, { Component, useContext } from 'react';
 import {BackHandler} from 'react-native';
@@ -21,7 +30,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { mainPanelStates, footerButtonList } from 'src/constants';
+import { mainPanelStates, footerButtonList, colors } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -531,6 +540,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           // This is a user-input validation error.
           // The page that sent the request should display it to the user.
           return data;
+        } else if (error == 503) {
+          this.state.setMaintenanceMode(true);
+          return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}: publicMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
@@ -594,6 +606,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           // This is an internal error.
           // Display it on the original page.
           return data;
+        } else if (error == 503) {
+          this.state.setMaintenanceMode(true);
+          return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
           let paramsStr = misc.jd(params);
@@ -886,9 +901,29 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     /* Public API methods */
+    this.setMaintenanceMode = (inMaintenanceMode) => {
+      this.setState({maintenanceMode: inMaintenanceMode});
+    }
 
-
-
+    this.checkMaintenanceMode = async (callback=null) => {
+      // Check if we can connect to Solidi.
+      let data = await this.state.publicMethod({
+        functionName: 'loadAPIVersion',
+        apiRoute: 'api_latest_version',
+        httpMethod: 'GET',
+      });
+      if (data.error==503) {
+        if(!this.state.maintenanceMode) {
+            this.state.setMaintenanceMode(true);
+        }
+      } else {
+        this.state.setMaintenanceMode(false);
+      }
+      if(callback) {
+        callback(this.state.maintenanceMode);
+      }
+      return this.state.maintenanceMode;
+    }
 
     this.loadLatestAPIVersion = async () => {
       let data = await this.state.publicMethod({
@@ -2184,6 +2219,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
+      maintenanceMode: false,
+      setMaintenanceMode: this.setMaintenanceMode,
+      checkMaintenanceMode: this.checkMaintenanceMode,
       generalSetup: this.generalSetup,
       login: this.login,
       loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
@@ -2439,20 +2477,47 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.resetLockAppTimer();
 
 
+
   }
 
 
   render() {
+
     return (
       <AppStateContext.Provider value={this.state}>
-        {this.props.children}
+
+     <SafeAreaView style={styles.container}>
+        {!this.state.maintenanceMode ?  <Header style={styles.header} />   : null }
+        {!this.state.maintenanceMode ?  <MainPanel style={styles.mainPanel} /> : null }
+        {!this.state.maintenanceMode ?  <Footer style={styles.footer} /> : null }
+       
+
+        {this.state.maintenanceMode ? <Maintenance /> : null }
+
+      </SafeAreaView>
+      
       </AppStateContext.Provider>
     );
   }
-
 }
 
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.defaultBackground,
+  },
+  header: {
+    height: '10%',
+  },
+  mainPanel: {
+    height: '78%',
+  },
+  footer: {
+    height: '12%',
+    paddingTop: scaledHeight(5),
+    visibility: 'hidden',
+  },
+})
 
 
 export { AppStateContext, AppStateProvider };
