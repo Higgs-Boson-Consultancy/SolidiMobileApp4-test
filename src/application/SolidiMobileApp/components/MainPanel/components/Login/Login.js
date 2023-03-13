@@ -69,6 +69,12 @@ let Login = () => {
 
 
   let submitLoginRequest = async () => {
+    let fName = `submitLoginRequest`;
+    // test data
+    /*
+    email = 'johnqfish@foo.com';
+    password = 'bigFish6';
+    */
     setDisableLoginButton(true);
     setErrorMessage('');
     try {
@@ -97,16 +103,7 @@ let Login = () => {
         return;
       }
       // Change state.
-      if (! appState.user.pin) {
-        return appState.changeState('PIN', 'choose');
-      } else if (appState.panels.buy.activeOrder) {
-        return appState.changeState('ChooseHowToPay');
-      } else if (! _.isEmpty(appState.stashedState)) {
-        return appState.loadStashedState();
-      } else {
-        // Change to BUY state by default.
-        return appState.changeState('Buy');
-      }
+      await appState.moveToNextState();
     } catch(err) {
       logger.error(err);
       setErrorMessage(err.message);

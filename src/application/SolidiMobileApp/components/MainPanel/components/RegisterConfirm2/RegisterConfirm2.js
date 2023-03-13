@@ -205,7 +205,7 @@ let RegisterConfirm2 = () => {
       setDisableConfirmAddressButton(false);
     } else {
       // Change state.
-      appState.changeState('AccountUpdate');
+      await appState.moveToNextState();
     }
   }
 
