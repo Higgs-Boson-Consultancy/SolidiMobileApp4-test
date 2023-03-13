@@ -399,6 +399,16 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           }
         }
 
+        if (mainPanelState === 'AccountUpdate') {
+          if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
         if (! nextStateName) {
           var msg = `${fName}: No next state found. Current state: ${jd(currentState)} (current saved state: ${jd(currentSavedState)})`;
           appState.switchToErrorState({message: msg});

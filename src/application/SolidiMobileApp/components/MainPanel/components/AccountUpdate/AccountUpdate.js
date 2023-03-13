@@ -105,8 +105,7 @@ let AccountUpdate = () => {
     if (n === 0) {
       let msg = `No extra information required.`;
       log(msg);
-      appState.changeState('Buy');
-      return;
+      return appState.moveToNextState();
     } else {
       let item = result[0]; // We display one item at a time, with its available options.
       setRemaining(generateRemainingUpdatesText({n}));
@@ -153,7 +152,6 @@ let AccountUpdate = () => {
       setDisableConfirmButton(false);
     } else {
       // Keep reloading the page until we have no more updates to make.
-      //appState.changeState('AccountUpdate');
       setDisableConfirmButton(false);
       setup();
     }
