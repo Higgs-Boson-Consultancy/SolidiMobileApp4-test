@@ -319,6 +319,106 @@ RegisterConfirm2 AccountUpdate
     }
 
 
+    this.moveToNextState = async () => {
+      /* Sometimes, there are lots of conditions (ideally stored within the AppState) that we look at in order to choose the next state to move to.
+      - It is not always a simple linear journey over several states. There can be multiple branches and/or loops.
+      */
+      let fName = 'moveToNextState';
+      try {
+        log(`${fName}: Start`);
+        let appState = this.state;
+        let {mainPanelState, pageName} = appState;
+        // Current state is always stored, even if it's not saved in the stateHistoryList.
+        let currentState = {mainPanelState, pageName};
+        let stateHistoryList = appState.stateHistoryList;
+        let currentSavedState = stateHistoryList[stateHistoryList.length - 1];
+        var msg = `${fName}: Current state: ${jd(currentState)} (current saved state: ${jd(currentSavedState)})`;
+        log(msg);
+        let nextStateName;
+        let nextPageName = 'default';
+
+        /*
+        - Some data needs to be loaded from the server.
+        -- Future: Maybe speed up by only doing this when necessary for specific current states.
+        */
+        try {
+          var extraInfoRequired = await appState.checkIfExtraInformationRequired();
+        } catch(err) {
+          logger.error(err);
+          return appState.switchToErrorState({message: String(err)});
+        }
+
+        // If the state has changed since we loaded data from the server, we exit so that we don't set any new state (which would probably cause an error).
+        let stateChangeID = appState.stateChangeID;
+        if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+
+        let pinValue = appTier === 'dev' ? appState.user.pin : '[deleted]';
+        var msg = `${fName}: Conditions:
+=====
+extraInfoRequired = ${extraInfoRequired}
+appState.panels.buy.activeOrder = ${appState.panels.buy.activeOrder}
+appState.user.pin = ${pinValue}
+_.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
+=====
+`;
+        log(msg);
+
+        // Decision tree
+        if (mainPanelState === 'Login') {
+          if (! appState.user.pin) {
+            nextStateName = 'PIN';
+            nextPageName = 'choose';
+          } else if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (mainPanelState === 'PIN') {
+          if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (mainPanelState === 'RegisterConfirm2') {
+          if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (! nextStateName) {
+          var msg = `${fName}: No next state found. Current state: ${jd(currentState)} (current saved state: ${jd(currentSavedState)})`;
+          appState.switchToErrorState({message: msg});
+        }
+
+        let nextState = {mainPanelState: nextStateName, pageName: nextPageName};
+        var msg = `${fName}: nextState = ${jd(nextState)}`;
+        log(msg);
+
+        // Change to next state.
+        appState.setMainPanelState(nextState);
+
+      } catch(err) {
+        var msg = `${fName}: ${String(err)}`;
+        logger.error(msg);
+        //appState.switchToErrorState({message: msg});
+      }
+    }
+
+
     this.generalSetup = async () => {
       // Note: This method needs to be called in every page, so that the Android back button always works.
       // (Obviously the back button handler could be called separately, but that's less convenient overall.)
@@ -2136,6 +2236,26 @@ RegisterConfirm2 AccountUpdate
     }
 
 
+    this.checkIfExtraInformationRequired = async () => {
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'user/extra_information/check',
+        params: {},
+        functionName: 'checkIfExtraInformationRequired',
+      });
+      if (data == 'DisplayedError') return;
+      //lj({data})
+      /* Example response:
+
+      */
+      let n = data.length;
+      if (n === 0) {
+        return false;
+      }
+      return true;
+    }
+
+
     /* END Private API methods */
 
 
@@ -2187,6 +2307,7 @@ RegisterConfirm2 AccountUpdate
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
+      moveToNextState: this.moveToNextState,
       generalSetup: this.generalSetup,
       login: this.login,
       loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
@@ -2266,6 +2387,7 @@ RegisterConfirm2 AccountUpdate
       getOpenBankingPaymentStatusFromSettlement: this.getOpenBankingPaymentStatusFromSettlement,
       getOpenBankingPaymentURLFromSettlement: this.getOpenBankingPaymentURLFromSettlement,
       closeSolidiAccount: this.closeSolidiAccount,
+      checkIfExtraInformationRequired: this.checkIfExtraInformationRequired,
       /* END Private API methods */
       /* More functions */
       androidBackButtonAction: this.androidBackButtonAction,
