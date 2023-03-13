@@ -100,10 +100,10 @@ class AppStateProvider extends Component {
     // Pressing the Back button will not lead to them.
     this.nonHistoryPanels = `
 Authenticate Login PIN
-RegisterConfirm RegisterConfirm2 AccountUpdate
 `;
     this.nonHistoryPanels = misc.splitStringIntoArray({s: this.nonHistoryPanels});
-    // We store Register, because it has a link to ReadArticle, which uses the History stack to return to the previous page.
+    // We do not include Register, because it has a link to ReadArticle, which uses the History stack to return to the previous page.
+    // We do not include [RegisterConfirm2, AccountUpdate], even though they do not display a Back button, because we want them to be in the history stack, so that resetStateHistory() works when we arrive at these locations.
 
 
     // Shortcut function for changing the mainPanelState.
@@ -128,14 +128,15 @@ RegisterConfirm RegisterConfirm2 AccountUpdate
 
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
-      let msg = `Set state to: ${JSON.stringify(newState)}.`;
+      let fName = 'setMainPanelState';
+      var msg = `${fName}: Set state to: ${jd(newState)}.`;
       log(msg);
       //this.state.logEntireStateHistory();
       let {mainPanelState, pageName} = newState;
       if (_.isNil(mainPanelState)) {
-        let errMsg = "Unknown mainPanelState: " + mainPanelState;
-        log(errMsg);
-        throw Error(errMsg);
+        var msg = `${fName}: Unknown mainPanelState: ${mainPanelState}`;
+        log(msg);
+        throw Error(msg);
       }
       if (_.isNil(pageName)) pageName = 'default';
       newState = {mainPanelState, pageName};
@@ -146,14 +147,20 @@ RegisterConfirm RegisterConfirm2 AccountUpdate
       - If the current state has just ended a user journey, we want to erase the state history, and start over.
       */
       let currentState = stateHistoryList[stateHistoryList.length - 1];
+      var msg = `${fName}: Current state: ${jd(currentState)}}`;
+      log(msg);
       let endJourneyList = `
 PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 RegisterConfirm2 AccountUpdate
 `;
-      endJourneyList = misc.splitStringIntoArray({s: endJourneyList})
+      endJourneyList = misc.splitStringIntoArray({s: endJourneyList});
+      var msg = `${fName}: endJourneyList: ${jd(endJourneyList)} - Includes current state ? ${endJourneyList.includes(currentState.mainPanelState)}}`;
+      log(msg);
       if (! _.isEmpty(currentState)) {
         // currentState can be empty if we're testing and start on the Login page, which is not saved into the stateHistoryList.
         if (endJourneyList.includes(currentState.mainPanelState)) {
+          var msg = `${fName}: Arrived at end of a user journey: ${currentState.mainPanelState}. Resetting state history.`;
+          log(msg);
           this.resetStateHistory();
         }
       }
@@ -169,10 +176,11 @@ RegisterConfirm2 AccountUpdate
       let storeHistoryState = (! stashed && ! this.nonHistoryPanels.includes(mainPanelState));
       if (storeHistoryState) {
         let currentState = stateHistoryList[stateHistoryList.length - 1];
-        if (JSON.stringify(newState) === JSON.stringify(currentState)) {
+        if (jd(newState) === jd(currentState)) {
           // We don't want to store the same state twice, so do nothing.
         } else {
-          log("Store new state history entry: " + JSON.stringify(newState));
+          var msg = `${fName}: Store new state history entry: ${jd(newState)}`;
+          log(msg);
           stateHistoryList = stateHistoryList.concat(newState);
           this.setState({stateHistoryList});
         }
@@ -190,7 +198,8 @@ RegisterConfirm2 AccountUpdate
       // Finally, change to new state.
       if (makeFinalSwitch) {
         let stateChangeID = this.state.stateChangeID + 1;
-        log(`New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`);
+        var msg = `${fName}: New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`;
+        log(msg);
         this.setState({mainPanelState, pageName, stateChangeID});
       }
     }
@@ -200,7 +209,8 @@ RegisterConfirm2 AccountUpdate
       let stateChangeID2 = this.state.stateChangeID;
       let location = mainPanelState ? mainPanelState + ': ' : '';
       if (stateChangeID !== stateChangeID2) {
-        log(`${location}stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`);
+        var msg = `${location}stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`;
+        log(msg);
         return true;
       }
       return false;
@@ -221,7 +231,7 @@ RegisterConfirm2 AccountUpdate
       misc.confirmExactKeys('stateX', stateX, expected, 'stashState');
       // Don't stash the RequestTimeout page. Instead, it should continually reload the existing stashed state.
       if (stateX.mainPanelState == 'RequestTimeout') return;
-      let msg = `Stashing state: ${JSON.stringify(stateX)}`;
+      var msg = `Stashing state: ${jd(stateX)}`;
       log(msg);
       this.state.stashedState = stateX;
     }
@@ -230,7 +240,7 @@ RegisterConfirm2 AccountUpdate
     this.loadStashedState = () => {
       // If there's no stashed state, don't do anything.
       if (_.isEmpty(this.state.stashedState)) return;
-      let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
+      let msg = `Loading stashed state: ${jd(this.state.stashedState)}`;
       log(msg);
       let stashed = true;
       this.state.setMainPanelState(this.state.stashedState, stashed);
@@ -762,8 +772,8 @@ RegisterConfirm2 AccountUpdate
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
       this.state.user.apiCredentialsFound = false;
-      // Wipe the state history and any stashed state.
-      this.state.stateHistoryList = [];
+      // Reset the state history and wipe any stashed state.
+      this.state.resetStateHistory();
       this.deleteStashedState();
       log("Logout complete.");
       /*
