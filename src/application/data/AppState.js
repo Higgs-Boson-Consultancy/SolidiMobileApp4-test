@@ -101,7 +101,8 @@ class AppStateProvider extends Component {
     this.nonHistoryPanels = `
 Authenticate Login PIN
 RegisterConfirm RegisterConfirm2 AccountUpdate
-`.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
+`;
+    this.nonHistoryPanels = misc.splitStringIntoArray({s: this.nonHistoryPanels});
     // We store Register, because it has a link to ReadArticle, which uses the History stack to return to the previous page.
 
 
