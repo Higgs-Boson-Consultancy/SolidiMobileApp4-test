@@ -89,7 +89,7 @@ let RegisterConfirm2 = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      //if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `RegisterConfirm2.setup: Error = ${err}`;
