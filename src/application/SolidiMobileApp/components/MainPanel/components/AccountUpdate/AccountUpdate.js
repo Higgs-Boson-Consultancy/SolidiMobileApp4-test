@@ -72,7 +72,7 @@ let AccountUpdate = () => {
   let setup = async () => {
     try {
       await appState.generalSetup();
-      await checkIfExtraInformationRequired();
+      await checkIfExtraInformationRequiredAndLoadIt();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
       triggerRender(renderCount+1);
@@ -91,11 +91,11 @@ let AccountUpdate = () => {
   }
 
 
-  let checkIfExtraInformationRequired = async () => {
+  let checkIfExtraInformationRequiredAndLoadIt = async () => {
     let apiRoute = 'user/extra_information/check';
     let result;
     try {
-      let functionName = 'checkIfExtraInformationRequired';
+      let functionName = 'checkIfExtraInformationRequiredAndLoadIt';
       result = await appState.privateMethod({functionName, apiRoute});
     } catch(err) {
       logger.error(err);
