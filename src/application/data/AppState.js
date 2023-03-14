@@ -429,10 +429,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
-    this.generalSetup = async () => {
+    this.generalSetup = async (optionalParams) => {
       // Note: This method needs to be called in every page, so that the Android back button always works.
       // (Obviously the back button handler could be called separately, but that's less convenient overall.)
-      log(`Start: generalSetup()`);
+      let {caller} = { ...optionalParams };
+      let fName = `generalSetup`;
+      let msg = `${fName}: Start`;
+      if (caller) msg += ` (called from ${caller})`;
+      log(msg);
       this.state.logEntireStateHistory();
       // Create a new event listener for the Android Back Button.
       // This needs to occur on every page.

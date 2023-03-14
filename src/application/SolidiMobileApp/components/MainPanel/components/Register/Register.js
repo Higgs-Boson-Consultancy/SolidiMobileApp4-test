@@ -89,7 +89,7 @@ let Register = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Register'});
       await appState.loadPersonalDetailOptions();
       await appState.loadCountries();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;

@@ -64,7 +64,7 @@ let RequestTimeout = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'RequestTimeout'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `RequestTimeout.setup: Error = ${err}`;
