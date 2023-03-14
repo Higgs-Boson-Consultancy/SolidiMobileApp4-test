@@ -98,12 +98,11 @@ class AppStateProvider extends Component {
 
     // nonHistoryPanels are not stored in the stateHistoryList.
     // Pressing the Back button will not lead to them.
+    // Future: Instead of doing this, better to later remove them from the stateHistoryList after reaching an endpoint ? In some circumstances (e.g. errors) it's better to be able to move backwards.
     this.nonHistoryPanels = `
 Authenticate Login PIN
 `;
     this.nonHistoryPanels = misc.splitStringIntoArray({s: this.nonHistoryPanels});
-    // We do not include Register, because it has a link to ReadArticle, which uses the History stack to return to the previous page.
-    // We do not include [RegisterConfirm2, AccountUpdate], even though they do not display a Back button, because we want them to be in the history stack, so that resetStateHistory() works when we arrive at these locations.
 
 
     // Shortcut function for changing the mainPanelState.
@@ -648,6 +647,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           this.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
+          // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
           //pass
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
@@ -711,6 +711,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           this.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
+          // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
           //pass
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
