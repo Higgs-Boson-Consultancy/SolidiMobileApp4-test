@@ -319,7 +319,7 @@ RegisterConfirm2 AccountUpdate
 
 
     this.moveToNextState = async () => {
-      /* Sometimes, there are lots of conditions (ideally stored within the AppState) that we look at in order to choose the next state to move to.
+      /* Sometimes, there are lots of conditions (ideally stored within the AppStateContext) that we look at in order to choose the next state to move to.
       - It is not always a simple linear journey over several states. There can be multiple branches and/or loops.
       */
       let fName = 'moveToNextState';
@@ -1486,6 +1486,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
+      // Future: If the security check results are negative, stop.
+      await this.loadSecurityChecks();
       if (! this.state.assetsInfoLoaded) {
         // This is needed for loading the deposit details & the default account.
         await this.state.loadAssetsInfo();
@@ -2273,6 +2275,26 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
+    this.loadSecurityChecks = async () => {
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'security_check',
+        params: {},
+        functionName: 'loadSecurityChecks',
+      });
+      if (data == 'DisplayedError') return;
+      //lj({data})
+      /* Example response:
+"data": {
+  "pepResult": false
+}
+      */
+     return data;
+    }
+
+
+
+
     /* END Private API methods */
 
 
@@ -2405,6 +2427,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       getOpenBankingPaymentURLFromSettlement: this.getOpenBankingPaymentURLFromSettlement,
       closeSolidiAccount: this.closeSolidiAccount,
       checkIfExtraInformationRequired: this.checkIfExtraInformationRequired,
+      loadSecurityChecks: this.loadSecurityChecks,
       /* END Private API methods */
       /* More functions */
       androidBackButtonAction: this.androidBackButtonAction,
