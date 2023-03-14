@@ -37,6 +37,9 @@ let RequestTimeout = () => {
     if (timeElapsedSeconds > timeToWaitSeconds) {
       // Stop the timer.
       clearInterval(appState.panels.requestTimeout.timerID);
+      if (appState.mainPanelState === 'RequestFailed') {
+        return;
+      }
       // Change to next state.
       tryAgain();
     }
