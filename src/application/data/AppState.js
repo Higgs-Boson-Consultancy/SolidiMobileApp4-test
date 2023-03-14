@@ -772,7 +772,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       msg += `\n- this.state.user.isAuthenticated = ${this.state.user.isAuthenticated}`;
       msg += `\n- this.state.user.email = ${this.state.user.email}`;
       msg += `\n- this.state.user.pin = ${this.state.user.pin}`;
-      log(msg);
+      if (appTier !== 'prod') {
+        log(msg);
+      }
       if (! this.state.user.apiCredentialsFound) {
         if (! this.state.user.isAuthenticated) {
           log("authenticateUser (1) -> Authenticate");
@@ -940,7 +942,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let waitTimeSeconds = waitTimeMinutes * 60;
       let lockAppTimer = () => {
         log(`Begin: lockAppTimer() - (${waitTimeMinutes} minutes)`);
-        let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
+        let msg = `lockAppTimer has finished.`;
         // Don't lock app if user has logged out already.
         if (this.state.user.isAuthenticated === false) {
           log(`${msg} The app is in a logged-out state. Resetting timer and exiting here.`);
