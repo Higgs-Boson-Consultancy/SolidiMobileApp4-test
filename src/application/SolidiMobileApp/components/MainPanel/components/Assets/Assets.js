@@ -50,7 +50,7 @@ let Assets = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Assets'});
       await appState.loadBalances();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);

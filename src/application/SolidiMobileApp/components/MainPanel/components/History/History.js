@@ -67,7 +67,7 @@ let History = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'History'});
       await appState.loadOrders();
       await appState.loadTransactions();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;

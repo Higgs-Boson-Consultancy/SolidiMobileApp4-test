@@ -71,7 +71,7 @@ let AccountUpdate = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'AccountUpdate'});
       await checkIfExtraInformationRequiredAndLoadIt();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);

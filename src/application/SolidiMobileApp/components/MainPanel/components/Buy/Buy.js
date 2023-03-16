@@ -110,7 +110,7 @@ let Buy = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Buy'});
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());

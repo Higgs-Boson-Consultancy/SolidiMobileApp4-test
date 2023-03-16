@@ -131,7 +131,7 @@ let Sell = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Sell'});
       await appState.loadBalances();
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
