@@ -2,6 +2,7 @@
 workspace.code-workspace
 
 # package-lock.json causes trouble because we use some packages with legacy peer dependencies.
+package-lock.json
 
 node_modules/
 .expo/
