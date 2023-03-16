@@ -97,7 +97,7 @@ let Buy = () => {
   let [itemsQA, setItemsQA] = useState(generateQuoteAssetItems());
 
   // More state
-  let [newAPIVersion, setNewAPIVersion] = useState(false);
+  let [newAPIVersionDetected, setNewAPIVersionDetected] = useState(false);
   let [errorMessage, setErrorMessage] = useState('');
   let [loadingBestPrice, setLoadingBestPrice] = useState(true);
 
@@ -115,7 +115,7 @@ let Buy = () => {
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
-      setNewAPIVersion(appState.checkLatestAPIVersion());
+      setNewAPIVersionDetected(appState.checkLatestAPIVersion());
       setLoadingBestPrice(false);
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;
@@ -497,7 +497,7 @@ let Buy = () => {
         <StandardButton title="Buy now" onPress={ startBuyRequest } />
       </View>
 
-      {newAPIVersion && upgradeRequired()}
+      {newAPIVersionDetected && upgradeRequired()}
 
       </KeyboardAwareScrollView>
 
