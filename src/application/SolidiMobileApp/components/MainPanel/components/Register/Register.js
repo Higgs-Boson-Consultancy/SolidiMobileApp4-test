@@ -316,6 +316,7 @@ emailPreferences
               autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
+              keyboardType='email-address'
               placeholder='Email address'
               placeholderTextColor='grey'
             />
@@ -369,7 +370,7 @@ emailPreferences
                 }}
                 autoCompleteType='off'
                 autoCapitalize='none'
-                keyboardType='numbers-and-punctuation' // May have plus sign and hyphen in it, not just digits.
+                keyboardType='phone-pad' // May have plus sign and hyphen in it, not just digits.
                 placeholder='Mobile phone number'
                 placeholderTextColor='grey'
               />
@@ -391,7 +392,7 @@ emailPreferences
                   setUserData({...userData, dateOfBirth: value});
                 }}
                 autoCompleteType='off'
-                keyboardType='numbers-and-punctuation'
+                keyboardType='default' // Can't use a smaller keyboard, because they need to be able to enter forward slashes.
                 placeholder='DD/MM/YYYY'
                 placeholderTextColor='grey'
               />
