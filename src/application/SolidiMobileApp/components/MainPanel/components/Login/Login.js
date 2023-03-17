@@ -130,7 +130,11 @@ let Login = () => {
         </View>
       }
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
       { challenges.includes('email') &&
         <View style={styles.emailLineWrapper}>
