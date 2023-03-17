@@ -327,7 +327,7 @@ address_1 address_2 address_3 address_4 postcode country
                 updateUserData({detail:'dateOfBirth', value});
               }}
               autoCompleteType='off'
-              keyboardType='numbers-and-punctuation'
+              keyboardType='default' // Can't use a smaller keyboard, because they need to be able to enter forward slashes.
             />
           </View>
         </View>
@@ -393,7 +393,7 @@ address_1 address_2 address_3 address_4 postcode country
               }}
               autoCompleteType='off'
               autoCapitalize='none'
-              keyboardType='numbers-and-punctuation' // May have plus sign and hyphen in it, not just digits.
+              keyboardType='phone-pad' // May have plus sign and hyphen in it, not just digits.
             />
           </View>
         </View>
