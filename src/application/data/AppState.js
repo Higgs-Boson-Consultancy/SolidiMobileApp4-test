@@ -491,7 +491,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       this.state.apiClient = apiClient;
       // Use the email and password to load the API Key and Secret from the server.
       let apiRoute = 'login_mobile' + `/${email}`;
-      let optionalParams = {};
+      let optionalParams = {
+        origin: {
+          clientType: 'mobile',
+          os: Platform.OS,
+          appVersion,
+          appTier,
+        }
+      };
       let params = {password, tfa, optionalParams};
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
