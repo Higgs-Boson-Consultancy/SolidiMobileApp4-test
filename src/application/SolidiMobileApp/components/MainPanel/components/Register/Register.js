@@ -237,7 +237,12 @@ emailPreferences
       </View>
 
 
-      <KeyboardAwareScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1, margin: 20 }} ref={scrollRefTop} >
+      <KeyboardAwareScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+        ref={scrollRefTop}
+      >
 
         { isLoading && <Spinner/> }
 
