@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Checkbox } from 'react-native-paper';
 
 // Other imports
