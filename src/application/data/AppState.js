@@ -1034,12 +1034,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       }
       let latestAppVersion = data.version;
       var msg = `Internal app version: ${appVersion}. Latest app version: ${latestAppVersion}`;
-      log(msg);
+      deb(msg);
       let os = Platform.OS;
       let minimumVersionRequiredIos = data.minimumVersionRequired.ios.version;
       let minimumVersionRequiredAndroid = data.minimumVersionRequired.android.version;
       var msg = `Minimum version required for iOS: ${minimumVersionRequiredIos}. Minimum version required for Android: ${minimumVersionRequiredAndroid}.`;
-      log(msg);
+      deb(msg);
       let minimumVersionRequired = 'Error';
       if (os == 'ios') {
         minimumVersionRequired = minimumVersionRequiredIos;
@@ -1047,7 +1047,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         minimumVersionRequired = minimumVersionRequiredAndroid;
       }
       var msg = `Platform OS: ${os}. Minimum version required = ${minimumVersionRequired}.`;
-      log(msg);
+      deb(msg);
       let upgradeRequired = semver.gt(minimumVersionRequired, appVersion);
       log(`Upgrade required: ${upgradeRequired}`);
       if (upgradeRequired) {
