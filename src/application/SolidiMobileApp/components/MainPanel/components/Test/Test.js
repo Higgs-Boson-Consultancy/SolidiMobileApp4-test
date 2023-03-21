@@ -64,35 +64,43 @@ let Test = () => {
         <Text style={styles.headingText}>Test Component</Text>
       </View>
 
-      <View style={styles.checkboxWrapper}>
-        <Checkbox.Item
-          label={'System Announcements'}
-          status={checkboxValue ? 'checked' : 'unchecked'}
-          style={styleCheckbox}
-          onPress={ () => {
-            let newValue = ! checkboxValue;
-            var msg = `checkbox set to ${newValue}`;
-            log(msg);
-            setCheckboxValue(newValue);
-          }}
-          color={colors.standardButton}
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
+
+        <View style={styles.checkboxWrapper}>
+          <Checkbox.Item
+            label={'System Announcements'}
+            status={checkboxValue ? 'checked' : 'unchecked'}
+            style={styleCheckbox}
+            onPress={ () => {
+              let newValue = ! checkboxValue;
+              var msg = `checkbox set to ${newValue}`;
+              log(msg);
+              setCheckboxValue(newValue);
+            }}
+            color={colors.standardButton}
+          />
+        </View>
+
+        <Image source={appState.getAssetIcon('EUR')} style={{
+            width: scaledWidth(27),
+            height: scaledHeight(27),
+            resizeMode: misc.getFlatListIconResizeMode(),
+            borderWidth: 1,
+          }}/>
+
+        <Text style={styles.basicText}>Status: </Text>
+        <StandardButton title='Log out' style={styleButton}
+          onPress={ async () => { await appState.logout(); } }
         />
-      </View>
+        <StandardButton title='Change PIN' style={styleButton}
+          onPress={ () => { appState.choosePIN(); } }
+        />
 
-      <Image source={appState.getAssetIcon('EUR')} style={{
-          width: scaledWidth(27),
-          height: scaledHeight(27),
-          resizeMode: misc.getFlatListIconResizeMode(),
-          borderWidth: 1,
-        }}/>
-
-      <Text style={styles.basicText}>Status: </Text>
-      <StandardButton title='Log out' style={styleButton}
-        onPress={ async () => { await appState.logout(); } }
-      />
-      <StandardButton title='Change PIN' style={styleButton}
-        onPress={ () => { appState.choosePIN(); } }
-      />
+      </KeyboardAwareScrollView>
 
     </View>
   )
