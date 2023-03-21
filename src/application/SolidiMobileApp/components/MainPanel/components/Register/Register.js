@@ -461,6 +461,7 @@ emailPreferences
               <Checkbox.Item label="System Announcements"
                 status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.systemAnnouncements ? "checked" : "unchecked" }
                 style={styleCheckbox}
+                color={colors.standardButton}
                 onPress={() => {
                   let currentValue = userData.emailPreferences.systemAnnouncements;
                   let newValue = ! currentValue;
@@ -474,6 +475,7 @@ emailPreferences
               <Checkbox.Item label="News & Updates"
                 status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.newsAndFeatureUpdates ? "checked" : "unchecked" }
                 style={styleCheckbox}
+                color={colors.standardButton}
                 onPress={() => {
                   let currentValue = userData.emailPreferences.newsAndFeatureUpdates;
                   let newValue = ! currentValue;
@@ -486,6 +488,7 @@ emailPreferences
               <Checkbox.Item label="Promotions & Special Offers"
                 status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.promotionsAndSpecialOffers ? "checked" : "unchecked" }
                 style={styleCheckbox}
+                color={colors.standardButton}
                 onPress={() => {
                   let currentValue = userData.emailPreferences.promotionsAndSpecialOffers;
                   let newValue = ! currentValue;
