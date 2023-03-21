@@ -1,6 +1,11 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
+import { Checkbox } from 'react-native-paper';
+
+// Other imports
+import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
@@ -23,6 +28,9 @@ let Test = () => {
   let appState = useContext(AppStateContext);
   let stateChangeID = appState.stateChangeID;
   let [renderCount, triggerRender] = useState(0);
+
+
+  let [checkboxValue, setCheckboxValue] = useState(false);
 
 
   useEffect(() => {
@@ -53,7 +61,22 @@ let Test = () => {
     <View style={styles.panelContainer}>
 
       <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>BlankExampleComponent2</Text>
+        <Text style={styles.headingText}>Test Component</Text>
+      </View>
+
+      <View style={styles.checkboxWrapper}>
+        <Checkbox.Item
+          label={'System Announcements'}
+          status={checkboxValue ? 'checked' : 'unchecked'}
+          style={styleCheckbox}
+          onPress={ () => {
+            let newValue = ! checkboxValue;
+            var msg = `checkbox set to ${newValue}`;
+            log(msg);
+            setCheckboxValue(newValue);
+          }}
+          color={colors.standardButton}
+        />
       </View>
 
       <Image source={appState.getAssetIcon('EUR')} style={{
@@ -110,11 +133,24 @@ let styles = StyleSheet.create({
   bold: {
     fontWeight: 'bold',
   },
+  checkboxWrapper: {
+    marginVertical: scaledHeight(20),
+  },
 });
 
 
 let styleButton = StyleSheet.create({
-  marginTop: 10,
+  marginTop: scaledHeight(10),
+});
+
+
+let styleCheckbox = StyleSheet.create({
+  //width: '100%',
+  //alignItems: 'center',
+  borderWidth: 1, //testing
+  borderRadius: scaledWidth(10),
+  paddingVertical: scaledHeight(0),
+  //justifyContent: 'center',
 });
 
 
