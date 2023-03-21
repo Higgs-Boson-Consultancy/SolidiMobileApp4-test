@@ -148,7 +148,7 @@ let AccountUpdate = () => {
       let selector = `ValidationError: [${detailName}]: `;
       errorMessage = error;
       if (error.startsWith(selector)) {
-        errorMessage = error.replace(selector, '');
+        errorMessage = 'Error: ' + error.replace(selector, '');
       }
       setErrorMessage(errorMessage);
       setDisableConfirmButton(false);
@@ -175,6 +175,7 @@ let AccountUpdate = () => {
                   label={optionText}
                   status={optionValue ? 'checked' : 'unchecked'}
                   style={styleCheckbox}
+                  color={colors.standardButton}
                   onPress={ () => {
                     let option_name = option.option_name;
                     let newValue = ! choices[option_name];
@@ -298,7 +299,7 @@ let styles = StyleSheet.create({
   },
   errorWrapper: {
     //marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
+    marginVertical: scaledHeight(10),
   },
   errorMessageText: {
     fontSize: normaliseFont(14),
@@ -337,7 +338,7 @@ let styleCheckbox = StyleSheet.create({
   borderRadius: scaledWidth(10),
   paddingVertical: scaledHeight(0),
   //justifyContent: 'center',
-})
+});
 
 
 let styleContactButton = StyleSheet.create({
