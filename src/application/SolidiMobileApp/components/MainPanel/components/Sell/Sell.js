@@ -451,7 +451,7 @@ let Sell = () => {
 
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={true}
-        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        contentContainerStyle={{ flexGrow: 1, margin: 0 }}
         keyboardShouldPersistTaps='handled'
       >
 
