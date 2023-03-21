@@ -1023,7 +1023,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let foundKeys = _.keys(data);
       if (! _.isEqual(_.intersection(expectedKeys, foundKeys), expectedKeys)) {
         var msg = `${fName}: Missing expected key(s) in response data from API endpoint '/app_latest_version'. Expected: ${jd(expectedKeys)}; Found: ${jd(foundKeys)}`;
-        return appState.switchToErrorState({message: msg});
+        return this.state.switchToErrorState({message: msg});
       }
       let latestAppVersion = data.version;
       var msg = `Internal app version: ${appVersion}. Latest app version: ${latestAppVersion}`;
