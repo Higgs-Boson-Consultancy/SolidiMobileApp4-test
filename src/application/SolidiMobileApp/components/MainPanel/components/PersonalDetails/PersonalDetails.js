@@ -156,7 +156,7 @@ address_1 address_2 address_3 address_4 postcode country
     let result = await appState.privateMethod({ functionName, apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: The error should be an object with 'code' and 'message' properties.
-    if (data === 'DisplayedError') return;
+    if (result === 'DisplayedError') return;
     if (_.has(result, 'error')) {
       let error = result.error;
       log(`Error returned from API request (Update user: Change ${detail} from '${prevValue}' to '${value}'): ${JSON.stringify(error)}`);
@@ -198,7 +198,11 @@ address_1 address_2 address_3 address_4 postcode country
         <Text style={styles.headingText}>Personal Details</Text>
       </View>
 
-      <KeyboardAwareScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionHeadingText}>Basic Details</Text>
@@ -513,7 +517,7 @@ address_1 address_2 address_3 address_4 postcode country
           </View>
         </View>
 
-        <View style={[styles.detail, {zIndex:1}]}>
+        <View style={[styles.detail, {zIndex:1}, styles.lastItem]}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Country</Text>
           </View>
@@ -657,7 +661,10 @@ let styles = StyleSheet.create({
   errorDisplayText: {
     fontSize: normaliseFont(14),
     color: 'red',
-  }
+  },
+  lastItem: {
+    marginBottom: scaledHeight(40),
+  },
 });
 
 
