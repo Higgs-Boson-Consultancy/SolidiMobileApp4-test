@@ -167,9 +167,15 @@ address_1 address_2 address_3 address_4 postcode country
           error = JSON.stringify(error);
         }
       }
-      // If error is a string, display the error message above the specific setting.
-      setErrorDisplay({...errorDisplay, [detail]: error});
+      // Display the error message above the specific setting.
+      let selector = `ValidationError: [${detail}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorDisplay({...errorDisplay, [detail]: errorMessage});
     } else { // No errors.
+      log(`Successful API request (Update user: Change ${detail} from '${prevValue}' to '${value}')`);
       // Update the appState.
       appState.setUserInfo({detail, value});
       // Reset any existing error.
@@ -516,6 +522,8 @@ address_1 address_2 address_3 address_4 postcode country
             />
           </View>
         </View>
+
+        {renderError('country')}
 
         <View style={[styles.detail, {zIndex:1}, styles.lastItem]}>
           <View style={styles.detailName}>
