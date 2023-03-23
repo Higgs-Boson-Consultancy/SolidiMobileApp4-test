@@ -1,6 +1,12 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Image, Text, StyleSheet, View, ScrollView } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Checkbox } from 'react-native-paper';
+
+// Other imports
+import _ from 'lodash';
+import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
@@ -23,6 +29,9 @@ let Test = () => {
   let appState = useContext(AppStateContext);
   let stateChangeID = appState.stateChangeID;
   let [renderCount, triggerRender] = useState(0);
+
+
+  let [checkboxValue, setCheckboxValue] = useState(false);
 
 
   useEffect(() => {
@@ -53,23 +62,46 @@ let Test = () => {
     <View style={styles.panelContainer}>
 
       <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>BlankExampleComponent2</Text>
+        <Text style={styles.headingText}>Test Component</Text>
       </View>
 
-      <Image source={appState.getAssetIcon('EUR')} style={{
-          width: scaledWidth(27),
-          height: scaledHeight(27),
-          resizeMode: misc.getFlatListIconResizeMode(),
-          borderWidth: 1,
-        }}/>
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
-      <Text style={styles.basicText}>Status: </Text>
-      <StandardButton title='Log out' style={styleButton}
-        onPress={ async () => { await appState.logout(); } }
-      />
-      <StandardButton title='Change PIN' style={styleButton}
-        onPress={ () => { appState.choosePIN(); } }
-      />
+        <View style={styles.checkboxWrapper}>
+          <Checkbox.Item
+            label={'System Announcements'}
+            status={checkboxValue ? 'checked' : 'unchecked'}
+            style={styleCheckbox}
+            onPress={ () => {
+              let newValue = ! checkboxValue;
+              var msg = `checkbox set to ${newValue}`;
+              log(msg);
+              setCheckboxValue(newValue);
+            }}
+            color={colors.standardButton}
+          />
+        </View>
+
+        <Image source={appState.getAssetIcon('EUR')} style={{
+            width: scaledWidth(27),
+            height: scaledHeight(27),
+            resizeMode: misc.getFlatListIconResizeMode(),
+            borderWidth: 1,
+          }}/>
+
+        <Text style={styles.basicText}>Status: </Text>
+        <StandardButton title='Log out' style={styleButton}
+          onPress={ async () => { await appState.logout(); } }
+        />
+        <StandardButton title='Change PIN' style={styleButton}
+          onPress={ () => { appState.choosePIN(); } }
+        />
+
+      </KeyboardAwareScrollView>
 
     </View>
   )
@@ -110,11 +142,24 @@ let styles = StyleSheet.create({
   bold: {
     fontWeight: 'bold',
   },
+  checkboxWrapper: {
+    marginVertical: scaledHeight(20),
+  },
 });
 
 
 let styleButton = StyleSheet.create({
-  marginTop: 10,
+  marginTop: scaledHeight(10),
+});
+
+
+let styleCheckbox = StyleSheet.create({
+  //width: '100%',
+  //alignItems: 'center',
+  borderWidth: 1, //testing
+  borderRadius: scaledWidth(10),
+  paddingVertical: scaledHeight(0),
+  //justifyContent: 'center',
 });
 
 

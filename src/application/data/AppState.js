@@ -7,7 +7,7 @@
 */
 //var pkg = require('../../../package.json');
 import { version } from "../../../package.json"
-let pkgversion = version;
+let appVersion = version;
 
 import {
   SafeAreaView,
@@ -21,7 +21,7 @@ import { UpdateApp } from 'src/application/SolidiMobileApp/components/MainPanel/
 
 // React imports
 import React, { Component, useContext } from 'react';
-import {BackHandler} from 'react-native';
+import { Platform, BackHandler } from 'react-native';
 import * as Keychain from 'react-native-keychain';
 import {deleteUserPinCode} from '@haskkor/react-native-pincode';
 import { getIpAddressesForHostname } from 'react-native-dns-lookup';
@@ -29,6 +29,7 @@ import { getIpAddressesForHostname } from 'react-native-dns-lookup';
 // Other imports
 import _ from 'lodash';
 import Big from 'big.js';
+import semver from 'semver';
 
 // Internal imports
 import { mainPanelStates, footerButtonList, colors } from 'src/constants';
@@ -53,11 +54,12 @@ import appTier from 'src/application/appTier'; // dev / stag / prod.
 let initialMainPanelState = 'Buy';
 //initialMainPanelState = 'CloseSolidiAccount'; // Dev work
 let initialPageName = 'default';
+//initialPageName = 'balance'; // Dev work
 
 // Settings: Various
 let appName = 'SolidiMobileApp';
 if (appTier == 'stag') appName = 'SolidiMobileAppTest'; // necessary ?
-let appAPIVersion = '1';
+let storedAPIVersion = '1';
 let domains = {
   dev: 't3.solidi.co',
   stag: 't10.solidi.co',
@@ -70,10 +72,6 @@ let autoLoginCredentials = {
   email: 'johnqfish@foo.com',
   password: 'bigFish6',
 }
-
-// Load access information for dev tier.
-let basicAuthTiers = 'dev stag'.split(' ');
-let devBasicAuth = (basicAuthTiers.includes(appTier)) ? require('src/access/values/devBasicAuth').default : require('src/access/empty/devBasicAuth').default;
 
 // Keychain storage keys.
 // - We use multiple aspects of the app in the key so that there's no risk of a test version of the app interacting with the storage of the production version.
@@ -108,9 +106,11 @@ class AppStateProvider extends Component {
 
     // nonHistoryPanels are not stored in the stateHistoryList.
     // Pressing the Back button will not lead to them.
+    // Future: Instead of doing this, better to later remove them from the stateHistoryList after reaching an endpoint ? In some circumstances (e.g. errors) it's better to be able to move backwards.
     this.nonHistoryPanels = `
 Authenticate Login PIN
-`.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
+`;
+    this.nonHistoryPanels = misc.splitStringIntoArray({s: this.nonHistoryPanels});
 
 
     // Shortcut function for changing the mainPanelState.
@@ -135,14 +135,15 @@ Authenticate Login PIN
 
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
-      let msg = `Set state to: ${JSON.stringify(newState)}.`;
+      let fName = 'setMainPanelState';
+      var msg = `${fName}: Set state to: ${jd(newState)}.`;
       log(msg);
       //this.state.logEntireStateHistory();
       let {mainPanelState, pageName} = newState;
-      if (_.isNil(mainPanelState)) {
-        let errMsg = "Unknown mainPanelState: " + mainPanelState;
-        log(errMsg);
-        throw Error(errMsg);
+      if (_.isNil(mainPanelState) || ! mainPanelStates.includes(mainPanelState)) {
+        var msg = `${fName}: Unknown mainPanelState: ${mainPanelState}`;
+        log(msg);
+        throw Error(msg);
       }
       if (_.isNil(pageName)) pageName = 'default';
       newState = {mainPanelState, pageName};
@@ -150,15 +151,23 @@ Authenticate Login PIN
       this.abortAllRequests();
       let stateHistoryList = this.state.stateHistoryList;
       /* Check the current state.
-      - If the current state has just ended a user journey, we want to erase the state history, and start over.
+      - If the current state has just ended a user journey, we want to reset the state history.
       */
       let currentState = stateHistoryList[stateHistoryList.length - 1];
+      var msg = `${fName}: Current state: ${jd(currentState)}}`;
+      log(msg);
       let endJourneyList = `
 PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
-`.replace(/\n/g, ' ').trim().replace(/ {2,}/g, ' ').split(' ');
+RegisterConfirm2 AccountUpdate
+`;
+      endJourneyList = misc.splitStringIntoArray({s: endJourneyList});
+      var msg = `${fName}: endJourneyList: ${jd(endJourneyList)} - Includes current state ? ${endJourneyList.includes(currentState?.mainPanelState)}}`;
+      //log(msg);
       if (! _.isEmpty(currentState)) {
         // currentState can be empty if we're testing and start on the Login page, which is not saved into the stateHistoryList.
         if (endJourneyList.includes(currentState.mainPanelState)) {
+          var msg = `${fName}: Arrived at end of a user journey: ${currentState.mainPanelState}. Resetting state history.`;
+          log(msg);
           this.resetStateHistory();
         }
       }
@@ -174,10 +183,11 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let storeHistoryState = (! stashed && ! this.nonHistoryPanels.includes(mainPanelState));
       if (storeHistoryState) {
         let currentState = stateHistoryList[stateHistoryList.length - 1];
-        if (JSON.stringify(newState) === JSON.stringify(currentState)) {
+        if (jd(newState) === jd(currentState)) {
           // We don't want to store the same state twice, so do nothing.
         } else {
-          log("Store new state history entry: " + JSON.stringify(newState));
+          var msg = `${fName}: Store new state history entry: ${jd(newState)}`;
+          log(msg);
           stateHistoryList = stateHistoryList.concat(newState);
           this.setState({stateHistoryList});
         }
@@ -195,7 +205,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Finally, change to new state.
       if (makeFinalSwitch) {
         let stateChangeID = this.state.stateChangeID + 1;
-        log(`New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`);
+        var msg = `${fName}: New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`;
+        log(msg);
         this.setState({mainPanelState, pageName, stateChangeID});
       }
     }
@@ -205,7 +216,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let stateChangeID2 = this.state.stateChangeID;
       let location = mainPanelState ? mainPanelState + ': ' : '';
       if (stateChangeID !== stateChangeID2) {
-        log(`${location}stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`);
+        var msg = `${location}stateChangeID is no longer ${stateChangeID}. It is now ${stateChangeID2}.`;
+        log(msg);
         return true;
       }
       return false;
@@ -226,7 +238,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       misc.confirmExactKeys('stateX', stateX, expected, 'stashState');
       // Don't stash the RequestTimeout page. Instead, it should continually reload the existing stashed state.
       if (stateX.mainPanelState == 'RequestTimeout') return;
-      let msg = `Stashing state: ${JSON.stringify(stateX)}`;
+      var msg = `Stashing state: ${jd(stateX)}`;
       log(msg);
       this.state.stashedState = stateX;
     }
@@ -235,7 +247,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.loadStashedState = () => {
       // If there's no stashed state, don't do anything.
       if (_.isEmpty(this.state.stashedState)) return;
-      let msg = `Loading stashed state: ${JSON.stringify(this.state.stashedState)}`;
+      let msg = `Loading stashed state: ${jd(this.state.stashedState)}`;
       log(msg);
       let stashed = true;
       this.state.setMainPanelState(this.state.stashedState, stashed);
@@ -314,10 +326,125 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
-    this.generalSetup = async () => {
+    this.moveToNextState = async () => {
+      /* Sometimes, there are lots of conditions (ideally stored within the AppStateContext) that we look at in order to choose the next state to move to.
+      - It is not always a simple linear journey over several states. There can be multiple branches and/or loops.
+      */
+      let fName = 'moveToNextState';
+      try {
+        log(`${fName}: Start`);
+        let appState = this.state;
+        let {mainPanelState, pageName} = appState;
+        // Current state is always stored, even if it's not saved in the stateHistoryList.
+        let currentState = {mainPanelState, pageName};
+        let stateHistoryList = appState.stateHistoryList;
+        let currentSavedState = stateHistoryList[stateHistoryList.length - 1];
+        var msg = `${fName}: Current state: ${jd(currentState)} (current saved state: ${jd(currentSavedState)})`;
+        log(msg);
+        let nextStateName;
+        let nextPageName = 'default';
+
+        /*
+        - Some data needs to be loaded from the server.
+        -- Future: Maybe speed up by only doing this when necessary for specific current states.
+        */
+        try {
+          var extraInfoRequired = await appState.checkIfExtraInformationRequired();
+        } catch(err) {
+          logger.error(err);
+          return appState.switchToErrorState({message: String(err)});
+        }
+
+        // If the state has changed since we loaded data from the server, we exit so that we don't set any new state (which would probably cause an error).
+        let stateChangeID = appState.stateChangeID;
+        if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+
+        let pinValue = appTier === 'dev' ? appState.user.pin : '[deleted]';
+        var msg = `${fName}: Conditions:
+=====
+extraInfoRequired = ${extraInfoRequired}
+appState.panels.buy.activeOrder = ${appState.panels.buy.activeOrder}
+appState.user.pin = ${pinValue}
+_.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
+=====
+`;
+        log(msg);
+
+        // Decision tree
+        if (mainPanelState === 'Login') {
+          if (! appState.user.pin) {
+            nextStateName = 'PIN';
+            nextPageName = 'choose';
+          } else if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (mainPanelState === 'PIN') {
+          if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (mainPanelState === 'RegisterConfirm2') {
+          if (extraInfoRequired) {
+            nextStateName = 'AccountUpdate';
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (mainPanelState === 'AccountUpdate') {
+          if (appState.panels.buy.activeOrder) {
+            nextStateName = 'ChooseHowToPay';
+          } else if (! _.isEmpty(appState.stashedState)) {
+            return appState.loadStashedState();
+          } else {
+            nextStateName = 'Buy';
+          }
+        }
+
+        if (! nextStateName) {
+          var msg = `${fName}: No next state found. Current state: ${jd(currentState)} (current saved state: ${jd(currentSavedState)})`;
+          appState.switchToErrorState({message: msg});
+        }
+
+        let nextState = {mainPanelState: nextStateName, pageName: nextPageName};
+        var msg = `${fName}: nextState = ${jd(nextState)}`;
+        log(msg);
+
+        // Change to next state.
+        appState.setMainPanelState(nextState);
+
+      } catch(err) {
+        var msg = `${fName}: ${String(err)}`;
+        logger.error(msg);
+        //appState.switchToErrorState({message: msg});
+      }
+    }
+
+
+    this.generalSetup = async (optionalParams) => {
+      // 2023-03-16: We now check for "upgrade required" here.
       // Note: This method needs to be called in every page, so that the Android back button always works.
       // (Obviously the back button handler could be called separately, but that's less convenient overall.)
-      log(`Start: generalSetup()`);
+      let {caller} = { ...optionalParams };
+      let fName = `generalSetup`;
+      let msg = `${fName}: Start`;
+      if (caller) msg += ` (called from ${caller})`;
+      log(msg);
       this.state.logEntireStateHistory();
       // Create a new event listener for the Android Back Button.
       // This needs to occur on every page.
@@ -327,15 +454,15 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         let {userAgent, domain} = this.state;
         this.state.apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
       }
+      // We check for "upgrade required" on every screen load.
+      await this.state.checkIfAppUpgradeRequired();
       // Load public info that rarely changes.
-      this.state.appVersion = pkgversion;
-      // Arguably we should check the API version here and not continue if it doesn't match
       if (! this.state.apiVersionLoaded) {
         await this.state.loadLatestAPIVersion();
         this.state.apiVersionLoaded = true;
       }
+      // Arguably we should double-check the API version here and not continue if it doesn't match.
       await this.state.loadTerms();
-
       if (! this.state.assetsInfoLoaded) {
         await this.state.loadAssetsInfo();
         this.state.assetsInfoLoaded = true;
@@ -360,7 +487,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         }
       }
       // Login to a specific user if we're developing.
-      if (basicAuthTiers.includes(this.state.appTier) && autoLoginOnDevAndStag) {
+      if ('dev stag'.split(' ').includes(appTier) && autoLoginOnDevAndStag) {
         await this.state.login({
           email: autoLoginCredentials['email'],
           password: autoLoginCredentials['password']
@@ -377,7 +504,15 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       this.state.apiClient = apiClient;
       // Use the email and password to load the API Key and Secret from the server.
       let apiRoute = 'login_mobile' + `/${email}`;
-      let params = {password, tfa};
+      let optionalParams = {
+        origin: {
+          clientType: 'mobile',
+          os: Platform.OS,
+          appVersion,
+          appTier,
+        }
+      };
+      let params = {password, tfa, optionalParams};
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
       //lj(data);
@@ -412,14 +547,16 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       _.assign(apiClient, {apiKey, apiSecret});
       // Store the API Key and Secret in the secure keychain storage.
       await Keychain.setInternetCredentials(this.state.apiCredentialsStorageKey, apiKey, apiSecret);
-      let msg = `apiCredentials (apiKey=${apiKey}, apiSecret=${apiSecret}) stored in keychain with key = '${this.state.apiCredentialsStorageKey}')`;
+      let msg = `apiCredentials stored in keychain with key = '${this.state.apiCredentialsStorageKey}')`;
       log(msg);
       // Save the fact that the API Key and Secret have been stored.
       this.state.user.apiCredentialsFound = true;
       let msg2 = `Set this.state.user.apiCredentialsFound = true`;
       log(msg2);
       log(`apiKey: ${apiKey}`);
-      log(`apiSecret: ${apiSecret}`);
+      if (appTier === 'dev') {
+        log(`apiSecret: ${apiSecret}`);
+      }
       // Load user stuff.
       await this.state.loadInitialStuffAboutUser();
       return "SUCCESS";
@@ -521,7 +658,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       if (_.has(data, 'error')) {
         let error = data.error;
         if (error == 'cannot_parse_data') {
-          this.state.switchToErrorState({message:JSON.stringify(data)});
+          this.state.switchToErrorState({message: jd(data)});
           return 'DisplayedError';
         } else if (error == 'timeout') {
           // Future: If we already have a stashed state, this could cause a problem.
@@ -529,6 +666,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           this.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
+          // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
           //pass
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
@@ -548,8 +686,12 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           // For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}: publicMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
           if (! _.isString(error)) error = JSON.stringify(error);
+          // For some common errors, add extra information / suggestions.
+          if (error === 'API-Key is missing') {
+            error += '\nProbable cause = using "appState.publicMethod" instead of "appState.privateMethod".';
+          }
           msg += "\nError = " + String(error);
-          this.state.switchToErrorState({message:msg});
+          this.state.switchToErrorState({message: msg});
           return 'DisplayedError';
         }
         return;
@@ -561,7 +703,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       } catch(err) {
         let msg = `Error in ${functionName}.publicMethod (apiRoute=${apiRoute}):`;
         msg += ' ' + String(err);
-        this.state.switchToErrorState({message:msg});
+        this.state.switchToErrorState({message: msg});
         return 'DisplayedError';
       }
       return data;
@@ -583,7 +725,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       if (_.has(data, 'error')) {
         let error = data.error;
         if (error == 'cannot_parse_data') {
-          this.state.switchToErrorState({message:JSON.stringify(data)});
+          this.state.switchToErrorState({message: jd(data)});
           return 'DisplayedError';
         } else if (error == 'timeout') {
           // Future: If we already have a stashed state, this could cause a problem.
@@ -591,6 +733,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           this.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
+          // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
           //pass
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
@@ -617,7 +760,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}, params=${paramsStr2}):`;
           if (! _.isString(error)) error = JSON.stringify(error);
           msg += ' Error = ' + String(error);
-          this.state.switchToErrorState({message:msg});
+          this.state.switchToErrorState({message: msg});
           return 'DisplayedError';
         }
         return;
@@ -629,7 +772,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       } catch(err) {
         let msg = `Error in ${functionName}.privateMethod (apiRoute=${apiRoute}):`;
         msg += ' ' + String(err);
-        this.state.switchToErrorState({message:msg});
+        this.state.switchToErrorState({message: msg});
         return 'DisplayedError';
       }
       return data;
@@ -654,7 +797,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       msg += `\n- this.state.user.isAuthenticated = ${this.state.user.isAuthenticated}`;
       msg += `\n- this.state.user.email = ${this.state.user.email}`;
       msg += `\n- this.state.user.pin = ${this.state.user.pin}`;
-      log(msg);
+      if (appTier !== 'prod') {
+        log(msg);
+      }
       if (! this.state.user.apiCredentialsFound) {
         if (! this.state.user.isAuthenticated) {
           log("authenticateUser (1) -> Authenticate");
@@ -769,8 +914,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
       this.state.user.apiCredentialsFound = false;
-      // Wipe the state history and any stashed state.
-      this.state.stateHistoryList = [];
+      // Reset the state history and wipe any stashed state.
+      this.state.resetStateHistory();
       this.deleteStashedState();
       log("Logout complete.");
       /*
@@ -813,7 +958,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.resetLockAppTimer = async () => {
       log(`Begin: resetLockAppTimer()`);
       let currentTimerID = this.state.lockAppTimerID;
-      log(`- currentTimerID = ${currentTimerID}`);
+      //log(`- currentTimerID = ${currentTimerID}`);
       // If there's an active timer, stop it.
       if (! _.isNil(currentTimerID)) {
         clearTimeout(currentTimerID);
@@ -821,8 +966,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let waitTimeMinutes = 30;
       let waitTimeSeconds = waitTimeMinutes * 60;
       let lockAppTimer = () => {
-        log(`Begin: lockAppTimer()`);
-        let msg = `lockAppTimer (${waitTimeMinutes} minutes) has finished.`;
+        log(`Begin: lockAppTimer() - (${waitTimeMinutes} minutes)`);
+        let msg = `lockAppTimer has finished.`;
         // Don't lock app if user has logged out already.
         if (this.state.user.isAuthenticated === false) {
           log(`${msg} The app is in a logged-out state. Resetting timer and exiting here.`);
@@ -842,7 +987,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Start new timer.
       let timerID = setTimeout(lockAppTimer, waitTimeSeconds * 1000);
       this.state.lockAppTimerID = timerID;
-      log(`- newTimerID = ${timerID}`);
+      //log(`- newTimerID = ${timerID}`);
     }
 
 
@@ -927,6 +1072,45 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       return this.state.maintenanceMode;
     }
 
+    this.checkIfAppUpgradeRequired = async () => {
+      let fName = 'checkIfAppUpgradeRequired';
+      let data = await this.state.publicMethod({
+        functionName: fName,
+        apiRoute: 'app_latest_version',
+        httpMethod: 'GET',
+      });
+      if (data == 'DisplayedError') return;
+      let expectedKeys = 'version minimumVersionRequired'.split(' ');
+      let foundKeys = _.keys(data);
+      if (! _.isEqual(_.intersection(expectedKeys, foundKeys), expectedKeys)) {
+        var msg = `${fName}: Missing expected key(s) in response data from API endpoint '/app_latest_version'. Expected: ${jd(expectedKeys)}; Found: ${jd(foundKeys)}`;
+        return this.state.switchToErrorState({message: msg});
+      }
+      let latestAppVersion = data.version;
+      var msg = `Internal app version: ${appVersion}. Latest app version: ${latestAppVersion}`;
+      deb(msg);
+      let os = Platform.OS;
+      let minimumVersionRequiredIos = data.minimumVersionRequired.ios.version;
+      let minimumVersionRequiredAndroid = data.minimumVersionRequired.android.version;
+      var msg = `Minimum version required for iOS: ${minimumVersionRequiredIos}. Minimum version required for Android: ${minimumVersionRequiredAndroid}.`;
+      deb(msg);
+      let minimumVersionRequired = 'Error';
+      if (os == 'ios') {
+        minimumVersionRequired = minimumVersionRequiredIos;
+      } else if (os == 'android') {
+        minimumVersionRequired = minimumVersionRequiredAndroid;
+      }
+      var msg = `Platform OS: ${os}. Minimum version required = ${minimumVersionRequired}.`;
+      deb(msg);
+      let upgradeRequired = semver.gt(minimumVersionRequired, appVersion);
+      log(`Upgrade required: ${upgradeRequired}`);
+      if (upgradeRequired) {
+        //this.state.changeState('UpgradeRequired');
+      }
+    }
+
+
+
     this.loadLatestAPIVersion = async () => {
       let data = await this.state.publicMethod({
         functionName: 'loadAPIVersion',
@@ -934,7 +1118,6 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         httpMethod: 'GET',
       });
       if (data == 'DisplayedError') return;
-      // if (! .has(data, 'api_latest_version')) this.state.changeState('Error');
       let api_latest_version = _.has(data, 'api_latest_version') ? data.api_latest_version : null;
       this.state.apiData.api_latest_version = api_latest_version;
       log(`Latest API version: ${api_latest_version}`);
@@ -942,7 +1125,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
 
     this.checkLatestAPIVersion = () => {
-      let appAPIVersion = this.state.appAPIVersion;
+      let storedAPIVersion = this.state.storedAPIVersion;
       let api_latest_version = this.state.apiData.api_latest_version;
       if (! misc.isNumericString(api_latest_version)) return false;
       let check = api_latest_version !== appAPIVersion;
@@ -1170,10 +1353,37 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       return _.uniq(baseAssets);
     }
 
+
     this.getQuoteAssets = () => {
       let markets = this.getMarkets();
       let quoteAssets = markets.map(x => x.split('/')[1]);
       return _.uniq(quoteAssets);
+    }
+
+
+    this.loadPersonalDetailOptions = async () => {
+      let data = await this.state.publicMethod({
+        functionName: 'loadPersonalDetailOptions',
+        httpMethod: 'GET',
+        apiRoute: 'personal_detail_option',
+      });
+      if (data == 'DisplayedError') return;
+      // If the data differs from existing data, save it.
+      let msg = "Personal detail options loaded from server.";
+      if (jd(data) === jd(this.state.apiData.personal_detail_option )) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(data));
+        this.state.apiData.personal_detail_option = data;
+      }
+    }
+
+
+    this.getPersonalDetailOptions = (detailName) => {
+      // Should contain a list of options for each detailName. (e.g. "title").
+      let result = this.state.apiData.personal_detail_option;
+      if (! _.has(result, detailName)) return ['[loading]'];
+      return result[detailName];
     }
 
 
@@ -1334,35 +1544,6 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     /* Private API methods */
 
 
-
-
-    // At the top here, we store a few methods that provide public information that can cause political problems (e.g. over which options are / are not supported), so we keep them private (so that they're not publically enumerable).
-
-    this.loadPersonalDetailOptions = async () => {
-      let data = await this.state.privateMethod({
-        functionName: 'loadPersonalDetailOptions',
-        apiRoute: 'personal_detail_option',
-      });
-      if (data == 'DisplayedError') return;
-      // If the data differs from existing data, save it.
-      let msg = "Personal detail options loaded from server.";
-      if (jd(data) === jd(this.state.apiData.personal_detail_option )) {
-        log(msg + " No change.");
-      } else {
-        log(msg + " New data saved to appState. " + jd(data));
-        this.state.apiData.personal_detail_option = data;
-      }
-    }
-
-
-    this.getPersonalDetailOptions = (detailName) => {
-      // Should contain a list of options for each detailName. (e.g. "title").
-      let result = this.state.apiData.personal_detail_option;
-      if (! _.has(result, detailName)) return ['[loading]'];
-      return result[detailName];
-    }
-
-
     this.loadAssetsIcons = async () => {
       let data = await this.state.publicMethod({
         functionName: 'loadAssetsIcons',
@@ -1406,6 +1587,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
+      // Future: If the security check results are negative, stop.
+      await this.loadSecurityChecks();
       if (! this.state.assetsInfoLoaded) {
         // This is needed for loading the deposit details & the default account.
         await this.state.loadAssetsInfo();
@@ -2173,6 +2356,46 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    this.checkIfExtraInformationRequired = async () => {
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'user/extra_information/check',
+        params: {},
+        functionName: 'checkIfExtraInformationRequired',
+      });
+      if (data == 'DisplayedError') return;
+      //lj({data})
+      /* Example response:
+
+      */
+      let n = data.length;
+      if (n === 0) {
+        return false;
+      }
+      return true;
+    }
+
+
+    this.loadSecurityChecks = async () => {
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'security_check',
+        params: {},
+        functionName: 'loadSecurityChecks',
+      });
+      if (data == 'DisplayedError') return;
+      //lj({data})
+      /* Example response:
+"data": {
+  "pepResult": false
+}
+      */
+     return data;
+    }
+
+
+
+
     /* END Private API methods */
 
 
@@ -2227,6 +2450,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       maintenanceMode: false,
       setMaintenanceMode: this.setMaintenanceMode,
       checkMaintenanceMode: this.checkMaintenanceMode,
+      moveToNextState: this.moveToNextState,
       generalSetup: this.generalSetup,
       login: this.login,
       loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
@@ -2249,6 +2473,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       /* Misc network methods */
       loadTerms: this.loadTerms,
       /* Public API methods */
+      checkIfAppUpgradeRequired: this.checkIfAppUpgradeRequired,
       loadLatestAPIVersion: this.loadLatestAPIVersion,
       checkLatestAPIVersion: this.checkLatestAPIVersion,
       loadAssetsInfo: this.loadAssetsInfo,
@@ -2257,6 +2482,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       getAssets: this.getAssets,
       loadMarkets: this.loadMarkets,
       getMarkets: this.getMarkets,
+      loadPersonalDetailOptions: this.loadPersonalDetailOptions,
+      getPersonalDetailOptions: this.getPersonalDetailOptions,
       loadCountries: this.loadCountries,
       getCountries: this.getCountries,
       getBaseAssets: this.getBaseAssets,
@@ -2271,8 +2498,6 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       getFullDecimalValue: this.getFullDecimalValue,
       /* END Public API methods */
       /* Private API methods */
-      loadPersonalDetailOptions: this.loadPersonalDetailOptions,
-      getPersonalDetailOptions: this.getPersonalDetailOptions,
       loadAssetsIcons: this.loadAssetsIcons,
       getAssetIcon: this.getAssetIcon,
       loadInitialStuffAboutUser: this.loadInitialStuffAboutUser,
@@ -2308,6 +2533,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       getOpenBankingPaymentStatusFromSettlement: this.getOpenBankingPaymentStatusFromSettlement,
       getOpenBankingPaymentURLFromSettlement: this.getOpenBankingPaymentURLFromSettlement,
       closeSolidiAccount: this.closeSolidiAccount,
+      checkIfExtraInformationRequired: this.checkIfExtraInformationRequired,
+      loadSecurityChecks: this.loadSecurityChecks,
       /* END Private API methods */
       /* More functions */
       androidBackButtonAction: this.androidBackButtonAction,
@@ -2337,12 +2564,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       priceLoadCount: 0,
       domain,
       appName,
+      appVersion,
       appTier,
-      appAPIVersion,
+      storedAPIVersion,
       appUpdateRequired: false,
-      appVersion: "1.0.0",
-      basicAuthTiers,
-      devBasicAuth,
       apiCredentialsStorageKey,
       pinStorageKey,
       userAgent: "Solidi Mobile App 4",
@@ -2354,6 +2579,22 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       changeStateParameters: {
         orderID: null,
         settlementID: null,
+      },
+      // userData is used during Register journey.
+      userData: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        mobileNumber: '',
+        dateOfBirth: '',
+        gender: '',
+        citizenship: '',
+        emailPreferences: {
+          systemAnnouncements: true,
+          newsAndFeatureUpdates: true,
+          promotionsAndSpecialOffers: true,
+        },
       },
       user: {
         isAuthenticated: false,
@@ -2407,6 +2648,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         'Settings',
         'WaitingForPayment',
         'SolidiAccount',
+        'AccountUpdate',
       ],
       apiClient: null,
       lockAppTimerID: null,
@@ -2467,7 +2709,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       error: {
         code: 0,
         message: '',
-      }
+      },
+      supportURL: "https://www.solidi.co/contactus",
     }
 
     // Call initial setup functions.
@@ -2486,7 +2729,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 
   }
 
-  
+
   render() {
     return (
       <AppStateContext.Provider value={this.state}>
@@ -2500,7 +2743,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
         { this.state.appUpdateRequired                               ? <UpdateApp /> : null }
 
       </SafeAreaView>
-      
+
       </AppStateContext.Provider>
     );
   }

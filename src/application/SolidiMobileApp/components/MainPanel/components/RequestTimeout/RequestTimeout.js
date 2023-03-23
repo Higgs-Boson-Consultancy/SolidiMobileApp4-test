@@ -37,6 +37,9 @@ let RequestTimeout = () => {
     if (timeElapsedSeconds > timeToWaitSeconds) {
       // Stop the timer.
       clearInterval(appState.panels.requestTimeout.timerID);
+      if (appState.mainPanelState === 'RequestFailed') {
+        return;
+      }
       // Change to next state.
       tryAgain();
     }
@@ -64,7 +67,7 @@ let RequestTimeout = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'RequestTimeout'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `RequestTimeout.setup: Error = ${err}`;

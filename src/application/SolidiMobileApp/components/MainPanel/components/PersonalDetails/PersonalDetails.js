@@ -124,6 +124,7 @@ let PersonalDetails = () => {
     Every time the user selects a new value:
     - We send an update to the server.
     - If the update is successful, we update the appState with the new value.
+    - If unsuccessful, we update the error display on this particular page, rather than moving to an error page. That's why this function is here instead of in AppState.js.
     */
     // Only update if the value has definitely changed.
     if (value == '[loading]') return;
@@ -134,7 +135,7 @@ let PersonalDetails = () => {
       return;
     }
     // Proceed with update.
-    functionName = 'updateUserData';
+    let functionName = 'updateUserData';
     let info = appState.user.info;
     // Check if we recognise the detail.
     let userDataDetails = `
@@ -143,7 +144,7 @@ dateOfBirth gender citizenship
 email mobile
 address_1 address_2 address_3 address_4 postcode country
 `;
-    userDataDetails = misc.splitStringIntoArray(userDataDetails);
+    userDataDetails = misc.splitStringIntoArray({s: userDataDetails});
     if (! userDataDetails.includes(detail)) {
       console.error(`updateUserData: Unrecognised detail: ${detail}`);
       return;
@@ -151,10 +152,11 @@ address_1 address_2 address_3 address_4 postcode country
     // Send the update.
     log(`API request: Update user: Change ${detail} from '${prevValue}' to '${value}'.`);
     let apiRoute = 'user/update';
-    let params = { user: {[detail]: value} }
+    let params = { userData: {[detail]: value} }
     let result = await appState.privateMethod({ functionName, apiRoute, params });
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     // Future: The error should be an object with 'code' and 'message' properties.
+    if (result === 'DisplayedError') return;
     if (_.has(result, 'error')) {
       let error = result.error;
       log(`Error returned from API request (Update user: Change ${detail} from '${prevValue}' to '${value}'): ${JSON.stringify(error)}`);
@@ -165,9 +167,15 @@ address_1 address_2 address_3 address_4 postcode country
           error = JSON.stringify(error);
         }
       }
-      // If error is a string, display the error message above the specific setting.
-      setErrorDisplay({...errorDisplay, [detail]: error});
+      // Display the error message above the specific setting.
+      let selector = `ValidationError: [${detail}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorDisplay({...errorDisplay, [detail]: errorMessage});
     } else { // No errors.
+      log(`Successful API request (Update user: Change ${detail} from '${prevValue}' to '${value}')`);
       // Update the appState.
       appState.setUserInfo({detail, value});
       // Reset any existing error.
@@ -196,7 +204,11 @@ address_1 address_2 address_3 address_4 postcode country
         <Text style={styles.headingText}>Personal Details</Text>
       </View>
 
-      <KeyboardAwareScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionHeadingText}>Basic Details</Text>
@@ -325,7 +337,7 @@ address_1 address_2 address_3 address_4 postcode country
                 updateUserData({detail:'dateOfBirth', value});
               }}
               autoCompleteType='off'
-              keyboardType='numbers-and-punctuation'
+              keyboardType='default' // Can't use a smaller keyboard, because they need to be able to enter forward slashes.
             />
           </View>
         </View>
@@ -391,7 +403,7 @@ address_1 address_2 address_3 address_4 postcode country
               }}
               autoCompleteType='off'
               autoCapitalize='none'
-              keyboardType='numbers-and-punctuation' // May have plus sign and hyphen in it, not just digits.
+              keyboardType='phone-pad' // May have plus sign and hyphen in it, not just digits.
             />
           </View>
         </View>
@@ -511,7 +523,9 @@ address_1 address_2 address_3 address_4 postcode country
           </View>
         </View>
 
-        <View style={[styles.detail, {zIndex:1}]}>
+        {renderError('country')}
+
+        <View style={[styles.detail, {zIndex:1}, styles.lastItem]}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Country</Text>
           </View>
@@ -655,7 +669,10 @@ let styles = StyleSheet.create({
   errorDisplayText: {
     fontSize: normaliseFont(14),
     color: 'red',
-  }
+  },
+  lastItem: {
+    marginBottom: scaledHeight(40),
+  },
 });
 
 

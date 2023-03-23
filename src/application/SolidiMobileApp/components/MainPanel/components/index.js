@@ -39,6 +39,9 @@ import SolidiAccount from './SolidiAccount/SolidiAccount';
 import Terms from './Terms/Terms';
 import CloseSolidiAccount from './CloseSolidiAccount/CloseSolidiAccount';
 import UpdateApp from './UpdateApp/UpdateApp';
+import RegisterConfirm from './RegisterConfirm/RegisterConfirm';
+import RegisterConfirm2 from './RegisterConfirm2/RegisterConfirm2';
+import AccountUpdate from './AccountUpdate/AccountUpdate';
 
 
 export {
@@ -83,4 +86,7 @@ export {
   Terms,
   CloseSolidiAccount,
   UpdateApp,
+  RegisterConfirm,
+  RegisterConfirm2,
+  AccountUpdate,
 };

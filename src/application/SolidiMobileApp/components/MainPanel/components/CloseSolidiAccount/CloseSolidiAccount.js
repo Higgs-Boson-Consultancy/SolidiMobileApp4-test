@@ -94,7 +94,7 @@ let CloseSolidiAccount = () => {
       <Text style={[styles.basicText, styles.bold]}>{'  \u2022' + " "}You cannot create a new account for 30 days.</Text>
       <Text style={[styles.basicText, styles.bold]}>{'  \u2022' + " "}Regulations may prevent us deleting your data.</Text>
       <Text style={[styles.basicText, styles.bold]}></Text>
-      <Text style={[styles.basicText, styles.bold]}>To find out more about account deletion, please read our blog post - </Text>
+      <Text style={[styles.basicText, styles.bold]}>To find out more about account deletion, please read our blog post: </Text>
       <Text style={[styles.basicText, styles.bold]}></Text>
       <View style={styles.buttonWrapper}>
         <FixedWidthButton title="Read the blog post"

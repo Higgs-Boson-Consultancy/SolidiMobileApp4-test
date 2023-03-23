@@ -131,7 +131,7 @@ let Sell = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Sell'});
       await appState.loadBalances();
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -171,7 +171,7 @@ let Sell = () => {
       return;
     }
     let invalidVolumeQA = false;
-    if (['[loading]', '[not loaded]'].includes(volumeQA)) invalidVolumeQA = true;
+    if (! misc.isNumericString(volumeQA)) invalidVolumeQA = true;
     if (volumeQA === '') invalidVolumeQA = true;
     if (volumeQA.match(/^0+$/)) invalidVolumeQA = true; // only zeros.
     if (volumeQA.match(/^0+\.0+$/)) invalidVolumeQA = true; // only zeros.
@@ -235,7 +235,7 @@ let Sell = () => {
   // - Exception: If volumeQA isn't a valid numeric string.
   useEffect(() => {
     if (! firstRender) {
-      if (['[loading]', '[not loaded]'].includes(volumeQA)) {
+      if (! misc.isNumericString(volumeQA)) {
         fetchBestPriceForBaseAssetVolume();
       } else {
         fetchBestPriceForQuoteAssetVolume();
@@ -256,7 +256,7 @@ let Sell = () => {
       return;
     }
     let invalidVolumeBA = false;
-    if (['[loading]', '[not loaded]'].includes(volumeBA)) invalidVolumeBA = true;
+    if (! misc.isNumericString(volumeBA)) invalidVolumeBA = true;
     if (volumeBA === '') invalidVolumeBA = true;
     if (volumeBA.match(/^0+$/)) invalidVolumeBA = true; // only zeros.
     if (volumeBA.match(/^0+\.0+$/)) invalidVolumeBA = true; // only zeros.
@@ -412,6 +412,11 @@ let Sell = () => {
       return setErrorMessage(`Please wait a moment. Price data hasn't been loaded yet.`);
     }
 
+    if (! misc.isNumericString(volumeBA) || ! misc.isNumericString(volumeQA)) {
+      var msg = `Error: Price data has not been loaded.`;
+      return setErrorMessage(msg);
+    }
+
     // Save the order details in the global state.
     // We enforce the full decimal value just in case.
     let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'Sell'});
@@ -449,7 +454,11 @@ let Sell = () => {
         </View>
       }
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 0 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
       <Text style={styles.descriptionText}>I want to get:</Text>
 

@@ -55,7 +55,7 @@ let PIN = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: "PIN"});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     } catch(err) {
       let msg = `PIN.setup: Error = ${err}`;
@@ -139,14 +139,7 @@ let PIN = () => {
     // If we've entered / chosen a PIN, and the app was locked, set appLocked to false.
     appState.appLocked = false;
     // Change state.
-    if (appState.panels.buy.activeOrder) {
-      return appState.changeState('ChooseHowToPay');
-    } else if (! _.isEmpty(appState.stashedState)) {
-      return appState.loadStashedState();
-    } else {
-      // Change to BUY state by default.
-      return appState.changeState('Buy');
-    }
+    await appState.moveToNextState();
   }
 
   return (

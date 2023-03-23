@@ -71,7 +71,7 @@ let SolidiAccount = () => {
         <FixedWidthButton styles={styleButton} title='Terms & Conditions'
           onPress={ () => { appState.changeState('Terms'); } }
         />
-      </View>     
+      </View>
 
       <View style={styles.buttonWrapper}>
         <FixedWidthButton styles={styleButton} title='Delete Account'
@@ -139,7 +139,7 @@ let styles = StyleSheet.create({
     alignItems: 'center',
 
   },
-    
+
     parent: {
         width: '100%',
         height: 500,
@@ -150,7 +150,7 @@ let styles = StyleSheet.create({
   view: {
     width: '70%',
     marginLeft: '15%',
-  }, 
+  },
 });
 
 let styleButton = StyleSheet.create({

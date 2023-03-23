@@ -83,7 +83,7 @@ let Receive = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Receive'});
       await appState.loadDepositDetailsForAsset(assetCA);
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsCA(generateAssetItems());

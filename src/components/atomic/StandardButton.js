@@ -19,6 +19,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 let StandardButton = ({styles, ...props}) => {
+  //log('Inside StandardButton constructor');
   let styleText = defaultStyle.text;
   let styleView = defaultStyle.view;
   if (! _.isNil(styles)) {

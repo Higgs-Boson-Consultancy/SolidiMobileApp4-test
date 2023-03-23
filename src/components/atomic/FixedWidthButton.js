@@ -19,6 +19,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 let FixedWidthButton = ({styles, ...props}) => {
+  //log('Inside FixedWidthButton constructor');
   let styleText = defaultStyle.text;
   let styleView = defaultStyle.view;
   if (! _.isNil(styles)) {
@@ -30,20 +31,12 @@ let FixedWidthButton = ({styles, ...props}) => {
     }
   }
   let finalStyles = {view: styleView, text: styleText};
-  let y = (
-      <Button styles={finalStyles} {...props} />
-  );
-  let z = (
-                <TouchableOpacity activeOpacity={0.95} style={finalStyles.view} {...props}  >
-                    <Text style={finalStyles.text}>{props['title']}</Text>
-                </TouchableOpacity>
-  );
   let x = (
-    <View style={styleButtonWrapper}>
+    <View style={[]}>
       <Button styles={finalStyles} {...props} />
     </View>
   );
-  return z;
+  return x;
 };
 
 
@@ -53,27 +46,13 @@ let defaultStyle = StyleSheet.create({
     paddingHorizontal: scaledWidth(20),
     borderRadius: scaledWidth(8),
     backgroundColor: colors.standardButton,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  view2: {
-    height: scaledHeight(45),
-    alignSelf: 'flex-start',
-    paddingHorizontal: scaledWidth(20),
-    borderRadius: scaledWidth(8),
-    backgroundColor: colors.standardButton,
+    minWidth: '100%',
   },
   text: {
     color: colors.standardButtonText,
     fontWeight: 'bold',
     fontSize: normaliseFont(16),
   },
-});
-
-
-// This wrapper view prevents the button expanding to fill the width of the parent view.
-let styleButtonWrapper = StyleSheet.create({
-  alignSelf: 'flex-start',
 });
 
 

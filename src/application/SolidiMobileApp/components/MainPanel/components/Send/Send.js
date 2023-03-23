@@ -191,7 +191,7 @@ let Send = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Send'});
       await appState.loadBalances();
       await appState.loadFees();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -601,7 +601,11 @@ let Send = () => {
         </View>
       }
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
       <View style={styles.description1}>
         <View>

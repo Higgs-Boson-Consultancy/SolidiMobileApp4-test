@@ -1,0 +1,374 @@
+// React imports
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+// Other imports
+import _ from 'lodash';
+import Big from 'big.js';
+
+// Internal imports
+import AppStateContext from 'src/application/data';
+import { mainPanelStates, colors } from 'src/constants';
+import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { Button, StandardButton, FixedWidthButton, ImageButton, Spinner } from 'src/components/atomic';
+import misc from 'src/util/misc';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('RegisterConfirm');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+// Shortcuts
+let jd = JSON.stringify;
+
+
+/* Notes
+
+
+*/
+
+
+
+
+let RegisterConfirm = () => {
+
+  let appState = useContext(AppStateContext);
+  let [renderCount, triggerRender] = useState(0);
+  let firstRender = misc.useFirstRender();
+  let stateChangeID = appState.stateChangeID;
+
+  let pageName = appState.pageName;
+  let permittedPageNames = 'confirm_email confirm_mobile_phone'.split(' ');
+  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'RegisterConfirm');
+
+  let pageTitle = misc.snakeCaseToCapitalisedWords(pageName);
+
+  // Basic
+  let [errorMessage, setErrorMessage] = useState('');
+
+  // Input state
+  let [emailCode, setEmailCode] = useState();
+  let [disableConfirmEmailButton, setDisableConfirmEmailButton] = useState(false);
+  let [mobileCode, setMobileCode] = useState();
+  let [disableConfirmMobileButton, setDisableConfirmMobileButton] = useState(false);
+
+
+
+
+  // Initial setup.
+  useEffect( () => {
+    setup();
+  }, []); // Pass empty array so that this only runs once on mount.
+
+
+  let setup = async () => {
+    try {
+      await appState.generalSetup();
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      triggerRender(renderCount+1);
+    } catch(err) {
+      let msg = `RegisterConfirm.setup: Error = ${err}`;
+      console.log(msg);
+    }
+  }
+
+
+  let confirmEmail = async () => {
+    /*
+    - If unsuccessful, we update the error display on this particular page, rather than moving to an error page.
+    */
+    setDisableConfirmEmailButton(true);
+    setErrorMessage();
+    if (_.isEmpty(emailCode)) {
+      errorMessage = 'Email code is empty.';
+      setErrorMessage(errorMessage);
+      setDisableConfirmEmailButton(false);
+      return;
+    }
+    let result;
+    let email = appState.userData.email;
+    let apiRoute = 'confirm_email';
+    apiRoute += `/${email}/${emailCode}`;
+    try {
+      log(`API request: Confirm user email: emailCode = ${emailCode}.`);
+      // Send the request.
+      let functionName = 'confirmEmail';
+      let params = {};
+      result = await appState.publicMethod({functionName, apiRoute, params});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return; // needed ?
+    } catch(err) {
+      logger.error(err);
+    }
+    lj({result})
+    if (result === 'DisplayedError') return;
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      log(`Error returned from API request ${apiRoute}: ${jd(error)}`);
+      if (_.isObject(error)) {
+        if (_.isEmpty(error)) {
+          error = 'Received an empty error object ({}) from the server.'
+        } else {
+          error = jd(error);
+        }
+      }
+      let detailName = 'emailCode';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorMessage(errorMessage);
+      setDisableConfirmEmailButton(false);
+    } else {
+      appState.changeState('RegisterConfirm', 'confirm_mobile_phone');
+    }
+  }
+
+
+  let confirmMobile = async () => {
+    setDisableConfirmMobileButton(true);
+    setErrorMessage();
+    if (_.isEmpty(mobileCode)) {
+      errorMessage = 'Mobile code is empty.';
+      setErrorMessage(errorMessage);
+      setDisableConfirmMobileButton(false);
+      return;
+    }
+    let result;
+    let {email, password} = appState.userData;
+    let apiRoute = 'confirm_mobile';
+    apiRoute += `/${email}/${mobileCode}`;
+    try {
+      log(`API request: Confirm user mobile: mobileCode = ${mobileCode}.`);
+      // Send the request.
+      let functionName = 'confirmMobile';
+      let params = {};
+      result = await appState.publicMethod({functionName, apiRoute, params});
+      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    } catch(err) {
+      logger.error(err);
+    }
+    lj({result})
+    if (result === 'DisplayedError') return;
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      log(`Error returned from API request ${apiRoute}: ${jd(error)}`);
+      if (_.isObject(error)) {
+        if (_.isEmpty(error)) {
+          error = 'Received an empty error object ({}) from the server.'
+        } else {
+          error = jd(error);
+        }
+      }
+      let detailName = 'mobileCode';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorMessage(errorMessage);
+      setDisableConfirmMobileButton(false);
+    } else {
+      // Log in.
+      let output = await appState.login({email, password});
+      lj({output})
+      // Change state.
+      appState.changeState('RegisterConfirm2', 'address');
+    }
+  }
+
+
+  return (
+    <View style={styles.panelContainer}>
+    <View style={styles.panelSubContainer}>
+
+      <View style={[styles.heading, styles.heading1]}>
+        <Text style={styles.headingText}>{pageTitle}</Text>
+      </View>
+
+      {!! errorMessage &&
+        <View style={styles.errorWrapper}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+      }
+
+
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
+
+
+        { pageName === 'confirm_email' &&
+        
+          <View>
+
+            <Text style={styles.basicText}>We have sent an email to your address.</Text>
+            <Text style={styles.basicText}>{'\n'}Please enter the 4-digit code contained in this email to verify your email address.</Text>
+
+            <View style={styles.emailCodeBox}>
+              <TextInput defaultValue={''}
+                style={[styles.detailValueFullWidth, styles.editableTextInput]}
+                onChangeText = {value => {
+                  log(`Email code: ${value}`);
+                  setEmailCode(value);
+                }}
+                autoCompleteType='off'
+                autoCapitalize='none'
+                keyboardType='number-pad'
+                placeholder='1234'
+                placeholderTextColor='grey'
+              />
+            </View>
+
+            <View style={styles.confirmEmailButtonWrapper}>
+              <FixedWidthButton title="Confirm email"
+                onPress={ confirmEmail }
+                disabled={disableConfirmEmailButton}
+              />
+            </View>
+
+          </View>
+
+        }
+
+
+        { pageName === 'confirm_mobile_phone' &&
+        
+          <View>
+
+            <Text style={styles.basicText}>We have sent a text to your mobile phone.</Text>
+            <Text style={styles.basicText}>{'\n'}Please enter the 4-digit code contained in this text to verify your mobile phone number.</Text>
+
+            <View style={styles.emailCodeBox}>
+              <TextInput defaultValue={''}
+                style={[styles.detailValueFullWidth, styles.editableTextInput]}
+                onChangeText = {value => {
+                  log(`Mobile code: ${value}`);
+                  setMobileCode(value);
+                }}
+                autoCompleteType='off'
+                autoCapitalize='none'
+                keyboardType='number-pad'
+                placeholder='1234'
+                placeholderTextColor='grey'
+              />
+            </View>
+
+            <View style={styles.confirmEmailButtonWrapper}>
+              <FixedWidthButton title="Confirm mobile phone"
+                onPress={ confirmMobile }
+                disabled={disableConfirmMobileButton}
+              />
+            </View>
+
+          </View>
+
+        }
+
+
+        <Text style={styles.basicText}>If there is a problem, please contact the support team.</Text>
+
+        <View style={styles.buttonWrapper}>
+          <FixedWidthButton title="Contact Support"
+            onPress={ () => { Linking.openURL(appState.supportURL) } }
+            styles={styleContactButton}
+          />
+        </View>
+
+      </KeyboardAwareScrollView>
+
+    </View>
+    </View>
+  )
+
+}
+
+
+let styles = StyleSheet.create({
+  panelContainer: {
+    paddingHorizontal: scaledWidth(15),
+    paddingVertical: scaledHeight(5),
+    width: '100%',
+    height: '100%',
+  },
+  panelSubContainer: {
+    paddingTop: scaledHeight(10),
+    paddingHorizontal: scaledWidth(30),
+    height: '100%',
+    //borderWidth: 1, // testing
+  },
+  heading: {
+    alignItems: 'center',
+  },
+  heading1: {
+    marginTop: scaledHeight(10),
+    marginBottom: scaledHeight(40),
+  },
+  headingText: {
+    fontSize: normaliseFont(20),
+    fontWeight: 'bold',
+  },
+  basicText: {
+    fontSize: normaliseFont(14),
+  },
+  mediumText: {
+    fontSize: normaliseFont(16),
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+  errorWrapper: {
+    //marginTop: scaledHeight(20),
+    marginBottom: scaledHeight(20),
+  },
+  errorMessageText: {
+    fontSize: normaliseFont(14),
+    color: 'red',
+  },
+  infoSection: {
+    paddingTop: scaledHeight(20),
+    alignItems: 'flex-start',
+  },
+  infoItem: {
+    marginBottom: scaledHeight(5),
+  },
+  detailValue: {
+    paddingLeft: scaledWidth(10),
+    paddingVertical: scaledHeight(10),
+    width: '50%',
+  },
+  detailValueFullWidth: {
+    paddingLeft: scaledWidth(10),
+    paddingVertical: scaledHeight(10),
+    minWidth: '99%',
+  },
+  editableTextInput: {
+    borderWidth: 1,
+    borderRadius: 16,
+    borderColor: colors.greyedOutIcon,
+    fontSize: normaliseFont(14),
+  },
+  emailCodeBox: {
+    marginTop: scaledHeight(30),
+  },
+  confirmEmailButtonWrapper: {
+    marginVertical: scaledHeight(20),
+  },
+  buttonWrapper: {
+    marginVertical: scaledHeight(20),
+  },
+});
+
+
+let styleContactButton = StyleSheet.create({
+  view: {
+    width: '70%',
+  },
+});
+
+
+export default RegisterConfirm;

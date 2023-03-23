@@ -97,7 +97,7 @@ let Buy = () => {
   let [itemsQA, setItemsQA] = useState(generateQuoteAssetItems());
 
   // More state
-  let [newAPIVersion, setNewAPIVersion] = useState(false);
+  let [newAPIVersionDetected, setNewAPIVersionDetected] = useState(false);
   let [errorMessage, setErrorMessage] = useState('');
   let [loadingBestPrice, setLoadingBestPrice] = useState(true);
 
@@ -110,12 +110,12 @@ let Buy = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'Buy'});
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
-      setNewAPIVersion(appState.checkLatestAPIVersion());
+      setNewAPIVersionDetected(appState.checkLatestAPIVersion());
       setLoadingBestPrice(false);
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;
@@ -137,7 +137,7 @@ let Buy = () => {
       return;
     }
     let invalidVolumeQA = false;
-    if (['[loading]', '[not loaded]'].includes(volumeQA)) invalidVolumeQA = true;
+    if (! misc.isNumericString(volumeQA)) invalidVolumeQA = true;
     if (volumeQA === '') invalidVolumeQA = true;
     if (volumeQA.match(/^0+$/)) invalidVolumeQA = true; // only zeros.
     if (volumeQA.match(/^0+\.0+$/)) invalidVolumeQA = true; // only zeros.
@@ -202,7 +202,7 @@ let Buy = () => {
   // - Exception: If volumeQA isn't a valid numeric string.
   useEffect(() => {
     if (! firstRender) {
-      if (['[loading]', '[not loaded]'].includes(volumeQA)) {
+      if (! misc.isNumericString(volumeQA)) {
         fetchBestPriceForBaseAssetVolume();
       } else {
         fetchBestPriceForQuoteAssetVolume();
@@ -223,7 +223,7 @@ let Buy = () => {
       return;
     }
     let invalidVolumeBA = false;
-    if (['[loading]', '[not loaded]'].includes(volumeBA)) invalidVolumeBA = true;
+    if (! misc.isNumericString(volumeBA)) invalidVolumeBA = true;
     if (volumeBA === '') invalidVolumeBA = true;
     if (volumeBA.match(/^0+$/)) invalidVolumeBA = true; // only zeros.
     if (volumeBA.match(/^0+\.0+$/)) invalidVolumeBA = true; // only zeros.
@@ -361,6 +361,11 @@ let Buy = () => {
       return setErrorMessage(`Please wait a moment. Price data hasn't been loaded yet.`);
     }
 
+    if (! misc.isNumericString(volumeBA) || ! misc.isNumericString(volumeQA)) {
+      var msg = `Error: Price data has not been loaded.`;
+      return setErrorMessage(msg);
+    }
+
     // Save the order details in the global state.
     // We enforce the full decimal value just in case.
     let volumeQA2 = appState.getFullDecimalValue({asset: assetQA, value: volumeQA, functionName: 'Buy'});
@@ -418,7 +423,11 @@ let Buy = () => {
         </View>
       }
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 0 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
       <Text style={styles.descriptionText}>I want to spend:</Text>
 
@@ -497,7 +506,7 @@ let Buy = () => {
         <StandardButton title="Buy now" onPress={ startBuyRequest } />
       </View>
 
-      {newAPIVersion && upgradeRequired()}
+      {newAPIVersionDetected && upgradeRequired()}
 
       </KeyboardAwareScrollView>
 
