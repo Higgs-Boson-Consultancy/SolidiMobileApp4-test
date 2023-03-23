@@ -123,13 +123,6 @@ let styles = StyleSheet.create({
     marginTop: scaledWidth(20),
     marginHorizontal: scaledWidth(20),
   },
-<<<<<<< HEAD
-  parent: {
-    width: '100%',
-    height: 500,
-    margin: 10,
-=======
-
   welcomeMessageText: {
     fontSize: normaliseFont(16),
   },
@@ -137,14 +130,11 @@ let styles = StyleSheet.create({
     marginVertical: scaledHeight(10),
     width: '100%',
     alignItems: 'center',
-
   },
-
-    parent: {
-        width: '100%',
-        height: 500,
-        margin: 10,
->>>>>>> deleteaccount
+  parent: {
+    width: '100%',
+    height: 500,
+    margin: 10,
     alignItems: 'center',
   },
   view: {
