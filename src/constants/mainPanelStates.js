@@ -27,6 +27,7 @@ export const mainPanelStates = [
   'Security',
   'RequestFailed',
   'Error',
+  'Maintenance',
   'SendSuccessful',
   'Authenticate',
   'Register',
@@ -36,6 +37,7 @@ export const mainPanelStates = [
   'ResetPassword',
   'MakePaymentOpenBanking',
   'SolidiAccount',
+  'Terms',
   'CloseSolidiAccount',
 ];
 

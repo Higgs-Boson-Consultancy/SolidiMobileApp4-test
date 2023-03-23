@@ -27,7 +27,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
 
-let SolidiAccount = () => {
+let Terms = () => {
 
   let appState = useContext(AppStateContext);
   let [renderCount, triggerRender] = useState(0);
@@ -37,7 +37,7 @@ let SolidiAccount = () => {
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'SolidiAccount');
-
+  let terms = appState.apiData.terms['general'];
 
   // Initial setup.
   useEffect( () => {
@@ -58,27 +58,29 @@ let SolidiAccount = () => {
     }
   }
 
+  const fontFamily = Platform.OS === 'ios' ? 'Courier' : 'monospace';
+  var multilinetext = String.raw`
+  Multi line
+  text string
+  that respects
+  newlines.
+`;
 
   return (
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
       <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Solidi Account</Text>
+        <Text style={styles.headingText}>Terms & Conditions</Text>
       </View>
 
-      <View style={styles.buttonWrapper}>
-        <FixedWidthButton styles={styleButton} title='Terms & Conditions'
-          onPress={ () => { appState.changeState('Terms'); } }
-        />
-      </View>     
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
 
-      <View style={styles.buttonWrapper}>
-        <FixedWidthButton styles={styleButton} title='Delete Account'
-          onPress={ () => { appState.changeState('CloseSolidiAccount') } }
-        />
+      <View >
+        <Text style={{fontFamily}}>{terms}</Text>
       </View>
 
+      </ScrollView>
 
     </View>
     </View>
@@ -123,12 +125,6 @@ let styles = StyleSheet.create({
     marginTop: scaledWidth(20),
     marginHorizontal: scaledWidth(20),
   },
-<<<<<<< HEAD
-  parent: {
-    width: '100%',
-    height: 500,
-    margin: 10,
-=======
 
   welcomeMessageText: {
     fontSize: normaliseFont(16),
@@ -144,12 +140,13 @@ let styles = StyleSheet.create({
         width: '100%',
         height: 500,
         margin: 10,
->>>>>>> deleteaccount
     alignItems: 'center',
-  },
-  view: {
+
+    },
+   view: {
     width: '70%',
-    marginLeft: '15%',
+    maginLeft: '15%',
+
   }, 
 });
 
@@ -161,4 +158,4 @@ let styleButton = StyleSheet.create({
 });
 
 
-export default SolidiAccount;
+export default Terms;

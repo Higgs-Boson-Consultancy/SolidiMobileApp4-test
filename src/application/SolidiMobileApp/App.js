@@ -9,10 +9,7 @@ import {
 import SplashScreen from 'react-native-splash-screen';
 
 // Internal imports
-import { Header, MainPanel, Footer } from './components';
 import { AppStateProvider } from 'src/application/data';
-import { mainPanelStates, colors } from 'src/constants';
-import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 // Logger
 import logger from 'src/util/logger';
@@ -46,35 +43,12 @@ let App = () => {
     setTimeout(SplashScreen.hide, 500);
   }, []);
 
-
   return (
-    <AppStateProvider>
-      <SafeAreaView style={styles.container}>
-        <Header style={styles.header} />
-        <MainPanel style={styles.mainPanel} />
-        <Footer style={styles.footer} />
-      </SafeAreaView>
-    </AppStateProvider>
+    <AppStateProvider />
   )
 };
 
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.defaultBackground,
-  },
-  header: {
-    height: '10%',
-  },
-  mainPanel: {
-    height: '78%',
-  },
-  footer: {
-    height: '12%',
-    paddingTop: scaledHeight(5),
-  },
-})
 
 
 export default App;

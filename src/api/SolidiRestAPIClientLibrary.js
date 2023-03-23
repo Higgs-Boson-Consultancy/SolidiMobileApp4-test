@@ -204,6 +204,12 @@ export default class SolidiRestAPIClientLibrary {
       }
       log(msg);
       let response = await fetch(uri, options);
+      if(!response.ok) {
+        // Return 503 errors to calling code - we might want to return all non 200-299 codes.
+        if(response.status==503) {
+          return {error: response.status}
+        }
+      }
       let responseData = await response.text();
       let responseDataStr = responseData;
       if (responseDataStr.length > 300) {

@@ -26,6 +26,7 @@ import BankAccounts from './BankAccounts/BankAccounts';
 import Security from './Security/Security';
 import RequestFailed from './RequestFailed/RequestFailed';
 import Error from './Error/Error';
+import Maintenance from './Maintenance/Maintenance';
 import SendSuccessful from './SendSuccessful/SendSuccessful';
 import Authenticate from './Authenticate/Authenticate';
 import Register from './Register/Register';
@@ -35,7 +36,9 @@ import IdentityVerification from './IdentityVerification/IdentityVerification';
 import ResetPassword from './ResetPassword/ResetPassword';
 import MakePaymentOpenBanking from './MakePaymentOpenBanking/MakePaymentOpenBanking';
 import SolidiAccount from './SolidiAccount/SolidiAccount';
+import Terms from './Terms/Terms';
 import CloseSolidiAccount from './CloseSolidiAccount/CloseSolidiAccount';
+import UpdateApp from './UpdateApp/UpdateApp';
 
 
 export {
@@ -67,6 +70,7 @@ export {
   Security,
   RequestFailed,
   Error,
+  Maintenance,
   SendSuccessful,
   Authenticate,
   Register,
@@ -76,5 +80,7 @@ export {
   ResetPassword,
   MakePaymentOpenBanking,
   SolidiAccount,
+  Terms,
   CloseSolidiAccount,
+  UpdateApp,
 };

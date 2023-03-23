@@ -126,7 +126,7 @@ let styleBackButton = StyleSheet.create({
 });
 
 
-styleSettingsButton = StyleSheet.create({
+let styleSettingsButton = StyleSheet.create({
   image: {
     iconSize: scaledWidth(27),
     iconColor: colors.greyedOutIcon,
@@ -141,7 +141,7 @@ styleSettingsButton = StyleSheet.create({
 });
 
 
-styleSettingsButtonSelected = StyleSheet.create({
+let styleSettingsButtonSelected = StyleSheet.create({
   image: {
     iconSize: scaledWidth(27),
     iconColor: colors.selectedIcon,

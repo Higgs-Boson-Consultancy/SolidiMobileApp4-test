@@ -9,6 +9,16 @@
 import { version } from "../../../package.json"
 let pkgversion = version;
 
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Header, MainPanel, Footer } from 'src/application/SolidiMobileApp/components';
+import { Maintenance } from 'src/application/SolidiMobileApp/components/MainPanel/components';
+import { UpdateApp } from 'src/application/SolidiMobileApp/components/MainPanel/components';
+
 // React imports
 import React, { Component, useContext } from 'react';
 import {BackHandler} from 'react-native';
@@ -21,7 +31,7 @@ import _ from 'lodash';
 import Big from 'big.js';
 
 // Internal imports
-import { mainPanelStates, footerButtonList } from 'src/constants';
+import { mainPanelStates, footerButtonList, colors } from 'src/constants';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
@@ -319,10 +329,13 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       }
       // Load public info that rarely changes.
       this.state.appVersion = pkgversion;
+      // Arguably we should check the API version here and not continue if it doesn't match
       if (! this.state.apiVersionLoaded) {
         await this.state.loadLatestAPIVersion();
         this.state.apiVersionLoaded = true;
       }
+      await this.state.loadTerms();
+
       if (! this.state.assetsInfoLoaded) {
         await this.state.loadAssetsInfo();
         this.state.assetsInfoLoaded = true;
@@ -528,6 +541,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           // This is a user-input validation error.
           // The page that sent the request should display it to the user.
           return data;
+        } else if (error == 503) {
+          this.state.setMaintenanceMode(true);
+          return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
           let msg = `Error in ${functionName}: publicMethod (apiRoute=${apiRoute}, params=${misc.jd(params)}):`;
@@ -591,6 +607,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
           // This is an internal error.
           // Display it on the original page.
           return data;
+        } else if (error == 503) {
+          this.state.setMaintenanceMode(true);
+          return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
           let paramsStr = misc.jd(params);
@@ -866,12 +885,47 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     }
 
 
+    /* Non API network methods */
+    this.loadTerms = async() => {
+      let {domain} = this.state;
+      let url = "https://"+domain+"/legal/terms.txt";
+      log(`Loading terms from ${url}`);
+      const response = await fetch(url);
+      let terms = "";
+      if(response.ok) {
+        terms = await response.text();
+      }
+      this.state.apiData.terms['general'] = terms;
+
+    }
+
 
 
     /* Public API methods */
+    this.setMaintenanceMode = (inMaintenanceMode) => {
+      log(`Setting maintenance mode to ${inMaintenanceMode}`);
+      this.setState({maintenanceMode: inMaintenanceMode});
+    }
 
-
-
+    this.checkMaintenanceMode = async (callback=null) => {
+      // Check if we can connect to Solidi.
+      let data = await this.state.publicMethod({
+        functionName: 'loadAPIVersion',
+        apiRoute: 'api_latest_version',
+        httpMethod: 'GET',
+      });
+      if (data.error==503) {
+        if(!this.state.maintenanceMode) {
+            this.state.setMaintenanceMode(true);
+        }
+      } else {
+        this.state.setMaintenanceMode(false);
+      }
+      if(callback) {
+        callback(this.state.maintenanceMode);
+      }
+      return this.state.maintenanceMode;
+    }
 
     this.loadLatestAPIVersion = async () => {
       let data = await this.state.publicMethod({
@@ -892,7 +946,10 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       let api_latest_version = this.state.apiData.api_latest_version;
       if (! misc.isNumericString(api_latest_version)) return false;
       let check = api_latest_version !== appAPIVersion;
-      let msg = `apiVersion in app: ${appAPIVersion}. Latest apiVersion from API data: ${api_latest_version}.`;
+      if(check) {
+        this.setState({appUpdateRequired: true});
+      }
+      let msg = `apiVersion in app: ${appAPIVersion}. Latest apiVersion from API data: ${api_latest_version}. Update=${check}`;
       log(msg);
       return check;
     }
@@ -2167,6 +2224,9 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
+      maintenanceMode: false,
+      setMaintenanceMode: this.setMaintenanceMode,
+      checkMaintenanceMode: this.checkMaintenanceMode,
       generalSetup: this.generalSetup,
       login: this.login,
       loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
@@ -2186,6 +2246,8 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       resetLockAppTimer: this.resetLockAppTimer,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
+      /* Misc network methods */
+      loadTerms: this.loadTerms,
       /* Public API methods */
       loadLatestAPIVersion: this.loadLatestAPIVersion,
       checkLatestAPIVersion: this.checkLatestAPIVersion,
@@ -2259,6 +2321,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       // Note: Need to be careful about which are arrays and which are objects with keyed values.
       apiData: {
         api_latest_version: null,
+        terms: {},
         asset_icon: {},
         balance: {},
         country: [],
@@ -2276,6 +2339,7 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
       appName,
       appTier,
       appAPIVersion,
+      appUpdateRequired: false,
       appVersion: "1.0.0",
       basicAuthTiers,
       devBasicAuth,
@@ -2419,20 +2483,46 @@ PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
     this.resetLockAppTimer();
 
 
+
   }
 
-
+  
   render() {
     return (
       <AppStateContext.Provider value={this.state}>
-        {this.props.children}
+
+     <SafeAreaView style={styles.container}>
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Header style={styles.header} />   : null }
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <MainPanel style={styles.mainPanel} /> : null }
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Footer style={styles.footer} /> : null }
+
+        { this.state.maintenanceMode                                 ? <Maintenance /> : null }
+        { this.state.appUpdateRequired                               ? <UpdateApp /> : null }
+
+      </SafeAreaView>
+      
       </AppStateContext.Provider>
     );
   }
-
 }
 
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.defaultBackground,
+  },
+  header: {
+    height: '10%',
+  },
+  mainPanel: {
+    height: '78%',
+  },
+  footer: {
+    height: '12%',
+    paddingTop: scaledHeight(5),
+    visibility: 'hidden',
+  },
+})
 
 
 export { AppStateContext, AppStateProvider };

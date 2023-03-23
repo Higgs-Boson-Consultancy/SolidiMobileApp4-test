@@ -8,6 +8,9 @@ let {
 // Base values are based on the iPhone 13 (iOS 15) simulator.
 let baseScreenWidth = 390;
 let baseScreenHeight = 844;
+// Setting this caused the iPad deployment to run at iPad resolution which is not ideal due to layout issues.
+//let baseScreenWidth = Dimensions.get('window').width;
+//let baseScreenHeight = Dimensions.get('window').height;
 let horizontalScale = screenWidth / baseScreenWidth;
 let verticalScale = screenHeight / baseScreenHeight;
 let scaledWidth = (x) => { return x * horizontalScale };
