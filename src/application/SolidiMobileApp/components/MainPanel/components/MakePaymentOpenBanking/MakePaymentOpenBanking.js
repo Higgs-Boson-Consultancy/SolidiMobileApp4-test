@@ -1,7 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Text, StyleSheet, View, ScrollView } from 'react-native';
-import * as Progress from 'react-native-progress';
 import { WebView } from 'react-native-webview';
 
 // Other imports
