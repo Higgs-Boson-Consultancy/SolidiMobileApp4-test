@@ -1,6 +1,3 @@
-
-import mainPanelStates from './mainPanelStates';
-
 // These buttons select the different panels to show in the main section.
 let footerButtonList = [
   'Buy',

@@ -13,7 +13,7 @@ import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { Button, StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
-import { mainPanelStates } from 'src/constants';
+import { colors } from 'src/constants';
 
 // Logger
 import logger from 'src/util/logger';

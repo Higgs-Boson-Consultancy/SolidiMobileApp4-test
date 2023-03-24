@@ -11,7 +11,7 @@ import Big from 'big.js';
 // Internal imports
 import { screenWidth, screenHeight } from 'src/util/dimensions';
 import AppStateContext from 'src/application/data';
-import { mainPanelStates } from 'src/constants';
+import { colors } from 'src/constants';
 import { Button } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
