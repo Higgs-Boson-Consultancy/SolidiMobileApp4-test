@@ -203,7 +203,7 @@ let RegisterConfirm = () => {
 
 
         { pageName === 'confirm_email' &&
-        
+
           <View>
 
             <Text style={styles.basicText}>We have sent an email to your address.</Text>
@@ -237,7 +237,7 @@ let RegisterConfirm = () => {
 
 
         { pageName === 'confirm_mobile_phone' &&
-        
+
           <View>
 
             <Text style={styles.basicText}>We have sent a text to your mobile phone.</Text>

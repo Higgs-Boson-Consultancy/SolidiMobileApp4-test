@@ -72,7 +72,7 @@ let Maintenance = () => {
      "title":"How we keep your funds safe",
      "url":"https://blog.solidi.co/2022/10/13/how-we-keep-your-funds-safe/"},
 
-     
+
   ];
 
   return (
@@ -86,7 +86,7 @@ let Maintenance = () => {
       <Text style={[styles.bold, styles.basicText]}>{'\n'}Sometimes, upgrades require a little downtime!</Text>
       <Text style={[             styles.basicText]}>{'\n'}Rest assured out engineers are working hard to get new features to you.</Text>
       <Text style={[             styles.basicText]}>{'\n'}Site upgrades should take less than an hour.</Text>
- 
+
       <View style={styles.infoSection}>
           <Text style={styles.basicText}>While you are waiting, why not check out some of our amazing blog posts to learn more about the exciting wolrd of crypto investing.{'\n'}</Text>
 
@@ -107,7 +107,7 @@ let Maintenance = () => {
       <Text></Text>
        <View style={styles.buttonWrapper}>
         <FixedWidthButton styles={styleButton} title='Retry'
-          onPress={ async () => { 
+          onPress={ async () => {
             log(`MM=${appState.maintenanceMode}`);
             let res = await appState.checkMaintenanceMode();
             if(res) {
@@ -115,7 +115,7 @@ let Maintenance = () => {
             }
           } }
         />
-      </View>   
+      </View>
 
        <Image source={ImageLookup[logoImageName]} resizeMode='contain' style={craneImage.image} />
 

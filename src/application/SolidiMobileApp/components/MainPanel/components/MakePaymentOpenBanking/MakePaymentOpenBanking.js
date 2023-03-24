@@ -36,7 +36,7 @@ let MakePaymentOpenBanking = () => {
     //appState.changeStateParameters.settlementID = 8249;
     appState.changeStateParameters.settlementID = 8229;
   }
-  
+
 
   // Load order details.
   let settlementID = appState.changeStateParameters.settlementID;
@@ -108,7 +108,7 @@ let MakePaymentOpenBanking = () => {
 
 
 
-  
+
   // Initial setup.
   useEffect( () => {
     setup();
@@ -173,7 +173,7 @@ let MakePaymentOpenBanking = () => {
               log(`Have received event from embedded webview, containing data = '${data}'`);
             }}
           />
-        
+
         }
 
       </View>

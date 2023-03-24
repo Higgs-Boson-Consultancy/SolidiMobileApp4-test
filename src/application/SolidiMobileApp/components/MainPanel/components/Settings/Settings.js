@@ -80,7 +80,7 @@ let Settings = () => {
         <Text style={styles.welcomeMessageText}>{generateWelcomeMessage()}</Text>
       </View>
 
- 
+
       <View style={styles.buttonWrapper}>
         <FixedWidthButton styles={styleButton} title='Personal Details'
           onPress={ () => { appState.changeState('PersonalDetails'); } }

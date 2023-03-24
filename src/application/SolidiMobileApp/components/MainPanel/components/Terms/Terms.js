@@ -135,7 +135,7 @@ let styles = StyleSheet.create({
     alignItems: 'center',
 
   },
-    
+
     parent: {
         width: '100%',
         height: 500,
@@ -147,7 +147,7 @@ let styles = StyleSheet.create({
     width: '70%',
     maginLeft: '15%',
 
-  }, 
+  },
 });
 
 let styleButton = StyleSheet.create({

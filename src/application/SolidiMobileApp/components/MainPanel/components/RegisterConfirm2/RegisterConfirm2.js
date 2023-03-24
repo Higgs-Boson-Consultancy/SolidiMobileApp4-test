@@ -236,7 +236,7 @@ let RegisterConfirm2 = () => {
 
 
       { pageName === 'address' &&
-        
+
         <View>
 
           <Text style={styles.basicText}>Please confirm your address.{'\n'}</Text>

@@ -105,7 +105,7 @@ let CloseSolidiAccount = () => {
       <Text style={[styles.basicText, styles.bold]}></Text>
       <Text style={[styles.basicText, styles.bold]}>If you still wish to delete your account, please click on the button below.</Text>
       <Text style={[styles.basicText, styles.bold]}></Text>
-      
+
       </View>
 
 

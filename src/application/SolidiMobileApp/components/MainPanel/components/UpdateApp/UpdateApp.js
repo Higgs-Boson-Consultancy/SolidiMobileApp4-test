@@ -84,7 +84,7 @@ let UpdateApp = () => {
         <Text></Text>
         <Text style={styles.basicText}>Click below to visit your App Store and update.</Text>
         <Text></Text>
- 
+
         <View style={styles.buttonWrapper}>
           <FixedWidthButton styles={styleButton} title='Update App'
               onPress={ () => {
@@ -96,7 +96,7 @@ let UpdateApp = () => {
                 }, (err) => console.log(err));
               } }
           />
-        </View>   
+        </View>
 
       </View>
 
@@ -161,7 +161,7 @@ let styles = StyleSheet.create({
   expandToParent: {
     height: '100%',
     width: '100%',
-  },  
+  },
 });
 
 
