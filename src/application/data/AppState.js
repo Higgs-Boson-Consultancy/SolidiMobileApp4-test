@@ -1030,7 +1030,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
+
+
     /* Non API network methods */
+
+
     this.loadTerms = async() => {
       let {domain} = this.state;
       let url = "https://"+domain+"/legal/terms.txt";
@@ -1046,7 +1050,10 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
 
+
     /* Public API methods */
+
+
     this.setMaintenanceMode = (inMaintenanceMode) => {
       log(`Setting maintenance mode to ${inMaintenanceMode}`);
       this.setState({maintenanceMode: inMaintenanceMode});
@@ -1071,6 +1078,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       }
       return this.state.maintenanceMode;
     }
+
 
     this.checkIfAppUpgradeRequired = async () => {
       let fName = 'checkIfAppUpgradeRequired';
@@ -1108,7 +1116,6 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         //this.state.changeState('UpgradeRequired');
       }
     }
-
 
 
     this.loadLatestAPIVersion = async () => {

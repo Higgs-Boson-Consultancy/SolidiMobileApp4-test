@@ -51,10 +51,10 @@ let styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   disclaimerText: {
-      fontWeight: 'normal',
-      fontSize: normaliseFont(12),
-      position: 'absolute',
-      bottom: 10,
+    fontWeight: 'normal',
+    fontSize: normaliseFont(12),
+    position: 'absolute',
+    bottom: 10,
   },
   expandToParent: {
     height: '100%',

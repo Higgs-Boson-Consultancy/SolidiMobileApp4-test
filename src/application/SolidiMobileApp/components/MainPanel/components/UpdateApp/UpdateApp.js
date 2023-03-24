@@ -67,7 +67,7 @@ let UpdateApp = () => {
     }
   }
 
-  let logoImageName = 'updaterequired';
+  let logoImageName = 'update_required';
 
   let r1 = (
     <View style={styles.panelContainer}>
@@ -138,7 +138,6 @@ let styles = StyleSheet.create({
     alignItems: 'center',
     top: '25%',
     width:'100%',
-
   },
   headingText: {
     fontSize: normaliseFont(28),
@@ -168,19 +167,18 @@ let styles = StyleSheet.create({
 let styleButton = StyleSheet.create({
   view: {
     width: '70%',
-
   },
 });
 
-const {width, height} = Image.resolveAssetSource(ImageLookup['updaterequired']);
-let nheight = baseScreenWidth * (height/width);
 
+const {width, height} = Image.resolveAssetSource(ImageLookup['update_required']);
+let nheight = baseScreenWidth * (height/width);
 let updateImage = StyleSheet.create({
   image: {
-    width: baseScreenWidth*0.3,
-    height: nheight*0.3,
-  }
-
+    width: baseScreenWidth * 0.3,
+    height: nheight * 0.3,
+  },
 });
+
 
 export default UpdateApp;
