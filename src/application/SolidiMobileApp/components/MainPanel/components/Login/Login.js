@@ -170,6 +170,7 @@ let Login = () => {
             style={styles.wideTextInput}
             onChangeText={setPassword}
             value={password}
+            autoCapitalize={'none'}
           />
         </View>
       }
