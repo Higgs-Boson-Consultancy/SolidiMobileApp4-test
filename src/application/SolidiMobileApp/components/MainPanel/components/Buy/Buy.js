@@ -1,6 +1,8 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
+import { Dimensions, Platform, PixelRatio } from 'react-native';
+
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -12,13 +14,24 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, Spinner } from 'src/components/atomic';
+import { Button, StandardButton, FixedWidthButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 // Logger
 import logger from 'src/util/logger';
 let logger2 = logger.extend('Buy');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+
+import {
+  LineChart,
+  BarChart,
+  PieChart,
+  ProgressChart,
+  ContributionGraph,
+  StackedBarChart
+} from 'react-native-chart-kit'
+
 
 
 /* Notes
@@ -56,6 +69,7 @@ let Buy = () => {
   let selectedVolumeBA = '[loading]'; // On first render, we send the selectedVolumeQA to the API to get the best price.
   let selectedAssetQA = 'GBP';
   let selectedVolumeQA = '10';
+  let selectedPeriod = '1D';
 
   // Function that derives dropdown properties from an asset list.
   let deriveAssetItems = (assets) => {
@@ -90,6 +104,8 @@ let Buy = () => {
   let [openBA, setOpenBA] = useState(false);
   let [assetBA, setAssetBA] = useState(selectedAssetBA);
   let [itemsBA, setItemsBA] = useState(generateBaseAssetItems());
+  let [period, setPeriod] = useState(selectedPeriod);
+  //let [loadingPrices, setLoadingPrices] = useState(true);
 
   // Dropdown state: Quote asset
   let [openQA, setOpenQA] = useState(false);
@@ -109,19 +125,31 @@ let Buy = () => {
 
 
   let setup = async () => {
+    console.log("Setting up");
     try {
+      console.log(`Loading prices from`);
       await appState.generalSetup({caller: 'Buy'});
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
       setNewAPIVersionDetected(appState.checkLatestAPIVersion());
+      console.log(`Loading prices from`);
       setLoadingBestPrice(false);
+      //let market = "BTC";
+      //let market = assetBA;
+      let market = assetBA + '/' + assetQA;
+
+console.log("Setup - Loading data");
+      let period = "2H";
+console.log("Setup - Done Loading data");
+      await appState.loadHistoricPrices({market, period});
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;
       console.log(msg);
     }
   }
+
 
 
   let fetchBestPriceForQuoteAssetVolume = async () => {
@@ -209,7 +237,7 @@ let Buy = () => {
       }
     }
   }, [assetBA, assetQA]);
-
+ 
 
   let fetchBestPriceForBaseAssetVolume = async () => {
     // We know the baseAssetVolume. We want to find the best price in terms of quoteAssetVolume.
@@ -406,7 +434,93 @@ let Buy = () => {
       </View>
     )
   }
+  if(appState.apiData.historic_prices['current']==undefined) {
+    appState.apiData.historic_prices['current'] = [];
+  }
 
+  function  getlinedata({assetBA, assetQA, peiod}) {
+    let market = assetBA+ '/' + assetQA;
+ //   console.log(JSON.stringify(appState.apiData.historic_prices));
+    console.log('getlinedataZZZ '+market+' '+assetBA+' '+assetQA+' '+period);
+    console.log('getlinedataXXX '+market+' '+period);
+//    lj(appState.apiData.historic_prices);
+    let data = [];
+    if(appState.apiData.historic_prices[market]!=null &&
+       appState.apiData.historic_prices[market][period]!=null)
+    {
+//      data = appState.apiData.historic_prices[market][period];
+      appState.apiData.historic_prices['current'] = appState.apiData.historic_prices[market][period];
+    }
+    else {
+      console.log("Loading xx");
+      //appState.loadHistoricPrices({market:market, period:period});
+      appState.apiData.historic_prices['current'] = [1,1];
+      console.log("Loading xx 2");
+    }
+    linedata = {
+//      labels: ['', '00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00',''],
+      labels: ['', '00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00',''],
+      datasets: [
+        {
+//          data: [20, 45, 28, 80, 99, 43],
+          data: appState.apiData.historic_prices['current'],
+          strokeWidth: 2, // optional
+        },
+      ],
+    };
+    return linedata;
+  }
+
+  function periodStyle(buttonPeriod) {
+    console.log('Period = '+buttonPeriod+' '+period);
+    if(period==buttonPeriod) {
+      return styleButtonSelected;
+    } else {
+      return styleButton;
+
+    }
+  }
+
+  function getPriceDP({assetBA, assetQA, period}) {
+    log(`getPriceDP ${assetBA} ${assetQA} ${period}`);
+    //appState.apiData.historic_prices["BTC/GBP"]["1D"]
+    let market = assetBA+'/'+assetQA;
+    log("X = "+market);
+    log("X = "+JSON.stringify(appState.apiData.historic_prices[market]));
+    // If we've got no prices currently then fallback to a guestimate based on the market.
+    if(appState.apiData.historic_prices[market]==undefined ||
+      appState.apiData.historic_prices[market][period]==undefined) {
+      let marketDP = {
+        "BTC/GBP": 0,
+        "LTC/GBP": 2,
+        "XRP/GBP": 4,
+        "ETH/GBP": 0,
+        "LINK/GBP": 2,
+      }
+      if(market in marketDP) {
+        return marketDP[market];
+      } else {
+        return 2;
+      }
+    }
+    let assetPrice = appState.apiData.historic_prices[market][period][0]
+    if(assetPrice>100) {
+      return 0;
+    }
+    if(assetPrice>1) {
+      return 2;
+    }
+    if(assetPrice>0.1) {
+      return 4;
+    }
+    if(assetPrice>0.01) {
+      return 5;
+    }
+    if(assetPrice>0.001) {
+      return 6;
+    }
+    return 8;
+  }
 
   return (
 
@@ -414,8 +528,143 @@ let Buy = () => {
     <View style={styles.panelSubContainer}>
 
       <View style={styles.heading}>
-        <Text style={styles.headingText}>Buy</Text>
+        <Text style={styles.headingText}>Buy Bitcoin</Text>
       </View>
+
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+
+{ appState.loadingPrices &&
+    <View style={styles.loading}>
+      <ActivityIndicator size='large' />
+    </View>
+}
+  <LineChart
+    data={getlinedata({assetBA, assetQA, period})}
+//    width={Dimensions.get('window').width} // from react-native
+    width={363} // from react-native
+//    width={350} // from react-native
+    height={220}
+    yAxisLabel={'£'}
+//    yLabelsOffset={-50}
+    xLabelsOffset={+10}
+    horizontalOffset={30}
+    verticalLabelRotation={-45}
+    withHorizontalLabels={true}
+    withVerticalLabels={false}
+    chartConfig={{
+//      backgroundColor: '#e26a00',
+      backgroundColor: '#ff0000',
+//      backgroundGradientFrom: '#fb8c00',
+//      backgroundGradientTo: '#ffa726',
+      fillShadowGradientFrom: '#000000',
+      fillShadowGradientFromOpacity: '0.3',
+      fillShadowGradientTo:   '#FFFFFF',
+      fillShadowGradientToOffset: '200',
+      fillShadowGradientToOpacity: '0',
+      backgroundGradientFrom: '#ffffff',
+      backgroundGradientTo:   '#ffffff',
+//      backgroundGradientFrom: '#000000',
+//      backgroundGradientTo:   '#000000',
+      decimalPlaces:getPriceDP({assetBA, assetQA, period}), // optional, defaults to 2dp
+//      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+      color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+
+      yLabelsOffset: "50",
+//      propsForLabels:{
+//        fontFamily:"Courier"
+//      },
+        propsForHorizontalLabels: {
+//            fontSize: 20,
+            dx: 60 
+        },      
+      propsForBackgroundLines: {
+        strokeWidth: "0",
+      },
+      propsForDots: {
+        r: "0",
+        strokeWidth: "1",
+//        stroke: "#ffa726",
+        stroke: "#000000"
+      },
+      style: {
+        marginVertical: 80,
+        borderRadius: 16,
+      }
+    }}
+    bezier
+    style={{
+      marginVertical: 8,
+      marginHorizontal: 0,
+      paddingHorizontal: 0,
+      borderHorizontal: 200,
+      borderRadius: 30,
+     paddingRight: 0,
+
+    }}
+  /> 
+
+  <View style={styles.buttonWrapper2}>
+       <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('2H')} title='2H'
+          onPress={ async () => {
+            setPeriod("2H");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>   
+      <View style={styleButton.wrapper}>
+
+        <FixedWidthButton styles={periodStyle('8H')} title='8H'
+          onPress={ async () => {
+            setPeriod("8H");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('1D')} title='1D'
+          onPress={ async () => { 
+            setPeriod("1D");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('1W')} title='1W'
+          onPress={ async () => { 
+            setPeriod("1W");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('1M')} title='1M'
+          onPress={ async () => { 
+            setPeriod("1M");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('6M')} title='6M'
+          onPress={ async () => { 
+            setPeriod("6M");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      <View style={styleButton.wrapper}>
+        <FixedWidthButton styles={periodStyle('1Y')} title='1Y'
+          onPress={ async () => { 
+            setPeriod("1Y");
+            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:period});
+          } }
+        />
+      </View>  
+      </View>   
+         <View style={styles.errorWrapper}>
+          <Text style={styles.errorMessageText}>{assetBA} - {period}</Text>
+        </View>
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
@@ -508,6 +757,9 @@ let Buy = () => {
 
       {newAPIVersionDetected && upgradeRequired()}
 
+
+
+
       </KeyboardAwareScrollView>
 
     </View>
@@ -533,7 +785,7 @@ let styles = StyleSheet.create({
   },
   heading: {
     alignItems: 'center',
-    marginBottom: scaledHeight(40),
+    marginBottom: scaledHeight(0),
   },
   headingText: {
     fontSize: normaliseFont(20),
@@ -619,6 +871,13 @@ let styles = StyleSheet.create({
   buttonWrapper: {
     marginTop: scaledHeight(20),
   },
+  buttonWrapper2: {
+    martinTop: 0,
+    flexDirection: "row",
+ //   height: scaledHeight(70),
+//    paddingHorizontal: scaledWidth(10),
+  //  paddingVertical: scaledWidth(0),
+  },
   errorWrapper: {
     //marginTop: scaledHeight(20),
     marginBottom: scaledHeight(20),
@@ -641,8 +900,59 @@ let styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
   },
+  loading: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 100,
+    bottom: 0,
+    alignItems: 'center',
+//    justifyContent: 'center'
+    zIndex: +100, // works on ios
+    elevation: +100, // works on android
+   },  
 });
 
+let styleButton = StyleSheet.create({
+  view: {
+    height: scaledHeight(15),
+//    width: '15%',
+//    height: '50%',
+    paddingHorizontal: scaledWidth(15),
+  },
+  text: {
+    color: colors.standardButtonText,
+    fontWeight: 'bold',
+    fontSize: normaliseFont(10),
+  },
+  wrapper: {
+    marginTop: scaledHeight(0),
+    marginBottom: scaledHeight(10),
+    marginLeft: scaledWidth(5),
+ //   height: '10pt',
+  }
+});
+
+let styleButtonSelected = StyleSheet.create({
+  view: {
+    backgroundColor: 'red',
+    height: scaledHeight(15),
+//    width: '15%',
+//    height: '50%',
+    paddingHorizontal: scaledWidth(15),
+  },
+  text: {
+    color: colors.standardButtonText,
+    fontWeight: 'bold',
+    fontSize: normaliseFont(10),
+  },
+  wrapper: {
+    marginTop: scaledHeight(0),
+    marginBottom: scaledHeight(10),
+    marginLeft: scaledWidth(5),
+ //   height: '10pt',
+  }
+});
 
 let styleContactUsButton = StyleSheet.create({
   text: {
