@@ -647,6 +647,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.publicMethod = async (args) => {
+      let fName = 'publicMethod';
       let {functionName, httpMethod, apiRoute, params, keyNames, noAbort} = args;
       if (_.isNil(functionName)) functionName = '[Unspecified function]';
       if (_.isNil(httpMethod)) httpMethod = 'POST';
@@ -659,6 +660,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let abortController = this.state.createAbortController({tag, noAbort});
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
       // Examine errors.
+      //data = {'error': 503}; // dev
       if (_.has(data, 'error')) {
         let error = data.error;
         if (error == 'cannot_parse_data') {
@@ -667,7 +669,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         } else if (error == 'timeout') {
           // Future: If we already have a stashed state, this could cause a problem.
           this.state.stashCurrentState();
-          this.changeState('RequestTimeout');
+          this.state.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
           // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
@@ -675,7 +677,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
             this.state.stashCurrentState();
-            this.changeState('RequestFailed');
+            this.state.changeState('RequestFailed');
             return 'DisplayedError';
           }
           // We only arrive at this point if we've had a "request_failed" error from a second request. No point doing anything extra about it.
@@ -685,6 +687,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           return data;
         } else if (error == 503) {
           this.state.setMaintenanceMode(true);
+          // We change state in order to stop any ongoing operations.
+          this.state.changeState('Maintenance');
           return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
@@ -734,7 +738,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         } else if (error == 'timeout') {
           // Future: If we already have a stashed state, this could cause a problem.
           this.state.stashCurrentState();
-          this.changeState('RequestTimeout');
+          this.state.changeState('RequestTimeout');
           return 'DisplayedError';
         } else if (error == 'aborted') {
           // Future: Return "Aborted" and make sure that every post-request code section checks for this and reacts appropriately.
@@ -742,7 +746,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         } else if (error == 'request_failed') {
           if (this.state.mainPanelState !== 'RequestFailed') {
             this.state.stashCurrentState();
-            this.changeState('RequestFailed');
+            this.state.changeState('RequestFailed');
             return 'DisplayedError';
           }
           // We only arrive at this point if we've had a "request_failed" error from a second request. No point doing anything extra about it.
@@ -756,6 +760,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           return data;
         } else if (error == 503) {
           this.state.setMaintenanceMode(true);
+          // We change state in order to stop any ongoing operations.
+          this.state.changeState('Maintenance');
           return 'DisplayedError'; // Indicate we have handled the 503 return code.
         } else {
           // For any other errors, switch to an error description page.
@@ -1044,12 +1050,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let url = "https://"+domain+"/legal/terms.txt";
       log(`Loading terms from ${url}`);
       const response = await fetch(url);
+      //lj(response);
       let terms = "";
-      if(response.ok) {
+      if (response.ok) {
         terms = await response.text();
       }
       this.state.apiData.terms['general'] = terms;
-
     }
 
 
@@ -1115,12 +1121,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       var msg = `Platform OS: ${os}. Minimum version required = ${minimumVersionRequired}.`;
       deb(msg);
       let updateRequired = semver.gt(minimumVersionRequired, appVersion);
-      updateRequired = true; // dev
-      log(`Upgrade required: ${updateRequired}`);
+      //updateRequired = true; // dev
+      log(`Update required: ${updateRequired}`);
       if (updateRequired) {
         this.setState({appUpdateRequired: true});
+        this.state.changeState('UpdateApp');
       }
-      this.state.changeState('UpdateApp');
     }
 
 
@@ -2747,7 +2753,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     return (
       <AppStateContext.Provider value={this.state}>
 
-     <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container}>
         {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Header style={styles.header} />   : null }
         {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <MainPanel style={styles.mainPanel} /> : null }
         {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Footer style={styles.footer} /> : null }
