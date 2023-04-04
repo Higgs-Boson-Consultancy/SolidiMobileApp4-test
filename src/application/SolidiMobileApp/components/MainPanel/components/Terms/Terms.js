@@ -47,8 +47,7 @@ let Terms = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
-      await appState.loadInitialStuffAboutUser();
+      await appState.generalSetup({caller: 'Terms'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
       triggerRender(renderCount+1);

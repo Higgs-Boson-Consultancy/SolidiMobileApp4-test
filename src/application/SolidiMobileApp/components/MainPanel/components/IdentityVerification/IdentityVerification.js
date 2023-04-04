@@ -125,7 +125,7 @@ let IdentityVerification = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
+      await appState.generalSetup({caller: 'IdentityVerification'});
       let xDetails = await appState.fetchIdentityVerificationDetails();
       lj({xDetails})
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
