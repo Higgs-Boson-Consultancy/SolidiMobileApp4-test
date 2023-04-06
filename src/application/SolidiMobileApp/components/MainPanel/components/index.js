@@ -1,92 +1,44 @@
-import Test from './Test/Test';
-import Buy from './Buy/Buy';
-import Sell from './Sell/Sell';
-import Send from './Send/Send';
-import Receive from './Receive/Receive';
-import History from './History/History';
-import Assets from './Assets/Assets';
-import Notifications from './Notifications/Notifications';
-import Settings from './Settings/Settings';
-import Login from './Login/Login';
-import PIN from './PIN/PIN';
-import ChooseHowToPay from './ChooseHowToPay/ChooseHowToPay';
-import MakePayment from './MakePayment/MakePayment';
-import WaitingForPayment from './WaitingForPayment/WaitingForPayment';
-import BlankExampleComponent from './BlankExampleComponent/BlankExampleComponent';
-import PaymentNotMade from './PaymentNotMade/PaymentNotMade';
-import PurchaseSuccessful from './PurchaseSuccessful/PurchaseSuccessful';
-import InsufficientBalance from './InsufficientBalance/InsufficientBalance';
-import ReadArticle from './ReadArticle/ReadArticle';
-import ChooseHowToReceivePayment from './ChooseHowToReceivePayment/ChooseHowToReceivePayment';
-import RequestTimeout from './RequestTimeout/RequestTimeout';
-import SaleSuccessful from './SaleSuccessful/SaleSuccessful';
-import PersonalDetails from './PersonalDetails/PersonalDetails';
-import ContactUs from './ContactUs/ContactUs';
-import BankAccounts from './BankAccounts/BankAccounts';
-import Security from './Security/Security';
-import RequestFailed from './RequestFailed/RequestFailed';
-import Error from './Error/Error';
-import Maintenance from './Maintenance/Maintenance';
-import SendSuccessful from './SendSuccessful/SendSuccessful';
-import Authenticate from './Authenticate/Authenticate';
-import Register from './Register/Register';
-import SupportTools from './SupportTools/SupportTools';
-import LimitsExceeded from './LimitsExceeded/LimitsExceeded';
-import IdentityVerification from './IdentityVerification/IdentityVerification';
-import ResetPassword from './ResetPassword/ResetPassword';
-import MakePaymentOpenBanking from './MakePaymentOpenBanking/MakePaymentOpenBanking';
-import SolidiAccount from './SolidiAccount/SolidiAccount';
-import Terms from './Terms/Terms';
-import CloseSolidiAccount from './CloseSolidiAccount/CloseSolidiAccount';
-import UpdateApp from './UpdateApp/UpdateApp';
-import RegisterConfirm from './RegisterConfirm/RegisterConfirm';
-import RegisterConfirm2 from './RegisterConfirm2/RegisterConfirm2';
-import AccountUpdate from './AccountUpdate/AccountUpdate';
-
-
-export {
-  Test,
-  Buy,
-  Sell,
-  Send,
-  Receive,
-  Assets,
-  History,
-  Notifications,
-  Settings,
-  Login,
-  PIN,
-  ChooseHowToPay,
-  MakePayment,
-  WaitingForPayment,
-  BlankExampleComponent,
-  PaymentNotMade,
-  PurchaseSuccessful,
-  InsufficientBalance,
-  ReadArticle,
-  ChooseHowToReceivePayment,
-  RequestTimeout,
-  SaleSuccessful,
-  PersonalDetails,
-  ContactUs,
-  BankAccounts,
-  Security,
-  RequestFailed,
-  Error,
-  Maintenance,
-  SendSuccessful,
-  Authenticate,
-  Register,
-  SupportTools,
-  LimitsExceeded,
-  IdentityVerification,
-  ResetPassword,
-  MakePaymentOpenBanking,
-  SolidiAccount,
-  Terms,
-  CloseSolidiAccount,
-  UpdateApp,
-  RegisterConfirm,
-  RegisterConfirm2,
-  AccountUpdate,
-};
+export {default as Test} from './Test/Test';
+export {default as Buy} from './Buy/Buy';
+export {default as Sell} from './Sell/Sell';
+export {default as Send} from './Send/Send';
+export {default as Receive} from './Receive/Receive';
+export {default as History} from './History/History';
+export {default as Assets} from './Assets/Assets';
+export {default as Notifications} from './Notifications/Notifications';
+export {default as Settings} from './Settings/Settings';
+export {default as Login} from './Login/Login';
+export {default as PIN} from './PIN/PIN';
+export {default as ChooseHowToPay} from './ChooseHowToPay/ChooseHowToPay';
+export {default as MakePayment} from './MakePayment/MakePayment';
+export {default as WaitingForPayment} from './WaitingForPayment/WaitingForPayment';
+export {default as BlankExampleComponent} from './BlankExampleComponent/BlankExampleComponent';
+export {default as PaymentNotMade} from './PaymentNotMade/PaymentNotMade';
+export {default as PurchaseSuccessful} from './PurchaseSuccessful/PurchaseSuccessful';
+export {default as InsufficientBalance} from './InsufficientBalance/InsufficientBalance';
+export {default as ReadArticle} from './ReadArticle/ReadArticle';
+export {default as ChooseHowToReceivePayment} from './ChooseHowToReceivePayment/ChooseHowToReceivePayment';
+export {default as RequestTimeout} from './RequestTimeout/RequestTimeout';
+export {default as SaleSuccessful} from './SaleSuccessful/SaleSuccessful';
+export {default as PersonalDetails} from './PersonalDetails/PersonalDetails';
+export {default as ContactUs} from './ContactUs/ContactUs';
+export {default as BankAccounts} from './BankAccounts/BankAccounts';
+export {default as Security} from './Security/Security';
+export {default as RequestFailed} from './RequestFailed/RequestFailed';
+export {default as Error} from './Error/Error';
+export {default as Maintenance} from './Maintenance/Maintenance';
+export {default as SendSuccessful} from './SendSuccessful/SendSuccessful';
+export {default as Authenticate} from './Authenticate/Authenticate';
+export {default as Register} from './Register/Register';
+export {default as SupportTools} from './SupportTools/SupportTools';
+export {default as LimitsExceeded} from './LimitsExceeded/LimitsExceeded';
+export {default as IdentityVerification} from './IdentityVerification/IdentityVerification';
+export {default as ResetPassword} from './ResetPassword/ResetPassword';
+export {default as MakePaymentOpenBanking} from './MakePaymentOpenBanking/MakePaymentOpenBanking';
+export {default as SolidiAccount} from './SolidiAccount/SolidiAccount';
+export {default as Terms} from './Terms/Terms';
+export {default as CloseSolidiAccount} from './CloseSolidiAccount/CloseSolidiAccount';
+export {default as UpdateApp} from './UpdateApp/UpdateApp';
+export {default as RegisterConfirm} from './RegisterConfirm/RegisterConfirm';
+export {default as RegisterConfirm2} from './RegisterConfirm2/RegisterConfirm2';
+export {default as AccountUpdate} from './AccountUpdate/AccountUpdate';
