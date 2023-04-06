@@ -59,7 +59,7 @@ let initialPageName = 'default';
 // Settings: Various
 let appName = 'SolidiMobileApp';
 if (appTier == 'stag') appName = 'SolidiMobileAppTest'; // necessary ?
-let storedAPIVersion = '1';
+let storedAPIVersion = '1.0.2';
 let domains = {
   dev: 't3.solidi.co',
   stag: 't10.solidi.co',
