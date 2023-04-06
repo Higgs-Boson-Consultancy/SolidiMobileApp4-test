@@ -1369,6 +1369,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     this.getBaseAssets = () => {
       let markets = this.getMarkets();
       let baseAssets = markets.map(x => x.split('/')[0]);
+      // Only include quote assets that appear in the asset info list.
+      let assetsInfo = this.getAssetsInfo();
+      baseAssets = baseAssets.filter(x => _.has(assetsInfo, x));
       return _.uniq(baseAssets);
     }
 
@@ -1376,6 +1379,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     this.getQuoteAssets = () => {
       let markets = this.getMarkets();
       let quoteAssets = markets.map(x => x.split('/')[1]);
+      // Only include quote assets that appear in the asset info list.
+      let assetsInfo = this.getAssetsInfo();
+      quoteAssets = quoteAssets.filter(x => _.has(assetsInfo, x));
       return _.uniq(quoteAssets);
     }
 
