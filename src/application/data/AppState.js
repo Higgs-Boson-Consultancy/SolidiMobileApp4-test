@@ -117,6 +117,7 @@ Authenticate Login PIN
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
       let fName = 'changeState';
+      // We check for this error in setMainPanelState as well, but it's useful to have it occur here as well, for debugging purposes.
       if (! mainPanelStates.includes(stateName)) {
         var msg = `${fName}: Unrecognised stateName: ${JSON.stringify(stateName)}`
         throw Error(msg);
@@ -139,7 +140,9 @@ Authenticate Login PIN
     // Function for changing the mainPanelState.
     this.setMainPanelState = (newState, stashed=false) => {
       let fName = 'setMainPanelState';
-      var msg = `${fName}: Set state to: ${jd(newState)}.`;
+      let {mainPanelState: currentMainPanelState, pageName: currentPageName} = this.state;
+      let currentState = {mainPanelState: currentMainPanelState, pageName: currentPageName};
+      var msg = `${fName}: Current state = ${jd(currentState)}. Attempting to set state to: ${jd(newState)}.`;
       log(msg);
       //this.state.logEntireStateHistory();
       let {mainPanelState, pageName} = newState;
@@ -153,23 +156,24 @@ Authenticate Login PIN
       this.cancelTimers();
       this.abortAllRequests();
       let stateHistoryList = this.state.stateHistoryList;
-      /* Check the current state.
-      - If the current state has just ended a user journey, we want to reset the state history.
+      /* Check the latest stored state.
+      - If the latest stored state has just ended a user journey, we want to reset the state history.
+      - Important: Don't add a nonHistoryPanel to the endJourneyList.
       */
-      let currentState = stateHistoryList[stateHistoryList.length - 1];
-      var msg = `${fName}: Current state: ${jd(currentState)}}`;
+      let latestStoredState = stateHistoryList[stateHistoryList.length - 1];
+      var msg = `${fName}: Latest stored state: ${jd(latestStoredState)}}`;
       log(msg);
       let endJourneyList = `
 PurchaseSuccessful PaymentNotMade SaleSuccessful SendSuccessful
 RegisterConfirm2 AccountUpdate
 `;
       endJourneyList = misc.splitStringIntoArray({s: endJourneyList});
-      var msg = `${fName}: endJourneyList: ${jd(endJourneyList)} - Includes current state ? ${endJourneyList.includes(currentState?.mainPanelState)}}`;
+      var msg = `${fName}: endJourneyList: ${jd(endJourneyList)} - Includes current state ? ${endJourneyList.includes(latestStoredState?.mainPanelState)}}`;
       //log(msg);
-      if (! _.isEmpty(currentState)) {
-        // currentState can be empty if we're testing and start on the Login page, which is not saved into the stateHistoryList.
-        if (endJourneyList.includes(currentState.mainPanelState)) {
-          var msg = `${fName}: Arrived at end of a user journey: ${currentState.mainPanelState}. Resetting state history.`;
+      if (! _.isEmpty(latestStoredState)) {
+        // latestStoredState can be empty if we're testing and start on the Login page, which is not saved into the stateHistoryList.
+        if (endJourneyList.includes(latestStoredState.mainPanelState)) {
+          var msg = `${fName}: Arrived at end of a user journey: ${latestStoredState.mainPanelState}. Resetting state history.`;
           log(msg);
           this.resetStateHistory();
         }
@@ -185,8 +189,8 @@ RegisterConfirm2 AccountUpdate
       */
       let storeHistoryState = (! stashed && ! this.nonHistoryPanels.includes(mainPanelState));
       if (storeHistoryState) {
-        let currentState = stateHistoryList[stateHistoryList.length - 1];
-        if (jd(newState) === jd(currentState)) {
+        let latestStoredState = stateHistoryList[stateHistoryList.length - 1];
+        if (jd(newState) === jd(latestStoredState)) {
           // We don't want to store the same state twice, so do nothing.
         } else {
           var msg = `${fName}: Store new state history entry: ${jd(newState)}`;
@@ -206,11 +210,12 @@ RegisterConfirm2 AccountUpdate
         }
       }
       // Finally, change to new state.
+      // Note: We store the currentState in the previousState variable, so that we can use it if necessary when we arrive at the destination state.
       if (makeFinalSwitch) {
         let stateChangeID = this.state.stateChangeID + 1;
         var msg = `${fName}: New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`;
         log(msg);
-        this.setState({mainPanelState, pageName, stateChangeID});
+        this.setState({previousState: currentState, mainPanelState, pageName, stateChangeID});
       }
     }
 
@@ -272,10 +277,19 @@ RegisterConfirm2 AccountUpdate
       }
       let msg = `Reset state history to: ${jd(this.state.stateHistoryList)}`;
       log(msg);
+      // Technically, this function should only affect the history, but we use it as a shorthand for wiping the state's memory of previous states.
+      this.state.deleteStashedState();
+      this.state.previousState = {mainPanelState: null, pageName: null};
     }
 
 
     this.decrementStateHistory = () => {
+      // Apart from setMainPanelState(), this is the only other basic function that changes the mainPanelState.
+      let fName = 'decrementStateHistory';
+      deb(`${fName}: Start`);
+      let {mainPanelState: currentMainPanelState, pageName: currentPageName} = this.state;
+      let currentState = {mainPanelState: currentMainPanelState, pageName: currentPageName};
+      deb(``);
       let stateHistoryList = this.state.stateHistoryList;
       if (stateHistoryList.length == 1) {
         // No previous state. Only the current state is in the history list.
@@ -283,8 +297,8 @@ RegisterConfirm2 AccountUpdate
       }
       this.cancelTimers();
       this.abortAllRequests();
-      let prevState = stateHistoryList[stateHistoryList.length - 2];
-      let {mainPanelState, pageName} = prevState;
+      let previousStoredState = stateHistoryList[stateHistoryList.length - 2];
+      let {mainPanelState, pageName} = previousStoredState;
       if (stateHistoryList.length > 1) {
         stateHistoryList.pop();
         this.setState({stateHistoryList});
@@ -292,7 +306,7 @@ RegisterConfirm2 AccountUpdate
       // If this state appears in the footerButtonList, set the footerIndex appropriately.
       // Note: This sets the index of the first button to be displayed in the footer. The highlighting of the selected button occurs separately.
       if (footerButtonList.includes(mainPanelState)) {
-        //lj({prevState});
+        //lj({previousStoredState});
         let index = footerButtonList.indexOf(mainPanelState);
         let steps = Math.floor(index / this.numberOfFooterButtonsToDisplay);
         let newFooterIndex = steps * this.numberOfFooterButtonsToDisplay;
@@ -305,15 +319,17 @@ RegisterConfirm2 AccountUpdate
         if (this.state.authRequired.includes(mainPanelState)) {
           makeFinalSwitch = false;
           // Stash the previous state for later retrieval.
-          this.state.stashState(prevState);
+          this.state.stashState(previousStoredState);
           this.state.authenticateUser();
         }
       }
       // Finally, change to previous state.
+      // Note: We store the currentState in the previousState variable, so that we can use it if necessary when we arrive at the destination state.
       if (makeFinalSwitch) {
         let stateChangeID = this.state.stateChangeID + 1;
-        log(`New stateChangeID: ${stateChangeID} (mainPanelState = ${mainPanelState})`);
-        this.setState({mainPanelState, pageName, stateChangeID});
+        var msg = `${fName}: currentState = ${jd(currentState)}. New stateChangeID: ${stateChangeID}. previousStoredState = ${jd(previousStoredState)}`
+        log(msg);
+        this.setState({previousState: currentState, mainPanelState, pageName, stateChangeID});
       }
     }
 
@@ -928,7 +944,6 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       this.state.user.apiCredentialsFound = false;
       // Reset the state history and wipe any stashed state.
       this.state.resetStateHistory();
-      this.deleteStashedState();
       log("Logout complete.");
       /*
       - Check to see if an original user's credentials are stored.
@@ -1036,6 +1051,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       log(`switchToErrorState: ${message}`);
       this.state.error.message = message;
       this.state.stashCurrentState();
+      let {mainPanelState, pageName} = this.state;
+      this.state.previousState = {mainPanelState, pageName};
       this.cancelTimers();
       this.abortAllRequests();
       this.state.changeState('Error');
@@ -2466,6 +2483,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       stateChangeIDHasChanged: this.stateChangeIDHasChanged,
       stashedState: {},
       stateHistoryList: [],
+      previousState: {mainPanelState: null, pageName: null},
       stashCurrentState: this.stashCurrentState,
       stashState: this.stashState,
       loadStashedState: this.loadStashedState,
@@ -2608,8 +2626,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         orderID: null,
         settlementID: null,
       },
-      // userData is used during Register journey.
-      userData: {
+      // registerData is used during Register journey.
+      blankRegisterData: {
         firstName: '',
         lastName: '',
         email: '',
@@ -2624,6 +2642,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           promotionsAndSpecialOffers: true,
         },
       },
+      registerData: null,
+      blankRegisterConfirmData: {
+        email: '',
+        password: '',
+      },
+      registerConfirmData: null,
       user: {
         isAuthenticated: false,
         email: '',
@@ -2741,7 +2765,10 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       supportURL: "https://www.solidi.co/contactus",
     }
 
-    // Call initial setup functions.
+    // Perform initial setup.
+
+    this.state.registerData = this.state.blankRegisterData;
+    this.state.registerConfirmData = this.state.blankRegisterConfirmData;
 
     // Initialise the state history.
     this.resetStateHistory();

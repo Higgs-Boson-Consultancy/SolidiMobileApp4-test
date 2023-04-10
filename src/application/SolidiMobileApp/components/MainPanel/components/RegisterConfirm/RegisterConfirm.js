@@ -88,7 +88,7 @@ let RegisterConfirm = () => {
       return;
     }
     let result;
-    let email = appState.userData.email;
+    let email = appState.registerConfirmData.email;
     let apiRoute = 'confirm_email';
     apiRoute += `/${email}/${emailCode}`;
     try {
@@ -137,7 +137,7 @@ let RegisterConfirm = () => {
       return;
     }
     let result;
-    let {email, password} = appState.userData;
+    let {email, password} = appState.registerConfirmData;
     let apiRoute = 'confirm_mobile';
     apiRoute += `/${email}/${mobileCode}`;
     try {
@@ -174,6 +174,9 @@ let RegisterConfirm = () => {
       // Log in.
       let output = await appState.login({email, password});
       lj({output})
+      // Future: What if login fails?
+      // Delete the temporarily stored registerConfirmData from the appState.
+      appState.registerConfirmData = appState.blankRegisterConfirmData;
       // Change state.
       appState.changeState('RegisterConfirm2', 'address');
     }

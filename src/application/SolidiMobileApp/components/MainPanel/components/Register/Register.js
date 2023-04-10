@@ -52,8 +52,15 @@ let Register = () => {
   */
 
 
+  // We preserve user-entered data only in the case where the user has left this page in order to read the Terms & Conditions page.
+  let previousState = appState.previousState;
+  let registerData = appState.blankRegisterData;
+  if (previousState.mainPanelState === 'ReadArticle') {
+    registerData = appState.registerData;
+  }
+
   // Basic
-  let [userData, setUserData] = useState(appState.userData);
+  let [userData, setUserData] = useState(registerData);
   let [isLoading, setIsLoading] = useState(true);
   let [errorDisplay, setErrorDisplay] = useState({});
   let [uploadMessage, setUploadMessage] = useState('');
@@ -61,7 +68,7 @@ let Register = () => {
   let [disableRegisterButton, setDisableRegisterButton] = useState(false);
 
   // Gender dropdown
-  let [gender, setGender] = useState(appState.userData.gender);
+  let [gender, setGender] = useState(registerData.gender);
   let generateGenderOptionsList = () => {
     let genderOptions = appState.getPersonalDetailOptions('gender');
     return genderOptions.map(x => ({label: x, value: x}) );
@@ -70,7 +77,7 @@ let Register = () => {
   let [openGender, setOpenGender] = useState(false);
 
   // Citizenship dropdown
-  let [citizenship, setCitizenship] = useState(appState.userData.citizenship);
+  let [citizenship, setCitizenship] = useState(registerData.citizenship);
   let generateCitizenshipOptionsList = () => {
     let countries = appState.getCountries();
     return countries.map(x => { return {label: x.name, value: x.code} });
@@ -200,8 +207,13 @@ emailPreferences
       // Scroll to top.
      scrollRefTop.current.scrollToPosition(0);
     } else { // No errors.
-      // Save the data that we sent to the server.
-      appState.userData = userData;
+      // Save some of the userData for use in RegisterConfirm.
+      appState.registerConfirmData = {
+        email: userData.email,
+        password: userData.password,
+      };
+      // Delete the temporarily stored registerData from the appState.
+      appState.registerData = appState.blankRegisterData;
       // Move to next page.
       appState.changeState('RegisterConfirm', 'confirm_email');
     }
@@ -516,7 +528,7 @@ emailPreferences
             <Button title="Terms & Conditions"
               onPress={ () => {
                 // Store the userData so that this page can retrieve it when we return from the ReadArticle page.
-                appState.userData = userData;
+                appState.registerData = userData;
                 log(`Have stored userData to appState: ${jd(userData)}`);
                 appState.changeState('ReadArticle', 'terms_and_conditions');
               }}
