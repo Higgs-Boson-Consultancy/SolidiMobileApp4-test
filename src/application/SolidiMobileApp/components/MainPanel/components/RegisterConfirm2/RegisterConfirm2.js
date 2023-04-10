@@ -293,14 +293,16 @@ let RegisterConfirm2 = () => {
                     return a.solidiFormatShort === value;
                   });
                   //lj({foundAddress})
-                  let addressLines = foundAddress.solidiFormat;
-                  //lj({addressLines})
-                  setAddress({
-                    address_1: _.isUndefined(addressLines[0]) ? null : addressLines[0],
-                    address_2: _.isUndefined(addressLines[1]) ? null : addressLines[1],
-                    address_3: _.isUndefined(addressLines[2]) ? null : addressLines[2],
-                    address_4: _.isUndefined(addressLines[3]) ? null : addressLines[3],
-                  })
+                  if (_.has(foundAddress, 'solidiFormat')) {
+                    let addressLines = foundAddress.solidiFormat;
+                    lj({addressLines})
+                    setAddress({
+                      address_1: _.isUndefined(addressLines[0]) ? null : addressLines[0],
+                      address_2: _.isUndefined(addressLines[1]) ? null : addressLines[1],
+                      address_3: _.isUndefined(addressLines[2]) ? null : addressLines[2],
+                      address_4: _.isUndefined(addressLines[3]) ? null : addressLines[3],
+                    });
+                  }
                 }}
               />
             </View>
