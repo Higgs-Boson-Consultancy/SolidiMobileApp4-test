@@ -89,7 +89,7 @@ let RegisterConfirm = () => {
     }
     let result;
     let email = appState.registerConfirmData.email;
-    let apiRoute = 'confirm_email';
+    let apiRoute = 'confirm_email_and_send_mobile_code';
     apiRoute += `/${email}/${emailCode}`;
     try {
       log(`API request: Confirm user email: emailCode = ${emailCode}.`);
