@@ -49,6 +49,8 @@ let jd = JSON.stringify;
 
 // Settings: Critical (check before making a new release)
 let autoLoginOnDevAndStag = false; // Only used during development (i.e. on 'dev' tier) to automatically login using a dev user.
+let preserveRegistrationData = true; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
+// - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
 import appTier from 'src/application/appTier'; // dev / stag / prod.
 
 // Settings: Initial page
@@ -2474,6 +2476,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     // The actual state object of the app.
     // This must be declared towards the end of the constructor.
     this.state = {
+      // START Developer mode settings
+      preserveRegistrationData: preserveRegistrationData,
+      // END Developer mode settings
       numberOfFooterButtonsToDisplay: this.numberOfFooterButtonsToDisplay,
       mainPanelState: this.initialMainPanelState,
       pageName: this.initialPageName,

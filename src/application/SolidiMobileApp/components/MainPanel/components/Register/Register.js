@@ -58,6 +58,10 @@ let Register = () => {
   if (previousState.mainPanelState === 'ReadArticle') {
     registerData = appState.registerData;
   }
+  if (appState.preserveRegistrationData) {
+    // This is for use during development. Saves having to re-enter the data every time.
+    registerData = appState.registerData;
+  }
 
   // Basic
   let [userData, setUserData] = useState(registerData);
