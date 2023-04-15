@@ -620,7 +620,10 @@ country
         <View style={[
           styles.detailValueFullWidth,
           {zIndex:2},
-          {paddingTop: 5, paddingBottom: 10, paddingLeft: 0}
+          {
+            paddingTop: scaledHeight(5), paddingBottom: scaledHeight(10),
+            paddingLeft: scaledWidth(0), paddingRight: scaledWidth(5),
+          },
         ]}>
           <DropDownPicker
             listMode="SCROLLVIEW"
