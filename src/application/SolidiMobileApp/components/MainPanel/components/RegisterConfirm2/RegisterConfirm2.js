@@ -107,7 +107,8 @@ let RegisterConfirm2 = () => {
       setDisableSearchPostcodeButton(false);
       return;
     }
-    let postcodeClean = postcode.replaceAll(' ','');
+    // URL can't have spaces. Easiest to remove them rather than encode them.
+    let postcodeClean = postcode.replaceAll(' ', '');
     let result;
     let apiRoute = 'search_postcode';
     apiRoute += `/${postcodeClean}`;
