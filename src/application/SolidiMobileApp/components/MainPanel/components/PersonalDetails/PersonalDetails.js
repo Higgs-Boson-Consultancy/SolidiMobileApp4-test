@@ -19,11 +19,18 @@ import misc from 'src/util/misc';
 import logger from 'src/util/logger';
 let logger2 = logger.extend('PersonalDetails');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+let jd = JSON.stringify;
 
 
 /* Notes
 
 Need to use zIndex values carefully to ensure that the opened dropdown appears above the rest of the data.
+
+The address is handled separately from the normal user data items. It's treated as a postcode, and as a group of address lines. The address lines and the postcode are bundled together and pushed to the provide_address endpoint instead of the update_user endpoint. After pushing, the appState user_data is updated with the new address lines and postcode.
+
+Arguably, we should handle updating the address by switching to the RegisterConfirm2 page. However, this might lead to maintenance problems later.
+
+Future: Handle country as part of the address.
 
 */
 
@@ -77,6 +84,34 @@ let PersonalDetails = () => {
   let [citizenshipOptionsList, setCitizenshipOptionsList] = useState(generateCitizenshipOptionsList());
   let [openCitizenship, setOpenCitizenship] = useState(false);
 
+  // Address details
+  let [postcode, setPostcode] = useState('[loading]');
+  let [address, setAddress] = useState({
+    address_1: '[loading]',
+    address_2: '[loading]',
+    address_3: '[loading]',
+    address_4: '[loading]',
+  });
+  let [disableSearchPostcodeButton, setDisableSearchPostcodeButton] = useState(false);
+  let [disableSaveAddressButton, setDisableSaveAddressButton] = useState(false);
+
+  // foundAddress dropdown
+  let initialSelectedAddress = '[no addresses listed]';
+  let [selectedAddress, setSelectedAddress] = useState(initialSelectedAddress);
+  let [foundAddresses, setFoundAddresses] = useState([]);
+  let generateSelectAddressList = ({addresses}) => {
+    let selectAddressList = addresses.map(x => (
+      {
+        label: x.solidiFormatShort,
+        value: x.solidiFormatShort,
+      }
+    ));
+    //lj({selectAddressList})
+    return selectAddressList;
+  }
+  let [selectAddressList, setSelectAddressList] = useState([]);
+  let [openSelectAddress, setOpenSelectAddress] = useState(false);
+
   // Country dropdown
   let initialCountry = appState.getUserInfo('country');
   let [country, setCountry] = useState(initialCountry);
@@ -109,6 +144,13 @@ let PersonalDetails = () => {
       setGenderOptionsList(generateGenderOptionsList());
       setCitizenship(appState.getUserInfo('citizenship'));
       setCitizenshipOptionsList(generateCitizenshipOptionsList());
+      setPostcode(appState.getUserInfo('postcode'));
+      setAddress({
+        address_1: appState.getUserInfo('address_1'),
+        address_2: appState.getUserInfo('address_2'),
+        address_3: appState.getUserInfo('address_3'),
+        address_4: appState.getUserInfo('address_4'),
+      });
       setCountry(appState.getUserInfo('country'));
       setCountryOptionsList(generateCountryOptionsList());
       triggerRender(renderCount+1);
@@ -142,7 +184,7 @@ let PersonalDetails = () => {
 title firstName middleNames lastName
 dateOfBirth gender citizenship
 email mobile
-address_1 address_2 address_3 address_4 postcode country
+country
 `;
     userDataDetails = misc.splitStringIntoArray({s: userDataDetails});
     if (! userDataDetails.includes(detail)) {
@@ -193,6 +235,130 @@ address_1 address_2 address_3 address_4 postcode country
         <Text style={styles.errorDisplayText}>Error: {detail}: {errorDisplay[detail]}</Text>
       </View>
     )
+  }
+
+
+  let searchPostcode = async () => {
+    setDisableSearchPostcodeButton(true);
+    setErrorDisplay({...errorDisplay, 'address_general': null});
+    if (_.isEmpty(postcode)) {
+      errorMessage = 'Postcode is empty.';
+      setErrorDisplay({...errorDisplay, 'address_general': errorMessage});
+      setDisableSearchPostcodeButton(false);
+      return;
+    }
+    // URL can't have spaces. Easiest to remove them rather than encode them.
+    let postcodeClean = postcode.replaceAll(' ', '');
+    let result;
+    let apiRoute = 'search_postcode';
+    apiRoute += `/${postcodeClean}`;
+    try {
+      // Send the request.
+      let functionName = 'searchPostcode';
+      result = await appState.privateMethod({functionName, apiRoute});
+    } catch(err) {
+      logger.error(err);
+    }
+    //lj({result})
+    if (result === 'DisplayedError') return;
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      let errorMessage = jd(error);
+      log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
+      let detailName = 'postcode';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorDisplay({...errorDisplay, 'address_general': errorMessage});
+      setDisableSearchPostcodeButton(false);
+      return;
+    } else {
+      setDisableSearchPostcodeButton(false);
+    }
+    // Take the results and use them to populate the dropdown.
+    let addresses = result.addresses;
+    if (addresses.length === 0) {
+      var msg = `Sorry, we can't find any addresses for this postcode. Please enter your address manually.`;
+      setErrorDisplay({...errorDisplay, 'address_general': msg});
+      return;
+    }
+    /* Example output:
+{
+  "addresses": [
+    {
+      "formatted_address": [
+        "1830 Somwhere Rd",
+        "",
+        "",
+        "Over, The Rainbow",
+        "Cambridgeshire"
+      ],
+      "solidiFormat": [
+        "1830 Somwhere Rd",
+        "Over, The Rainbow",
+        "Cambridgeshire"
+      ],
+      "solidiFormatShort": "1830 Somwhere Rd, Over, The Rainbow, Cambridgeshire"
+    }
+  ]
+}
+    */
+    /* Notes:
+    - We'll use solidiFormatShort as the ID of the address.
+    - We'll use solidiFormat as the separate lines of the address that we use to fill out the addressLine Views.
+    */
+    setFoundAddresses(addresses);
+    let addressList = generateSelectAddressList({addresses});
+    //lj({addressList})
+    setSelectAddressList(addressList);
+    let plural = addresses.length > 1 ? 'es': '';
+    var msg = `${addresses.length} address${plural} found. Click to select.`;
+    setSelectedAddress(msg);
+  }
+
+
+  let saveAddress = async () => {
+    setDisableSaveAddressButton(true);
+    setErrorDisplay({...errorDisplay, 'address_general': null});
+    let result;
+    let apiRoute = 'provide_address';
+    let address2 = _.clone(address);
+    address2.postcode = postcode;
+    lj({address2})
+    try {
+      let functionName = 'saveAddress';
+      let params = {address: address2};
+      result = await appState.privateMethod({functionName, apiRoute, params});
+    } catch(err) {
+      logger.error(err);
+    }
+    lj({result})
+    if (result === 'DisplayedError') return;
+    if (_.has(result, 'error')) {
+      let error = result.error;
+      let errorMessage = jd(error);
+      log(`Error returned from API request ${apiRoute}: ${errorMessage}`);
+      let detailName = 'address';
+      let selector = `ValidationError: [${detailName}]: `;
+      errorMessage = error;
+      if (error.startsWith(selector)) {
+        errorMessage = error.replace(selector, '');
+      }
+      setErrorDisplay({...errorDisplay, 'address_general': null});
+    } else {
+      // No errors.
+      // Update the appState.
+      appState.setUserInfo({
+        address_1: address.address_1,
+        address_2: address.address_2,
+        address_3: address.address_3,
+        address_4: address.address_4,
+        postcode: postcode,
+      });
+    }
+    setDisableSaveAddressButton(false);
   }
 
 
@@ -418,109 +584,172 @@ address_1 address_2 address_3 address_4 postcode country
           <Text style={styles.sectionHeadingText}>Address Details</Text>
         </View>
 
-        {renderError('address_1')}
+        {renderError('address_general')}
 
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Address</Text>
-          </View>
-          <View>
-            <TextInput defaultValue={appState.getUserInfo('address_1')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'address_1', value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'none'}
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        {renderError('address_2')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('address_2')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'address_2', value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'none'}
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        {renderError('address_3')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('address_3')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'address_3', value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'none'}
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        {renderError('address_4')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('address_4')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'address_4', value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'none'}
-              autoCorrect={false}
-            />
-          </View>
-        </View>
-
-        {renderError('postcode')}
+        {/* {renderError('postcode')} */}
 
         <View style={styles.detail}>
           <View style={styles.detailName}>
             <Text style={styles.detailNameText}>{`\u2022  `}Postcode</Text>
           </View>
           <View>
-          <TextInput defaultValue={appState.getUserInfo('postcode')}
+            <TextInput
               style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
-                let value = event.nativeEvent.text;
-                updateUserData({detail:'postcode', value});
+              onChangeText = {value => {
+                log(`Postcode: ${value}`);
+                //updateUserData({detail:'postcode', value});
+                setPostcode(value);
               }}
               autoComplete={'off'}
               autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
+              value={postcode}
             />
           </View>
+        </View>
+
+        <View style={styles.searchPostcodeButtonWrapper}>
+          <StandardButton title="Search postcode"
+            onPress={ searchPostcode }
+            disabled={disableSearchPostcodeButton}
+          />
+        </View>
+
+        <View style={[
+          styles.detailValueFullWidth,
+          {zIndex:2},
+          {paddingTop: 5, paddingBottom: 10, paddingLeft: 0}
+        ]}>
+          <DropDownPicker
+            listMode="SCROLLVIEW"
+            scrollViewProps={{nestedScrollEnabled: true}}
+            placeholder={selectedAddress}
+            open={openSelectAddress}
+            value={selectedAddress}
+            items={selectAddressList}
+            setOpen={setOpenSelectAddress}
+            setValue={setSelectedAddress}
+            style={[styles.detailDropdown]}
+            textStyle = {styles.detailDropdownText}
+            onChangeValue = { (value) => {
+              log(`Selected address: ${value}`);
+              if (value === '[no addresses listed]') return;
+              if (value.includes('Click to select.')) return;
+              // User has selected an address from the list.
+              // Populate the address lines with this address.
+              //lj({foundAddresses})
+              let foundAddress = foundAddresses.find(a => {
+                return a.solidiFormatShort === value;
+              });
+              //lj({foundAddress})
+              if (_.has(foundAddress, 'solidiFormat')) {
+                let addressLines = foundAddress.solidiFormat;
+                lj({addressLines})
+                setAddress({
+                  address_1: _.isUndefined(addressLines[0]) ? null : addressLines[0],
+                  address_2: _.isUndefined(addressLines[1]) ? null : addressLines[1],
+                  address_3: _.isUndefined(addressLines[2]) ? null : addressLines[2],
+                  address_4: _.isUndefined(addressLines[3]) ? null : addressLines[3],
+                });
+              }
+            }}
+          />
+        </View>
+
+        {/* {renderError('address_1')} */}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}>{`\u2022  `}Address</Text>
+          </View>
+          <View>
+            <TextInput
+              style={[styles.detailValue, styles.editableTextInput]}
+              onChangeText = {value => {
+                log(`Address line 1: ${value}`);
+                setAddress({...address, address_1: value});
+              }}
+              autoComplete={'off'}
+              autoCompleteType='off'
+              autoCapitalize={'none'}
+              autoCorrect={false}
+              value={address.address_1}
+            />
+          </View>
+        </View>
+
+        {/* {renderError('address_2')} */}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}></Text>
+          </View>
+          <View>
+            <TextInput
+              style={[styles.detailValue, styles.editableTextInput]}
+              onChangeText = {value => {
+                log(`Address line 2: ${value}`);
+                setAddress({...address, address_2: value});
+              }}
+              autoComplete={'off'}
+              autoCompleteType='off'
+              autoCapitalize={'none'}
+              autoCorrect={false}
+              value={address.address_2}
+            />
+          </View>
+        </View>
+
+        {/* {renderError('address_3')} */}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}></Text>
+          </View>
+          <View>
+            <TextInput
+              style={[styles.detailValue, styles.editableTextInput]}
+              onChangeText = {value => {
+                log(`Address line 3: ${value}`);
+                setAddress({...address, address_3: value});
+              }}
+              autoComplete={'off'}
+              autoCompleteType='off'
+              autoCapitalize={'none'}
+              autoCorrect={false}
+              value={address.address_3}
+            />
+          </View>
+        </View>
+
+        {/* {renderError('address_4')} */}
+
+        <View style={styles.detail}>
+          <View style={styles.detailName}>
+            <Text style={styles.detailNameText}></Text>
+          </View>
+          <View>
+            <TextInput
+              style={[styles.detailValue, styles.editableTextInput]}
+              onChangeText = {value => {
+                log(`Address line 4: ${value}`);
+                setAddress({...address, address_4: value});
+              }}
+              autoComplete={'off'}
+              autoCompleteType='off'
+              autoCapitalize={'none'}
+              autoCorrect={false}
+              value={address.address_4}
+            />
+          </View>
+        </View>
+
+        <View style={styles.saveAddressButtonWrapper}>
+          <StandardButton title="Save address"
+            onPress={ saveAddress }
+            disabled={disableSaveAddressButton}
+          />
         </View>
 
         {renderError('country')}
@@ -658,6 +887,14 @@ let styles = StyleSheet.create({
     marginVertical: scaledHeight(10),
     width: '100%',
   },
+  addressLine: {
+    marginVertical: scaledHeight(5),
+  },
+  searchPostcodeButtonWrapper: {
+    marginBottom: scaledHeight(10),
+    marginRight: scaledWidth(5),
+    alignSelf: 'flex-end',
+  },
   alignRight: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -672,6 +909,11 @@ let styles = StyleSheet.create({
   },
   lastItem: {
     marginBottom: scaledHeight(40),
+  },
+  saveAddressButtonWrapper: {
+    marginBottom: scaledHeight(10),
+    marginRight: scaledWidth(5),
+    alignSelf: 'flex-end',
   },
 });
 
