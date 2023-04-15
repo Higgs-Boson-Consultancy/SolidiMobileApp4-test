@@ -4,6 +4,7 @@ import { Text, StyleSheet, View, ScrollView } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {launchCamera} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
 import _ from 'lodash';
@@ -353,7 +354,11 @@ let IdentityVerification = () => {
         <Text style={styles.headingText}>Identity Verification</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        keyboardShouldPersistTaps='handled'
+      >
 
 
       { isLoading && <Spinner/> }
@@ -494,7 +499,7 @@ let IdentityVerification = () => {
       }
 
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
     </View>
     </View>
