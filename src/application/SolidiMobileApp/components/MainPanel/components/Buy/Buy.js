@@ -760,8 +760,9 @@ console.log("Setup - Done Loading data");
       }
 
       <View style={styles.buttonWrapper}>
-        <StandardButton title="Buy now" onPress={ startBuyRequest } />
+        <FixedWidthButton title="Buy now" onPress={ startBuyRequest } />
       </View>
+
 
       {newAPIVersionDetected && upgradeRequired()}
 
@@ -873,6 +874,7 @@ let styles = StyleSheet.create({
   },
   priceWrapper: {
     marginVertical: scaledHeight(10),
+    alignItems: 'center',
   },
   priceText: {
     fontSize: normaliseFont(16),
@@ -883,6 +885,8 @@ let styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
+    marginLeft: '25%',
+    width: '50%',
   },
   buttonWrapper2: {
     marginTop: scaledHeight(-30),
