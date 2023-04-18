@@ -474,7 +474,6 @@ console.log("Setup - Done Loading data");
       labels: ['', '00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00',''],
       datasets: [
         {
-//          data: [20, 45, 28, 80, 99, 43],
           data: appState.apiData.historic_prices['current'],
           strokeWidth: 2, // optional
         },
@@ -543,11 +542,7 @@ console.log("Setup - Done Loading data");
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
-      <View style={styles.heading}>
-        <Text style={styles.headingText}>Buy Bitcoin</Text>
-      </View>
-
-
+  
 { appState.loadingPrices &&
     <View style={styles.loading}>
       <ActivityIndicator size='large' />
@@ -677,10 +672,7 @@ console.log("Setup - Done Loading data");
           } }
         />
       </View>  
-      </View>   
-         <View style={styles.errorWrapper}>
-          <Text style={styles.errorMessageText}>{assetBA} - {period}</Text>
-        </View>
+      </View>     
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
@@ -787,14 +779,14 @@ console.log("Setup - Done Loading data");
 
 let styles = StyleSheet.create({
   panelContainer: {
-    paddingVertical: scaledHeight(15),
+    paddingVertical: scaledHeight(0),
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
     //borderWidth: 1, // testing
   },
   panelSubContainer: {
-    paddingTop: scaledHeight(10),
+    paddingTop: scaledHeight(0),
     //paddingHorizontal: scaledWidth(30),
     height: '100%',
     //borderWidth: 1, // testing
@@ -821,7 +813,10 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(18),
   },
   quoteAssetWrapper: {
-    paddingVertical: scaledHeight(20),
+   // paddingVertical: scaledHeight(20),
+    paddingTop: scaledHeight(0),
+    paddingBottom: scaledHeight(20),
+
     width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
@@ -847,7 +842,9 @@ let styles = StyleSheet.create({
     width: scaledWidth(220),
   },
   baseAssetWrapper: {
-    paddingVertical: scaledHeight(20),
+//    paddingVertical: scaledHeight(20),
+    paddingTop: scaledHeight(0),
+    paddingBottom: scaledHeight(20),
     width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
@@ -888,7 +885,8 @@ let styles = StyleSheet.create({
     marginTop: scaledHeight(20),
   },
   buttonWrapper2: {
-    martinTop: 0,
+    marginTop: scaledHeight(-30),
+    marginBottom: scaledHeight(20),
     flexDirection: "row",
  //   height: scaledHeight(70),
 //    paddingHorizontal: scaledWidth(10),
@@ -931,9 +929,8 @@ let styles = StyleSheet.create({
 
 let styleButton = StyleSheet.create({
   view: {
+    backgroundColor: colors.greyedOutIcon,
     height: scaledHeight(15),
-//    width: '15%',
-//    height: '50%',
     paddingHorizontal: scaledWidth(15),
     minWidth:'12%',
   },
@@ -954,10 +951,8 @@ let styleButton = StyleSheet.create({
 
 let styleButtonSelected = StyleSheet.create({
   view: {
-    backgroundColor: 'red',
+//    backgroundColor: 'red',
     height: scaledHeight(15),
-//    width: '15%',
-//    height: '50%',
     paddingHorizontal: scaledWidth(15),
     minWidth:'12%',
   },
