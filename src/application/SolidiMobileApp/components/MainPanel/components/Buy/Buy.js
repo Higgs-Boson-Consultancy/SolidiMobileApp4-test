@@ -105,7 +105,6 @@ let Buy = () => {
   let [assetBA, setAssetBA] = useState(selectedAssetBA);
   let [itemsBA, setItemsBA] = useState(generateBaseAssetItems());
   let [period, setPeriod] = useState(selectedPeriod);
-  //let [loadingPrices, setLoadingPrices] = useState(true);
   let [graphPrices, setGraphPrices] = useState(graphPrices);
 
   // Dropdown state: Quote asset
@@ -128,24 +127,17 @@ let Buy = () => {
 
 
   let setup = async () => {
-    console.log("Setting up");
     try {
-      console.log(`Loading prices from`);
       await appState.generalSetup({caller: 'Buy'});
       await fetchBestPriceForQuoteAssetVolume();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setItemsBA(generateBaseAssetItems());
       setItemsQA(generateQuoteAssetItems());
       setNewAPIVersionDetected(appState.checkLatestAPIVersion());
-      console.log(`Loading prices from`);
       setLoadingBestPrice(false);
-      //let market = "BTC";
-      //let market = assetBA;
       let market = assetBA + '/' + assetQA;
 
-console.log("Setup - Loading data");
       let period = "2H";
-console.log("Setup - Done Loading data");
       await appState.loadHistoricPrices({market, period});
     } catch(err) {
       let msg = `Buy.setup: Error = ${err}`;
@@ -242,7 +234,7 @@ console.log("Setup - Done Loading data");
       // Check if we need to fetch data for the graph.
       let market = assetBA + '/' + assetQA;
       if(market!=graphMarket) {
-        console.log("Market changed from "+graphMarket+" to "+market+", updating graph");
+        log("Market changed from "+graphMarket+" to "+market+", updating graph");
         appState.loadHistoricPrices({market:market, period:period});
         setGraphMarket(market);
       }
@@ -450,27 +442,21 @@ console.log("Setup - Done Loading data");
     appState.apiData.historic_prices['current'] = [];
   }
 
-  function  getlinedata({assetBA, assetQA, peiod, graphPrices}) {
+  function  getlinedata({assetBA, assetQA, peiod}) {
     let market = assetBA+ '/' + assetQA;
- //   console.log(JSON.stringify(appState.apiData.historic_prices));
-    console.log('getlinedataZZZ '+market+' '+assetBA+' '+assetQA+' '+period);
-    console.log('getlinedataXXX '+market+' '+period);
-//    lj(appState.apiData.historic_prices);
     let data = [];
     if(appState.apiData.historic_prices[market]!=null &&
        appState.apiData.historic_prices[market][period]!=null)
     {
-//      data = appState.apiData.historic_prices[market][period];
+      // We have data for the requested market and period - display it.
       appState.apiData.historic_prices['current'] = appState.apiData.historic_prices[market][period];
     }
-    else {
-      console.log("Loading xx");
-      //appState.loadHistoricPrices({market:market, period:period});
+    else
+    {
+      // No data for the requested period - set to 'blank'
       appState.apiData.historic_prices['current'] = [1,1];
-      console.log("Loading xx 2");
     }
     linedata = {
-//      labels: ['', '00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00',''],
       labels: ['', '00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00',''],
       datasets: [
         {
@@ -549,7 +535,6 @@ console.log("Setup - Done Loading data");
     </View>
 }
   <LineChart
-//    data={getlinedata({assetBA, assetQA, period, graphPrices})}
     data={getlinedata({assetBA, assetQA, period})}
 //    width={Dimensions.get('window').width} // from react-native
     width={363} // from react-native
