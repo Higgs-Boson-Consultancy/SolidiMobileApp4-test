@@ -4,6 +4,7 @@ import StandardButton from './StandardButton';
 import FixedWidthButton from './FixedWidthButton';
 import ImageButton from './ImageButton/ImageButton';
 import Spinner from './Spinner';
+import PriceGraph from './PriceGraph';
 
 export {
   Button,
@@ -11,4 +12,5 @@ export {
   FixedWidthButton,
   ImageButton,
   Spinner,
+  PriceGraph,
 };
