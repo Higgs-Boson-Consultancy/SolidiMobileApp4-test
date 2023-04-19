@@ -108,12 +108,6 @@ let Buy = () => {
   let [errorMessage, setErrorMessage] = useState('');
   let [loadingBestPrice, setLoadingBestPrice] = useState(true);
 
-  // Graph state
-  let market = assetBA + '/' + assetQA;
-  let [period, setPeriod] = useState(selectedPeriod);
-  let [graphPrices, setGraphPrices] = useState(graphPrices);
-  let [graphMarket, setGraphMarket] = useState(market);
-
 
   // Initial setup.
   useEffect( () => {
@@ -224,14 +218,6 @@ let Buy = () => {
         fetchBestPriceForBaseAssetVolume();
       } else {
         fetchBestPriceForQuoteAssetVolume();
-      }
-
-      // Check if we need to fetch data for the graph (triggered when we change currency in the dropdown).
-      let market = assetBA + '/' + assetQA;
-      if(market!=graphMarket) {
-        log("Market changed from "+graphMarket+" to "+market+", updating graph");
-        appState.loadHistoricPrices({market:market, period:period});
-        setGraphMarket(market);
       }
     }
   }, [assetBA, assetQA]);
@@ -437,86 +423,17 @@ let Buy = () => {
   }
 
  
-  function periodStyle(buttonPeriod) {
-    if(period==buttonPeriod) {
-      return styleButtonSelected;
-    } else {
-      return styleButton;
 
-    }
-  }
   return (
 
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
   
-{ appState.loadingPrices &&
-    <View style={styles.loading}>
-      <ActivityIndicator size='large' />
-    </View>
-}
-  <PriceGraph assetBA={assetBA} assetQA={assetQA} period={period} historic_prices={appState.apiData.historic_prices}/>
 
-  <View style={styles.buttonWrapper2}>
-       <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('2H')} title='2H'
-          onPress={ async () => {
-            setPeriod("2H");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"2H"});
-          } }
-        />
-      </View>   
-      <View style={styleButton.wrapper}>
+  <PriceGraph assetBA={assetBA} assetQA={assetQA} historic_prices={appState.apiData.historic_prices}/>
 
-        <FixedWidthButton styles={periodStyle('8H')} title='8H'
-          onPress={ async () => {
-            setPeriod("8H");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"8H"});
-          } }
-        />
-      </View>  
-      <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('1D')} title='1D'
-          onPress={ async () => { 
-            setPeriod("1D");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"1D"});
-          } }
-        />
-      </View>  
-      <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('1W')} title='1W'
-          onPress={ async () => { 
-            setPeriod("1W");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"1W"});
-          } }
-        />
-      </View>  
-      <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('1M')} title='1M'
-          onPress={ async () => { 
-            setPeriod("1M");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"1M"});
-          } }
-        />
-      </View>  
-      <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('6M')} title='6M'
-          onPress={ async () => { 
-            setPeriod("6M");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"6M"});
-          } }
-        />
-      </View>  
-      <View style={styleButton.wrapper}>
-        <FixedWidthButton styles={periodStyle('1Y')} title='1Y'
-          onPress={ async () => { 
-            setPeriod("1Y");
-            await appState.loadHistoricPrices({market:assetBA+ '/' + assetQA, period:"1Y"});
-          } }
-        />
-      </View>  
-      </View>     
+   
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
@@ -732,14 +649,6 @@ let styles = StyleSheet.create({
     marginLeft: '25%',
     width: '50%',
   },
-  buttonWrapper2: {
-    marginTop: scaledHeight(-30),
-    marginBottom: scaledHeight(20),
-    flexDirection: "row",
- //   height: scaledHeight(70),
-//    paddingHorizontal: scaledWidth(10),
-  //  paddingVertical: scaledWidth(0),
-  },
   errorWrapper: {
     //marginTop: scaledHeight(20),
     marginBottom: scaledHeight(20),
@@ -762,62 +671,9 @@ let styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
   },
-  loading: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 100,
-    bottom: 0,
-    alignItems: 'center',
-//    justifyContent: 'center'
-    zIndex: +100, // works on ios
-    elevation: +100, // works on android
-   },  
 });
 
-let styleButton = StyleSheet.create({
-  view: {
-    backgroundColor: colors.greyedOutIcon,
-    height: scaledHeight(15),
-    paddingHorizontal: scaledWidth(15),
-    minWidth:'12%',
-  },
-  text: {
-    color: colors.standardButtonText,
-    fontWeight: 'bold',
-    fontSize: normaliseFont(10),
-    padding:'0%',
-    margin: '0%',
-  },
-  wrapper: {
-    marginTop: scaledHeight(0),
-    marginBottom: scaledHeight(10),
-    marginLeft: scaledWidth(5),
- //   height: '10pt',
-  }
-});
 
-let styleButtonSelected = StyleSheet.create({
-  view: {
-//    backgroundColor: 'red',
-    height: scaledHeight(15),
-    paddingHorizontal: scaledWidth(15),
-    minWidth:'12%',
-  },
-  text: {
-    color: colors.standardButtonText,
-    fontWeight: 'bold',
-    fontSize: normaliseFont(10),
-    padding:'0%',
-    margin: '0%',
-  },
-  wrapper: {
-    marginTop: scaledHeight(0),
-    marginBottom: scaledHeight(10),
-    marginLeft: scaledWidth(5),
- //   height: '10pt',
-  }
-});
 
 let styleContactUsButton = StyleSheet.create({
   text: {
