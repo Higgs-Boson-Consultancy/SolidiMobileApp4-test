@@ -531,7 +531,7 @@ let Sell = () => {
       {generateBalanceSection()}
 
       <View style={styles.buttonWrapper}>
-        <StandardButton title="Sell now" onPress={ startSellRequest } />
+        <FixedWidthButton title="Sell now" onPress={ startSellRequest } />
       </View>
 
       </KeyboardAwareScrollView>
@@ -545,13 +545,13 @@ let Sell = () => {
 
 let styles = StyleSheet.create({
   panelContainer: {
-    paddingVertical: scaledHeight(15),
+    paddingVertical: scaledHeight(0),
     paddingHorizontal: scaledWidth(15),
     width: '100%',
     height: '100%',
   },
   panelSubContainer: {
-    paddingTop: scaledHeight(10),
+    paddingTop: scaledHeight(0),
     //paddingHorizontal: scaledWidth(30),
     height: '100%',
     //borderWidth: 1, // testing
@@ -578,7 +578,10 @@ let styles = StyleSheet.create({
     fontSize: normaliseFont(18),
   },
   quoteAssetWrapper: {
-    paddingVertical: scaledHeight(20),
+    //paddingVertical: scaledHeight(20),
+    paddingTop: scaledHeight(0),
+    paddingBottom: scaledHeight(20),
+
     width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
@@ -602,7 +605,10 @@ let styles = StyleSheet.create({
     width: scaledWidth(220),
   },
   baseAssetWrapper: {
-    paddingVertical: scaledHeight(20),
+    //paddingVertical: scaledHeight(20),
+    paddingTop: scaledHeight(0),
+    paddingBottom: scaledHeight(20),
+
     width: '100%',
     flexDirection: "row",
     justifyContent: 'space-between',
@@ -630,6 +636,7 @@ let styles = StyleSheet.create({
   },
   priceWrapper: {
     marginVertical: scaledHeight(10),
+    alignItems: 'center',
   },
   priceText: {
     fontWeight: 'bold',
@@ -637,6 +644,8 @@ let styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginTop: scaledHeight(20),
+    marginLeft: '25%',
+    width: '50%',
   },
   errorWrapper: {
     //marginTop: scaledHeight(20),
