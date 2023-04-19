@@ -11,8 +11,8 @@ import Big from 'big.js';
 // Internal imports
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
-import { StandardButton } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { Button, StandardButton, FixedWidthButton, Spinner, PriceGraph } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 // Logger
@@ -139,6 +139,10 @@ let Sell = () => {
       setItemsQA(generateQuoteAssetItems());
       setBalanceBA(appState.getBalance(assetBA));
       setLoadingBestPrice(false);
+
+      let market = assetBA + '/' + assetQA;
+      let period = "2H";
+      await appState.loadHistoricPrices({market, period});
     } catch(err) {
       let msg = `Sell.setup: Error = ${err}`;
       console.log(msg);
@@ -444,9 +448,8 @@ let Sell = () => {
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
 
-      <View style={styles.heading}>
-        <Text style={styles.headingText}>Sell</Text>
-      </View>
+
+      <PriceGraph assetBA={assetBA} assetQA={assetQA} historic_prices={appState.apiData.historic_prices}/>
 
       {!! errorMessage &&
         <View style={styles.errorWrapper}>
