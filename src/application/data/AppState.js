@@ -1375,22 +1375,16 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         this.state.apiData.market = data;
       }
 
-      // Intialise the prices
+      // Intialise the historic prices
       for(var idx in data) {
-        log(data[idx]);
         this.state.apiData.historic_prices[data[idx]] = {};
         for(var idx2 in graph_periods) {
-          console.log("Setting up "+data[idx]+ " "+graph_periods[idx2])
           this.state.apiData.historic_prices[data[idx]][graph_periods[idx2]] = [0];
         }
-;      }
-console.log("Setting up1 "+this.state.apiData.historic_prices);
-console.log("Setting up2 "+this.state.apiData.historic_prices["BTC/GBP"]);
-console.log("Setting up3 "+this.state.apiData.historic_prices["BTC/GBP"]["1D"]);
+      }
+
       this.state.apiData.historic_prices['current'] = this.state.apiData.historic_prices["BTC/GBP"]["1D"];
-      log(jd(this.state.apiData.historic_prices));
       await this.loadHistoricPrices({market:"BTC/GBP",period:"1D"});
-      //this.state.apiData.historic_prices =
       return data;
     }
 
@@ -1559,9 +1553,8 @@ console.log("Setting up3 "+this.state.apiData.historic_prices["BTC/GBP"]["1D"]);
       //this.state.loadingPrices = true;
       this.setState({loadingPrices: true});
       let {domain} = this.state;
-//      let url = "https://"+domain+"/"+market+".csv";
       let remotemarket = market.replace("/","-");
-      let url = "https://hcp1.solidi.co/"+remotemarket+"-"+period+".csv";
+      let url = "https://"+domain+"/"+remotemarket+"-"+period+".csv";
       log(`Loading prices from ${market} ${url}`);
       const response = await fetch(url);
       let prices = "";
@@ -1569,57 +1562,35 @@ console.log("Setting up3 "+this.state.apiData.historic_prices["BTC/GBP"]["1D"]);
         prices = await response.text();
       }
       pricesX = prices.split("\n");
-      log('prices = '+pricesX.length);
-      if(pricesX.length>2) {
+      if(pricesX.length> 2) {
         let floatPrices = [];
         for(var idx in pricesX) {
-    //      log('converting1 '+idx);
-    //      log('converting2 >'+pricesX[idx]+'<');
           if(pricesX[idx]!="") {
             floatPrices.push(parseFloat(pricesX[idx]));
           }
         }
-        //floatPrices = [10,20,30,20,10];
         log("Saving "+market+" "+period);
-        console.log("Saving "+market+" "+period);
         this.setHistoricPrices({market, period, prices:floatPrices});
         this.setState({graphPrices: floatPrices});
-        log("Saving done");
-        console.log("Saving done");
-//        this.state.apiData.historic_prices[market] = prices;
-        log(`Loaded prices for ${market}.`);
-//        log(`xxData=>${floatPrices}<`);
       } else {
-        // DIsplay warning
+        log(`Waring - got less than 2 prices for ${market} (${period})`);
       }
       this.setState({loadingPrices: false});
-
-
     }
 
     this.setHistoricPrices = ({market, period, prices}) => {
       let historic_prices = this.state.apiData.historic_prices;
-//      console.log("hp = "+JSON.stringify(historic_prices));
-//log('HP = '+prices);
-log('M == '+market);
-log('P == '+period);
-console.log('M == '+market);
-console.log('P == '+period);
-    try {
-      if(historic_prices[market]==undefined || historic_prices[market][period]==undefined) {
-        log('Undefined ============================================================');
-        console.log('Undefined ============================================================');
-        historic_prices[market][period] = [1];
-      } else {
-        historic_prices[market][period] = prices;
-//log('HP = '+prices);
+      try {
+        if(historic_prices[market]==undefined || historic_prices[market][period]==undefined) {
+          historic_prices[market][period] = [1];
+        } else {
+          historic_prices[market][period] = prices;
+        }
+        historic_prices['current'] = historic_prices[market][period];
+        this.setState({historic_prices});
+      } catch (e) {
+        logger.error(e.stack);
       }
-      historic_prices['current'] = historic_prices[market][period];
-      this.setState({historic_prices});
-//      this.setState({assetBA: "BTC"});
-    } catch (e) {
-      console.log(e.stack);
-    }
     }
 
     this.setPrice = ({market, price}) => {
@@ -2695,7 +2666,6 @@ console.log('P == '+period);
         ticker: {},
         transaction: [],
         historic_prices: {"BTC/GBPX":{"1D":[1,20]}},
-//        loadingPrices: true, 
       },
       prevAPIData: {
         ticker: {},
