@@ -9,6 +9,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 // Other imports
 import _ from 'lodash';
 import Big from 'big.js';
+import { LineChart } from 'react-native-chart-kit'
 
 // Internal imports
 import AppStateContext from 'src/application/data';
@@ -23,14 +24,6 @@ let logger2 = logger.extend('Buy');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
-import {
-  LineChart,
-  BarChart,
-  PieChart,
-  ProgressChart,
-  ContributionGraph,
-  StackedBarChart
-} from 'react-native-chart-kit'
 
 
 
