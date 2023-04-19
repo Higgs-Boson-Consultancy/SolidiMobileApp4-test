@@ -1,7 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Image, Text, TextInput, StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
-import { Dimensions, Platform, PixelRatio } from 'react-native';
+import { Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
 
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -62,7 +61,6 @@ let Buy = () => {
   let selectedVolumeBA = '[loading]'; // On first render, we send the selectedVolumeQA to the API to get the best price.
   let selectedAssetQA = 'GBP';
   let selectedVolumeQA = '10';
-  let selectedPeriod = '1D';
 
   // Function that derives dropdown properties from an asset list.
   let deriveAssetItems = (assets) => {
@@ -417,9 +415,6 @@ let Buy = () => {
         </View>
       </View>
     )
-  }
-  if(appState.apiData.historic_prices['current']==undefined) {
-    appState.apiData.historic_prices['current'] = [];
   }
 
  

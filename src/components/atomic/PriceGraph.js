@@ -22,6 +22,10 @@ let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
   let [period, setPeriod] = useState(selectedPeriod);
   let [graphMarket, setGraphMarket] = useState(market);
 
+  if(historic_prices['current']==undefined) {
+    historic_prices['current'] = [];
+  }
+
 
  function  getlinedata({assetBA, assetQA, period}) {
     let market = assetBA+ '/' + assetQA;
