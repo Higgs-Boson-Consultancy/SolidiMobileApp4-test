@@ -42,7 +42,9 @@ let Receive = () => {
 
   let pageName = appState.pageName;
   let permittedPageNames = 'default'.split(' ');
-  misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Receive');
+
+  // Don't check the pageName here - check below against the depositEnabled assets.
+  // misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'Receive');
 
 
   // Function that derives dropdown properties from an asset list.
@@ -67,6 +69,15 @@ let Receive = () => {
 
   // Initial state:
   let selectedAssetCA = 'BTC';
+
+  // Check if the pageName matches one of our assets and if so switch to that instead of the default asset.
+  let possibleAssets = generateAssetItems();
+  possibleAssets.forEach(item => {
+    console.log(item.value);
+    if(item.value == pageName) {
+      selectedAssetCA = pageName
+    }
+  });
 
   // Dropdown state: Select asset
   // CA = Chosen Asset
