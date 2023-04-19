@@ -30,9 +30,6 @@ let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
  function  getlinedata({assetBA, assetQA, period}) {
     let market = assetBA+ '/' + assetQA;
     let data = [];
-    console.log(assetBA);
-    console.log(assetQA);
-    console.log(historic_prices);
 
     if(historic_prices[market]!=null &&
        historic_prices[market][period]!=null)
