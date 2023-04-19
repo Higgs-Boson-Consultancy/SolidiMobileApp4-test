@@ -144,8 +144,8 @@ let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
       fillShadowGradientFrom: '#000000',
       fillShadowGradientFromOpacity: '0.3',
       fillShadowGradientTo:   '#FFFFFF',
-      fillShadowGradientToOffset: '200',
-      fillShadowGradientToOpacity: '0',
+      fillShadowGradientToOffset: '0.8',
+      fillShadowGradientToOpacity: '0.0',
       backgroundGradientFrom: '#ffffff',
       backgroundGradientTo:   '#ffffff',
       decimalPlaces:getPriceDP({assetBA, assetQA, period}),
@@ -189,6 +189,7 @@ let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
           } }
         />
       </View>   
+
       <View style={styleButton.wrapper}>
 
         <FixedWidthButton styles={periodStyle('8H')} title='8H'
@@ -238,6 +239,7 @@ let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
           } }
         />
       </View>  
+
       </View>  
       </View>  
   );
@@ -247,7 +249,10 @@ let styles = StyleSheet.create({
   buttonWrapper2: {
     marginTop: scaledHeight(-30),
     marginBottom: scaledHeight(20),
+    justifyContent:'center',
+
     flexDirection: "row",
+    alignItems: "center",
  //   height: scaledHeight(70),
 //    paddingHorizontal: scaledWidth(10),
   //  paddingVertical: scaledWidth(0),
@@ -267,16 +272,16 @@ let styles = StyleSheet.create({
 });
 
 let styleButton = StyleSheet.create({
-  view: {
+  view: {minWidth: 300,
     backgroundColor: colors.greyedOutIcon,
-    height: scaledHeight(15),
+    height: scaledHeight(20),
     paddingHorizontal: scaledWidth(15),
     minWidth:'12%',
   },
   text: {
     color: colors.standardButtonText,
     fontWeight: 'bold',
-    fontSize: normaliseFont(10),
+    fontSize: normaliseFont(12),
     padding:'0%',
     margin: '0%',
   },
@@ -291,14 +296,14 @@ let styleButton = StyleSheet.create({
 let styleButtonSelected = StyleSheet.create({
   view: {
 //    backgroundColor: 'red',
-    height: scaledHeight(15),
+    height: scaledHeight(20),
     paddingHorizontal: scaledWidth(15),
     minWidth:'12%',
   },
   text: {
     color: colors.standardButtonText,
     fontWeight: 'bold',
-    fontSize: normaliseFont(10),
+    fontSize: normaliseFont(12),
     padding:'0%',
     margin: '0%',
   },
