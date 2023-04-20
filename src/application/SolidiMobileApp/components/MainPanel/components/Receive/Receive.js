@@ -105,7 +105,7 @@ let Receive = () => {
         setAssetCA('[None]');
       }
 
-      setCryptoTxnsEnabled((appState.getUserStatus('bankAccountConfirmed') || appState.getUserStatus('identityChecked')));
+      setCryptoTxnsEnabled((appState.getUserStatus('addressConfirmed') || appState.getUserStatus('bankAccountConfirmed') || appState.getUserStatus('identityChecked')));
 
       triggerRender(renderCount+1);
     } catch(err) {

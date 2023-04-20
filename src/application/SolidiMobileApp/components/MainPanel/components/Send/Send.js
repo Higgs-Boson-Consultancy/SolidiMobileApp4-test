@@ -202,6 +202,9 @@ let Send = () => {
       setItemsPriority(generatePriorityItemsForAsset(assetSA));
       setPriority(selectLowestAvailablePriority(assetSA));
       setTransferFee(selectFee({priority, asset: assetSA}));
+
+      setCryptoTxnsEnabled((appState.getUserStatus('addressConfirmed') || appState.getUserStatus('bankAccountConfirmed') || appState.getUserStatus('identityChecked')));
+
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Send.setup: ${err}`;
