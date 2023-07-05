@@ -203,7 +203,15 @@ let Send = () => {
       setPriority(selectLowestAvailablePriority(assetSA));
       setTransferFee(selectFee({priority, asset: assetSA}));
 
-      setCryptoTxnsEnabled((appState.getUserStatus('addressConfirmed') || appState.getUserStatus('bankAccountConfirmed') || appState.getUserStatus('identityChecked')));
+      // If the deposit address returns "idrequired" or we have disabled cryptoWithdraw for the
+      // user, then don't display withdraw details and display error dialog
+      await appState.loadDepositDetailsForAsset(assetSA);
+      let addressProperties = appState.getDepositDetailsForAsset(assetSA);
+      if(("result" in addressProperties && addressProperties['result']=="idrequired") || appState.getUserStatus('cryptoWithdrawDisabled') ) {
+        setCryptoTxnsEnabled(false);
+      } else {
+        setCryptoTxnsEnabled(true);
+      }
 
       triggerRender(renderCount+1);
     } catch(err) {

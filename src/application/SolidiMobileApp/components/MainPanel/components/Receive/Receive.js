@@ -96,6 +96,15 @@ let Receive = () => {
     try {
       await appState.generalSetup({caller: 'Receive'});
       await appState.loadDepositDetailsForAsset(assetCA);
+
+      // If the deposit address returns "idrequired" or we have disabled cryptoWithdraw for the
+      // user, then don't display withdraw details and display error dialog
+      let addressProperties = appState.getDepositDetailsForAsset(assetCA);
+      if(("result" in addressProperties && addressProperties['result']=="idrequired") || appState.getUserStatus('cryptoWithdrawDisabled') ) {
+        setCryptoTxnsEnabled(false);
+      } else {
+        setCryptoTxnsEnabled(true);
+      }
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       let assetItems = generateAssetItems();
       setItemsCA(assetItems);
@@ -104,8 +113,6 @@ let Receive = () => {
         logger.error(msg);
         setAssetCA('[None]');
       }
-
-      setCryptoTxnsEnabled((appState.getUserStatus('addressConfirmed') || appState.getUserStatus('bankAccountConfirmed') || appState.getUserStatus('identityChecked')));
 
       triggerRender(renderCount+1);
     } catch(err) {
@@ -169,6 +176,7 @@ let Receive = () => {
         </View>
       )
     }
+
     let addressKeys = _.keys(addressProperties);
     // Check for an error response.
     if (_.isEqual(addressKeys, ['error'])) {
