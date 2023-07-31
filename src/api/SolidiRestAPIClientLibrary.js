@@ -55,6 +55,16 @@ export default class SolidiRestAPIClientLibrary {
     let expected = 'userAgent, apiKey, apiSecret, domain'.split(', ');
     this._checkExactExpectedArgs(args, expected, 'constructor');
     _.assign(this, args);
+
+    // When testing for release into production, it is not possible to use www.solidi.co (as this is pointing to the current live server)
+    // and it is not easy to override the DNS when testing on a mobile app.
+    // Instead we use the hostname 'tt.solidi.co', however as the new production server is setup as www.solidi.co and expects all messages
+    // to be signed as going to www.solidi.co we override the domain name supplied here with www.solidi.co for the purposes of signing api
+    // calls.
+    this.signingDomain = this.domain;
+    if(this.domain=='tt.solidi.co') {
+      this.signingDomain = 'www.solidi.co';
+    }
     this.prevNonce = Date.now() * 1000; // Note: Date.now() returns a value in milliseconds.
     this.activeRequest = false;
   }
@@ -292,7 +302,7 @@ export default class SolidiRestAPIClientLibrary {
     let expected = 'path, postData'.split(', ');
     this._checkExactExpectedArgs(args, expected, 'signAPICall');
     let {path, postData} = args;
-    let dataToSign = this.domain + path;
+    let dataToSign = this.signingDomain + path;
     if (postData) dataToSign += postData;
     //this.deb({dataToSign});
     let secretBase64 = Buffer.from(this.apiSecret).toString('base64');
