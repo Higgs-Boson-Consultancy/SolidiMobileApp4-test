@@ -49,7 +49,7 @@ let jd = JSON.stringify;
 
 // Settings: Critical (check before making a new release)
 let autoLoginOnDevAndStag = false; // Only used during development (i.e. on 'dev' tier) to automatically login using a dev user.
-let preserveRegistrationData = true; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
+let preserveRegistrationData = false; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
 // - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
 import appTier from 'src/application/appTier'; // dev / stag / prod.
 
