@@ -1121,7 +1121,7 @@ PODS:
     - React-jsi (= 0.73.11)
     - React-logger (= 0.73.11)
     - React-perflogger (= 0.73.11)
-  - RNCAsyncStorage (2.1.2):
+  - RNCAsyncStorage (2.2.0):
     - React-Core
   - RNCClipboard (1.14.0):
     - React-Core
@@ -1129,9 +1129,9 @@ PODS:
     - React
   - RNFS (2.20.0):
     - React-Core
-  - RNKeychain (8.2.0):
+  - RNKeychain (8.0.0):
     - React-Core
-  - RNSVG (15.11.2):
+  - RNSVG (15.13.0):
     - React-Core
   - RNVectorIcons (10.0.3):
     - glog
@@ -1375,7 +1375,7 @@ SPEC CHECKSUMS:
   Flipper-PeerTalk: 116d8f857dc6ef55c7a5a75ea3ceaafe878aadc9
   FlipperKit: 37525a5d056ef9b93d1578e04bc3ea1de940094f
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
-  glog: c5d68082e772fa1c511173d6b30a9de2c05a69a2
+  glog: 035f1e36e53b355cf70f6434d161b36e7d21fecd
   hermes-engine: d992945b77c506e5164e6a9a77510c9d57472c59
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   OpenSSL-Universal: ebc357f1e6bc71fa463ccb2fe676756aff50e88c
@@ -1423,12 +1423,12 @@ SPEC CHECKSUMS:
   React-runtimescheduler: 398069b748d97567cc7585cc9a97284ad19d72fa
   React-utils: e8549669b504c18929b2e9aa4d87657e530a91a4
   ReactCommon: 9c38e8797dc2ac72edf63cd18cf450d918575666
-  RNCAsyncStorage: b9f5f78da5d16a853fe3dc22e8268d932fc45a83
+  RNCAsyncStorage: b44e8a4e798c3e1f56bffccd0f591f674fb9198f
   RNCClipboard: c20b93d3a1b47ce86dcffa5c0af5dd59938e47e1
   RNDnsLookup: db4a89381b80ec1a5153088518d2c4f8e51f2521
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
-  RNKeychain: bbe2f6d5cc008920324acb49ef86ccc03d3b38e4
-  RNSVG: 36ab724902de0406127ef8d63d940c055e2a1442
+  RNKeychain: 3194f1c9d8599f39e570b4b5ecbcdd8cd610e771
+  RNSVG: 46521c4cc8267ae35019c83e0ec7e495876793e6
   RNVectorIcons: 102cd20472bf0d7cd15443d43cd87f9c97228ac3
   SocketRocket: f32cd54efbe0f095c4d7594881e52619cfe80b17
   Yoga: a813a6d82538ccba91c54406404e3ed80b48a692
