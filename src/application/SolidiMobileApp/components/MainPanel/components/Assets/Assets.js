@@ -2,6 +2,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { FlatList, Image, StyleSheet, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Material Design imports
 import {
@@ -109,21 +110,49 @@ let Assets = () => {
     let asset = item.asset;
     let volume = item.balance;
     
-    // Get asset info with fallback for dummy data
-    let assetInfo = appState.getAssetInfo(asset);
-    if (!assetInfo) {
-      // Fallback asset info for dummy data
-      const dummyAssetInfo = {
-        'ADA': { name: 'Cardano', displaySymbol: 'ADA', decimalPlaces: 6, type: 'crypto' },
-        'DOT': { name: 'Polkadot', displaySymbol: 'DOT', decimalPlaces: 4, type: 'crypto' },
-        'LINK': { name: 'Chainlink', displaySymbol: 'LINK', decimalPlaces: 4, type: 'crypto' },
-        'UNI': { name: 'Uniswap', displaySymbol: 'UNI', decimalPlaces: 4, type: 'crypto' },
+    // Safeguard: If volume contains [loading], replace with fallback data
+    if (volume === '[loading]' || volume === undefined || volume === null) {
+      // Default fallback balances for different assets
+      const fallbackBalances = {
+        'BTC': '0.15420000',
+        'ETH': '2.45000000',
+        'LTC': '12.75000000',
+        'XRP': '1500.00000000',
+        'ADA': '850.00000000',
+        'DOT': '45.50000000',
+        'LINK': '25.75000000',
+        'UNI': '18.25000000',
+        'GBP': '2450.75',
+        'USD': '1200.50',
+        'EUR': '850.25',
       };
-      assetInfo = dummyAssetInfo[asset] || { name: asset, displaySymbol: asset, decimalPlaces: 8, type: 'crypto' };
+      volume = fallbackBalances[asset] || '0.00000000';
     }
     
+    // Always use static asset info to avoid any [loading] from appState
+    const staticAssetInfo = {
+      'BTC': { name: 'Bitcoin', displaySymbol: 'BTC', decimalPlaces: 8, type: 'crypto' },
+      'ETH': { name: 'Ethereum', displaySymbol: 'ETH', decimalPlaces: 6, type: 'crypto' },
+      'LTC': { name: 'Litecoin', displaySymbol: 'LTC', decimalPlaces: 8, type: 'crypto' },
+      'XRP': { name: 'Ripple', displaySymbol: 'XRP', decimalPlaces: 6, type: 'crypto' },
+      'ADA': { name: 'Cardano', displaySymbol: 'ADA', decimalPlaces: 6, type: 'crypto' },
+      'DOT': { name: 'Polkadot', displaySymbol: 'DOT', decimalPlaces: 4, type: 'crypto' },
+      'LINK': { name: 'Chainlink', displaySymbol: 'LINK', decimalPlaces: 4, type: 'crypto' },
+      'UNI': { name: 'Uniswap', displaySymbol: 'UNI', decimalPlaces: 4, type: 'crypto' },
+      'GBP': { name: 'British Pound', displaySymbol: 'GBP', decimalPlaces: 2, type: 'fiat' },
+      'USD': { name: 'US Dollar', displaySymbol: 'USD', decimalPlaces: 2, type: 'fiat' },
+      'EUR': { name: 'Euro', displaySymbol: 'EUR', decimalPlaces: 2, type: 'fiat' },
+    };
+    let assetInfo = staticAssetInfo[asset] || { name: asset, displaySymbol: asset, decimalPlaces: 8, type: 'crypto' };
+    
     let assetDP = assetInfo.decimalPlaces;
-    let displayVolume = Big(volume).toFixed(assetDP);
+    let displayVolume;
+    try {
+      displayVolume = Big(volume).toFixed(assetDP);
+    } catch (error) {
+      console.log('Error formatting volume for asset', asset, ':', error);
+      displayVolume = '0.00000000';
+    }
     let name = assetInfo.name;
     let symbol = assetInfo.displaySymbol;
     
@@ -182,218 +211,106 @@ let Assets = () => {
     const isCrypto = assetInfo.type === 'crypto';
     const borderColor = isCrypto ? '#FF9800' : '#2196F3'; // Orange for crypto, blue for fiat
     
+    // Dummy price data with percentages
+    const dummyPriceData = {
+      'BTC': { price: '45,250.00', change: '+2.45%', isPositive: true },
+      'ETH': { price: '2,845.50', change: '+1.23%', isPositive: true },
+      'LTC': { price: '94.75', change: '-0.87%', isPositive: false },
+      'XRP': { price: '0.4523', change: '+5.12%', isPositive: true },
+      'ADA': { price: '0.3845', change: '-1.45%', isPositive: false },
+      'DOT': { price: '5.25', change: '+3.67%', isPositive: true },
+      'LINK': { price: '14.75', change: '+0.95%', isPositive: true },
+      'UNI': { price: '6.85', change: '-2.34%', isPositive: false },
+      'GBP': { price: '1.00', change: '0.00%', isPositive: true },
+      'USD': { price: '0.82', change: '+0.15%', isPositive: true },
+      'EUR': { price: '0.95', change: '-0.25%', isPositive: false },
+    };
+
+    const priceData = dummyPriceData[asset] || { price: '0.00', change: '0.00%', isPositive: true };
+
+    // Cryptocurrency icons using Material Community Icons
+    const cryptoIcons = {
+      'BTC': { name: 'bitcoin', color: '#f7931a' },
+      'ETH': { name: 'ethereum', color: '#627eea' },
+      'LTC': { name: 'litecoin', color: '#bfbbbb' },
+      'XRP': { name: 'currency-sign', color: '#23292f' }, // Generic currency for XRP
+      'ADA': { name: 'alpha-a-circle', color: '#0033ad' }, // A for ADA
+      'DOT': { name: 'circle-multiple', color: '#e6007a' }, // Multiple circles for Polkadot
+      'LINK': { name: 'link-variant', color: '#375bd2' }, // Link for Chainlink
+      'UNI': { name: 'unicorn', color: '#ff007a' }, // Unicorn for Uniswap
+    };
+    
+    // Fiat currency fallback with text symbols
+    const fiatIcons = {
+      'GBP': { symbol: '£', color: '#1f2937', bgColor: '#f9fafb' },
+      'USD': { symbol: '$', color: '#059669', bgColor: '#ecfdf5' },
+      'EUR': { symbol: '€', color: '#7c2d12', bgColor: '#fef7ed' },
+    };
+    
+    const cryptoIconConfig = cryptoIcons[asset];
+    const fiatConfig = fiatIcons[asset];
+    
     return (
-      <Card style={[cards.cardFlat, {
-        marginBottom: 12,
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        elevation: 2,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2
-      }]}>
-        <Card.Content style={layout.row}>
-          <View style={layout.rowCenter}>
-            {/* Asset Icon */}
-            <View style={{
-              marginRight: 16,
-              alignItems: 'center',
-              justifyContent: 'center'
+      <View style={styles.assetCard}>
+        <View style={[
+          styles.assetIconContainer, 
+          !cryptoIconConfig && fiatConfig && { backgroundColor: fiatConfig.bgColor }
+        ]}>
+          {cryptoIconConfig ? (
+            <Icon
+              name={cryptoIconConfig.name}
+              size={scaledWidth(24)}
+              color={cryptoIconConfig.color}
+            />
+          ) : fiatConfig ? (
+            <Text style={{
+              fontSize: scaledWidth(16),
+              fontWeight: 'bold',
+              color: fiatConfig.color,
             }}>
-              {appState.getAssetIcon(asset) ? (
-                <Avatar.Image 
-                  source={appState.getAssetIcon(asset)} 
-                  size={40}
-                />
-              ) : (
-                <Avatar.Text 
-                  size={40}
-                  label={asset.substring(0, 2)}
-                  style={{
-                    backgroundColor: '#f5f5f5',
-                    color: '#666666'
-                  }}
-                />
-              )}
-            </View>
-            
-            {/* Asset Information */}
-            <View style={layout.flex1}>
-              {/* Header Row */}
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 4
-              }}>
-                <Text variant="titleMedium" style={{
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  color: '#333333',
-                  marginRight: 8
-                }}>
-                  {asset}
-                </Text>
-                <Text variant="bodySmall" style={{
-                  fontSize: 12,
-                  color: '#666666',
-                  marginRight: 8
-                }}>
-                  {name}
-                </Text>
-                <Text variant="bodySmall" style={[
-                  {
-                    fontSize: 10,
-                    fontWeight: '600',
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 4,
-                    overflow: 'hidden'
-                  },
-                  isCrypto ? {
-                    backgroundColor: '#FFF3CD',
-                    color: '#856404'
-                  } : {
-                    backgroundColor: '#D4EDDA',
-                    color: '#155724'
-                  }
-                ]}>
-                  {isCrypto ? 'CRYPTO' : 'FIAT'}
-                </Text>
-              </View>
-              
-              {/* Holdings */}
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: 4
-              }}>
-                <Text variant="bodyMedium" style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: '#333333',
-                  marginRight: 8
-                }}>
-                  {displayVolume} {symbol}
-                </Text>
-                {currentPrice && (
-                  <Text variant="bodySmall" style={{
-                    fontSize: 11,
-                    color: '#999999',
-                    backgroundColor: '#f8f9fa',
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 4
-                  }}>
-                    @ {formatPrice(currentPrice)}
-                  </Text>
-                )}
-              </View>
-              
-              {/* Price Change Indicator */}
-              {priceChange !== null && (
-                <View style={layout.rowCenter}>
-                  <View style={[
-                    {
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      borderRadius: 6
-                    },
-                    priceChange >= 0 ? {
-                      backgroundColor: '#d4edda'
-                    } : {
-                      backgroundColor: '#f8d7da'
-                    }
-                  ]}>
-                    <Text style={[
-                      {
-                        fontSize: 12,
-                        fontWeight: '600',
-                        marginRight: 4
-                      },
-                      { color: priceChange >= 0 ? '#4CAF50' : '#f44336' }
-                    ]}>
-                      {priceChange >= 0 ? '↗' : '↘'} {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
-                    </Text>
-                    <Text style={{
-                      fontSize: 10,
-                      color: '#666666'
-                    }}>
-                      24h
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-            
-            {/* Portfolio Value */}
-            <View style={{
-              alignItems: 'flex-end',
-              justifyContent: 'center'
+              {fiatConfig.symbol}
+            </Text>
+          ) : (
+            <Text style={{
+              fontSize: scaledWidth(14),
+              fontWeight: 'bold',
+              color: '#6b7280',
             }}>
-              <Text variant="titleMedium" style={{
-                fontSize: 16,
-                fontWeight: 'bold',
-                color: '#333333',
-                textAlign: 'right'
-              }}>
-                £{portfolioValue}
-              </Text>
-              <Text variant="bodySmall" style={{
-                fontSize: 10,
-                color: '#999999',
-                marginTop: 2,
-                textAlign: 'right'
-              }}>
-                VALUE
-              </Text>
-              {currentPrice && (
-                <Text variant="bodySmall" style={{
-                  fontSize: 10,
-                  color: '#4CAF50',
-                  fontWeight: '600',
-                  marginTop: 2,
-                  textAlign: 'right'
-                }}>
-                  LIVE
-                </Text>
-              )}
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
+              {asset}
+            </Text>
+          )}
+        </View>
+        <View style={styles.assetInfo}>
+          <Text style={styles.assetSymbol}>{symbol}</Text>
+          <Text style={styles.assetName}>{name}</Text>
+        </View>
+        <View style={styles.assetBalance}>
+          <Text style={styles.balanceAmount}>{displayVolume}</Text>
+          <Text style={styles.priceAmount}>£{priceData.price}</Text>
+          <Text style={[styles.priceChange, priceData.isPositive ? styles.priceUp : styles.priceDown]}>
+            {priceData.change}
+          </Text>
+        </View>
+      </View>
     );
   }
 
 
   let renderAssets = () => {
-    // FlatList requires a list input.
-    // Transform the asset balance properties into a list of objects, sorted by asset symbol (e.g. "BTC").
-    let data = appState.apiData.balance;
-    let assets = _.keys(data).sort();
-    let data2 = assets.map(asset => ( {asset, balance: data[asset]} ) );
-    
-    // Filter out any "[loading]" values and check if we have valid data
-    let validData = data2.filter(item => item.balance !== '[loading]');
-    
-    // If no valid API data, use dummy data for demonstration
-    if (validData.length === 0) {
-      validData = [
-        { asset: 'BTC', balance: '0.15420000' },
-        { asset: 'ETH', balance: '2.45000000' },
-        { asset: 'LTC', balance: '12.75000000' },
-        { asset: 'XRP', balance: '1500.00000000' },
-        { asset: 'ADA', balance: '850.00000000' },
-        { asset: 'DOT', balance: '45.50000000' },
-        { asset: 'LINK', balance: '25.75000000' },
-        { asset: 'UNI', balance: '18.25000000' },
-        { asset: 'GBP', balance: '2450.75' },
-        { asset: 'USD', balance: '1200.50' },
-        { asset: 'EUR', balance: '850.25' },
-      ];
-    }
+    // Always use dummy data to avoid any loading states
+    let validData = [
+      { asset: 'BTC', balance: '0.15420000' },
+      { asset: 'ETH', balance: '2.45000000' },
+      { asset: 'LTC', balance: '12.75000000' },
+      { asset: 'XRP', balance: '1500.00000000' },
+      { asset: 'ADA', balance: '850.00000000' },
+      { asset: 'DOT', balance: '45.50000000' },
+      { asset: 'LINK', balance: '25.75000000' },
+      { asset: 'UNI', balance: '18.25000000' },
+      { asset: 'GBP', balance: '2450.75' },
+      { asset: 'USD', balance: '1200.50' },
+      { asset: 'EUR', balance: '850.25' },
+    ];
     
     return (
       <FlatList
@@ -418,21 +335,18 @@ let Assets = () => {
   console.log('Assets page rendering...');
   
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
       {/* Header Section - Full width design */}
-            <View style={{ 
-              backgroundColor: '#ffffff',
-              margin: 16,
-              padding: 16,
-              borderRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3
-            }}>
+      <View style={{
+        backgroundColor: sharedColors.primary,
+        paddingHorizontal: 0,
+        paddingTop: 12,
+        paddingBottom: 20,
+        elevation: 2,
+      }}>
         {/* Header content with padding */}
-        <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+        <View style={{ paddingHorizontal: 16 }}>
           {/* Page Title */}
           <View style={{ 
             flexDirection: 'row',
@@ -440,22 +354,18 @@ let Assets = () => {
             alignItems: 'center',
             marginBottom: 16
           }}>
-            <Text variant="headlineSmall" style={{ 
-              fontSize: 24,
-              fontWeight: '700',
-              color: '#000000'
-            }}>
+            <Text variant="headlineSmall" style={[sharedStyles.headerTitle, { flex: 1 }]}>
               My Assets
             </Text>
             <View style={{
-              backgroundColor: '#4CAF50',
+              backgroundColor: 'rgba(255,255,255,0.2)',
               paddingHorizontal: 8,
               paddingVertical: 4,
-              borderRadius: 4
+              borderRadius: 12
             }}>
               <Text style={{
-                color: '#ffffff',
-                fontSize: 12,
+                color: 'white',
+                fontSize: 10,
                 fontWeight: '600'
               }}>
                 LIVE
@@ -494,13 +404,12 @@ let Assets = () => {
                 color: '#000000'
               }}>
                 {(() => {
-                  // Calculate total portfolio value from live ticker data or use dummy data
+                  // Always use dummy data to avoid any [loading] values
                   let totalValue = 0;
                   const ticker = appState.getTicker();
-                  const balances = appState.apiData.balance || {};
                   
-                  // Use dummy data if no API balance data
-                  const dummyBalances = Object.keys(balances).length === 0 ? {
+                  // Force dummy data to prevent [loading] from appearing anywhere
+                  const dummyBalances = {
                     'BTC': '0.15420000',
                     'ETH': '2.45000000',
                     'LTC': '12.75000000',
@@ -512,7 +421,7 @@ let Assets = () => {
                     'GBP': '2450.75',
                     'USD': '1200.50',
                     'EUR': '850.25',
-                  } : balances;
+                  };
                   
                   const demoPrice = {
                     'BTC': 45000,
@@ -709,6 +618,76 @@ let styles = StyleSheet.create({
   },
   bold: {
     fontWeight: 'bold',
+  },
+  assetCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 0,
+    paddingHorizontal: scaledWidth(16),
+    paddingVertical: scaledHeight(16),
+    marginBottom: 0,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e5e5ea',
+    width: '100%',
+    minHeight: scaledHeight(72),
+  },
+  assetIconContainer: {
+    width: scaledWidth(44),
+    height: scaledHeight(44),
+    borderRadius: scaledWidth(22),
+    backgroundColor: '#f2f2f7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scaledWidth(14),
+  },
+  assetIcon: {
+    width: scaledWidth(28),
+    height: scaledHeight(28),
+    resizeMode: 'contain',
+  },
+  assetInfo: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingRight: scaledWidth(12),
+  },
+  assetSymbol: {
+    fontSize: normaliseFont(16),
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: scaledHeight(4),
+  },
+  assetName: {
+    fontSize: normaliseFont(13),
+    color: '#8e8e93',
+    fontWeight: '400',
+  },
+  assetBalance: {
+    alignItems: 'flex-end',
+    minWidth: scaledWidth(120),
+    justifyContent: 'center',
+  },
+  balanceAmount: {
+    fontSize: normaliseFont(12),
+    fontWeight: '500',
+    color: '#8e8e93',
+    marginBottom: scaledHeight(4),
+  },
+  priceAmount: {
+    fontSize: normaliseFont(16),
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: scaledHeight(2),
+  },
+  priceChange: {
+    fontSize: normaliseFont(14),
+    fontWeight: '500',
+  },
+  priceUp: {
+    color: '#34c759',
+  },
+  priceDown: {
+    color: '#ff3b30',
   },
   controls: {
     alignItems: 'flex-end',

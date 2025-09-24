@@ -4,6 +4,8 @@ export const mainPanelStates = [
   'Sell',
   'Trade',
   'Assets',
+  'Explore',
+  'Transfer',
   'History',
   'Send',
   'Receive',

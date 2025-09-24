@@ -4,6 +4,8 @@ export {default as Send} from './Send/Send';
 export {default as Receive} from './Receive/Receive';
 export {default as History} from './History/History';
 export {default as Assets} from './Assets/Assets';
+export {default as Explore} from './Explore/Explore';
+export {default as Transfer} from './Transfer/Transfer';
 export {default as Notifications} from './Notifications/Notifications';
 export {default as Settings} from './Settings/Settings';
 export {default as Login} from './Login/Login';

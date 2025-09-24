@@ -2,8 +2,8 @@
 let footerButtonList = [
   'Trade',
   'Assets',
-  'Send',
-  'Receive',
+  'Explore',
+  'Transfer',
   'History',
 ];
 
