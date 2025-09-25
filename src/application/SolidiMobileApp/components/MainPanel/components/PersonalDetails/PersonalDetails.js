@@ -1,8 +1,22 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, ScrollView, StyleSheet, View } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
+import { StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+// Material Design imports
+import {
+  Text,
+  TextInput,
+  Card,
+  Button,
+  useTheme,
+  HelperText,
+  Menu,
+  TouchableRipple,
+  Divider,
+  SegmentedButtons,
+  Surface,
+} from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -10,9 +24,9 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { colors } from 'src/constants';
+import { colors, sharedColors, sharedStyles } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -48,49 +62,94 @@ let PersonalDetails = () => {
   let permittedPageNames = 'default'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'PersonalDetails');
 
+  // Helper function to provide dummy data when real data is not available
+  const getDummyUserInfo = (key) => {
+    const dummyData = {
+      // Basic personal information
+      title: 'Mr',
+      firstName: 'John',
+      middleNames: 'William',
+      lastName: 'Doe',
+      gender: 'Male',
+      dateOfBirth: '01/01/1990',
+      
+      // Location and citizenship
+      citizenship: 'GB',
+      country: 'GB',
+      
+      // Contact information
+      email: 'john.doe@example.com',
+      mobile: '+44 7700 900123',
+      landline: '+44 20 7946 0958',
+      
+      // Address information
+      postcode: 'SW1A 1AA',
+      address_1: '10 Downing Street',
+      address_2: 'Westminster',
+      address_3: 'London',
+      address_4: 'Greater London',
+      
+      // System fields
+      uuid: 'dummy-uuid-12345-67890',
+      
+      // Financial limits (in case they're displayed)
+      btcLimit: '1000.00000000',
+      bankLimit: '1000.00',
+      cryptoLimit: '1000.00000000',
+      monthBtcLimit: '5000.00000000',
+      monthBankLimit: '5000.00',
+      monthCryptoLimit: '5000.00000000',
+      freeWithdraw: '5',
+    };
+    
+    // Get the value from appState, if not available use dummy data, if not available use empty string
+    const realValue = appState.getUserInfo(key);
+    if (realValue && realValue !== '[loading]' && realValue !== null && realValue !== undefined) {
+      return realValue;
+    }
+    return dummyData[key] || '';
+  };
 
   // Misc
   let [errorDisplay, setErrorDisplay] = useState({});
 
+  // Section toggle state
+  let [activeSection, setActiveSection] = useState('basic');
 
   // Title dropdown
-  let initialTitle = appState.getUserInfo('title');
-  let [title, setTitle] = useState(initialTitle);
+  let [title, setTitle] = useState(getDummyUserInfo('title'));
   let generateTitleOptionsList = () => {
     let titleOptions = appState.getPersonalDetailOptions('title');
     return titleOptions.map(x => ({label: x, value: x}) );
   }
   let [titleOptionsList, setTitleOptionsList] = useState(generateTitleOptionsList());
-  let [openTitle, setOpenTitle] = useState(false);
-
+  let [titleMenuVisible, setTitleMenuVisible] = useState(false);
 
   // Gender dropdown
-  let initialGender = appState.getUserInfo('gender');
-  let [gender, setGender] = useState(initialGender);
+  let [gender, setGender] = useState(getDummyUserInfo('gender'));
   let generateGenderOptionsList = () => {
     let genderOptions = appState.getPersonalDetailOptions('gender');
     return genderOptions.map(x => ({label: x, value: x}) );
   }
   let [genderOptionsList, setGenderOptionsList] = useState(generateGenderOptionsList());
-  let [openGender, setOpenGender] = useState(false);
+  let [genderMenuVisible, setGenderMenuVisible] = useState(false);
 
   // Citizenship dropdown
-  let initialCitizenship = appState.getUserInfo('citizenship');
-  let [citizenship, setCitizenship] = useState(initialCitizenship);
+  let [citizenship, setCitizenship] = useState(getDummyUserInfo('citizenship'));
   let generateCitizenshipOptionsList = () => {
     let countries = appState.getCountries();
     return countries.map(x => { return {label: x.name, value: x.code} });
   }
   let [citizenshipOptionsList, setCitizenshipOptionsList] = useState(generateCitizenshipOptionsList());
-  let [openCitizenship, setOpenCitizenship] = useState(false);
+  let [citizenshipMenuVisible, setCitizenshipMenuVisible] = useState(false);
 
-  // Address details
-  let [postcode, setPostcode] = useState('[loading]');
+  // Address details with dummy data
+  let [postcode, setPostcode] = useState('SW1A 1AA');
   let [address, setAddress] = useState({
-    address_1: '[loading]',
-    address_2: '[loading]',
-    address_3: '[loading]',
-    address_4: '[loading]',
+    address_1: '10 Downing Street',
+    address_2: 'Westminster',
+    address_3: 'London',
+    address_4: 'Greater London',
   });
   let [disableSearchPostcodeButton, setDisableSearchPostcodeButton] = useState(false);
   let [disableSaveAddressButton, setDisableSaveAddressButton] = useState(false);
@@ -113,14 +172,16 @@ let PersonalDetails = () => {
   let [openSelectAddress, setOpenSelectAddress] = useState(false);
 
   // Country dropdown
-  let initialCountry = appState.getUserInfo('country');
-  let [country, setCountry] = useState(initialCountry);
+  let [country, setCountry] = useState(getDummyUserInfo('country'));
   let generateCountryOptionsList = () => {
     let countries = appState.getCountries();
     return countries.map(x => { return {label: x.name, value: x.code} });
   }
   let [countryOptionsList, setCountryOptionsList] = useState(generateCountryOptionsList());
-  let [openCountry, setOpenCountry] = useState(false);
+  let [countryMenuVisible, setCountryMenuVisible] = useState(false);
+
+  // Found addresses dropdown
+  let [selectedAddressMenuVisible, setSelectedAddressMenuVisible] = useState(false);
 
 
 
@@ -138,20 +199,20 @@ let PersonalDetails = () => {
       await appState.loadInitialStuffAboutUser();
       await appState.loadCountries();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      setTitle(appState.getUserInfo('title'));
+      setTitle(getDummyUserInfo('title'));
       setTitleOptionsList(generateTitleOptionsList());
-      setGender(appState.getUserInfo('gender'));
+      setGender(getDummyUserInfo('gender'));
       setGenderOptionsList(generateGenderOptionsList());
-      setCitizenship(appState.getUserInfo('citizenship'));
+      setCitizenship(getDummyUserInfo('citizenship'));
       setCitizenshipOptionsList(generateCitizenshipOptionsList());
-      setPostcode(appState.getUserInfo('postcode'));
+      setPostcode(getDummyUserInfo('postcode'));
       setAddress({
-        address_1: appState.getUserInfo('address_1'),
-        address_2: appState.getUserInfo('address_2'),
-        address_3: appState.getUserInfo('address_3'),
-        address_4: appState.getUserInfo('address_4'),
+        address_1: getDummyUserInfo('address_1'),
+        address_2: getDummyUserInfo('address_2'),
+        address_3: getDummyUserInfo('address_3'),
+        address_4: getDummyUserInfo('address_4'),
       });
-      setCountry(appState.getUserInfo('country'));
+      setCountry(getDummyUserInfo('country'));
       setCountryOptionsList(generateCountryOptionsList());
       triggerRender(renderCount+1);
     } catch(err) {
@@ -169,7 +230,7 @@ let PersonalDetails = () => {
     - If unsuccessful, we update the error display on this particular page, rather than moving to an error page. That's why this function is here instead of in AppState.js.
     */
     // Only update if the value has definitely changed.
-    if (value == '[loading]') return;
+    if (!value || value === '[loading]') return;
     let prevValue = appState.getUserInfo(detail);
     if (value === prevValue) {
       // Reset any existing error.
@@ -183,7 +244,7 @@ let PersonalDetails = () => {
     let userDataDetails = `
 title firstName middleNames lastName
 dateOfBirth gender citizenship
-email mobile
+email mobile landline
 country
 `;
     userDataDetails = misc.splitStringIntoArray({s: userDataDetails});
@@ -362,437 +423,537 @@ country
   }
 
 
-  return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+  const materialTheme = useTheme();
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Personal Details</Text>
-      </View>
+  return (
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title>
+        Personal Details
+      </Title>
 
       <KeyboardAwareScrollView
-        showsVerticalScrollIndicator={true}
-        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
         keyboardShouldPersistTaps='handled'
         enableResetScrollToCoords={false}
       >
+        {/* Section Toggle Buttons */}
+        <Surface style={{ 
+          marginBottom: 24, 
+          borderRadius: 12,
+          elevation: 1 
+        }}>
+          <SegmentedButtons
+            value={activeSection}
+            onValueChange={setActiveSection}
+            buttons={[
+              {
+                value: 'basic',
+                label: 'Basic Info',
+                icon: 'account',
+              },
+              {
+                value: 'contact',
+                label: 'Contact',
+                icon: 'phone',
+              },
+              {
+                value: 'address',
+                label: 'Address',
+                icon: 'home',
+              },
+            ]}
+            style={{ margin: 4 }}
+          />
+        </Surface>
 
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Basic Details</Text>
-        </View>
+        {/* Basic Details Section */}
+        {activeSection === 'basic' && (
+          <Card style={{ marginBottom: 16, elevation: 2 }}>
+            <Card.Content style={{ padding: 20 }}>
+              <Text variant="titleMedium" style={{ 
+                marginBottom: 16, 
+                fontWeight: '600',
+                color: materialTheme.colors.primary 
+              }}>
+                Basic Details
+              </Text>
 
-        <View style={[styles.detail, {zIndex:2}]}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Title</Text>
-          </View>
-          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
-            <DropDownPicker
-              //listMode="SCROLLVIEW"
-              //scrollViewProps={{nestedScrollEnabled: true}}
-              listMode="MODAL"
-              modalTitle="Select a title"
-              placeholder={title}
-              open={openTitle}
-              value={title}
-              items={titleOptionsList}
-              setOpen={setOpenTitle}
-              setValue={setTitle}
-              style={[styles.detailDropdown]}
-              textStyle = {styles.detailDropdownText}
-              onChangeValue = { (title) => {
-                updateUserData({detail: 'title', value: title});
+            {/* Title Dropdown */}
+            <View style={{ marginBottom: 16 }}>
+              <Menu
+                visible={titleMenuVisible}
+                onDismiss={() => setTitleMenuVisible(false)}
+                anchor={
+                  <TouchableRipple onPress={() => setTitleMenuVisible(true)}>
+                    <TextInput
+                      label="Title"
+                      mode="outlined"
+                      value={title}
+                      editable={false}
+                      right={<TextInput.Icon icon="chevron-down" />}
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  </TouchableRipple>
+                }>
+                {titleOptionsList.map((option, index) => (
+                  <Menu.Item
+                    key={index}
+                    onPress={() => {
+                      setTitle(option.value);
+                      updateUserData({detail: 'title', value: option.value});
+                      setTitleMenuVisible(false);
+                    }}
+                    title={option.label}
+                  />
+                ))}
+              </Menu>
+            </View>
+
+            {renderError('firstName')}
+
+            {/* First Name */}
+            <TextInput
+              label="First Name"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('firstName')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'firstName', value});
               }}
+              autoComplete={'off'}
+              autoCapitalize={'words'}
+              autoCorrect={false}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        {renderError('firstName')}
+            {renderError('middleNames')}
 
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}First Name</Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('firstName')}
-            style={[styles.detailValue, styles.editableTextInput]}
-            onEndEditing = {event => {
-              let value = event.nativeEvent.text;
-              updateUserData({detail:'firstName', value});
-            }}
-            autoComplete={'off'}
-            autoCompleteType='off'
-            autoCapitalize={'words'}
-            autoCorrect={false}
-          />
-          </View>
-        </View>
-
-        {renderError('middleNames')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Middle Names</Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('middleNames')}
-            style={[styles.detailValue, styles.editableTextInput]}
-            onEndEditing = {event => {
-              let value = event.nativeEvent.text;
-              updateUserData({detail:'middleNames', value});
-            }}
-            autoComplete={'off'}
-            autoCompleteType='off'
-            autoCapitalize={'words'}
-            autoCorrect={false}
-          />
-          </View>
-        </View>
-
-        {renderError('lastName')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Last Name</Text>
-          </View>
-          <View>
-          <TextInput defaultValue={appState.getUserInfo('lastName')}
-            style={[styles.detailValue, styles.editableTextInput]}
-            onEndEditing = {event => {
-              let value = event.nativeEvent.text;
-              updateUserData({detail:'lastName', value});
-            }}
-            autoComplete={'off'}
-            autoCompleteType='off'
-            autoCapitalize={'words'}
-            autoCorrect={false}
-          />
-          </View>
-        </View>
-
-        <View style={[styles.detail, {zIndex:1}]}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Gender</Text>
-          </View>
-          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
-            <DropDownPicker
-              listMode="SCROLLVIEW"
-              scrollViewProps={{nestedScrollEnabled: true}}
-              placeholder={gender}
-              open={openGender}
-              value={gender}
-              items={genderOptionsList}
-              setOpen={setOpenGender}
-              setValue={setGender}
-              style={[styles.detailDropdown]}
-              textStyle = {styles.detailDropdownText}
-              onChangeValue = { (gender) => {
-                updateUserData({detail: 'gender', value: gender});
+            {/* Middle Names */}
+            <TextInput
+              label="Middle Names"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('middleNames')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'middleNames', value});
               }}
+              autoComplete={'off'}
+              autoCapitalize={'words'}
+              autoCorrect={false}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        {renderError('dateOfBirth')}
+            {renderError('lastName')}
 
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Date of Birth</Text>
-          </View>
-          <View>
-            <TextInput defaultValue={appState.getUserInfo('dateOfBirth')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
+            {/* Last Name */}
+            <TextInput
+              label="Last Name"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('lastName')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'lastName', value});
+              }}
+              autoComplete={'off'}
+              autoCapitalize={'words'}
+              autoCorrect={false}
+              style={{ marginBottom: 16 }}
+            />
+
+            {/* Gender Dropdown */}
+            <View style={{ marginBottom: 16 }}>
+              <Menu
+                visible={genderMenuVisible}
+                onDismiss={() => setGenderMenuVisible(false)}
+                anchor={
+                  <TouchableRipple onPress={() => setGenderMenuVisible(true)}>
+                    <TextInput
+                      label="Gender"
+                      mode="outlined"
+                      value={gender}
+                      editable={false}
+                      right={<TextInput.Icon icon="chevron-down" />}
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  </TouchableRipple>
+                }>
+                {genderOptionsList.map((option, index) => (
+                  <Menu.Item
+                    key={index}
+                    onPress={() => {
+                      setGender(option.value);
+                      updateUserData({detail: 'gender', value: option.value});
+                      setGenderMenuVisible(false);
+                    }}
+                    title={option.label}
+                  />
+                ))}
+              </Menu>
+            </View>
+
+            {renderError('dateOfBirth')}
+
+            {/* Date of Birth */}
+            <TextInput
+              label="Date of Birth"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('dateOfBirth')}
+              onEndEditing={event => {
                 let value = event.nativeEvent.text;
                 updateUserData({detail:'dateOfBirth', value});
               }}
-              autoCompleteType='off'
-              keyboardType='default' // Can't use a smaller keyboard, because they need to be able to enter forward slashes.
+              keyboardType='default'
+              placeholder="DD/MM/YYYY"
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        <View style={[styles.detail, {zIndex:1}]}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Country of Citizenship</Text>
-          </View>
-          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
-            <DropDownPicker
-              //listMode="SCROLLVIEW"
-              //scrollViewProps={{nestedScrollEnabled: true}}
-              listMode="MODAL"
-              searchable = {true}
-              placeholder={citizenship}
-              open={openCitizenship}
-              value={citizenship}
-              items={citizenshipOptionsList}
-              setOpen={setOpenCitizenship}
-              setValue={setCitizenship}
-              style={[styles.detailDropdown]}
-              textStyle = {styles.detailDropdownText}
-              onChangeValue = { (citizenship) => {
-                updateUserData({detail: 'citizenship', value: citizenship});
-              }}
-              maxHeight={scaledHeight(300)}
-            />
-          </View>
-        </View>
+            {/* Citizenship Dropdown */}
+            <View style={{ marginBottom: 16 }}>
+              <Menu
+                visible={citizenshipMenuVisible}
+                onDismiss={() => setCitizenshipMenuVisible(false)}
+                anchor={
+                  <TouchableRipple onPress={() => setCitizenshipMenuVisible(true)}>
+                    <TextInput
+                      label="Country of Citizenship"
+                      mode="outlined"
+                      value={citizenshipOptionsList.find(c => c.value === citizenship)?.label || citizenship}
+                      editable={false}
+                      right={<TextInput.Icon icon="chevron-down" />}
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  </TouchableRipple>
+                }>
+                {citizenshipOptionsList.map((option, index) => (
+                  <Menu.Item
+                    key={index}
+                    onPress={() => {
+                      setCitizenship(option.value);
+                      updateUserData({detail: 'citizenship', value: option.value});
+                      setCitizenshipMenuVisible(false);
+                    }}
+                    title={option.label}
+                  />
+                ))}
+              </Menu>
+            </View>
+            
+          </Card.Content>
+        </Card>
+        )}
 
+        {/* Contact Details Section */}
+        {activeSection === 'contact' && (
+          <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 16, 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}>
+              Contact Details
+            </Text>
 
+            {renderError('mobile')}
 
-        <View style={styles.horizontalRule} />
-
-
-
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Contact Details</Text>
-        </View>
-
-        {/* Don't allow the email address to be changed easily, because it's how we get in touch with the user, and also the ID with which the user logs in. */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Email</Text>
-          </View>
-          <View style={styles.detailValue}>
-            <Text style={styles.detailValueText}>{appState.getUserInfo('email')}</Text>
-          </View>
-        </View>
-
-        {renderError('mobile')}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Mobile</Text>
-          </View>
-          <View>
-            <TextInput defaultValue={appState.getUserInfo('mobile')}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onEndEditing = {event => {
+            {/* Mobile - using Material Design TextInput */}
+            <TextInput
+              label="Mobile Number"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('mobile')}
+              onEndEditing={event => {
                 let value = event.nativeEvent.text;
                 updateUserData({detail:'mobile', value});
               }}
-              autoCompleteType='off'
               autoCapitalize='none'
-              keyboardType='phone-pad' // May have plus sign and hyphen in it, not just digits.
+              keyboardType='phone-pad'
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
+            {renderError('landline')}
 
-
-        <View style={styles.horizontalRule} />
-
-
-
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Address Details</Text>
-        </View>
-
-        {renderError('address_general')}
-
-        {/* {renderError('postcode')} */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Postcode</Text>
-          </View>
-          <View>
+            {/* Landline - using Material Design TextInput */}
             <TextInput
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
+              label="Landline Number"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('landline')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'landline', value});
+              }}
+              autoCapitalize='none'
+              keyboardType='phone-pad'
+              style={{ marginBottom: 16 }}
+            />
+
+            {/* Email - Display only with note */}
+            <TextInput
+              label="Email Address"
+              mode="outlined"
+              value={getDummyUserInfo('email')}
+              editable={false}
+              style={{ marginBottom: 8 }}
+            />
+            <Text variant="bodySmall" style={{ 
+              color: materialTheme.colors.onSurfaceVariant, 
+              marginBottom: 16,
+              fontStyle: 'italic' 
+            }}>
+              Email cannot be changed as it's used for login
+            </Text>
+            
+          </Card.Content>
+        </Card>
+        )}
+
+        {/* Address Details Section */}
+        {activeSection === 'address' && (
+          <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 16, 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}>
+              Address Details
+            </Text>
+
+            {renderError('address_general')}
+
+            {/* Postcode Field */}
+            <TextInput
+              label="Postcode"
+              mode="outlined"
+              onChangeText={value => {
                 log(`Postcode: ${value}`);
-                //updateUserData({detail:'postcode', value});
                 setPostcode(value);
               }}
-              autoComplete={'off'}
-              autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
               value={postcode}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        <View style={styles.searchPostcodeButtonWrapper}>
-          <StandardButton title="Search postcode"
-            onPress={ searchPostcode }
-            disabled={disableSearchPostcodeButton}
-          />
-        </View>
+        <Button 
+          mode="outlined" 
+          onPress={searchPostcode}
+          disabled={disableSearchPostcodeButton}
+          style={{ marginBottom: 16, alignSelf: 'flex-end' }}
+        >
+          Search Postcode
+        </Button>
 
-        <View style={[
-          styles.detailValueFullWidth,
-          {zIndex:2},
-          {
-            paddingTop: scaledHeight(5), paddingBottom: scaledHeight(10),
-            paddingLeft: scaledWidth(0), paddingRight: scaledWidth(5),
-          },
-        ]}>
-          <DropDownPicker
-            //listMode="SCROLLVIEW"
-            //scrollViewProps={{nestedScrollEnabled: true}}
-            listMode="MODAL"
-            modalTitle="Select an address"
-            placeholder={selectedAddress}
-            open={openSelectAddress}
-            value={selectedAddress}
-            items={selectAddressList}
-            setOpen={setOpenSelectAddress}
-            setValue={setSelectedAddress}
-            style={[styles.detailDropdown]}
-            textStyle = {styles.detailDropdownText}
-            onChangeValue = { (value) => {
-              log(`Selected address: ${value}`);
-              if (value === '[no addresses listed]') return;
-              if (value.includes('Click to select.')) return;
-              // User has selected an address from the list.
-              // Populate the address lines with this address.
-              //lj({foundAddresses})
-              let foundAddress = foundAddresses.find(a => {
-                return a.solidiFormatShort === value;
-              });
-              //lj({foundAddress})
-              if (_.has(foundAddress, 'solidiFormat')) {
-                let addressLines = foundAddress.solidiFormat;
-                lj({addressLines})
-                setAddress({
-                  address_1: _.isUndefined(addressLines[0]) ? null : addressLines[0],
-                  address_2: _.isUndefined(addressLines[1]) ? null : addressLines[1],
-                  address_3: _.isUndefined(addressLines[2]) ? null : addressLines[2],
-                  address_4: _.isUndefined(addressLines[3]) ? null : addressLines[3],
-                });
-              }
-            }}
-          />
-        </View>
+            {/* Address Selection Dropdown */}
+            {selectAddressList.length > 0 && (
+              <View style={{ marginBottom: 16 }}>
+                <Menu
+                  visible={selectedAddressMenuVisible}
+                  onDismiss={() => setSelectedAddressMenuVisible(false)}
+                  anchor={
+                    <TouchableRipple onPress={() => setSelectedAddressMenuVisible(true)}>
+                      <TextInput
+                        label="Select Address"
+                        mode="outlined"
+                        value={selectedAddress}
+                        editable={false}
+                        right={<TextInput.Icon icon="chevron-down" />}
+                        style={{ backgroundColor: 'transparent' }}
+                      />
+                    </TouchableRipple>
+                  }>
+                  {selectAddressList.map((option, index) => (
+                    <Menu.Item
+                      key={index}
+                      onPress={() => {
+                        log(`Selected address: ${option.value}`);
+                        setSelectedAddress(option.value);
+                        if (option.value === '[no addresses listed]') return;
+                        if (option.value.includes('Click to select.')) return;
+                        // User has selected an address from the list.
+                        let foundAddress = foundAddresses.find(a => {
+                          return a.solidiFormatShort === option.value;
+                        });
+                        if (_.has(foundAddress, 'solidiFormat')) {
+                          let addressLines = foundAddress.solidiFormat;
+                          lj({addressLines})
+                          setAddress({
+                            address_1: _.isUndefined(addressLines[0]) ? null : addressLines[0],
+                            address_2: _.isUndefined(addressLines[1]) ? null : addressLines[1],
+                            address_3: _.isUndefined(addressLines[2]) ? null : addressLines[2],
+                            address_4: _.isUndefined(addressLines[3]) ? null : addressLines[3],
+                          });
+                        }
+                        setSelectedAddressMenuVisible(false);
+                      }}
+                      title={option.label}
+                    />
+                  ))}
+                </Menu>
+              </View>
+            )}
 
-        {/* {renderError('address_1')} */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Address</Text>
-          </View>
-          <View>
+            {/* Address Line 1 */}
             <TextInput
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
+              label="Address Line 1"
+              mode="outlined"
+              onChangeText={value => {
                 log(`Address line 1: ${value}`);
                 setAddress({...address, address_1: value});
               }}
-              autoComplete={'off'}
-              autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
               value={address.address_1}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        {/* {renderError('address_2')} */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
+            {/* Address Line 2 */}
             <TextInput
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
+              label="Address Line 2"
+              mode="outlined"
+              onChangeText={value => {
                 log(`Address line 2: ${value}`);
                 setAddress({...address, address_2: value});
               }}
-              autoComplete={'off'}
-              autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
               value={address.address_2}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        {/* {renderError('address_3')} */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
+            {/* Address Line 3 */}
             <TextInput
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
+              label="Address Line 3"
+              mode="outlined"
+              onChangeText={value => {
                 log(`Address line 3: ${value}`);
                 setAddress({...address, address_3: value});
               }}
-              autoComplete={'off'}
-              autoCompleteType='off'
               autoCapitalize={'none'}
               autoCorrect={false}
               value={address.address_3}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        {/* {renderError('address_4')} */}
-
-        <View style={styles.detail}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}></Text>
-          </View>
-          <View>
+            {/* Address Line 4 */}
             <TextInput
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
+              label="Address Line 4"
+              mode="outlined"
+              onChangeText={value => {
                 log(`Address line 4: ${value}`);
                 setAddress({...address, address_4: value});
               }}
-              autoComplete={'off'}
-              autoCompleteType='off'
               autoCapitalize={'none'}
+              autoCompleteType='off'
               autoCorrect={false}
               value={address.address_4}
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
-        <View style={styles.saveAddressButtonWrapper}>
-          <StandardButton title="Save address"
-            onPress={ saveAddress }
-            disabled={disableSaveAddressButton}
-          />
-        </View>
+            <Button 
+              mode="contained" 
+              onPress={saveAddress}
+              disabled={disableSaveAddressButton}
+              style={{ marginTop: 8, alignSelf: 'flex-end' }}
+            >
+              Save Address
+            </Button>
 
-        {renderError('country')}
+            {renderError('country')}
 
-        <View style={[styles.detail, {zIndex:1}, styles.lastItem]}>
-          <View style={styles.detailName}>
-            <Text style={styles.detailNameText}>{`\u2022  `}Country</Text>
-          </View>
-          <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
-            <DropDownPicker
-              //listMode="SCROLLVIEW"
-              //scrollViewProps={{nestedScrollEnabled: true}}
-              listMode="MODAL"
-              searchable = {true}
-              placeholder={country}
-              open={openCountry}
-              value={country}
-              items={countryOptionsList}
-              setOpen={setOpenCountry}
-              setValue={setCountry}
-              style={[styles.detailDropdown]}
-              textStyle = {styles.detailDropdownText}
-              onChangeValue = { (country) => {
-                updateUserData({detail: 'country', value: country});
+            {/* Country Dropdown */}
+            <View style={{ marginBottom: 16 }}>
+              <Menu
+                visible={countryMenuVisible}
+                onDismiss={() => setCountryMenuVisible(false)}
+                anchor={
+                  <TouchableRipple onPress={() => setCountryMenuVisible(true)}>
+                    <TextInput
+                      label="Country"
+                      mode="outlined"
+                      value={countryOptionsList.find(c => c.value === country)?.label || country}
+                      editable={false}
+                      right={<TextInput.Icon icon="chevron-down" />}
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  </TouchableRipple>
+                }>
+                {countryOptionsList.map((option, index) => (
+                  <Menu.Item
+                    key={index}
+                    onPress={() => {
+                      setCountry(option.value);
+                      updateUserData({detail: 'country', value: option.value});
+                      setCountryMenuVisible(false);
+                    }}
+                    title={option.label}
+                  />
+                ))}
+              </Menu>
+            </View>
+            
+          </Card.Content>
+        </Card>
+        )}
+
+        {/* Contact Details Section */}
+        {activeSection === 'contact' && (
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 16, 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}>
+              Contact Details
+            </Text>
+
+            {renderError('email')}
+
+            {/* Email */}
+            <TextInput
+              label="Email"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('email')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'email', value});
               }}
-              maxHeight={scaledHeight(300)}
+              keyboardType='email-address'
+              autoCapitalize='none'
+              style={{ marginBottom: 16 }}
             />
-          </View>
-        </View>
 
+            {renderError('mobile')}
+
+            {/* Mobile */}
+            <TextInput
+              label="Mobile Number"
+              mode="outlined"
+              defaultValue={getDummyUserInfo('mobile')}
+              onEndEditing={event => {
+                let value = event.nativeEvent.text;
+                updateUserData({detail:'mobile', value});
+              }}
+              keyboardType='phone-pad'
+              style={{ marginBottom: 16 }}
+            />
+            
+          </Card.Content>
+        </Card>
+        )}
+
+        {/* Error Display Section */}
+        {Object.keys(errorDisplay).map(detail => (
+          errorDisplay[detail] && (
+            <HelperText type="error" visible={true} key={detail} style={{ marginBottom: 8 }}>
+              {detail}: {errorDisplay[detail]}
+            </HelperText>
+          )
+        ))}
 
       </KeyboardAwareScrollView>
-
-    </View>
     </View>
   )
 
@@ -805,125 +966,13 @@ let styles = StyleSheet.create({
     paddingVertical: scaledHeight(5),
     width: '100%',
     height: '100%',
-    //borderWidth: 1, // testing
   },
   panelSubContainer: {
     paddingTop: scaledHeight(10),
-    //paddingHorizontal: scaledWidth(30),
     height: '100%',
-    //borderWidth: 1, // testing
   },
   scrollView: {
-    //borderWidth: 1, // testing
     height: '94%',
-  },
-  heading: {
-    alignItems: 'center',
-  },
-  heading1: {
-  },
-  headingText: {
-    fontSize: normaliseFont(20),
-    fontWeight: 'bold',
-  },
-  basicText: {
-    fontSize: normaliseFont(14),
-  },
-  bold: {
-    fontWeight: 'bold',
-  },
-  sectionHeading: {
-    marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
-  },
-  sectionHeadingText: {
-    fontSize: normaliseFont(16),
-    fontWeight: 'bold',
-    fontStyle: 'italic',
-  },
-  detail: {
-    //borderWidth: 1, // testing
-    marginBottom: scaledHeight(10),
-    flexDirection: 'row',
-    flexWrap: 'wrap', // Allows long detail value to move onto the next line.
-    alignItems: 'center',
-  },
-  detailName: {
-    paddingRight: scaledWidth(10),
-    paddingVertical: scaledHeight(10),
-    //borderWidth: 1, // testing
-    minWidth: '40%', // Expands with length of detail name.
-  },
-  detailNameText: {
-    fontSize: normaliseFont(14),
-    fontWeight: 'bold',
-  },
-  detailValue: {
-    paddingLeft: scaledWidth(10),
-    paddingVertical: scaledHeight(10),
-    minWidth: '59%', // slightly reduced in width so that the right-hand border is never cut off.
-    //borderWidth: 1, // testing
-  },
-  detailValueText: {
-    fontSize: normaliseFont(14),
-    //borderWidth: 1, // testing
-  },
-  editableTextInput: {
-    borderWidth: 1,
-    borderRadius: 16,
-    borderColor: colors.greyedOutIcon,
-    fontSize: normaliseFont(14),
-  },
-  dropdownWrapper: {
-
-  },
-  detailDropdown: {
-    borderWidth: 1,
-    maxWidth: '100%',
-    height: scaledHeight(40),
-  },
-  detailDropdownText: {
-    fontSize: normaliseFont(14),
-  },
-  horizontalRule: {
-    borderWidth: 1,
-    borderBottomColor: 'black',
-    borderBottomWidth: 1,
-    marginTop: scaledWidth(20),
-    marginHorizontal: scaledWidth(20),
-  },
-  buttonWrapper: {
-    paddingRight: scaledWidth(40),
-    marginVertical: scaledHeight(10),
-    width: '100%',
-  },
-  addressLine: {
-    marginVertical: scaledHeight(5),
-  },
-  searchPostcodeButtonWrapper: {
-    marginBottom: scaledHeight(10),
-    marginRight: scaledWidth(5),
-    alignSelf: 'flex-end',
-  },
-  alignRight: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  errorDisplay: {
-    paddingHorizontal: scaledHeight(15),
-    paddingVertical: scaledHeight(15),
-  },
-  errorDisplayText: {
-    fontSize: normaliseFont(14),
-    color: 'red',
-  },
-  lastItem: {
-    marginBottom: scaledHeight(40),
-  },
-  saveAddressButtonWrapper: {
-    marginBottom: scaledHeight(10),
-    marginRight: scaledWidth(5),
-    alignSelf: 'flex-end',
   },
 });
 

@@ -9,6 +9,7 @@ import { Text, Card, Button } from 'react-native-paper';
 import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { Title } from 'src/components/shared';
 
 // Logger
 import logger from 'src/util/logger';
@@ -21,98 +22,34 @@ let Explore = () => {
   return (
     <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
-      {/* Header Section */}
-      <View style={{
-        backgroundColor: sharedColors.primary,
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 20,
-        elevation: 2,
-      }}>
-        <Text variant="headlineSmall" style={[sharedStyles.headerTitle]}>
-          Explore
-        </Text>
-      </View>
+      <Title>
+        Explore
+      </Title>
 
       {/* Content */}
       <ScrollView style={{ flex: 1, padding: 16 }}>
         
-        {/* Market Overview */}
+        {/* Navigation Index */}
         <Card style={{ marginBottom: 16 }}>
           <Card.Content style={{ padding: 20 }}>
             <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              Market Overview
+              App Navigation Index
             </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22 }}>
-              Stay up to date with cryptocurrency market trends, prices, and analysis.
+            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+              Access all pages and features through the comprehensive navigation index.
             </Text>
             <Button 
               mode="contained" 
-              onPress={() => console.log('View Markets')}
+              onPress={() => {
+                appState.setMainPanelState({
+                  mainPanelState: 'NavigationDebug',
+                  pageName: 'default'
+                });
+              }}
               style={{ marginTop: 16 }}
               contentStyle={{ paddingVertical: 4 }}
             >
-              View Markets
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* Educational Content */}
-        <Card style={{ marginBottom: 16 }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              Learn & Earn
-            </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22 }}>
-              Discover educational content about cryptocurrencies and blockchain technology.
-            </Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => console.log('Start Learning')}
-              style={{ marginTop: 16 }}
-              contentStyle={{ paddingVertical: 4 }}
-            >
-              Start Learning
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* News & Updates */}
-        <Card style={{ marginBottom: 16 }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              News & Updates
-            </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22 }}>
-              Get the latest news and updates from the cryptocurrency world.
-            </Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => console.log('Read News')}
-              style={{ marginTop: 16 }}
-              contentStyle={{ paddingVertical: 4 }}
-            >
-              Read News
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* DeFi Opportunities */}
-        <Card style={{ marginBottom: 32 }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              DeFi Opportunities
-            </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22 }}>
-              Explore decentralized finance opportunities and yield farming options.
-            </Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => console.log('Explore DeFi')}
-              style={{ marginTop: 16 }}
-              contentStyle={{ paddingVertical: 4 }}
-            >
-              Explore DeFi
+              Open Navigation Index
             </Button>
           </Card.Content>
         </Card>

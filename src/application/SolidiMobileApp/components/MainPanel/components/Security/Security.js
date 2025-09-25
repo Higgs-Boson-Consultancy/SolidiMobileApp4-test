@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { Text, Card, useTheme } from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -8,9 +9,10 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { colors } from 'src/constants';
+import { colors, sharedColors, sharedStyles } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -30,6 +32,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let Security = () => {
 
   let appState = useContext(AppStateContext);
+  const materialTheme = useTheme();
   let [renderCount, triggerRender] = useState(0);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
@@ -69,47 +72,72 @@ let Security = () => {
 
 
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Security</Text>
-      </View>
+      <Title>
+        Security
+      </Title>
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+      <ScrollView 
+        style={{ flex: 1 }} 
+        contentContainerStyle={{ padding: 16 }}
+        showsVerticalScrollIndicator={true}
+      >
 
-      <View style={styles.detail}>
-        <View style={styles.detailName}>
-          <Text style={styles.detailNameText}>{`\u2022  `}PIN</Text>
-        </View>
-        <View>
-          <TextInput
-            name='pin'
-            value={appState.user.pin}
-            style={[styles.detailValue, styles.secretTextInput]}
-            textContentType='newPassword'
-            secureTextEntry={! pinVisible}
-            editable={false}
-          />
-        </View>
-      </View>
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 20, 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}>
+              PIN Management
+            </Text>
 
-      <View style={styles.buttonWrapper}>
-        <StandardButton title={getPINButtonTitle()}
-          onPress={ () => { setPINVisible(! pinVisible) } }
-        />
-      </View>
+            <View style={{ marginBottom: 16 }}>
+              <Text variant="bodyMedium" style={{ 
+                marginBottom: 8,
+                color: materialTheme.colors.onSurfaceVariant,
+                fontWeight: '500'
+              }}>
+                Current PIN
+              </Text>
+              <TextInput
+                name='pin'
+                value={appState.user.pin}
+                style={{
+                  backgroundColor: materialTheme.colors.surfaceVariant,
+                  borderRadius: 8,
+                  fontSize: 16,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  color: materialTheme.colors.onSurface
+                }}
+                textContentType='newPassword'
+                secureTextEntry={! pinVisible}
+                editable={false}
+              />
+            </View>
 
-      <View style={styles.buttonWrapper}>
-        <StandardButton title='Change PIN' onPress={ () => {
-          appState.stashCurrentState()
-          appState.choosePIN();
-        } } />
-      </View>
+            <View style={{ gap: 12 }}>
+              <StandardButton 
+                title={getPINButtonTitle()}
+                onPress={ () => { setPINVisible(! pinVisible) } }
+              />
+              
+              <StandardButton 
+                title='Change PIN' 
+                onPress={ () => {
+                  appState.stashCurrentState()
+                  appState.choosePIN();
+                }} 
+              />
+            </View>
+          </Card.Content>
+        </Card>
 
       </ScrollView>
 
-    </View>
     </View>
   )
 

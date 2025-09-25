@@ -23,6 +23,7 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 
@@ -78,9 +79,10 @@ let History = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup({caller: 'History'});
-      await appState.loadOrders();
-      await appState.loadTransactions();
+      // Disabled API calls for design testing
+      // await appState.generalSetup({caller: 'History'});
+      // await appState.loadOrders();
+      // await appState.loadTransactions();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
       triggerRender(renderCount+1);
@@ -344,14 +346,13 @@ let History = () => {
   const materialTheme = useTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background, padding: 16 }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Card.Title 
-          title="Transaction History" 
-          subtitle="View your trading orders and transactions"
-          left={(props) => <Avatar.Icon {...props} icon="history" />}
-        />
-      </Card>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title>
+        Transaction History
+      </Title>
+
+      <View style={{ padding: 16 }}>
 
       { isLoading && (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -364,6 +365,7 @@ let History = () => {
       {! isLoading && category === 'orders' && renderOrders()}
 
       {! isLoading && category === 'transactions' && renderTransactions()}
+      </View>
     </View>
   );
 

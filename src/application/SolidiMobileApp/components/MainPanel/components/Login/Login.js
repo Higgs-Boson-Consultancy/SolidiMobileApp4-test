@@ -22,6 +22,7 @@ import * as Keychain from 'react-native-keychain';
 import AppStateContext from 'src/application/data';
 import SolidiRestAPIClientLibrary from 'src/api/SolidiRestAPIClientLibrary';
 import { StandardButton } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import misc from 'src/util/misc';
 import { colors } from 'src/constants';
@@ -127,29 +128,20 @@ let Login = () => {
   const theme = useTheme();
 
   return (
-    <View style={[layout.flex1, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header elevated>
-        <Appbar.Content title="Welcome Back" subtitle="Sign in to your account" />
-        <Appbar.Action icon="account-circle" onPress={() => {}} />
-      </Appbar.Header>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      
+      <Title>
+        Secure Login
+      </Title>
 
       <KeyboardAwareScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={layout.containerPadded}
+        contentContainerStyle={{ 
+          padding: 16,
+          backgroundColor: theme.colors.background
+        }}
         keyboardShouldPersistTaps='handled'
       >
-        
-        {/* Welcome Card */}
-        <Card style={cards.elevated}>
-          <Card.Content style={[layout.center, layout.paddingVertical]}>
-            <Text variant="headlineMedium" style={[text.h2, { color: theme.colors.primary }]}>
-              🔐 Secure Login
-            </Text>
-            <Text variant="bodyMedium" style={[text.bodyCenter, { color: theme.colors.onSurfaceVariant }]}>
-              Access your cryptocurrency trading account
-            </Text>
-          </Card.Content>
-        </Card>
 
         {/* Error Message */}
         {!_.isEmpty(errorMessage) && (
@@ -163,10 +155,19 @@ let Login = () => {
         )}
 
         {/* Login Form Card */}
-        <Card style={{ marginBottom: 24 }}>
-          <Card.Content>
-            <Text variant="titleMedium" style={{ marginBottom: 16, color: theme.colors.primary }}>
-              Sign In
+        <Card style={{ 
+          marginBottom: 24,
+          marginHorizontal: 16,
+          elevation: 3
+        }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 20, 
+              color: theme.colors.primary,
+              textAlign: 'center',
+              fontWeight: '600'
+            }}>
+              🔐 Sign In
             </Text>
 
             {/* Email Field */}
@@ -260,9 +261,16 @@ let Login = () => {
         </Card>
 
         {/* Additional Actions */}
-        <Card>
-          <Card.Content>
-            <Text variant="titleSmall" style={{ marginBottom: 16, color: theme.colors.primary }}>
+        <Card style={{ 
+          marginHorizontal: 16,
+          elevation: 2
+        }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleSmall" style={{ 
+              marginBottom: 16, 
+              color: theme.colors.primary,
+              fontWeight: '600'
+            }}>
               Need Help?
             </Text>
             

@@ -1,7 +1,19 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ScrollView } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { 
+  Text, 
+  Card, 
+  Button as PaperButton, 
+  TouchableRipple, 
+  TextInput,
+  HelperText,
+  Surface,
+  useTheme,
+  RadioButton,
+  List,
+  IconButton
+} from 'react-native-paper';
 import {launchCamera} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -12,9 +24,10 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { colors } from 'src/constants';
+import { colors, sharedColors, sharedStyles } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -44,6 +57,7 @@ Future: If a specific document has already been used for identity, and been acce
 let IdentityVerification = () => {
 
   let appState = useContext(AppStateContext);
+  const materialTheme = useTheme();
   let [renderCount, triggerRender] = useState(0);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
@@ -105,6 +119,10 @@ let IdentityVerification = () => {
   let [itemsADType, setItemsADType] = useState(generateAddressDropdownItems());
 
 
+  // Accordion states
+  let [identityAccordionExpanded, setIdentityAccordionExpanded] = useState(false);
+  let [addressAccordionExpanded, setAddressAccordionExpanded] = useState(false);
+
   // Message state
   let [uploadPhoto1Message, setUploadPhoto1Message] = useState('');
   let [uploadPhoto2Message, setUploadPhoto2Message] = useState('');
@@ -126,12 +144,13 @@ let IdentityVerification = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup({caller: 'IdentityVerification'});
-      let xDetails = await appState.fetchIdentityVerificationDetails();
-      lj({xDetails})
+      // Disabled API calls for design testing
+      // await appState.generalSetup({caller: 'IdentityVerification'});
+      // let xDetails = await appState.fetchIdentityVerificationDetails();
+      // lj({xDetails})
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setIsLoading(false);
-      SetIdentityVerificationDetails(xDetails);
+      // SetIdentityVerificationDetails(xDetails);
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `IdentityVerification.setup: Error = ${err}`;
@@ -347,161 +366,261 @@ let IdentityVerification = () => {
 
 
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
-
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Identity Verification</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title>
+        Identity Verification
+      </Title>
 
       <KeyboardAwareScrollView
-        showsVerticalScrollIndicator={true}
-        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
         keyboardShouldPersistTaps='handled'
+        enableResetScrollToCoords={false}
       >
 
 
       { isLoading && <Spinner/> }
 
-
       { ! isLoading && ! _.isEmpty(errorMessage) &&
-        <View style={styles.errorMessage}>
-          <Text style={styles.errorMessageText}>{errorMessage}</Text>
-        </View>
+        <HelperText type="error" visible={true} style={{ marginBottom: 16 }}>
+          {errorMessage}
+        </HelperText>
       }
 
 
-      { ! isLoading && (identityDocumentStatus()) &&
-        <View>
-          <Text style={styles.bold}>{generateDocumentStatusString('identity')}</Text>
-        </View>
-      }
 
-
-      { ! isLoading && (addressDocumentStatus()) &&
-        <View>
-          <Text style={styles.bold}>{generateDocumentStatusString('address')}</Text>
-        </View>
-      }
 
 
       { ! isLoading && (! identityDocumentStatus() || ! addressDocumentStatus()) &&
-
-        <View>
-
-        <Text style={[styles.basicText, styles.bold]}>{generateTaskDescriptionString()}</Text>
-
-
-        <View style={[styles.horizontalRule, styles.horizontalRule1]}/>
-
-        </View>
-
+        <Card style={{ 
+          marginBottom: 16, 
+          elevation: 3,
+          backgroundColor: '#E8F4FD',
+          borderLeftWidth: 4,
+          borderLeftColor: materialTheme.colors.primary,
+          borderRadius: 8
+        }}>
+          <Card.Content style={{ 
+            padding: 16,
+            flexDirection: 'row',
+            alignItems: 'flex-start'
+          }}>
+            <IconButton 
+              icon="information" 
+              iconColor={materialTheme.colors.primary} 
+              size={24}
+              style={{ marginTop: -8, marginLeft: -8, marginRight: 8 }}
+            />
+            <View style={{ flex: 1 }}>
+              <Text variant="titleSmall" style={{ 
+                fontWeight: '600',
+                color: materialTheme.colors.primary,
+                marginBottom: 4
+              }}>
+                Document Upload Required
+              </Text>
+              <Text variant="bodyMedium" style={{ 
+                color: '#1565C0',
+                lineHeight: 20
+              }}>
+                {generateTaskDescriptionString()}
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
       }
 
 
-      {/* If an identity document has not been uploaded, we make an upload pathway available. */}
-      { ! isLoading && ! identityDocumentStatus() &&
+      {/* Identity Document Accordion */}
+      { ! isLoading &&
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <List.Accordion
+            title="Identity Document"
+            expanded={identityAccordionExpanded}
+            onPress={() => setIdentityAccordionExpanded(!identityAccordionExpanded)}
+            left={(props) => <List.Icon {...props} icon="account-box" />}
+            right={(props) => (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {!identityDocumentStatus() && (
+                  <IconButton icon="close-circle" iconColor={materialTheme.colors.error} size={20} />
+                )}
+                {identityDocumentStatus() && (
+                  <IconButton icon="check-circle" iconColor={materialTheme.colors.primary} size={20} />
+                )}
+                <IconButton {...props} icon={identityAccordionExpanded ? "chevron-up" : "chevron-down"} />
+              </View>
+            )}
+            titleStyle={{ 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}
+          >
+            {identityDocumentStatus() ? (
+              <Card.Content style={{ padding: 20 }}>
+                <Text variant="bodyLarge" style={{ fontWeight: '600', color: materialTheme.colors.primary }}>
+                  {generateDocumentStatusString('identity')}
+                </Text>
+              </Card.Content>
+            ) : (
+              <Card.Content style={{ padding: 20 }}>
+                {/* Document Type Selection with Radio Buttons */}
+                <Text variant="titleSmall" style={{ marginBottom: 16, fontWeight: '600' }}>
+                  Select Document Type:
+                </Text>
+                
+                <RadioButton.Group 
+                  onValueChange={value => setIDType(value)} 
+                  value={idType}
+                >
+                  {generateIdentityDropdownItems().map((option, index) => (
+                    <View key={index} style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      marginBottom: 8 
+                    }}>
+                      <RadioButton value={option.value} />
+                      <Text 
+                        variant="bodyMedium" 
+                        style={{ flex: 1, marginLeft: 8 }}
+                        onPress={() => setIDType(option.value)}
+                      >
+                        {option.label}
+                      </Text>
+                    </View>
+                  ))}
+                </RadioButton.Group>
 
-        <View>
+                {/* Action Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+                  <PaperButton
+                    mode="outlined"
+                    onPress={() => takePhotoOfDocument('identity')}
+                    disabled={disablePhoto1Buttons}
+                    style={{ flex: 0.48 }}
+                    icon="camera"
+                  >
+                    Take Photo
+                  </PaperButton>
+                  <PaperButton
+                    mode="contained"
+                    onPress={() => uploadPhoto('identity')}
+                    disabled={disablePhoto1Buttons}
+                    style={{ flex: 0.48 }}
+                    icon="upload"
+                  >
+                    Upload Photo
+                  </PaperButton>
+                </View>
 
-        <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Identity Document:</Text>
-
-        <View style={styles.idTypeDropdownWrapper}>
-          <DropDownPicker
-            listMode="MODAL"
-            //style={styles.idTypeDropdown}
-            //containerStyle={styles.idTypeDropdownContainer}
-            open={openIDType}
-            value={idType}
-            items={itemsIDType}
-            setOpen={setOpenIDType}
-            setValue={setIDType}
-            setItems={setItemsIDType}
-            searchable={true}
-            textStyle={styles.dropdownText}
-          />
-        </View>
-
-        <View style={styles.takePhotoButtonWrapper}>
-          <StandardButton title="Take photo"
-            onPress={ () => { takePhotoOfDocument('identity') } }
-            disabled={disablePhoto1Buttons}
-          />
-          <View style={styles.photoMessage}>
-            <Text style={styles.photoMessageText}>{generateTakePhoto1Message()}</Text>
-          </View>
-        </View>
-
-        <View style={styles.uploadPhotoButtonWrapper}>
-          <StandardButton title="Upload photo"
-            onPress={ () => { uploadPhoto('identity') } }
-            disabled={disablePhoto1Buttons}
-          />
-          <View style={styles.photoMessage}>
-            <Text style={styles.photoMessageText}>{uploadPhoto1Message}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.horizontalRule, styles.horizontalRule1]}/>
-
-        </View>
-
+                {/* Messages */}
+                {(generateTakePhoto1Message() || uploadPhoto1Message) && (
+                  <HelperText type="info" visible={true} style={{ marginTop: 10 }}>
+                    {generateTakePhoto1Message() || uploadPhoto1Message}
+                  </HelperText>
+                )}
+              </Card.Content>
+            )}
+          </List.Accordion>
+        </Card>
       }
 
+      {/* Proof of Address Accordion */}
+      { ! isLoading &&
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <List.Accordion
+            title="Proof of Address"
+            expanded={addressAccordionExpanded}
+            onPress={() => setAddressAccordionExpanded(!addressAccordionExpanded)}
+            left={(props) => <List.Icon {...props} icon="home-account" />}
+            right={(props) => (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {!addressDocumentStatus() && (
+                  <IconButton icon="close-circle" iconColor={materialTheme.colors.error} size={20} />
+                )}
+                {addressDocumentStatus() && (
+                  <IconButton icon="check-circle" iconColor={materialTheme.colors.primary} size={20} />
+                )}
+                <IconButton {...props} icon={addressAccordionExpanded ? "chevron-up" : "chevron-down"} />
+              </View>
+            )}
+            titleStyle={{ 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}
+          >
+            {addressDocumentStatus() ? (
+              <Card.Content style={{ padding: 20 }}>
+                <Text variant="bodyLarge" style={{ fontWeight: '600', color: materialTheme.colors.primary }}>
+                  {generateDocumentStatusString('address')}
+                </Text>
+              </Card.Content>
+            ) : (
+              <Card.Content style={{ padding: 20 }}>
+                {/* Document Type Selection with Radio Buttons */}
+                <Text variant="titleSmall" style={{ marginBottom: 16, fontWeight: '600' }}>
+                  Select Document Type:
+                </Text>
+                
+                <RadioButton.Group 
+                  onValueChange={value => setADType(value)} 
+                  value={adType}
+                >
+                  {generateAddressDropdownItems().map((option, index) => (
+                    <View key={index} style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      marginBottom: 8 
+                    }}>
+                      <RadioButton value={option.value} />
+                      <Text 
+                        variant="bodyMedium" 
+                        style={{ flex: 1, marginLeft: 8 }}
+                        onPress={() => setADType(option.value)}
+                      >
+                        {option.label}
+                      </Text>
+                    </View>
+                  ))}
+                </RadioButton.Group>
 
-      {/* If an address document has not been uploaded, we make an upload pathway available. */}
-      { ! isLoading && ! addressDocumentStatus() &&
+                {/* Action Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+                  <PaperButton
+                    mode="outlined"
+                    onPress={() => takePhotoOfDocument('address')}
+                    disabled={disablePhoto2Buttons}
+                    style={{ flex: 0.48 }}
+                    icon="camera"
+                  >
+                    Take Photo
+                  </PaperButton>
+                  <PaperButton
+                    mode="contained"
+                    onPress={() => uploadPhoto('address')}
+                    disabled={disablePhoto2Buttons}
+                    style={{ flex: 0.48 }}
+                    icon="upload"
+                  >
+                    Upload Photo
+                  </PaperButton>
+                </View>
 
-        <View>
-
-        <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Proof of Address:</Text>
-
-        <View style={styles.adTypeDropdownWrapper}>
-          <DropDownPicker
-            listMode="MODAL"
-            //style={styles.adTypeDropdown}
-            //containerStyle={styles.adTypeDropdownContainer}
-            open={openADType}
-            value={adType}
-            items={itemsADType}
-            setOpen={setOpenADType}
-            setValue={setADType}
-            setItems={setItemsADType}
-            searchable={true}
-            textStyle={styles.dropdownText}
-          />
-        </View>
-
-        <View style={styles.takePhotoButtonWrapper}>
-          <StandardButton title="Take photo"
-            onPress={ () => { takePhotoOfDocument('address') } }
-            disabled={disablePhoto2Buttons}
-          />
-          <View style={styles.photoMessage}>
-            <Text style={styles.photoMessageText}>{generateTakePhoto2Message()}</Text>
-          </View>
-        </View>
-
-        <View style={styles.uploadPhotoButtonWrapper}>
-          <StandardButton title="Upload photo"
-            onPress={ () => { uploadPhoto('address') } }
-            disabled={disablePhoto2Buttons}
-          />
-          <View style={styles.photoMessage}>
-            <Text style={styles.photoMessageText}>{uploadPhoto2Message}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.horizontalRule, styles.horizontalRule1]}/>
-
-        </View>
-
+                {/* Messages */}
+                {(generateTakePhoto2Message() || uploadPhoto2Message) && (
+                  <HelperText type="info" visible={true} style={{ marginTop: 10 }}>
+                    {generateTakePhoto2Message() || uploadPhoto2Message}
+                  </HelperText>
+                )}
+              </Card.Content>
+            )}
+          </List.Accordion>
+        </Card>
       }
 
 
       </KeyboardAwareScrollView>
 
-    </View>
     </View>
   )
 

@@ -25,6 +25,7 @@ import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -612,22 +613,17 @@ let Send = () => {
     <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
       {/* Header Section - Full width design */}
-      <View style={styles.headerSection}>
-        {/* Header content with padding */}
-        <View style={styles.headerContent}>
-          {/* Page Title */}
-          <View style={[sharedStyles.row, { marginBottom: 12 }]}>
-            <Text variant="headlineSmall" style={[sharedStyles.headerTitle, { flex: 1 }]}>
-              Send Crypto
+      <Title 
+        rightElement={
+          <View style={styles.secureBadge}>
+            <Text style={styles.secureText}>
+              SECURE
             </Text>
-            <View style={styles.secureBadge}>
-              <Text style={styles.secureText}>
-                SECURE
-              </Text>
-            </View>
           </View>
-        </View>
-      </View>
+        }
+      >
+        Send Crypto
+      </Title>
 
       {/* Content Section */}
       <View style={styles.panelSubContainer}>

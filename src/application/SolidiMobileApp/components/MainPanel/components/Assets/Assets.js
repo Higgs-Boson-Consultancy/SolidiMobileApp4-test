@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { FlatList, Image, StyleSheet, View } from 'react-native';
+import { FlatList, Image, StyleSheet, View, TouchableOpacity } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -22,6 +22,7 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors, layoutStyles, cardStyles } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Create local references for commonly used styles
@@ -250,8 +251,35 @@ let Assets = () => {
     const cryptoIconConfig = cryptoIcons[asset];
     const fiatConfig = fiatIcons[asset];
     
+    // Function to handle crypto item press
+    const handleCryptoPress = () => {
+      // Only navigate for crypto assets, not fiat currencies
+      if (cryptoIconConfig) {
+        // Store selected crypto data in app state
+        appState.selectedCrypto = {
+          asset,
+          name,
+          symbol,
+          balance: displayVolume,
+          currentPrice: currentPrice || 0,
+          priceChange: priceChange || 0,
+          portfolioValue
+        };
+        
+        // Navigate to CryptoContent page
+        appState.setMainPanelState({
+          mainPanelState: 'CryptoContent',
+          pageName: 'default'
+        });
+      }
+    };
+    
     return (
-      <View style={styles.assetCard}>
+      <TouchableOpacity 
+        style={styles.assetCard}
+        onPress={handleCryptoPress}
+        activeOpacity={cryptoIconConfig ? 0.7 : 1}
+      >
         <View style={[
           styles.assetIconContainer, 
           !cryptoIconConfig && fiatConfig && { backgroundColor: fiatConfig.bgColor }
@@ -291,7 +319,16 @@ let Assets = () => {
             {priceData.change}
           </Text>
         </View>
-      </View>
+        {cryptoIconConfig && (
+          <View style={{ marginLeft: 8 }}>
+            <Icon
+              name="chevron-right"
+              size={20}
+              color="#9CA3AF"
+            />
+          </View>
+        )}
+      </TouchableOpacity>
     );
   }
 
@@ -337,43 +374,24 @@ let Assets = () => {
   return (
     <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
-      {/* Header Section - Full width design */}
-      <View style={{
-        backgroundColor: sharedColors.primary,
-        paddingHorizontal: 0,
-        paddingTop: 12,
-        paddingBottom: 20,
-        elevation: 2,
-      }}>
-        {/* Header content with padding */}
-        <View style={{ paddingHorizontal: 16 }}>
-          {/* Page Title */}
-          <View style={{ 
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16
+      <Title 
+        rightElement={
+          <View style={{
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12
           }}>
-            <Text variant="headlineSmall" style={[sharedStyles.headerTitle, { flex: 1 }]}>
-              My Assets
-            </Text>
-            <View style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 12
+            <Text style={{
+              color: 'white',
+              fontSize: 10,
+              fontWeight: '600'
             }}>
-              <Text style={{
-                color: 'white',
-                fontSize: 10,
-                fontWeight: '600'
-              }}>
-                LIVE
-              </Text>
-            </View>
+              LIVE
+            </Text>
           </View>
-        
-          {/* Portfolio Value Cards */}
+        }
+        customContent={
           <View style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -500,10 +518,10 @@ let Assets = () => {
               </View>
             </View>
           </View>
-
-
-        </View>
-      </View>
+        }
+      >
+        My Assets
+      </Title>
 
       {/* Content Section - Full width scrollable */}
       <View style={{ flex: 1, paddingTop: 12 }}>

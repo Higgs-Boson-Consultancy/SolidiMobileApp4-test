@@ -72,7 +72,8 @@ let Settings = () => {
     let loading = firstName === '[loading]' || lastName === '[loading]';
     
     if (loading) {
-      return "Loading...";
+      // Use dummy data instead of showing "Loading..."
+      return "John Doe";
     } else {
       return `${firstName} ${lastName}`;
     }
@@ -80,7 +81,11 @@ let Settings = () => {
 
   let getUserEmail = () => {
     let email = appState.getUserInfo('email');
-    return email === '[loading]' ? 'Loading...' : email;
+    if (email === '[loading]') {
+      // Use dummy data instead of showing "Loading..."
+      return 'john.doe@example.com';
+    }
+    return email;
   }
 
   const materialTheme = useTheme();
@@ -95,13 +100,14 @@ let Settings = () => {
         <Card style={{ marginBottom: 16, elevation: 2 }}>
           <Card.Content style={{ padding: 24 }}>
             <View style={{ alignItems: 'center' }}>
-              <Avatar.Image
+              <Avatar.Icon
                 size={80}
-                source={require('src/assets/profile.png')}
+                icon="account"
                 style={{ 
                   marginBottom: 16,
-                  backgroundColor: materialTheme.colors.surfaceVariant 
+                  backgroundColor: materialTheme.colors.primaryContainer 
                 }}
+                color={materialTheme.colors.onPrimaryContainer}
               />
               <Text 
                 variant="headlineSmall" 

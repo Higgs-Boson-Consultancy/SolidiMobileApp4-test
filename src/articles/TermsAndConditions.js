@@ -2,6 +2,8 @@
 import React from 'react';
 import { Text, ScrollView, StyleSheet, View } from 'react-native';
 
+// Component imports
+import Title from 'src/components/shared/Title/Title';
 
 // Internal imports
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
@@ -496,38 +498,31 @@ v1.01  08 Apr 2020
 `;
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
+      
+      <Title>
+        Terms & Conditions
+      </Title>
 
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>General Terms & Conditions</Text>
-        </View>
-
-        <Text>{textGeneralTermsAndConditions}</Text>
-
-        {horizontalRule()}
-
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Privacy Policy</Text>
-        </View>
-
-        <Text>{textPrivacyPolicy}</Text>
+      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
+        
+        <Text style={styles.contentText}>{textGeneralTermsAndConditions}</Text>
 
         {horizontalRule()}
 
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Trading Terms & Conditions</Text>
-        </View>
-
-        <Text>{textTradingTermsAndConditions}</Text>
+        <Text style={styles.contentText}>{textPrivacyPolicy}</Text>
 
         {horizontalRule()}
 
-        <View style={styles.sectionHeading}>
-          <Text style={styles.sectionHeadingText}>Over-The-Counter (OTC) Terms & Conditions</Text>
-        </View>
+        <Text style={styles.contentText}>{textTradingTermsAndConditions}</Text>
 
-        <Text>{textOverTheCounterTermsAndConditions}</Text>
+        {horizontalRule()}
 
+        <Text style={styles.contentText}>{textOverTheCounterTermsAndConditions}</Text>
+
+        <View style={{ height: 32 }} />
+
+      </ScrollView>
 
     </View>
   )
@@ -536,13 +531,11 @@ v1.01  08 Apr 2020
 
 
 let styles = StyleSheet.create({
-  sectionHeading: {
-    marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
-  },
-  sectionHeadingText: {
-    fontSize: normaliseFont(16),
-    fontWeight: 'bold',
+  contentText: {
+    fontSize: normaliseFont(14),
+    lineHeight: normaliseFont(20),
+    marginBottom: scaledHeight(16),
+    color: '#333',
   },
   bold: {
     fontWeight: 'bold',

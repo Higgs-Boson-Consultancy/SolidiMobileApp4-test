@@ -1,6 +1,15 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { 
+  Text, 
+  TextInput,
+  Card, 
+  Button as PaperButton, 
+  HelperText,
+  IconButton,
+  useTheme 
+} from 'react-native-paper';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 // Other imports
@@ -9,9 +18,10 @@ import Big from 'big.js';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
-import { colors } from 'src/constants';
+import { colors, sharedColors, sharedStyles } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -31,6 +41,7 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let BankAccounts = () => {
 
   let appState = useContext(AppStateContext);
+  const materialTheme = useTheme();
   let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
   let [isLoading, setIsLoading] = useState(true);
@@ -64,13 +75,14 @@ let BankAccounts = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup();
-      await appState.loadInitialStuffAboutUser();
+      // Disabled API calls for design testing
+      // await appState.generalSetup();
+      // await appState.loadInitialStuffAboutUser();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      account1 = appState.getDefaultAccountForAsset(accountAsset);
-      setAccountName(account1.accountName);
-      setSortCode(account1.sortCode);
-      setAccountNumber(account1.accountNumber);
+      // account1 = appState.getDefaultAccountForAsset(accountAsset);
+      // setAccountName(account1.accountName);
+      // setSortCode(account1.sortCode);
+      // setAccountNumber(account1.accountNumber);
       setUpdateMessage('');
       setIsLoading(false);
       triggerRender(renderCount+1);
@@ -109,105 +121,140 @@ let BankAccounts = () => {
 
 
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Bank Account</Text>
-      </View>
+      <Title>
+        Bank Account
+      </Title>
 
       <KeyboardAwareScrollView
-        showsVerticalScrollIndicator={true}
-        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
         keyboardShouldPersistTaps='handled'
+        enableResetScrollToCoords={false}
       >
 
       { isLoading && <Spinner/> }
 
-      { ! isLoading &&
-        (_.isEmpty(accountName) && _.isEmpty(sortCode) && _.isEmpty(accountNumber)) &&
+            { ! isLoading &&
         _.isEmpty(errorMessage) &&
-        <View style={styles.initialMessage}>
-          <Text style={styles.initialMessageText}>Please enter your bank account details.</Text>
-        </View>
+        <Card style={{ 
+          marginBottom: 16, 
+          elevation: 2,
+          backgroundColor: '#E3F2FD',
+          borderLeftWidth: 4,
+          borderLeftColor: materialTheme.colors.primary,
+          borderRadius: 8
+        }}>
+          <Card.Content style={{ 
+            padding: 16,
+            flexDirection: 'row',
+            alignItems: 'flex-start'
+          }}>
+            <IconButton 
+              icon="information" 
+              iconColor={materialTheme.colors.primary} 
+              size={24}
+              style={{ marginTop: -8, marginLeft: -8, marginRight: 8 }}
+            />
+            <View style={{ flex: 1 }}>
+              <Text variant="titleSmall" style={{ 
+                fontWeight: '600',
+                color: materialTheme.colors.primary,
+                marginBottom: 4
+              }}>
+                Bank Account Required
+              </Text>
+              <Text variant="bodyMedium" style={{ 
+                color: '#1565C0',
+                lineHeight: 20
+              }}>
+                Please enter your bank account details.
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
       }
 
       { ! isLoading && ! _.isEmpty(errorMessage) &&
-        <View style={styles.errorMessage}>
-          <Text style={styles.errorMessageText}>{errorMessage}</Text>
-        </View>
+        <HelperText type="error" visible={true} style={{ marginBottom: 16 }}>
+          {errorMessage}
+        </HelperText>
       }
 
       { ! isLoading &&
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ 
+              marginBottom: 20, 
+              fontWeight: '600',
+              color: materialTheme.colors.primary 
+            }}>
+              Bank Account Details
+            </Text>
 
-        <View style={styles.bankAccount}>
+            {/* Account Name */}
+            <TextInput
+              label="Account Name"
+              mode="outlined"
+              defaultValue={appState.getDefaultAccountForAsset(accountAsset).accountName}
+              onChangeText={setAccountName}
+              style={{ marginBottom: 16 }}
+            />
 
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Account Name</Text>
-            </View>
-            <View>
-              <TextInput defaultValue={appState.getDefaultAccountForAsset(accountAsset).accountName}
-                style={[styles.detailValue, styles.editableTextInput]}
-                onChangeText={setAccountName}
-                autoCompleteType='off'
-              />
-            </View>
-          </View>
+            {/* Sort Code */}
+            <TextInput
+              label="Sort Code"
+              mode="outlined"
+              defaultValue={appState.getDefaultAccountForAsset(accountAsset).sortCode}
+              onChangeText={setSortCode}
+              placeholder="01-02-03"
+              keyboardType="numbers-and-punctuation"
+              style={{ marginBottom: 16 }}
+            />
 
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Sort Code</Text>
-            </View>
-            <View>
-              <TextInput defaultValue={appState.getDefaultAccountForAsset(accountAsset).sortCode}
-                style={[styles.detailValue, styles.editableTextInput]}
-                onChangeText={setSortCode}
-                autoCompleteType='off'
-                placeholder='01-02-03'
-                keyboardType='numbers-and-punctuation'
-              />
-            </View>
-          </View>
+            {/* Account Number */}
+            <TextInput
+              label="Account Number"
+              mode="outlined"
+              defaultValue={appState.getDefaultAccountForAsset(accountAsset).accountNumber}
+              onChangeText={setAccountNumber}
+              placeholder="01230123"
+              keyboardType="number-pad"
+              style={{ marginBottom: 16 }}
+            />
 
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Account Number</Text>
-            </View>
-            <View>
-              <TextInput defaultValue={appState.getDefaultAccountForAsset(accountAsset).accountNumber}
-                style={[styles.detailValue, styles.editableTextInput]}
-                onChangeText={setAccountNumber}
-                autoCompleteType='off'
-                placeholder='01230123'
-                keyboardType='number-pad'
-              />
-            </View>
-          </View>
+            {/* Currency (Read-only) */}
+            <TextInput
+              label="Currency"
+              mode="outlined"
+              value={appState.getAssetInfo(accountAsset).displayString}
+              editable={false}
+              style={{ marginBottom: 20 }}
+            />
 
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Currency</Text>
-            </View>
-            <View>
-            <Text style={styles.detailNameText}>{appState.getAssetInfo(accountAsset).displayString}</Text>
-            </View>
-          </View>
+            {/* Update Button */}
+            <PaperButton
+              mode="contained"
+              onPress={updateBankAccountDetails}
+              style={{ marginBottom: 10 }}
+              icon="content-save"
+            >
+              Update Details
+            </PaperButton>
 
-          <View style={styles.buttonWrapper}>
-            <StandardButton title="Update details" onPress={ updateBankAccountDetails } />
-            <View style={styles.updateMessage}>
-              <Text style={styles.updateMessageText}>{updateMessage}</Text>
-            </View>
-          </View>
-
-        </View>
-
+            {/* Update Message */}
+            {updateMessage && (
+              <HelperText type="info" visible={true}>
+                {updateMessage}
+              </HelperText>
+            )}
+          </Card.Content>
+        </Card>
       }
 
       </KeyboardAwareScrollView>
 
-    </View>
     </View>
   )
 

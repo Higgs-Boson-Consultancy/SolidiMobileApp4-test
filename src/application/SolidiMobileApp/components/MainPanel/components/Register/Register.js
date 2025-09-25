@@ -1,9 +1,22 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { Checkbox } from 'react-native-paper';
+
+// Material Design imports
+import {
+  Card,
+  Text,
+  TextInput,
+  Checkbox,
+  Button,
+  HelperText,
+  useTheme,
+  Portal,
+  Modal,
+  List,
+} from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -13,7 +26,8 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, FixedWidthButton, ImageButton, Spinner } from 'src/components/atomic';
+import { StandardButton, FixedWidthButton, ImageButton, Spinner } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -64,7 +78,14 @@ let Register = () => {
   }
 
   // Basic
-  let [userData, setUserData] = useState(registerData);
+  let [userData, setUserData] = useState({
+    ...registerData,
+    emailPreferences: registerData.emailPreferences || {
+      systemAnnouncements: true,
+      newsAndFeatureUpdates: true,
+      promotionsAndSpecialOffers: true,
+    }
+  });
   let [isLoading, setIsLoading] = useState(true);
   let [errorDisplay, setErrorDisplay] = useState({});
   let [uploadMessage, setUploadMessage] = useState('');
@@ -72,19 +93,29 @@ let Register = () => {
   let [disableRegisterButton, setDisableRegisterButton] = useState(false);
 
   // Gender dropdown
-  let [gender, setGender] = useState(registerData.gender);
+  let [gender, setGender] = useState(registerData.gender || '');
   let generateGenderOptionsList = () => {
-    let genderOptions = appState.getPersonalDetailOptions('gender');
-    return genderOptions.map(x => ({label: x, value: x}) );
+    return ['Male', 'Female', 'Other'].map(x => ({label: x, value: x}));
   }
   let [genderOptionsList, setGenderOptionsList] = useState(generateGenderOptionsList());
   let [openGender, setOpenGender] = useState(false);
+  let [genderModalVisible, setGenderModalVisible] = useState(false);
 
   // Citizenship dropdown
-  let [citizenship, setCitizenship] = useState(registerData.citizenship);
+  let [citizenship, setCitizenship] = useState(registerData.citizenship || '');
+  let [citizenshipModalVisible, setCitizenshipModalVisible] = useState(false);
   let generateCitizenshipOptionsList = () => {
-    let countries = appState.getCountries();
-    return countries.map(x => { return {label: x.name, value: x.code} });
+    return [
+      {label: 'United Kingdom', value: 'GB'},
+      {label: 'United States', value: 'US'},
+      {label: 'Canada', value: 'CA'},
+      {label: 'Australia', value: 'AU'},
+      {label: 'Germany', value: 'DE'},
+      {label: 'France', value: 'FR'},
+      {label: 'Spain', value: 'ES'},
+      {label: 'Italy', value: 'IT'},
+      {label: 'Netherlands', value: 'NL'},
+    ];
   }
   let [citizenshipOptionsList, setCitizenshipOptionsList] = useState(generateCitizenshipOptionsList());
   let [openCitizenship, setOpenCitizenship] = useState(false);
@@ -100,9 +131,10 @@ let Register = () => {
 
   let setup = async () => {
     try {
-      await appState.generalSetup({caller: 'Register'});
-      await appState.loadPersonalDetailOptions();
-      await appState.loadCountries();
+      // Disabled API calls for design testing
+      // await appState.generalSetup({caller: 'Register'});
+      // await appState.loadPersonalDetailOptions();
+      // await appState.loadCountries();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setGenderOptionsList(generateGenderOptionsList());
       setCitizenshipOptionsList(generateCitizenshipOptionsList());
@@ -244,22 +276,21 @@ emailPreferences
 
 
 
+  const materialTheme = useTheme();
+
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
-
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Register</Text>
-      </View>
-
-      <View style={styles.scrollDownMessage}>
-        <Text style={styles.scrollDownMessageText}>{! isLoading && "(Scroll down for Register button)"}</Text>
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title>
+        Create Account
+      </Title>
 
       <KeyboardAwareScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ flexGrow: 1, margin: 20 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ 
+          padding: 16,
+          backgroundColor: materialTheme.colors.background
+        }}
         keyboardShouldPersistTaps='handled'
         ref={scrollRefTop}
       >
@@ -267,266 +298,252 @@ emailPreferences
         { isLoading && <Spinner/> }
 
         { ! isLoading &&
-
-          <View>
-
-          {renderError('unknown')}
-
-
-
-
-          {renderError('firstName')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}First Name</Text>
-            </View>
-            <View>
-            <TextInput
-              value={userData.firstName}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
-                log(`First Name set to: ${value}`);
-                setUserData({...userData, firstName: value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'words'}
-              autoCorrect={false}
-              placeholder='First Name...'
-              placeholderTextColor='grey'
-            />
-            </View>
-          </View>
-
-          {renderError('lastName')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Last Name</Text>
-            </View>
-            <View>
-            <TextInput
-              value={userData.lastName}
-              style={[styles.detailValue, styles.editableTextInput]}
-              onChangeText = {value => {
-                log(`Last Name set to: ${value}`);
-                setUserData({...userData, lastName: value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'words'}
-              autoCorrect={false}
-              placeholder='Last Name...'
-              placeholderTextColor='grey'
-            />
-            </View>
-          </View>
-
-          {renderError('email')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Email</Text>
-            </View>
-            <View>
-            <TextInput
-              value={userData.email}
-              style={[styles.detailValueFullWidth, styles.editableTextInput]}
-              onChangeText = {value => {
-                log(`Email set to: ${value}`);
-                setUserData({...userData, email: value});
-              }}
-              autoComplete={'off'}
-              autoCompleteType='off'
-              autoCapitalize={'none'}
-              autoCorrect={false}
-              keyboardType='email-address'
-              placeholder='Email address'
-              placeholderTextColor='grey'
-            />
-            </View>
-          </View>
-
-          {renderError('password')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Password</Text>
-            </View>
-            <View style={styles.detailValue}>
-              <Button title={getPasswordButtonTitle()}
-                onPress={ () => { setPasswordVisible(! passwordVisible) } }
-                styles={styleTextButton}
-              />
-            </View>
-            <View>
-              <TextInput
-                value={userData.password}
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Password set to: ${value}`);
-                  setUserData({...userData, password: value});
-                }}
-                autoComplete={'off'}
-                autoCompleteType='off'
-                autoCapitalize='none'
-                autoCorrect={false}
-                placeholder='Password'
-                placeholderTextColor='grey'
-                secureTextEntry={! passwordVisible}
-              />
-            </View>
-          </View>
-
-          {renderError('mobile')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text>
-                <Text style={styles.detailNameText}>{`\u2022  `}Mobile </Text>
-                <Text style={styles.red}>(UK mobile numbers only)</Text>
+          <Card style={{ 
+            marginHorizontal: 16,
+            marginBottom: 24,
+            elevation: 3
+          }}>
+            <Card.Content style={{ padding: 20 }}>
+              <Text variant="titleMedium" style={{ 
+                marginBottom: 20, 
+                color: materialTheme.colors.primary,
+                textAlign: 'center',
+                fontWeight: '600'
+              }}>
+                📝 Create Your Account
               </Text>
-            </View>
-            <View>
+
+              {/* Email Field */}
               <TextInput
-                value={userData.mobileNumber}
-                style={[styles.detailValueFullWidth, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`Mobile set to: ${value}`);
-                  setUserData({...userData, mobileNumber: value});
-                }}
-                autoCompleteType='off'
-                autoCapitalize='none'
-                keyboardType='phone-pad' // May have plus sign and hyphen in it, not just digits.
-                placeholder='Ex. 07710123123'
-                placeholderTextColor='grey'
+                mode="outlined"
+                label="Email Address"
+                value={userData.email}
+                onChangeText={(value) => setUserData({...userData, email: value})}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="email" />}
               />
-            </View>
-          </View>
 
-          {renderError('dateOfBirth')}
-
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Date of Birth</Text>
-            </View>
-            <View>
+              {/* Password Field */}
               <TextInput
+                mode="outlined"
+                label="Password"
+                value={userData.password}
+                onChangeText={(value) => setUserData({...userData, password: value})}
+                secureTextEntry={!passwordVisible}
+                autoCapitalize="none"
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={passwordVisible ? "eye-off" : "eye"}
+                    onPress={() => setPasswordVisible(!passwordVisible)}
+                  />
+                }
+              />
+
+              {/* First Name Field */}
+              <TextInput
+                mode="outlined"
+                label="First Name"
+                value={userData.firstName}
+                onChangeText={(value) => setUserData({...userData, firstName: value})}
+                autoCapitalize="words"
+                autoCorrect={false}
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="account" />}
+              />
+
+              {/* Last Name Field */}
+              <TextInput
+                mode="outlined"
+                label="Last Name"
+                value={userData.lastName}
+                onChangeText={(value) => setUserData({...userData, lastName: value})}
+                autoCapitalize="words"
+                autoCorrect={false}
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="account" />}
+              />
+
+              {/* Date of Birth Field */}
+              <TextInput
+                mode="outlined"
+                label="Date of Birth (DD/MM/YYYY)"
                 value={userData.dateOfBirth}
-                style={[styles.detailValue, styles.editableTextInput]}
-                onChangeText = {value => {
-                  log(`dateOfBirth set to: ${value}`);
-                  setUserData({...userData, dateOfBirth: value});
-                }}
-                autoCompleteType='off'
-                keyboardType='default' // Can't use a smaller keyboard, because they need to be able to enter forward slashes.
-                placeholder='DD/MM/YYYY'
-                placeholderTextColor='grey'
+                onChangeText={(value) => setUserData({...userData, dateOfBirth: value})}
+                placeholder="01/01/1990"
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="calendar" />}
               />
-            </View>
-          </View>
 
-          <View style={[styles.detail, {zIndex: 2, zIndexInverse: 1}]}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Gender</Text>
-            </View>
-            <View style={[styles.detailValue, {paddingVertical:0, paddingLeft: 0}]}>
-              <DropDownPicker
-                listMode="SCROLLVIEW"
-                scrollViewProps={{nestedScrollEnabled: true}}
-                placeholder='Select gender'
-                placeholderStyle={{color: 'grey'}}
-                open={openGender}
-                value={gender}
-                items={genderOptionsList}
-                setOpen={setOpenGender}
-                setValue={setGender}
-                style={[styles.detailDropdown]}
-                textStyle = {styles.detailDropdownText}
-                onChangeValue = { (gender) => {
-                  log(`Gender set to: ${gender}`);
-                  setUserData({...userData, gender});
-                }}
+              {/* Mobile Number Field */}
+              <TextInput
+                mode="outlined"
+                label="Mobile Number"
+                value={userData.mobileNumber}
+                onChangeText={(value) => setUserData({...userData, mobileNumber: value})}
+                keyboardType="phone-pad"
+                style={{ marginBottom: 16 }}
+                left={<TextInput.Icon icon="phone" />}
               />
-            </View>
-          </View>
 
-          <View style={[styles.detail, {zIndex: 1, zIndexInverse: 2}]}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Country of Citizenship</Text>
-            </View>
-            <View style={[styles.detailValueFullWidth, {paddingVertical:0, paddingLeft: 0}]}>
-              <DropDownPicker
-                //listMode="SCROLLVIEW"
-                //scrollViewProps={{nestedScrollEnabled: true}}
-                listMode="MODAL"
-                searchable = {true}
-                placeholder='Select country'
-                placeholderStyle={{color: 'grey'}}
-                open={openCitizenship}
-                value={citizenship}
-                items={citizenshipOptionsList}
-                setOpen={setOpenCitizenship}
-                setValue={setCitizenship}
-                style={[styles.detailDropdown]}
-                textStyle = {styles.detailDropdownText}
-                onChangeValue = { (citizenship) => {
-                  setUserData({...userData, citizenship});
-                }}
-                maxHeight={scaledHeight(300)}
-                dropDownDirection="BOTTOM"
-              />
-            </View>
-          </View>
+              {/* Gender Field */}
+              <TouchableOpacity onPress={() => setGenderModalVisible(true)}>
+                <TextInput
+                  mode="outlined"
+                  label="Gender"
+                  value={gender}
+                  editable={false}
+                  style={{ marginBottom: 16 }}
+                  left={<TextInput.Icon icon="human-male-female" />}
+                  right={<TextInput.Icon icon="chevron-down" />}
+                />
+              </TouchableOpacity>
 
-          {renderError('emailPreferences')}
+              {/* Citizenship Field */}
+              <TouchableOpacity onPress={() => setCitizenshipModalVisible(true)}>
+                <TextInput
+                  mode="outlined"
+                  label="Country of Citizenship"
+                  value={citizenshipOptionsList.find(c => c.value === citizenship)?.label || citizenship}
+                  editable={false}
+                  style={{ marginBottom: 16 }}
+                  left={<TextInput.Icon icon="earth" />}
+                  right={<TextInput.Icon icon="chevron-down" />}
+                />
+              </TouchableOpacity>
 
-          <View style={styles.detail}>
-            <View style={styles.detailName}>
-              <Text style={styles.detailNameText}>{`\u2022  `}Email Preferences</Text>
-            </View>
-            <View style={styles.checkboxWrapper}>
-              <Checkbox.Item label="System Announcements"
-                status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.systemAnnouncements ? "checked" : "unchecked" }
-                style={styleCheckbox}
-                color={colors.standardButton}
-                onPress={() => {
-                  let currentValue = userData.emailPreferences.systemAnnouncements;
-                  let newValue = ! currentValue;
-                  log(`Changing userData.emailPreferences.systemAnnouncements from ${currentValue} to ${newValue}`);
-                  setUserData({...userData, emailPreferences: {...userData.emailPreferences, systemAnnouncements: newValue}});
-                }}
-                //position={'leading'}
-              />
-            </View>
-            <View style={styles.checkboxWrapper}>
-              <Checkbox.Item label="News & Updates"
-                status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.newsAndFeatureUpdates ? "checked" : "unchecked" }
-                style={styleCheckbox}
-                color={colors.standardButton}
-                onPress={() => {
-                  let currentValue = userData.emailPreferences.newsAndFeatureUpdates;
-                  let newValue = ! currentValue;
-                  log(`Changing userData.emailPreferences.newsAndFeatureUpdates from ${currentValue} to ${newValue}`);
-                  setUserData({...userData, emailPreferences: {...userData.emailPreferences, newsAndFeatureUpdates: newValue}});
-                }}
-              />
-            </View>
-            <View style={styles.checkboxWrapper}>
-              <Checkbox.Item label="Promotions & Special Offers"
-                status={ _.has(userData, 'emailPreferences') && userData.emailPreferences.promotionsAndSpecialOffers ? "checked" : "unchecked" }
-                style={styleCheckbox}
-                color={colors.standardButton}
-                onPress={() => {
-                  let currentValue = userData.emailPreferences.promotionsAndSpecialOffers;
-                  let newValue = ! currentValue;
-                  log(`Changing userData.emailPreferences.promotionsAndSpecialOffers from ${currentValue} to ${newValue}`);
-                  setUserData({...userData, emailPreferences: {...userData.emailPreferences, promotionsAndSpecialOffers: newValue}});
-                }}
-              />
-            </View>
-          </View>
+              {/* Email Preferences Section */}
+              <Text variant="titleSmall" style={{ 
+                marginBottom: 12, 
+                marginTop: 8,
+                color: materialTheme.colors.primary,
+                fontWeight: '600'
+              }}>
+                Email Preferences
+              </Text>
+
+              <View style={{ marginBottom: 20 }}>
+                <Checkbox.Item
+                  label="System Announcements"
+                  status={userData.emailPreferences?.systemAnnouncements ? 'checked' : 'unchecked'}
+                  onPress={() => {
+                    const newValue = !userData.emailPreferences?.systemAnnouncements;
+                    setUserData({
+                      ...userData, 
+                      emailPreferences: {
+                        ...userData.emailPreferences,
+                        systemAnnouncements: newValue
+                      }
+                    });
+                  }}
+                  style={{ paddingLeft: 0 }}
+                />
+
+                <Checkbox.Item
+                  label="News & Feature Updates"
+                  status={userData.emailPreferences?.newsAndFeatureUpdates ? 'checked' : 'unchecked'}
+                  onPress={() => {
+                    const newValue = !userData.emailPreferences?.newsAndFeatureUpdates;
+                    setUserData({
+                      ...userData, 
+                      emailPreferences: {
+                        ...userData.emailPreferences,
+                        newsAndFeatureUpdates: newValue
+                      }
+                    });
+                  }}
+                  style={{ paddingLeft: 0 }}
+                />
+
+                <Checkbox.Item
+                  label="Promotions & Special Offers"
+                  status={userData.emailPreferences?.promotionsAndSpecialOffers ? 'checked' : 'unchecked'}
+                  onPress={() => {
+                    const newValue = !userData.emailPreferences?.promotionsAndSpecialOffers;
+                    setUserData({
+                      ...userData, 
+                      emailPreferences: {
+                        ...userData.emailPreferences,
+                        promotionsAndSpecialOffers: newValue
+                      }
+                    });
+                  }}
+                  style={{ paddingLeft: 0 }}
+                />
+              </View>
+
+              {/* Terms & Conditions */}
+              <Text variant="bodySmall" style={{ 
+                marginBottom: 16,
+                textAlign: 'center',
+                color: materialTheme.colors.onSurfaceVariant,
+                lineHeight: 18
+              }}>
+                By clicking Create Account, you agree to our{' '}
+                <Text 
+                  style={{ color: materialTheme.colors.primary, textDecorationLine: 'underline' }}
+                  onPress={() => {
+                    // Store the userData so that this page can retrieve it when we return from the ReadArticle page.
+                    appState.registerData = userData;
+                    appState.changeState('ReadArticle', 'terms_and_conditions');
+                  }}
+                >
+                  Terms & Conditions
+                </Text>
+              </Text>
+
+              {/* Register Button */}
+              <Button
+                mode="contained"
+                onPress={submitRegisterRequest}
+                disabled={disableRegisterButton}
+                style={{ marginBottom: 16, paddingVertical: 4 }}
+                labelStyle={{ fontSize: 16, fontWeight: '600' }}
+                icon="account-plus"
+              >
+                Create Account
+              </Button>
+
+              {/* Upload Message */}
+              {uploadMessage && (
+                <HelperText type="info">
+                  {uploadMessage}
+                </HelperText>
+              )}
+            </Card.Content>
+          </Card>
+        }
+
+        {/* Login Link */}
+        <Card style={{ 
+          marginHorizontal: 16,
+          elevation: 2
+        }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="bodyMedium" style={{ 
+              textAlign: 'center',
+              color: materialTheme.colors.onSurfaceVariant,
+              marginBottom: 12
+            }}>
+              Already have an account?
+            </Text>
+            <Button
+              mode="outlined"
+              onPress={() => appState.changeState('Login')}
+              style={{ alignSelf: 'center' }}
+              icon="login"
+            >
+              Sign In
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <View style={{ height: 32 }} />
+
 
           <View style={styles.termsSection}>
             <Text style={styles.termsSectionText}>By clicking Register, you agree to our </Text>
@@ -551,17 +568,67 @@ emailPreferences
           </View>
 
 
-        </View>
-
-        }
-
-
       </KeyboardAwareScrollView>
 
+      {/* Gender Modal */}
+      <Portal>
+        <Modal 
+          visible={genderModalVisible} 
+          onDismiss={() => setGenderModalVisible(false)}
+          contentContainerStyle={{ 
+            backgroundColor: materialTheme.colors.surface,
+            margin: 20,
+            borderRadius: 8,
+            padding: 20
+          }}
+        >
+          <Text variant="titleMedium" style={{ marginBottom: 16 }}>Select Gender</Text>
+          {genderOptionsList.map((option) => (
+            <List.Item
+              key={option.value}
+              title={option.label}
+              onPress={() => {
+                setGender(option.value);
+                setUserData({...userData, gender: option.value});
+                setGenderModalVisible(false);
+              }}
+            />
+          ))}
+        </Modal>
+      </Portal>
+
+      {/* Citizenship Modal */}
+      <Portal>
+        <Modal 
+          visible={citizenshipModalVisible} 
+          onDismiss={() => setCitizenshipModalVisible(false)}
+          contentContainerStyle={{ 
+            backgroundColor: materialTheme.colors.surface,
+            margin: 20,
+            borderRadius: 8,
+            padding: 20,
+            maxHeight: '80%'
+          }}
+        >
+          <Text variant="titleMedium" style={{ marginBottom: 16 }}>Select Country</Text>
+          <ScrollView>
+            {citizenshipOptionsList.map((option) => (
+              <List.Item
+                key={option.value}
+                title={option.label}
+                onPress={() => {
+                  setCitizenship(option.value);
+                  setUserData({...userData, citizenship: option.value});
+                  setCitizenshipModalVisible(false);
+                }}
+              />
+            ))}
+          </ScrollView>
+        </Modal>
+      </Portal>
 
     </View>
-    </View>
-  )
+  );
 
 }
 

@@ -32,6 +32,7 @@ import {
 } from 'src/styles';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Button, StandardButton, ImageButton, Spinner, FixedWidthButton } from 'src/components/atomic';
+import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
 // Logger
@@ -360,23 +361,17 @@ let Receive = () => {
   return (
     <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
-      {/* Header Section - Full width design */}
-      <View style={styles.headerSection}>
-        {/* Header content with padding */}
-        <View style={styles.headerContent}>
-          {/* Page Title */}
-          <View style={[sharedStyles.row, { marginBottom: 12 }]}>
-            <Text variant="headlineSmall" style={[sharedStyles.headerTitle, { flex: 1 }]}>
-              Receive Crypto
+      <Title 
+        rightElement={
+          <View style={styles.secureBadge}>
+            <Text style={styles.secureText}>
+              INSTANT
             </Text>
-            <View style={styles.secureBadge}>
-              <Text style={styles.secureText}>
-                INSTANT
-              </Text>
-            </View>
           </View>
-        </View>
-      </View>
+        }
+      >
+        Receive Crypto
+      </Title>
 
       {/* Content Section */}
       <View style={styles.panelSubContainer}>
