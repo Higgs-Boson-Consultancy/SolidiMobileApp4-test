@@ -2904,7 +2904,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
-      loadingPrices: true,
+      loadingPrices: Platform.OS === 'web' ? false : true, // Skip loading for web
       graphPrices: [],
       maintenanceMode: false,
       setMaintenanceMode: this.setMaintenanceMode,

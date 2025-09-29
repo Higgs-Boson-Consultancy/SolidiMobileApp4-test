@@ -1,5 +1,27 @@
 PODS:
   - boost (1.83.0)
+  - Braintree (4.38.0):
+    - Braintree/Card (= 4.38.0)
+    - Braintree/Core (= 4.38.0)
+    - Braintree/PayPal (= 4.38.0)
+    - Braintree/UI (= 4.38.0)
+  - Braintree/Card (4.38.0):
+    - Braintree/Core
+  - Braintree/Core (4.38.0)
+  - Braintree/PayPal (4.38.0):
+    - Braintree/Core
+    - Braintree/PayPalOneTouch
+  - Braintree/PayPalDataCollector (4.38.0):
+    - Braintree/Core
+    - Braintree/PayPalUtils
+  - Braintree/PayPalOneTouch (4.38.0):
+    - Braintree/Core
+    - Braintree/PayPalDataCollector
+    - Braintree/PayPalUtils
+  - Braintree/PayPalUtils (4.38.0)
+  - Braintree/UI (4.38.0):
+    - Braintree/Card
+    - Braintree/Core
   - CocoaAsyncSocket (7.6.5)
   - DoubleConversion (1.1.6)
   - FBLazyVector (0.73.11)
@@ -952,6 +974,10 @@ PODS:
     - glog
     - RCT-Folly (= 2022.05.16.00)
     - React-Core
+  - react-native-payments (0.8.4):
+    - Braintree (~> 4)
+    - React
+    - Stripe (~> 19)
   - react-native-render-html (6.3.4):
     - React-Core
   - react-native-safe-area-context (5.6.1):
@@ -1148,6 +1174,7 @@ PODS:
     - RCT-Folly (= 2022.05.16.00)
     - React-Core
   - SocketRocket (0.6.1)
+  - Stripe (19.4.1)
   - VisionCamera (4.7.2):
     - VisionCamera/Core (= 4.7.2)
     - VisionCamera/React (= 4.7.2)
@@ -1211,6 +1238,7 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - react-native-document-picker (from `../node_modules/react-native-document-picker`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
+  - react-native-payments (from `../node_modules/react-native-payments`)
   - react-native-render-html (from `../node_modules/react-native-render-html`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-splash-screen (from `../node_modules/react-native-splash-screen`)
@@ -1248,6 +1276,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Braintree
     - CocoaAsyncSocket
     - Flipper
     - Flipper-Boost-iOSX
@@ -1261,6 +1290,7 @@ SPEC REPOS:
     - libevent
     - OpenSSL-Universal
     - SocketRocket
+    - Stripe
 
 EXTERNAL SOURCES:
   boost:
@@ -1322,6 +1352,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-document-picker"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
+  react-native-payments:
+    :path: "../node_modules/react-native-payments"
   react-native-render-html:
     :path: "../node_modules/react-native-render-html"
   react-native-safe-area-context:
@@ -1393,6 +1425,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
+  Braintree: 78a33deb6f6ec617c2c4891fbe352854358b3a8d
   CocoaAsyncSocket: 065fd1e645c7abab64f7a6a2007a48038fdc6a99
   DoubleConversion: fea03f2699887d960129cc54bba7e52542b6f953
   FBLazyVector: b46891061bfe0a9b07f601813114c8653a72a45c
@@ -1433,6 +1466,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 41c166b84fc479afc78097cd51404109ec9edf68
   react-native-document-picker: 23b6a82e09199f4f109376e73d88892a8931eeea
   react-native-image-picker: d3db110a3ded6e48c93aef7e8e51afdde8b16ed0
+  react-native-payments: 0cb00209f3b25a72d5b614554abf688e2cc53002
   react-native-render-html: 984dfe2294163d04bf5fe25d7c9f122e60e05ebe
   react-native-safe-area-context: aac2745e96999c8633d2f6119e4e39b499c2ac8b
   react-native-splash-screen: 4312f786b13a81b5169ef346d76d33bc0c6dc457
@@ -1466,9 +1500,10 @@ SPEC CHECKSUMS:
   RNSVG: 81c48d349bf4e8dd7d9b17f22b35985ee6138ce8
   RNVectorIcons: 73ab573085f65a572d3b6233e68996d4707fd505
   SocketRocket: f32cd54efbe0f095c4d7594881e52619cfe80b17
+  Stripe: 5914399ac5878056b985d56b409cb4bb1e7fc7e8
   VisionCamera: 2230ecfd78a1f6cddd8be0fe4e6589f21a6385e1
   Yoga: 1f93d5925ea12fb0880b21efe3566677337cf2ed
 
-PODFILE CHECKSUM: c4fef19c82dc1bb7de6354d299bc8f2ad65b4690
+PODFILE CHECKSUM: 9db59e66ff86b543f9483dea98f6bba7c09dfeae
 
 COCOAPODS: 1.16.2

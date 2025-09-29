@@ -406,13 +406,13 @@ let ChooseHowToPay = () => {
 
             <RadioButton.Item label="Bank transfer" value="solidi"
               color={colors.standardButtonText}
-              style={paymentOptionDisabled('solidi') ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
+              style={paymentOptionDisabled('solidi') ? stylePaymentOptionButtonDisabled.container : stylePaymentOptionButton.container}
               labelStyle={styles.buttonLabel}
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={[styles.basicText, paymentOptionDisabled('solidi') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Fast & Easy - No fee!</Text>
-              <Text style={[styles.basicText, paymentOptionDisabled('solidi') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Usually processed in under a minute</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('solidi') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Fast & Easy - No fee!</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('solidi') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Usually processed in under a minute</Text>
               {paymentOptionDisabled('solidi') &&
                 <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} This payment option is inactive</Text>
               }
@@ -421,13 +421,13 @@ let ChooseHowToPay = () => {
             <RadioButton.Item label="Mobile bank app" value="openbank"
               color={colors.standardButtonText}
               disabled={paymentOptionDisabled('openbank')}
-              style={paymentOptionDisabled('openbank') ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
+              style={paymentOptionDisabled('openbank') ? stylePaymentOptionButtonDisabled.container : stylePaymentOptionButton.container}
               labelStyle={styles.buttonLabel}
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Authorise the payment via your mobile banking app - No fee!</Text>
-              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Usually processed in seconds</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Authorise the payment via your mobile banking app - No fee!</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('openbank') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Usually processed in seconds</Text>
               {paymentOptionDisabled('openbank') &&
                 <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} This payment option is inactive</Text>
               }
@@ -436,14 +436,14 @@ let ChooseHowToPay = () => {
             <RadioButton.Item label="Solidi balance" value="balance"
               color={colors.standardButtonText}
               disabled={paymentOptionDisabled('balance')}
-              style={paymentOptionDisabled('balance') ? stylePaymentOptionButtonDisabled : stylePaymentOptionButton}
+              style={paymentOptionDisabled('balance') ? stylePaymentOptionButtonDisabled.container : stylePaymentOptionButton.container}
               labelStyle={styles.buttonLabel}
             />
 
             <View style={styles.buttonDetail}>
-              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
-              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} Processed instantly</Text>
-              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled : stylePaymentOptionButtonAdditionalText]}>{`\u2022  `} {getBalanceDescriptionLine()}</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Pay from your Solidi balance - No fee!</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} Processed instantly</Text>
+              <Text style={[styles.basicText, paymentOptionDisabled('balance') ? stylePaymentOptionButtonAdditionalTextDisabled.text : stylePaymentOptionButtonAdditionalText.text]}>{`\u2022  `} {getBalanceDescriptionLine()}</Text>
               {balanceTooSmall() &&
                 <Text style={styles.paymentOptionDisabledText}>{`\u2022  `} Balance is too low for this option</Text>
               }
@@ -521,25 +521,33 @@ let ChooseHowToPay = () => {
 
 
 let stylePaymentOptionButton = StyleSheet.create({
-  borderWidth: 1,
-  borderRadius: scaledWidth(18),
-  backgroundColor: colors.standardButton,
+  container: {
+    borderWidth: 1,
+    borderRadius: scaledWidth(18),
+    backgroundColor: colors.standardButton,
+  }
 });
 
 let stylePaymentOptionButtonDisabled = StyleSheet.create({
-  borderWidth: 1,
-  borderRadius: scaledWidth(18),
-  backgroundColor: colors.greyedOutIcon,
+  container: {
+    borderWidth: 1,
+    borderRadius: scaledWidth(18),
+    backgroundColor: colors.greyedOutIcon,
+  }
 });
 
 
 let stylePaymentOptionButtonAdditionalText = StyleSheet.create({
-  fontWeight: 'bold',
+  text: {
+    fontWeight: 'bold',
+  }
 });
 
 let stylePaymentOptionButtonAdditionalTextDisabled = StyleSheet.create({
-  fontWeight: 'bold',
-  color: colors.greyedOutIcon,
+  text: {
+    fontWeight: 'bold',
+    color: colors.greyedOutIcon,
+  }
 });
 
 

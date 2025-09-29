@@ -10,12 +10,35 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import QRCodeScanner from 'react-native-qrcode-scanner';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+// Conditional imports based on platform
+let QRCodeScanner, request, PERMISSIONS, RESULTS, WebQRScanner;
+
+if (Platform.OS === 'web') {
+  WebQRScanner = require('../web/WebQRScanner').default;
+} else {
+  QRCodeScanner = require('react-native-qrcode-scanner').default;
+  const permissions = require('react-native-permissions');
+  request = permissions.request;
+  PERMISSIONS = permissions.PERMISSIONS;
+  RESULTS = permissions.RESULTS;
+}
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const QRScanner = ({ visible, onScanSuccess, onClose, title = 'Scan QR Code' }) => {
+  // Use web version on web platform
+  if (Platform.OS === 'web' && WebQRScanner) {
+    return (
+      <WebQRScanner 
+        visible={visible}
+        onScanSuccess={onScanSuccess}
+        onClose={onClose}
+        title={title}
+      />
+    );
+  }
+
   const [hasPermission, setHasPermission] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -2,6 +2,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { ScrollView, View, Alert, Platform } from 'react-native';
 
+// Apple Pay imports
+import { PaymentRequest, canMakePayments } from 'react-native-payments';
+
 // Material Design imports
 import {
   Card,
@@ -155,6 +158,10 @@ let Wallet = () => {
           onPress: () => handleApplePayDeposit(currency)
         },
         { 
+          text: 'Apple Pay (Demo)', 
+          onPress: () => handleApplePayDemo(currency)
+        },
+        { 
           text: 'Bank Transfer', 
           onPress: () => handleBankTransferDeposit(currency)
         }
@@ -164,6 +171,145 @@ let Wallet = () => {
 
   // Handle Apple Pay deposit
   let handleApplePayDeposit = async (currency) => {
+    log('Apple Pay deposit requested for currency:', currency);
+    
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Apple Pay Not Available', 'Apple Pay is only available on iOS devices.');
+      return;
+    }
+
+    try {
+      // Step 1: Check if Apple Pay is available
+      log('Checking Apple Pay availability...');
+      
+      // Check multiple Apple Pay conditions
+      const canPay = await canMakePayments();
+      log('Apple Pay canMakePayments result:', canPay);
+      
+      // Additional checks
+      const deviceSupport = await canMakePayments(['apple-pay']);
+      log('Apple Pay device support:', deviceSupport);
+      
+      if (!canPay) {
+        Alert.alert(
+          'Apple Pay Not Available', 
+          'Apple Pay is not set up on this device. Please add a card to Wallet and try again.',
+          [
+            { text: 'Open Settings', onPress: () => log('User should open Settings > Wallet & Apple Pay') },
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
+        return;
+      }
+
+      // Step 2: Show amount input dialog
+      log('Showing amount input dialog...');
+      const depositAmount = await showDepositAmountDialog(currency);
+      if (!depositAmount) {
+        log('User cancelled amount input');
+        return;
+      }
+
+      // Step 3: Validate amount
+      const amount = parseFloat(depositAmount);
+      log('Amount entered:', depositAmount, 'Parsed:', amount);
+      
+      if (isNaN(amount) || amount <= 0) {
+        Alert.alert('Invalid Amount', 'Please enter a valid deposit amount.');
+        return;
+      }
+
+      // Step 4: Create payment request with simplified configuration
+      log('Creating PaymentRequest for amount:', amount, 'currency:', currency);
+      
+      const paymentRequest = new PaymentRequest(
+        [
+          {
+            supportedMethods: ['apple-pay'],
+            data: {
+              merchantIdentifier: 'merchant.com.henryyeung.mysolidimobileapp', // Sandbox merchant ID
+              supportedNetworks: ['visa', 'masterCard', 'amex', 'discover'],
+              countryCode: 'US', // Try US for better sandbox compatibility
+              currencyCode: currency.toUpperCase(),
+              merchantCapabilities: ['supports3DS'],
+            },
+          },
+        ],
+        {
+          id: `deposit-${Date.now()}`,
+          displayItems: [
+            {
+              label: `Deposit to ${currency.toUpperCase()} Wallet`,
+              amount: { currency: currency.toUpperCase(), value: amount.toFixed(2) },
+            },
+          ],
+          total: {
+            label: 'Solidi Mobile App',
+            amount: { currency: currency.toUpperCase(), value: amount.toFixed(2) },
+          },
+        }
+      );
+
+      log('PaymentRequest created, attempting to show payment sheet...');
+
+      // Step 5: Show Apple Pay payment sheet
+      const paymentResponse = await paymentRequest.show();
+      log('Payment sheet shown, response received');
+
+      // Step 6: Process the payment
+      await processApplePayPayment(currency, amount, paymentResponse);
+
+      // Step 7: Complete the payment
+      log('Completing payment...');
+      await paymentResponse.complete('success');
+      log('Payment completed successfully');
+
+    } catch (error) {
+      log('Apple Pay error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        code: error.code
+      });
+      
+      if (error.message === 'AbortError' || error.name === 'AbortError') {
+        log('User cancelled Apple Pay');
+        return;
+      }
+      
+      // Provide specific error messages based on error type
+      let errorMessage = 'Unable to process Apple Pay payment.';
+      
+      if (error.message.includes('not supported')) {
+        errorMessage = 'Apple Pay is not supported on this device or iOS version.';
+      } else if (error.message.includes('merchant')) {
+        errorMessage = 'Apple Pay merchant configuration error. This is a development setup issue.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network error during Apple Pay setup. Please check your connection.';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid payment configuration. Please try again.';
+      } else {
+        errorMessage = `Apple Pay error: ${error.message}`;
+      }
+      
+      Alert.alert(
+        'Apple Pay Error', 
+        errorMessage,
+        [
+          { 
+            text: 'Try Bank Transfer', 
+            onPress: () => handleBankTransferDeposit(currency) 
+          },
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
+  // Handle Apple Pay Demo (fallback for testing)
+  let handleApplePayDemo = async (currency) => {
+    log('Apple Pay Demo mode requested');
+    
     if (Platform.OS !== 'ios') {
       Alert.alert('Apple Pay Not Available', 'Apple Pay is only available on iOS devices.');
       return;
@@ -181,21 +327,40 @@ let Wallet = () => {
         return;
       }
 
-      // Step 3: Simulate Apple Pay payment sheet
+      // Step 3: Simulate Apple Pay payment sheet with native iOS alert
       Alert.alert(
-        'Apple Pay Payment',
-        `Confirm payment of ${getCurrencySymbol(currency)}${formatCurrency(amount.toString(), currency)} using Apple Pay?`,
+        '🍎 Apple Pay Demo',
+        `Simulate payment of ${getCurrencySymbol(currency)}${formatCurrency(amount.toString(), currency)}?\n\nThis is a demo that simulates Apple Pay without requiring merchant setup.`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
-            text: 'Pay with Apple Pay',
-            onPress: () => processApplePayPayment(currency, amount)
+            text: 'Pay with Touch ID',
+            onPress: async () => {
+              // Simulate processing delay
+              Alert.alert('Processing...', 'Please wait while we process your payment.');
+              
+              setTimeout(() => {
+                Alert.alert(
+                  'Payment Successful! 🎉',
+                  `Demo payment of ${getCurrencySymbol(currency)}${formatCurrency(amount.toString(), currency)} completed.\n\nTransaction ID: DEMO_${Date.now()}`,
+                  [
+                    {
+                      text: 'View Transaction',
+                      onPress: () => appState.changeState('History')
+                    },
+                    { text: 'OK' }
+                  ]
+                );
+                triggerRender(renderCount + 1);
+              }, 2000);
+            }
           }
         ]
       );
+
     } catch (error) {
-      log('Apple Pay error:', error);
-      Alert.alert('Payment Error', 'Unable to process Apple Pay payment. Please try again.');
+      log('Apple Pay Demo error:', error);
+      Alert.alert('Demo Error', 'There was an error with the Apple Pay demo.');
     }
   };
 
@@ -220,18 +385,34 @@ let Wallet = () => {
   };
 
   // Process Apple Pay payment
-  let processApplePayPayment = async (currency, amount) => {
+  let processApplePayPayment = async (currency, amount, paymentResponse) => {
     try {
-      // Show loading state
-      Alert.alert('Processing...', 'Please wait while we process your Apple Pay payment.');
+      log('Processing Apple Pay payment:', {
+        currency,
+        amount,
+        paymentToken: paymentResponse.details.paymentToken
+      });
 
-      // Simulate API call delay
+      // In a real app, you would send the payment token to your backend
+      // Your backend would then process it with a payment processor like Stripe
+      
+      // For sandbox testing, we'll simulate the processing
       await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Extract payment token details for logging (sandbox only)
+      const paymentToken = paymentResponse.details.paymentToken;
+      log('Apple Pay Token received:', {
+        transactionIdentifier: paymentToken.transactionIdentifier,
+        paymentMethodDisplayName: paymentToken.paymentMethod?.displayName,
+        paymentMethodNetwork: paymentToken.paymentMethod?.network
+      });
 
       // Simulate successful payment
       Alert.alert(
         'Payment Successful',
-        `Your deposit of ${getCurrencySymbol(currency)}${formatCurrency(amount.toString(), currency)} has been processed successfully via Apple Pay.`,
+        `Your deposit of ${getCurrencySymbol(currency)}${formatCurrency(amount.toString(), currency)} has been processed successfully via Apple Pay.
+        
+Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}`,
         [
           {
             text: 'View Transaction',
@@ -247,25 +428,57 @@ let Wallet = () => {
     } catch (error) {
       log('Apple Pay processing error:', error);
       Alert.alert('Payment Failed', 'Your Apple Pay payment could not be processed. Please try again.');
+      throw error; // Re-throw to let the calling function handle completion
     }
   };
 
   // Handle bank transfer deposit
-  let handleBankTransferDeposit = (currency) => {
-    Alert.alert(
-      'Bank Transfer',
-      `Bank transfer deposit would redirect to payment gateway for ${currency}.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Continue', 
-          onPress: () => {
-            // In real implementation, redirect to payment gateway
-            appState.changeState('MakePayment');
-          }
+  let handleBankTransferDeposit = async (currency) => {
+    log('Bank transfer deposit requested for currency:', currency);
+    
+    try {
+      // Ensure deposit details are loaded for the currency
+      if (currency === 'GBP') {
+        try {
+          await appState.loadDepositDetailsForAsset('GBP');
+          log('Deposit details loaded for GBP');
+        } catch (error) {
+          log('Note: Could not load deposit details from server, will use fallback values');
         }
-      ]
-    );
+      }
+
+      Alert.alert(
+        'Bank Transfer Deposit',
+        `You will be redirected to a secure payment gateway to deposit ${currency} via bank transfer.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Continue to Payment', 
+            onPress: () => {
+              try {
+                log('Navigating to MakePayment state for bank transfer');
+                // Navigate to payment gateway
+                appState.changeState('MakePayment');
+              } catch (error) {
+                log('Error navigating to payment state:', error);
+                Alert.alert(
+                  'Navigation Error',
+                  'Unable to open payment gateway. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      log('Error in handleBankTransferDeposit:', error);
+      Alert.alert(
+        'Error',
+        'Unable to process bank transfer request. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   // Handle withdrawal

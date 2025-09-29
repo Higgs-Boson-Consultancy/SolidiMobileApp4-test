@@ -65,5 +65,15 @@ target 'SolidiMobileApp4' do
       config[:reactNativePath],
       :mac_catalyst_enabled => false
     )
+    
+    # Fix Braintree deprecation warnings
+    installer.pods_project.targets.each do |target|
+      if target.name == 'Braintree'
+        target.build_configurations.each do |config|
+          config.build_settings['WARNING_CFLAGS'] ||= []
+          config.build_settings['WARNING_CFLAGS'] << '-Wno-deprecated-declarations'
+        end
+      end
+    end
   end
 end

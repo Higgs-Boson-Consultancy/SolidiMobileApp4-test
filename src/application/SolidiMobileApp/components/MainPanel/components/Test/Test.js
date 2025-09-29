@@ -75,7 +75,7 @@ let Test = () => {
           <Checkbox.Item
             label={'System Announcements'}
             status={checkboxValue ? 'checked' : 'unchecked'}
-            style={styleCheckbox}
+            style={styleCheckbox.container}
             onPress={ () => {
               let newValue = ! checkboxValue;
               var msg = `checkbox set to ${newValue}`;
@@ -94,10 +94,10 @@ let Test = () => {
           }}/>
 
         <Text style={styles.basicText}>Status: </Text>
-        <StandardButton title='Log out' style={styleButton}
+        <StandardButton title='Log out' style={styleButton.container}
           onPress={ async () => { await appState.logout(); } }
         />
-        <StandardButton title='Change PIN' style={styleButton}
+        <StandardButton title='Change PIN' style={styleButton.container}
           onPress={ () => { appState.choosePIN(); } }
         />
 
@@ -149,17 +149,21 @@ let styles = StyleSheet.create({
 
 
 let styleButton = StyleSheet.create({
-  marginTop: scaledHeight(10),
+  container: {
+    marginTop: scaledHeight(10),
+  }
 });
 
 
 let styleCheckbox = StyleSheet.create({
-  //width: '100%',
-  //alignItems: 'center',
-  borderWidth: 1, //testing
-  borderRadius: scaledWidth(10),
-  paddingVertical: scaledHeight(0),
-  //justifyContent: 'center',
+  container: {
+    //width: '100%',
+    //alignItems: 'center',
+    borderWidth: 1, //testing
+    borderRadius: scaledWidth(10),
+    paddingVertical: scaledHeight(0),
+    //justifyContent: 'center',
+  }
 });
 
 

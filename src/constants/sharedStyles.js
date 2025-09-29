@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { shadowStyles } from 'src/util/shadowStyles';
 
 // Shared color constants
 export const sharedColors = {
@@ -53,33 +54,21 @@ export const sharedStyles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderRadius: 8,
-    elevation: 2,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...shadowStyles.card,
   },
   cardCompact: {
     backgroundColor: sharedColors.surface,
     padding: 12,
     marginBottom: 12,
     borderRadius: 8,
-    elevation: 2,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...shadowStyles.cardCompact,
   },
   cardOneLine: {
     backgroundColor: sharedColors.surface,
     padding: 12,
     marginBottom: 12,
     borderRadius: 8,
-    elevation: 2,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...shadowStyles.cardOneLine,
   },
   
   // Text styles
@@ -150,33 +139,21 @@ export const sharedStyles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: sharedColors.warningBackground,
     borderRadius: 8,
-    elevation: 1,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    ...shadowStyles.warningCard,
   },
   infoCard: {
     padding: 12,
     marginBottom: 12,
     backgroundColor: sharedColors.infoBackground,
     borderRadius: 8,
-    elevation: 1,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    ...shadowStyles.infoCard,
   },
   errorCard: {
     padding: 12,
     marginBottom: 12,
     backgroundColor: sharedColors.warningBackground,
     borderRadius: 8,
-    elevation: 1,
-    shadowColor: sharedColors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    ...shadowStyles.errorCard,
   },
   
   // Text for message cards

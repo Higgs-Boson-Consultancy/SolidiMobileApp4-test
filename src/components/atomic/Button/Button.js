@@ -31,14 +31,14 @@ const Button = ({
 
   //log('Inside Button constructor');
 
-  let styleView = defaultStyleView;
+  let styleView = defaultStyleView.container;
   if (! _.isNil(styles)) {
     // Add some default styling to the View.
     if (styles.view) {
       styleView = StyleSheet.flatten([styleView, styles.view]);
       // Alter styling of a disabled button.
       if (disabled) {
-        styleView = StyleSheet.flatten([styleView, styleViewDisabled]);
+        styleView = StyleSheet.flatten([styleView, styleViewDisabled.container]);
       }
     }
   }
@@ -62,14 +62,18 @@ const Button = ({
 
 
 let defaultStyleView = StyleSheet.create({
-  // Elevation is set to 0 to avoid a slight drop-shadow on the ImageButton's internal View on Android.
-  elevation: 0,
-  backgroundColor: colors.defaultBackground,
+  container: {
+    // Elevation is set to 0 to avoid a slight drop-shadow on the ImageButton's internal View on Android.
+    elevation: 0,
+    backgroundColor: colors.defaultBackground,
+  }
 });
 
 
 let styleViewDisabled = StyleSheet.create({
-  backgroundColor: colors.greyedOutIcon,
+  container: {
+    backgroundColor: colors.greyedOutIcon,
+  }
 });
 
 

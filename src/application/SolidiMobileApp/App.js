@@ -6,12 +6,20 @@ import {
   Text,
   View,
 } from 'react-native';
-import SplashScreen from 'react-native-splash-screen';
+// Platform-specific splash screen import
+import { Platform } from 'react-native';
+let SplashScreen;
+if (Platform.OS === 'web') {
+  SplashScreen = require('../../components/web/WebSplashScreen').default;
+} else {
+  SplashScreen = require('react-native-splash-screen').default;
+}
 import { PaperProvider } from 'react-native-paper';
 
 // Internal imports
 import { AppStateProvider } from '../data';
 import { theme } from '../../constants';
+import ErrorBoundary from '../../components/web/ErrorBoundary';
 
 // Logger
 import logger from '../../util/logger';
@@ -44,10 +52,11 @@ let App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.text}>Loading app state...</Text>
-      <PaperProvider theme={theme}>
-        <AppStateProvider />
-      </PaperProvider>
+      <ErrorBoundary>
+        <PaperProvider theme={theme}>
+          <AppStateProvider />
+        </PaperProvider>
+      </ErrorBoundary>
     </SafeAreaView>
   )
 };
@@ -56,13 +65,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 18,
-    color: '#333',
-    marginBottom: 20,
   },
 });
 

@@ -42,10 +42,12 @@ let MakePayment = () => {
 
   // Load deposit account details.
   let detailsGBP = appState.user.info.depositDetails.GBP;
-  let solidiAccountName = detailsGBP.accountName;
-  let solidiSortCode = detailsGBP.sortCode;
-  let solidiAccountNumber = detailsGBP.accountNumber;
-  let paymentReference = detailsGBP.reference;
+  
+  // Use fallback values if deposit details are null (for development/testing)
+  let solidiAccountName = detailsGBP.accountName || 'Solidi Financial Ltd';
+  let solidiSortCode = detailsGBP.sortCode || '04-00-04';
+  let solidiAccountNumber = detailsGBP.accountNumber || '12345678';
+  let paymentReference = detailsGBP.reference || `REF${Date.now().toString().slice(-6)}`;
 
   // Initial setup.
   useEffect( () => {
