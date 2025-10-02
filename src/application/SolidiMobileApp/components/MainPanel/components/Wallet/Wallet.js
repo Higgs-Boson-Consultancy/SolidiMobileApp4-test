@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { ScrollView, View, Alert, Platform } from 'react-native';
+import { ScrollView, View, Alert, Platform, TouchableOpacity } from 'react-native';
 
 // Apple Pay imports
 // import { PaymentRequest, canMakePayments } from 'react-native-payments';
@@ -43,6 +43,108 @@ let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 let Wallet = () => {
   let appState = useContext(AppStateContext);
   let theme = useTheme();
+  
+  // Check authentication first
+  if (!appState) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#666' }}>Loading...</Text>
+      </View>
+    );
+  }
+  
+  // Check if user is authenticated
+  const isAuthenticated = appState.user?.isAuthenticated;
+  
+  if (!isAuthenticated) {
+    return (
+      <View style={{ 
+        flex: 1, 
+        backgroundColor: '#f5f5f5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+      }}>
+        {/* Header */}
+        <View style={{
+          backgroundColor: '#FF6B6B',
+          paddingVertical: 20,
+          paddingHorizontal: 30,
+          borderRadius: 12,
+          marginBottom: 30,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        }}>
+          <Text style={{ 
+            fontSize: 20, 
+            fontWeight: 'bold', 
+            color: 'white',
+            textAlign: 'center',
+            marginBottom: 10
+          }}>
+            🔒 Authentication Required
+          </Text>
+          <Text style={{ 
+            fontSize: 16, 
+            color: 'white',
+            textAlign: 'center'
+          }}>
+            Please login to access your wallet
+          </Text>
+        </View>
+        
+        <Text style={{ 
+          fontSize: 16, 
+          color: '#666',
+          textAlign: 'center',
+          marginBottom: 30,
+          lineHeight: 24
+        }}>
+          You need to be logged in to access{'\n'}your wallet and manage funds.
+        </Text>
+        
+        <TouchableOpacity 
+          style={{
+            backgroundColor: '#007AFF',
+            paddingHorizontal: 30,
+            paddingVertical: 15,
+            borderRadius: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+          onPress={() => {
+            console.log('🔐 Redirecting to login page...');
+            appState.setMainPanelState('Login');
+          }}
+        >
+          <Text style={{ 
+            color: 'white', 
+            fontWeight: 'bold', 
+            fontSize: 16,
+            textAlign: 'center' 
+          }}>
+            Go to Login
+          </Text>
+        </TouchableOpacity>
+        
+        <Text style={{ 
+          fontSize: 12, 
+          color: '#999',
+          textAlign: 'center',
+          marginTop: 20
+        }}>
+          Don't have an account? Sign up in the Login page.
+        </Text>
+      </View>
+    );
+  }
+  
   let [renderCount, triggerRender] = useState(0);
   let [isLoading, setIsLoading] = useState(true);
   let [depositAmount, setDepositAmount] = useState('');

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-30T17:38:34.702Z",
+  "timestamp": "2025-10-01T19:48:49.286Z",
   "testSummary": {
     "total": 11,
     "passed": 11,
@@ -39,7 +39,7 @@
           }
         }
       },
-      "testedAt": "2025-09-30T17:38:34.946Z",
+      "testedAt": "2025-10-01T19:48:49.515Z",
       "requiresAuth": false
     },
     "api_version": {
@@ -50,7 +50,7 @@
           "api_latest_version": "1.0.2"
         }
       },
-      "testedAt": "2025-09-30T17:38:35.990Z",
+      "testedAt": "2025-10-01T19:48:50.574Z",
       "requiresAuth": false
     },
     "app_version": {
@@ -69,7 +69,7 @@
           }
         }
       },
-      "testedAt": "2025-09-30T17:38:37.034Z",
+      "testedAt": "2025-10-01T19:48:51.629Z",
       "requiresAuth": false
     }
   },
@@ -82,7 +82,7 @@
           "pepResult": false
         }
       },
-      "testedAt": "2025-09-30T17:38:38.158Z",
+      "testedAt": "2025-10-01T19:48:52.755Z",
       "requiresAuth": true
     },
     "balance": {
@@ -90,15 +90,15 @@
       "response": {
         "error": null,
         "data": {
-          "BTC": "0.00000000",
+          "BTC": "10000.00000000",
           "ETH": "0.000000000000000000",
-          "GBP": "0.00",
+          "GBP": "1000000.00",
           "LINK": "0.00000000",
           "LTC": "0.00000000",
           "XRP": "0.000000"
         }
       },
-      "testedAt": "2025-09-30T17:38:39.220Z",
+      "testedAt": "2025-10-01T19:48:53.822Z",
       "requiresAuth": true
     },
     "transaction": {
@@ -106,11 +106,46 @@
       "response": {
         "error": null,
         "data": {
-          "total": "0",
-          "txns": []
+          "total": "2",
+          "txns": [
+            {
+              "baseAsset": "BTC",
+              "baseAssetVolume": "10000.00000000",
+              "code": "PI",
+              "date": "01 Oct 2025",
+              "description": "Transfer In",
+              "fee": "0.00000000",
+              "feeAsset": "BTC",
+              "market": 0,
+              "quoteAsset": "",
+              "quoteAssetVolume": "0.00000000",
+              "reference": "Deposit",
+              "status": "A",
+              "time": "16:49",
+              "ts": "1759337373",
+              "yyyymmdd": "2025-10-01"
+            },
+            {
+              "baseAsset": "GBP",
+              "baseAssetVolume": "1000000.00000000",
+              "code": "PI",
+              "date": "01 Oct 2025",
+              "description": "Transfer In",
+              "fee": "0.00000000",
+              "feeAsset": "GBP",
+              "market": 0,
+              "quoteAsset": "",
+              "quoteAssetVolume": "0.00000000",
+              "reference": "Deposit",
+              "status": "A",
+              "time": "16:49",
+              "ts": "1759337357",
+              "yyyymmdd": "2025-10-01"
+            }
+          ]
         }
       },
-      "testedAt": "2025-09-30T17:38:40.286Z",
+      "testedAt": "2025-10-01T19:48:54.875Z",
       "requiresAuth": true
     },
     "user": {
@@ -135,7 +170,7 @@
           "compname": null,
           "compno": null,
           "coolend": "2025-10-01T08:15:50.000Z",
-          "cooling": true,
+          "cooling": false,
           "country": "GB",
           "created": "2025-09-30T08:15:50.000Z",
           "cryptoLimit": "50.00",
@@ -161,7 +196,7 @@
           "uuid": "e2ad15b8-c48d-4d97-8935-959f9e725761"
         }
       },
-      "testedAt": "2025-09-30T17:38:41.353Z",
+      "testedAt": "2025-10-01T19:48:55.935Z",
       "requiresAuth": true
     },
     "fee": {
@@ -231,7 +266,7 @@
           }
         }
       },
-      "testedAt": "2025-09-30T17:38:42.415Z",
+      "testedAt": "2025-10-01T19:48:56.991Z",
       "requiresAuth": true
     },
     "order": {
@@ -240,7 +275,7 @@
         "error": null,
         "data": []
       },
-      "testedAt": "2025-09-30T17:38:43.473Z",
+      "testedAt": "2025-10-01T19:48:58.046Z",
       "requiresAuth": true
     }
   },
@@ -249,19 +284,19 @@
       "success": true,
       "response": {
         "bitcoin": {
-          "gbp": 84168,
-          "gbp_24h_change": -0.8055374528464557,
-          "usd": 113297,
-          "usd_24h_change": -0.544898209222472
+          "gbp": 87244,
+          "gbp_24h_change": 2.662212061872719,
+          "usd": 117631,
+          "usd_24h_change": 2.920500929993013
         },
         "ethereum": {
-          "gbp": 3045.96,
-          "gbp_24h_change": -1.4133012387279023,
-          "usd": 4100.12,
-          "usd_24h_change": -1.154258929946713
+          "gbp": 3216.66,
+          "gbp_24h_change": 4.346324598531992,
+          "usd": 4336.99,
+          "usd_24h_change": 4.618698782038066
         }
       },
-      "testedAt": "2025-09-30T17:38:44.716Z",
+      "testedAt": "2025-10-01T19:48:59.298Z",
       "requiresAuth": false
     },
     "coingecko_market": {
@@ -272,63 +307,63 @@
           "symbol": "btc",
           "name": "Bitcoin",
           "image": "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png?1696501400",
-          "current_price": 84168,
-          "market_cap": 1676605872887,
+          "current_price": 87244,
+          "market_cap": 1738382784118,
           "market_cap_rank": 1,
-          "fully_diluted_valuation": 1676605872887,
-          "total_volume": 40869380957,
-          "high_24h": 85443,
-          "low_24h": 83835,
-          "price_change_24h": -683.5091175743291,
-          "price_change_percentage_24h": -0.80554,
-          "market_cap_change_24h": -13318218595.338867,
-          "market_cap_change_percentage_24h": -0.7881,
+          "fully_diluted_valuation": 1738382784118,
+          "total_volume": 51638976290,
+          "high_24h": 87613,
+          "low_24h": 84622,
+          "price_change_24h": 2262.4,
+          "price_change_percentage_24h": 2.66221,
+          "market_cap_change_24h": 45761359798,
+          "market_cap_change_percentage_24h": 2.70358,
           "circulating_supply": 19928203,
           "total_supply": 19928203,
           "max_supply": 21000000,
           "ath": 91369,
-          "ath_change_percentage": -7.95046,
+          "ath_change_percentage": -4.64943,
           "ath_date": "2025-08-14T00:37:02.582Z",
           "atl": 43.9,
-          "atl_change_percentage": 191473.05075,
+          "atl_change_percentage": 198343.12901,
           "atl_date": "2013-07-05T00:00:00.000Z",
           "roi": null,
-          "last_updated": "2025-09-30T17:38:42.043Z"
+          "last_updated": "2025-10-01T19:48:53.498Z"
         },
         {
           "id": "ethereum",
           "symbol": "eth",
           "name": "Ethereum",
           "image": "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
-          "current_price": 3045.96,
-          "market_cap": 367486815726,
+          "current_price": 3216.66,
+          "market_cap": 388017948251,
           "market_cap_rank": 2,
-          "fully_diluted_valuation": 367486815726,
-          "total_volume": 23844223901,
-          "high_24h": 3149.44,
-          "low_24h": 3043.44,
-          "price_change_24h": -43.66568608714488,
-          "price_change_percentage_24h": -1.4133,
-          "market_cap_change_24h": -5112476881.458069,
-          "market_cap_change_percentage_24h": -1.37211,
-          "circulating_supply": 120702766.1885211,
-          "total_supply": 120702766.1885211,
+          "fully_diluted_valuation": 388017948251,
+          "total_volume": 29891685738,
+          "high_24h": 3222.48,
+          "low_24h": 3064.85,
+          "price_change_24h": 133.98,
+          "price_change_percentage_24h": 4.34632,
+          "market_cap_change_24h": 16775261127,
+          "market_cap_change_percentage_24h": 4.51868,
+          "circulating_supply": 120702662.8433763,
+          "total_supply": 120702662.8433763,
           "max_supply": null,
           "ath": 3685.5,
-          "ath_change_percentage": -17.25439,
+          "ath_change_percentage": -12.91378,
           "ath_date": "2025-08-24T18:41:03.538Z",
           "atl": 0.280314,
-          "atl_change_percentage": 1087816.85396,
+          "atl_change_percentage": 1144886.01883,
           "atl_date": "2015-10-20T00:00:00.000Z",
           "roi": {
-            "times": 47.37719711569463,
+            "times": 48.29556084729084,
             "currency": "btc",
-            "percentage": 4737.719711569463
+            "percentage": 4829.5560847290835
           },
-          "last_updated": "2025-09-30T17:38:33.785Z"
+          "last_updated": "2025-10-01T19:48:54.058Z"
         }
       ],
-      "testedAt": "2025-09-30T17:38:44.888Z",
+      "testedAt": "2025-10-01T19:48:59.488Z",
       "requiresAuth": false
     }
   },
