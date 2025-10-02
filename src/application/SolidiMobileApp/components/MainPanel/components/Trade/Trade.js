@@ -30,6 +30,7 @@ import { PriceGraph } from 'src/components/atomic';
 import LivePriceTicker from 'src/components/LivePriceTicker';
 import misc from 'src/util/misc';
 import ImageLookup from 'src/images';
+import { getLiveExchangeRate, refreshLiveRates } from 'src/util/liveRates';
 import { sharedStyles as styles, layoutStyles as layout, textStyles as text, cardStyles as cards, buttonStyles as buttons, formStyles as forms } from 'src/styles';
 
 // Logger
@@ -115,6 +116,49 @@ let Trade = () => {
     setup();
   }, []); // Pass empty array to only run once on mount.
 
+  // Auto-update receive amount when pay amount changes
+  useEffect(() => {
+    const updateReceiveAmount = async () => {
+      if (tradeType === 'buy' && volumeQA && parseFloat(volumeQA) > 0) {
+        // When buying: QA (fiat) amount changes -> update BA (crypto) amount
+        await fetchBestPriceForQuoteAssetVolume();
+      } else if (tradeType === 'sell' && volumeBA && parseFloat(volumeBA) > 0) {
+        // When selling: BA (crypto) amount changes -> update QA (fiat) amount
+        await fetchBestPriceForBaseAssetVolume();
+      }
+    };
+
+    // Debounce the update to avoid too frequent API calls
+    const timeoutId = setTimeout(updateReceiveAmount, 500);
+    return () => clearTimeout(timeoutId);
+  }, [volumeQA, volumeBA, tradeType]);
+
+  // Auto-update when assets change (different exchange rates)
+  useEffect(() => {
+    const updateForNewAssets = async () => {
+      if (tradeType === 'buy' && volumeQA && parseFloat(volumeQA) > 0) {
+        await fetchBestPriceForQuoteAssetVolume();
+      } else if (tradeType === 'sell' && volumeBA && parseFloat(volumeBA) > 0) {
+        await fetchBestPriceForBaseAssetVolume();
+      }
+    };
+
+    updateForNewAssets();
+  }, [assetBA, assetQA]);
+
+  // Auto-update when trade type changes
+  useEffect(() => {
+    const updateForTradeType = async () => {
+      if (tradeType === 'buy' && volumeQA && parseFloat(volumeQA) > 0) {
+        await fetchBestPriceForQuoteAssetVolume();
+      } else if (tradeType === 'sell' && volumeBA && parseFloat(volumeBA) > 0) {
+        await fetchBestPriceForBaseAssetVolume();
+      }
+    };
+
+    updateForTradeType();
+  }, [tradeType]);
+
   let setup = async () => {
     try {
       await appState.generalSetup({caller: 'Trade'});
@@ -140,21 +184,78 @@ let Trade = () => {
         return;
       }
 
-      let bestPrice = await appState.getBestPrice({
-        volumeQA: volumeQA,
-        assetQA: assetQA,
-        assetBA: assetBA,
-        side: tradeType // Use the current trade type
-      });
-
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-
-      if (bestPrice && bestPrice.volumeBA) {
-        setVolumeBA(bestPrice.volumeBA);
+      // Try to get live rate from CoinGecko first
+      const liveRate = await getLiveExchangeRate(appState, assetBA, assetQA);
+      
+      if (liveRate) {
+        // Use live CoinGecko rate for calculation
+        const cryptoAmount = (quoteAssetVolumeFloat / liveRate).toString();
+        setVolumeBA(parseFloat(cryptoAmount).toFixed(8));
+        log(`Used live CoinGecko rate: 1 ${assetBA} = ${liveRate} ${assetQA}`);
+      } else {
+        // Fallback to internal API or demo prices
+        const { getAssetPriceWithSource } = await import('src/util/liveRates');
+        const priceInfo = getAssetPriceWithSource(appState, assetBA, assetQA);
+        
+        if (priceInfo.price) {
+          const cryptoAmount = (quoteAssetVolumeFloat / priceInfo.price).toString();
+          setVolumeBA(parseFloat(cryptoAmount).toFixed(8));
+          log(`Used ${priceInfo.label} rate: 1 ${assetBA} = ${priceInfo.price} ${assetQA}`);
+        } else {
+          // Use a demo rate as last resort
+          const demoRate = assetBA === 'BTC' ? 45000 : 2800; // Demo prices
+          const cryptoAmount = (quoteAssetVolumeFloat / demoRate).toString();
+          setVolumeBA(parseFloat(cryptoAmount).toFixed(8));
+          log(`Used DEMO rate: 1 ${assetBA} = ${demoRate} ${assetQA} (no live data available)`);
+        }
       }
+      
       setLoadingBestPrice(false);
     } catch (error) {
       log('fetchBestPriceForQuoteAssetVolume: Error =', error);
+      setLoadingBestPrice(false);
+    }
+  };
+
+  let fetchBestPriceForBaseAssetVolume = async () => {
+    try {
+      setLoadingBestPrice(true);
+      let baseAssetVolumeFloat = parseFloat(volumeBA) || 0;
+      if (baseAssetVolumeFloat <= 0) {
+        setVolumeQA('0');
+        setLoadingBestPrice(false);
+        return;
+      }
+
+      // Try to get live rate from CoinGecko first
+      const liveRate = await getLiveExchangeRate(appState, assetBA, assetQA);
+      
+      if (liveRate) {
+        // Use live CoinGecko rate for calculation
+        const fiatAmount = (baseAssetVolumeFloat * liveRate).toString();
+        setVolumeQA(parseFloat(fiatAmount).toFixed(2));
+        log(`Used live CoinGecko rate: 1 ${assetBA} = ${liveRate} ${assetQA}`);
+      } else {
+        // Fallback to internal API or demo prices
+        const { getAssetPriceWithSource } = await import('src/util/liveRates');
+        const priceInfo = getAssetPriceWithSource(appState, assetBA, assetQA);
+        
+        if (priceInfo.price) {
+          const fiatAmount = (baseAssetVolumeFloat * priceInfo.price).toString();
+          setVolumeQA(parseFloat(fiatAmount).toFixed(2));
+          log(`Used ${priceInfo.label} rate: 1 ${assetBA} = ${priceInfo.price} ${assetQA}`);
+        } else {
+          // Use a demo rate as last resort
+          const demoRate = assetBA === 'BTC' ? 45000 : 2800; // Demo prices
+          const fiatAmount = (baseAssetVolumeFloat * demoRate).toString();
+          setVolumeQA(parseFloat(fiatAmount).toFixed(2));
+          log(`Used DEMO rate: 1 ${assetBA} = ${demoRate} ${assetQA} (no live data available)`);
+        }
+      }
+      
+      setLoadingBestPrice(false);
+    } catch (error) {
+      log('fetchBestPriceForBaseAssetVolume: Error =', error);
       setLoadingBestPrice(false);
     }
   };
@@ -171,7 +272,14 @@ let Trade = () => {
     
     try {
       let rate = Big(volumeQA).div(Big(volumeBA));
-      return `1 ${baseAssetDisplayString} = ${rate.toFixed(2)} ${quoteAssetDisplayString}`;
+      
+      // Check if we're using live CoinGecko data
+      const tickerData = appState.apiData?.ticker || {};
+      const marketKey = `${assetBA}/${assetQA}`;
+      const isLiveRate = tickerData[marketKey]?.source === 'coingecko';
+      const rateSource = isLiveRate ? '🟢 Live' : '📊 Estimate';
+      
+      return `${rateSource}: 1 ${baseAssetDisplayString} = ${rate.toFixed(2)} ${quoteAssetDisplayString}`;
     } catch (error) {
       return 'Price calculation error';
     }
@@ -229,6 +337,20 @@ let Trade = () => {
     }
 
     return appState.changeState('ChooseHowToReceivePayment');
+  };
+
+  // Function to get balance for an asset
+  const getBalance = (asset) => {
+    try {
+      const balances = appState.apiData?.balance || {};
+      const balance = balances[asset];
+      if (balance && typeof balance === 'object' && balance.balance !== undefined) {
+        return parseFloat(balance.balance).toFixed(asset === 'GBP' ? 2 : 8);
+      }
+      return '0.00';
+    } catch (error) {
+      return '0.00';
+    }
   };
 
   const materialTheme = useTheme();
@@ -302,99 +424,174 @@ let Trade = () => {
         {/* Trading Form */}
         <Card style={{ marginBottom: 16, elevation: 2 }}>
           <Card.Content>
-            <Text variant="titleMedium" style={{ marginBottom: 16, color: materialTheme.colors.primary }}>
-              💱 {tradeType === 'buy' ? 'Buy' : 'Sell'} Order
-            </Text>
-
-            {/* Amount Input */}
-            <TextInput
-              label={tradeType === 'buy' ? 'Amount to spend (GBP)' : 'Amount to sell'}
-              value={tradeType === 'buy' ? volumeQA : volumeBA}
-              onChangeText={tradeType === 'buy' ? setVolumeQA : setVolumeBA}
-              keyboardType="numeric"
-              mode="outlined"
-              style={{ marginBottom: 16 }}
-              right={<TextInput.Icon icon="currency-gbp" />}
-            />
-
-            {/* Asset Dropdowns */}
-            <View style={{ marginBottom: 16, zIndex: 2000 }}>
-              <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
-                {tradeType === 'buy' ? 'Cryptocurrency to buy:' : 'Cryptocurrency to sell:'}
-              </Text>
-              <DropDownPicker
-                open={openBA}
-                value={assetBA}
-                items={itemsBA}
-                setOpen={setOpenBA}
-                setValue={setAssetBA}
-                setItems={setItemsBA}
-                placeholder="Select cryptocurrency"
-                style={{ borderColor: materialTheme.colors.outline }}
-                dropDownContainerStyle={{ borderColor: materialTheme.colors.outline }}
+            {/* Trade Type Indicator */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+              <Icon 
+                source={tradeType === 'buy' ? "arrow-down" : "arrow-up"} 
+                size={32} 
+                color={tradeType === 'buy' ? '#4CAF50' : '#1565C0'} 
               />
+              <Text variant="headlineSmall" style={{ 
+                marginLeft: 8,
+                color: tradeType === 'buy' ? '#4CAF50' : '#1565C0',
+                fontWeight: 'bold'
+              }}>
+                {tradeType === 'buy' ? 'BUY' : 'SELL'}
+              </Text>
             </View>
 
-            <View style={{ marginBottom: 16, zIndex: 1000 }}>
-              <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
-                {tradeType === 'buy' ? 'Currency to pay with:' : 'Currency to receive:'}
-              </Text>
-              <DropDownPicker
-                open={openQA}
-                value={assetQA}
-                items={itemsQA}
-                setOpen={setOpenQA}
-                setValue={setAssetQA}
-                setItems={setItemsQA}
-                placeholder="Select currency"
-                style={{ borderColor: materialTheme.colors.outline }}
-                dropDownContainerStyle={{ borderColor: materialTheme.colors.outline }}
-              />
+            {/* Two Column Layout */}
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              
+              {/* Left Column - FROM */}
+              <View style={{ flex: 1 }}>
+                <Text variant="titleMedium" style={{ 
+                  textAlign: 'center', 
+                  marginBottom: 16, 
+                  color: materialTheme.colors.primary,
+                  fontWeight: '600'
+                }}>
+                  FROM
+                </Text>
+                
+                {/* Asset Selection */}
+                <View style={{ marginBottom: 12, zIndex: tradeType === 'buy' ? 1000 : 2000 }}>
+                  <DropDownPicker
+                    open={tradeType === 'buy' ? openQA : openBA}
+                    value={tradeType === 'buy' ? assetQA : assetBA}
+                    items={tradeType === 'buy' ? itemsQA : itemsBA}
+                    setOpen={tradeType === 'buy' ? setOpenQA : setOpenBA}
+                    setValue={tradeType === 'buy' ? setAssetQA : setAssetBA}
+                    setItems={tradeType === 'buy' ? setItemsQA : setItemsBA}
+                    placeholder={tradeType === 'buy' ? "Pay with" : "Sell"}
+                    style={{ 
+                      borderColor: materialTheme.colors.outline,
+                      height: 56,
+                      backgroundColor: materialTheme.colors.surface
+                    }}
+                    dropDownContainerStyle={{ 
+                      borderColor: materialTheme.colors.outline,
+                      backgroundColor: materialTheme.colors.surface,
+                      zIndex: 3000
+                    }}
+                    listMode="SCROLLVIEW"
+                    scrollViewProps={{ nestedScrollEnabled: true }}
+                  />
+                </View>
+
+                {/* Amount Input */}
+                <TextInput
+                  label="Amount"
+                  value={tradeType === 'buy' ? volumeQA : volumeBA}
+                  onChangeText={tradeType === 'buy' ? setVolumeQA : setVolumeBA}
+                  keyboardType="numeric"
+                  mode="outlined"
+                  style={{ 
+                    backgroundColor: materialTheme.colors.surface,
+                    marginBottom: 8
+                  }}
+                />
+
+                {/* Balance Display */}
+                <Text variant="bodySmall" style={{ 
+                  textAlign: 'center', 
+                  color: materialTheme.colors.onSurfaceVariant 
+                }}>
+                  Balance: {getBalance(tradeType === 'buy' ? assetQA : assetBA)} {tradeType === 'buy' ? assetQA : assetBA}
+                </Text>
+              </View>
+
+              {/* Center Arrow */}
+              <View style={{ 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                paddingHorizontal: 8,
+                paddingTop: 40
+              }}>
+                <Icon 
+                  source="arrow-right" 
+                  size={24} 
+                  color={materialTheme.colors.primary} 
+                />
+              </View>
+
+              {/* Right Column - TO */}
+              <View style={{ flex: 1 }}>
+                <Text variant="titleMedium" style={{ 
+                  textAlign: 'center', 
+                  marginBottom: 16, 
+                  color: materialTheme.colors.primary,
+                  fontWeight: '600'
+                }}>
+                  TO
+                </Text>
+                
+                {/* Asset Selection */}
+                <View style={{ marginBottom: 12, zIndex: tradeType === 'buy' ? 2000 : 1000 }}>
+                  <DropDownPicker
+                    open={tradeType === 'buy' ? openBA : openQA}
+                    value={tradeType === 'buy' ? assetBA : assetQA}
+                    items={tradeType === 'buy' ? itemsBA : itemsQA}
+                    setOpen={tradeType === 'buy' ? setOpenBA : setOpenQA}
+                    setValue={tradeType === 'buy' ? setAssetBA : setAssetQA}
+                    setItems={tradeType === 'buy' ? setItemsBA : setItemsQA}
+                    placeholder={tradeType === 'buy' ? "Buy" : "Receive"}
+                    style={{ 
+                      borderColor: materialTheme.colors.outline,
+                      height: 56,
+                      backgroundColor: materialTheme.colors.surface
+                    }}
+                    dropDownContainerStyle={{ 
+                      borderColor: materialTheme.colors.outline,
+                      backgroundColor: materialTheme.colors.surface,
+                      zIndex: 3000
+                    }}
+                    listMode="SCROLLVIEW"
+                    scrollViewProps={{ nestedScrollEnabled: true }}
+                  />
+                </View>
+
+                {/* Amount Display (Auto-calculated) */}
+                <TextInput
+                  label="You receive"
+                  value={tradeType === 'buy' ? volumeBA : volumeQA}
+                  editable={false}
+                  mode="outlined"
+                  style={{ 
+                    backgroundColor: materialTheme.colors.surfaceVariant,
+                    marginBottom: 8
+                  }}
+                  right={<TextInput.Icon icon="calculator" />}
+                />
+
+                {/* Balance Display */}
+                <Text variant="bodySmall" style={{ 
+                  textAlign: 'center', 
+                  color: materialTheme.colors.onSurfaceVariant 
+                }}>
+                  Balance: {getBalance(tradeType === 'buy' ? assetBA : assetQA)} {tradeType === 'buy' ? assetBA : assetQA}
+                </Text>
+              </View>
             </View>
 
-            {/* Price Display */}
+            {/* Exchange Rate Display */}
             <Surface style={{ 
               padding: 12, 
               borderRadius: 8, 
-              marginBottom: 16,
-              backgroundColor: tradeType === 'buy' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(21, 101, 192, 0.1)'
+              marginTop: 20,
+              backgroundColor: materialTheme.colors.surfaceVariant
             }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Icon 
-                  source={tradeType === 'buy' ? "trending-up" : "trending-down"} 
-                  size={20} 
-                  color={tradeType === 'buy' ? '#4CAF50' : '#1565C0'} 
-                />
-                <Text variant="bodyMedium" style={{ 
-                  marginLeft: 8,
-                  color: tradeType === 'buy' ? '#2E7D32' : '#1565C0',
-                  fontWeight: '600'
-                }}>
-                  {generatePriceDescription()}
-                </Text>
-              </View>
-            </Surface>
-
-            {/* Result Display */}
-            {(tradeType === 'buy' ? volumeBA : volumeQA) !== '0' && (
-              <Surface style={{ 
-                padding: 12, 
-                borderRadius: 8, 
-                marginBottom: 16,
-                backgroundColor: materialTheme.colors.surfaceVariant
+              <Text variant="bodyMedium" style={{ 
+                textAlign: 'center',
+                color: materialTheme.colors.onSurfaceVariant
               }}>
-                <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
-                  {tradeType === 'buy' 
-                    ? `You will receive: ${volumeBA} ${appState.getAssetInfo(assetBA).displayString}`
-                    : `You will receive: ${volumeQA} ${appState.getAssetInfo(assetQA).displayString}`
-                  }
-                </Text>
-              </Surface>
-            )}
+                {generatePriceDescription()}
+              </Text>
+            </Surface>
 
             {/* Error Message */}
             {errorMessage && (
-              <HelperText type="error" style={{ marginBottom: 16 }}>
+              <HelperText type="error" style={{ marginTop: 8, textAlign: 'center' }}>
                 {errorMessage}
               </HelperText>
             )}

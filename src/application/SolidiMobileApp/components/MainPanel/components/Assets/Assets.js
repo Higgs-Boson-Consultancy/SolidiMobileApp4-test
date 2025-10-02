@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, View, TouchableOpacity, RefreshControl } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Material Design imports
@@ -20,6 +20,7 @@ import { colors as sharedColors } from 'src/styles/shared';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
+import { refreshLiveRates, getAssetPriceWithSource } from 'src/util/liveRates';
 
 // Asset Data Model imports
 import {
@@ -40,11 +41,7 @@ import logger from 'src/util/logger';
 let logger2 = logger.extend('Assets');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
-
-
-
-let Assets = () => {
-
+const Assets = () => {
   let appState = useContext(AppStateContext);
   
   // Safety check: Ensure appState is available
@@ -56,865 +53,749 @@ let Assets = () => {
     );
   }
 
+  // Check authentication first - fixed path
+  const isAuthenticated = appState.user?.isAuthenticated;
+  
+  
+  if (!isAuthenticated) {
+    return (
+      <View style={{ 
+        flex: 1, 
+        backgroundColor: '#f5f5f5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+      }}>
+        <View style={{
+          backgroundColor: '#FF6B6B',
+          paddingVertical: 20,
+          paddingHorizontal: 30,
+          borderRadius: 12,
+          marginBottom: 30,
+        }}>
+          <Text style={{ 
+            fontSize: 20, 
+            fontWeight: 'bold', 
+            color: 'white',
+            textAlign: 'center',
+            marginBottom: 10
+          }}>
+            🔒 Please Login First
+          </Text>
+          <Text style={{ 
+            fontSize: 16, 
+            color: 'white',
+            textAlign: 'center'
+          }}>
+            Authentication required to view assets
+          </Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={{
+            backgroundColor: '#007AFF',
+            paddingHorizontal: 30,
+            paddingVertical: 15,
+            borderRadius: 8,
+          }}
+          onPress={() => {
+            try {
+              console.log('🔐 Attempting to redirect to login...');
+              appState.setMainPanelState('Login');
+            } catch (error) {
+              console.log('❌ Error redirecting to login:', error);
+              alert('Please navigate to login manually');
+            }
+          }}
+        >
+          <Text style={{ 
+            color: 'white', 
+            fontWeight: 'bold', 
+            fontSize: 16,
+            textAlign: 'center' 
+          }}>
+            Go to Login
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState.stateChangeID;
   
   // API loading states
   let [isLoadingBalances, setIsLoadingBalances] = useState(false);
   let [isLoadingTicker, setIsLoadingTicker] = useState(false);
+  let [isDataReady, setIsDataReady] = useState(false);
+  let [refreshing, setRefreshing] = useState(false);
+  
+  // Initialize with safe data immediately to prevent any undefined issues
+  const [assetData, setAssetData] = useState(() => generateFallbackAssetData());
 
-  // Default empty asset data to prevent FlatList errors
-  const defaultAssetData = [
-    { asset: 'BTC', balance: '0.00000000' },
-    { asset: 'ETH', balance: '0.00000000' },
-    { asset: 'GBP', balance: '0.00' },
-  ];
+  // Use AssetDataModel for consistent fallback data
+  const defaultAssetData = generateFallbackAssetData();
 
-  // Refresh function for manual data reload
+  // Refresh function for manual data reload with comprehensive error handling
   let refreshData = async () => {
-    await setup();
+    try {
+      console.log('🔄 Assets: Starting manual refresh...');
+      setRefreshing(true);
+      await setup();
+      console.log('✅ Assets: Manual refresh completed');
+    } catch (error) {
+      console.log('❌ Assets: Manual refresh failed:', error);
+      // Even if refresh fails, ensure we have fallback data displayed
+      setAssetData(generateFallbackAssetData());
+      triggerRender(renderCount + 1);
+    } finally {
+      setRefreshing(false);
+    }
   };
-
-
-
 
   // Initial setup.
   useEffect(() => {
     setup();
   }, []); // Pass empty array so that this only runs once on mount.
 
+  // Safety useEffect to ensure assetData is never empty
+  useEffect(() => {
+    if (!Array.isArray(assetData) || assetData.length === 0) {
+      console.log('🔄 Assets: assetData is empty, initializing with fallback');
+      setAssetData(generateFallbackAssetData());
+    }
+  }, [assetData]);
 
-  let setup = async () => {
+  // Rerun setup when stateChangeID changes.
+  useEffect(() => {
+    setup();
+  }, [stateChangeID]);
+
+  async function setup() {
+    let fn = 'setup';
     try {
-      await appState.generalSetup({caller: 'Assets'});
+      console.log('🚀 Assets: Starting setup...');
+      setIsDataReady(false);
       
-      // Load balances with loading state
-      setIsLoadingBalances(true);
-      try {
-        const balancePromise = appState.loadBalances();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Balance loading timeout after 5 seconds')), 5000)
-        );
-        
-        await Promise.race([balancePromise, timeoutPromise]);
-        
-        // Trigger render to show balance data
-        triggerRender(renderCount + 1);
-      } catch (balanceError) {
-        // Continue with demo data if balance loading fails
-      } finally {
-        setIsLoadingBalances(false);
-      }
-      
-      // Load ticker data with loading state
-      setIsLoadingTicker(true);
-      try {
-        await appState.loadTickerWithCoinGecko();
-        
-        // Force a re-render to show updated price data
-        triggerRender(renderCount + 1);
-      } catch (tickerError) {
-        // Use demo prices if ticker loading fails
-      } finally {
-        setIsLoadingTicker(false);
-      }
-      
-      if (appState.stateChangeIDHasChanged(stateChangeID)) {
+      // Check authentication first
+      if (!appState.user?.isAuthenticated) {
+        console.log('❌ User not authenticated, redirecting to login');
+        setMainPanelState(appState.constants.mainPanelStates.LOGIN);
         return;
       }
       
-      // Final render trigger
-      triggerRender(renderCount + 1);
+      console.log('✅ User authenticated, proceeding with data loading');
       
-    } catch(err) {
-      // Even if setup fails, trigger render to show demo data
-      triggerRender(renderCount + 1);
+      // Always start with fallback data to ensure UI renders
+      setAssetData(generateFallbackAssetData());
+      
+      // Log current ticker data before loading
+      console.log('📊 Pre-load ticker data:', appState.apiData?.ticker);
+      
+      await loadBalance();
+      await loadTicker();
+      
+      // Log ticker data after loading
+      console.log('📊 Post-load ticker data:', appState.apiData?.ticker);
+      
+      setIsDataReady(true);
+      console.log('✅ Assets: Setup completed successfully');
+    } catch (error) {
+      console.log('❌ Assets: Setup failed:', error);
+      // Ensure we always have fallback data even if setup fails
+      setAssetData(generateFallbackAssetData());
+      setIsDataReady(true);
     }
   }
 
-
-
-
-
-  let renderAssetItem = ({ item }) => {
+  async function loadBalance() {
     try {
-      // Safety guard: Ensure item exists and has required properties
-      if (!item || typeof item !== 'object' || !item.asset) {
-        console.warn('renderAssetItem: Invalid item received', item);
-        return null;
-      }
+      console.log('💰 Assets: Loading balance data...');
+      setIsLoadingBalances(true);
       
-      // Example item:
-      // {"asset": "XRP", "balance": "0.00000000"}
-      let asset = item.asset;
-      let volume = item.balance;
+      // Call the correct balance loading method
+      await appState.loadBalances();
       
-      // Safeguard: If volume contains [loading] or is invalid, replace with fallback data
-      if (volume === '[loading]' || volume === undefined || volume === null || volume === '') {
-        // Default fallback balances for different assets
-        const fallbackBalances = {
-          'BTC': '0.15420000',
-          'ETH': '2.45000000',
-          'LTC': '12.75000000',
-          'XRP': '1500.00000000',
-          'ADA': '850.00000000',
-          'DOT': '45.50000000',
-          'LINK': '25.75000000',
-          'UNI': '18.25000000',
-          'GBP': '2450.75',
-          'USD': '1200.50',
-          'EUR': '850.25',
-        };
-        volume = fallbackBalances[asset] || '0.00000000';
-      }    // Always use static asset info to avoid any [loading] from appState
-    const staticAssetInfo = {
-      'BTC': { name: 'Bitcoin', displaySymbol: 'BTC', decimalPlaces: 8, type: 'crypto' },
-      'ETH': { name: 'Ethereum', displaySymbol: 'ETH', decimalPlaces: 6, type: 'crypto' },
-      'LTC': { name: 'Litecoin', displaySymbol: 'LTC', decimalPlaces: 8, type: 'crypto' },
-      'XRP': { name: 'Ripple', displaySymbol: 'XRP', decimalPlaces: 6, type: 'crypto' },
-      'ADA': { name: 'Cardano', displaySymbol: 'ADA', decimalPlaces: 6, type: 'crypto' },
-      'DOT': { name: 'Polkadot', displaySymbol: 'DOT', decimalPlaces: 4, type: 'crypto' },
-      'LINK': { name: 'Chainlink', displaySymbol: 'LINK', decimalPlaces: 4, type: 'crypto' },
-      'UNI': { name: 'Uniswap', displaySymbol: 'UNI', decimalPlaces: 4, type: 'crypto' },
-      'GBP': { name: 'British Pound', displaySymbol: 'GBP', decimalPlaces: 2, type: 'fiat' },
-      'USD': { name: 'US Dollar', displaySymbol: 'USD', decimalPlaces: 2, type: 'fiat' },
-      'EUR': { name: 'Euro', displaySymbol: 'EUR', decimalPlaces: 2, type: 'fiat' },
-    };
-    let assetInfo = staticAssetInfo[asset] || { name: asset, displaySymbol: asset, decimalPlaces: 8, type: 'crypto' };
-    
-    let assetDP = assetInfo.decimalPlaces;
-    let displayVolume;
-    try {
-      displayVolume = Big(volume).toFixed(assetDP);
-    } catch (error) {
-      console.log('Error formatting volume for asset', asset, ':', error);
-      displayVolume = '0.00000000';
-    }
-    let name = assetInfo.name;
-    let symbol = assetInfo.displaySymbol;
-    
-    // Get live price from ticker with enhanced logging
-    let market = `${asset}/GBP`;
-    let ticker = appState.getTicker();
-    let currentPrice = null;
-    let priceChange = null;
-    let portfolioValue = '0.00';
-    
-    // Check for live ticker data first
-    if (ticker && ticker[market] && ticker[market].price) {
-      currentPrice = parseFloat(ticker[market].price);
-      priceChange = ticker[market].change_24h || null;
-    } else {
-      // Fallback to demo data for development
-      const demoPrice = {
-        'BTC': 45000,
-        'ETH': 2800,
-        'LTC': 95,
-        'XRP': 0.45,
-        'ADA': 0.38,
-        'DOT': 5.25,
-        'LINK': 14.75,
-        'UNI': 6.85,
-        'GBP': 1.0,
-        'USD': 0.82,
-        'EUR': 0.95
-      };
+      // Access balance data from the correct location in appState
+      let rawBalanceData = appState.apiData?.balance || {};
+      console.log('💰 Assets: Raw balance data:', rawBalanceData);
+      console.log('💰 Assets: Raw balance keys:', Object.keys(rawBalanceData));
+      console.log('💰 Assets: Raw balance values:', Object.values(rawBalanceData));
       
-      if (demoPrice[asset]) {
-        currentPrice = demoPrice[asset];
-        // Demo price change data
-        priceChange = Math.random() > 0.5 ? 
-          +(Math.random() * 10).toFixed(2) : 
-          -(Math.random() * 10).toFixed(2);
-      }
-    }
-    
-    // Calculate portfolio value
-    if (currentPrice && !isNaN(currentPrice)) {
-      let volumeNum = parseFloat(volume);
-      if (!isNaN(volumeNum)) {
-        portfolioValue = (currentPrice * volumeNum).toFixed(2);
-      }
-    }
-    
-    const formatPrice = (price) => {
-      if (!price) return 'N/A';
-      if (price >= 1000) return `£${price.toLocaleString()}`;
-      if (price >= 1) return `£${price.toFixed(2)}`;
-      return `£${price.toFixed(4)}`;
-    };
-    
-    // Determine asset type for styling
-    const isCrypto = assetInfo.type === 'crypto';
-    const borderColor = isCrypto ? '#FF9800' : '#2196F3'; // Orange for crypto, blue for fiat
-    
-    // Dummy price data with percentages
-    const dummyPriceData = {
-      'BTC': { price: '45,250.00', change: '+2.45%', isPositive: true },
-      'ETH': { price: '2,845.50', change: '+1.23%', isPositive: true },
-      'LTC': { price: '94.75', change: '-0.87%', isPositive: false },
-      'XRP': { price: '0.4523', change: '+5.12%', isPositive: true },
-      'ADA': { price: '0.3845', change: '-1.45%', isPositive: false },
-      'DOT': { price: '5.25', change: '+3.67%', isPositive: true },
-      'LINK': { price: '14.75', change: '+0.95%', isPositive: true },
-      'UNI': { price: '6.85', change: '-2.34%', isPositive: false },
-      'GBP': { price: '1.00', change: '0.00%', isPositive: true },
-      'USD': { price: '0.82', change: '+0.15%', isPositive: true },
-      'EUR': { price: '0.95', change: '-0.25%', isPositive: false },
-    };
-
-    const priceData = dummyPriceData[asset] || { price: '0.00', change: '0.00%', isPositive: true };
-
-    // Cryptocurrency icons using Material Community Icons
-    const cryptoIcons = {
-      'BTC': { name: 'bitcoin', color: '#f7931a' },
-      'ETH': { name: 'ethereum', color: '#627eea' },
-      'LTC': { name: 'litecoin', color: '#bfbbbb' },
-      'XRP': { name: 'currency-sign', color: '#23292f' }, // Generic currency for XRP
-      'ADA': { name: 'alpha-a-circle', color: '#0033ad' }, // A for ADA
-      'DOT': { name: 'circle-multiple', color: '#e6007a' }, // Multiple circles for Polkadot
-      'LINK': { name: 'link-variant', color: '#375bd2' }, // Link for Chainlink
-      'UNI': { name: 'unicorn', color: '#ff007a' }, // Unicorn for Uniswap
-    };
-    
-    // Fiat currency fallback with text symbols
-    const fiatIcons = {
-      'GBP': { symbol: '£', color: '#1f2937', bgColor: '#f9fafb' },
-      'USD': { symbol: '$', color: '#059669', bgColor: '#ecfdf5' },
-      'EUR': { symbol: '€', color: '#7c2d12', bgColor: '#fef7ed' },
-    };
-    
-    const cryptoIconConfig = cryptoIcons[asset];
-    const fiatConfig = fiatIcons[asset];
-    
-    // Function to handle crypto item press
-    const handleCryptoPress = () => {
-      // Only navigate for crypto assets, not fiat currencies
-      if (cryptoIconConfig) {
-        // Store selected crypto data in app state
-        appState.selectedCrypto = {
-          asset,
-          name,
-          symbol,
-          balance: displayVolume,
-          currentPrice: currentPrice || 0,
-          priceChange: priceChange || 0,
-          portfolioValue
-        };
-        
-        // Navigate to CryptoContent page
-        appState.setMainPanelState({
-          mainPanelState: 'CryptoContent',
-          pageName: 'default'
-        });
-      }
-    };
-    
-    return (
-      <TouchableOpacity 
-        style={styles.assetCard}
-        onPress={handleCryptoPress}
-        activeOpacity={cryptoIconConfig ? 0.7 : 1}
-      >
-        <View style={[
-          styles.assetIconContainer, 
-          !cryptoIconConfig && fiatConfig && { backgroundColor: fiatConfig.bgColor }
-        ]}>
-          {cryptoIconConfig ? (
-            <Icon
-              name={cryptoIconConfig.name}
-              size={scaledWidth(24)}
-              color={cryptoIconConfig.color}
-            />
-          ) : fiatConfig ? (
-            <Text style={{
-              fontSize: scaledWidth(16),
-              fontWeight: 'bold',
-              color: fiatConfig.color,
-            }}>
-              {fiatConfig.symbol}
-            </Text>
-          ) : (
-            <Text style={{
-              fontSize: scaledWidth(14),
-              fontWeight: 'bold',
-              color: '#6b7280',
-            }}>
-              {asset}
-            </Text>
-          )}
-        </View>
-        <View style={styles.assetInfo}>
-          <Text style={styles.assetSymbol}>{symbol}</Text>
-          <Text style={styles.assetName}>{name}</Text>
-        </View>
-        <View style={styles.assetBalance}>
-          <Text style={styles.balanceAmount}>{displayVolume}</Text>
-          <Text style={styles.priceAmount}>£{priceData.price}</Text>
-          <Text style={[styles.priceChange, priceData.isPositive ? styles.priceUp : styles.priceDown]}>
-            {priceData.change}
-          </Text>
-        </View>
-        {cryptoIconConfig && (
-          <View style={{ marginLeft: 8 }}>
-            <Icon
-              name="chevron-right"
-              size={20}
-              color="#9CA3AF"
-            />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-    } catch (error) {
-      console.log('❌ renderAssetItem: Error rendering asset item:', error);
-      return (
-        <View style={{ padding: 16 }}>
-          <Text style={{ color: '#666' }}>Error loading asset</Text>
-        </View>
-      );
-    }
-  }
-
-
-  let renderAssets = () => {
-    try {
-      console.log('🔍 renderAssets: Starting to build asset list...');
-      
-      // Try to get real balance data from API first
-      let balanceData = {};
-    try {
-      if (appState.state && appState.state.apiData && appState.state.apiData.balance) {
-        balanceData = appState.state.apiData.balance;
-      } else {
-        // Try to get individual balances
-        
-        // Try to get individual balances
-        const assetList = ['BTC', 'ETH', 'LTC', 'XRP', 'ADA', 'DOT', 'LINK', 'UNI', 'GBP', 'USD', 'EUR'];
-        assetList.forEach(asset => {
-          const balance = appState.getBalance(asset);
-          if (balance && balance !== '[loading]') {
-            balanceData[asset] = balance;
-          }
-        });
-      }
-    } catch (error) {
-      console.log('❌ renderAssets: Error getting balance data:', error);
-    }
-    
-    // Create asset list from real data or fallback to demo data
-    let validData = [];
-    
-    if (Object.keys(balanceData).length > 0) {
-      // Build asset list from real balance data
-      validData = Object.keys(balanceData).map(asset => ({
+      // Let's also try creating a simple array directly from the raw data
+      const directAssetArray = Object.keys(rawBalanceData).map(asset => ({
         asset: asset,
-        balance: balanceData[asset]
+        balance: String(rawBalanceData[asset] || '0'),
+        id: `direct-${asset.toLowerCase()}-${Date.now()}`
       }));
-    } else {
-      // Use demo data as fallback
-      // Fallback to demo data only when real data is not available
-      validData = [
-        { asset: 'BTC', balance: '0.15420000' },
-        { asset: 'ETH', balance: '2.45000000' },
-        { asset: 'LTC', balance: '12.75000000' },
-        { asset: 'XRP', balance: '1500.00000000' },
-        { asset: 'ADA', balance: '850.00000000' },
-        { asset: 'DOT', balance: '45.50000000' },
-        { asset: 'LINK', balance: '25.75000000' },
-        { asset: 'UNI', balance: '18.25000000' },
-        { asset: 'GBP', balance: '2450.75' },
-        { asset: 'USD', balance: '1200.50' },
-        { asset: 'EUR', balance: '850.25' },
-      ];
-    }
-    
-    // Safety guard: Ensure validData is always an array
-    if (!Array.isArray(validData) || validData.length === 0) {
-      validData = [
-        { asset: 'BTC', balance: '0.15420000' },
-        { asset: 'ETH', balance: '2.45000000' },
-        { asset: 'LTC', balance: '12.75000000' },
-        { asset: 'XRP', balance: '1500.00000000' },
-        { asset: 'ADA', balance: '850.00000000' },
-        { asset: 'DOT', balance: '45.50000000' },
-        { asset: 'LINK', balance: '25.75000000' },
-        { asset: 'UNI', balance: '18.25000000' },
-        { asset: 'GBP', balance: '2450.75' },
-        { asset: 'USD', balance: '1200.50' },
-        { asset: 'EUR', balance: '850.25' },
-      ];
-    }
-    
-    // Additional safety: Ensure validData is definitely an array
-    if (!Array.isArray(validData) || validData.length === 0) {
-      console.warn('renderAssets: Using default asset data due to invalid validData');
-      validData = defaultAssetData;
-    }
-    
-    return (
-      <FlatList
-        data={validData}
-        renderItem={renderAssetItem}
-        keyExtractor={(item, index) => `asset-${item?.asset || 'unknown'}-${index}`}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
-        style={{ width: '100%' }}
-        removeClippedSubviews={false}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        extraData={renderCount}
-        ListEmptyComponent={() => (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-            <Text style={{ color: '#666', fontSize: 16, textAlign: 'center' }}>
-              No assets available
-            </Text>
-          </View>
-        )}
-      />
-    );
+      console.log('💰 Assets: Direct asset array:', directAssetArray);
+      
+      let processedData = processBalanceData(rawBalanceData);
+      console.log('💰 Assets: Processed balance data:', processedData);
+      console.log('💰 Assets: Processed data length:', processedData.length);
+      
+      // Validate processed data
+      let validatedData = validateAssetDataArray(processedData);
+      console.log('💰 Assets: Validated asset data:', validatedData);
+      console.log('💰 Assets: Final data length:', validatedData.length);
+      
+      // Temporary fix: If we have more raw assets than processed ones, use direct array
+      if (Object.keys(rawBalanceData).length > validatedData.length && directAssetArray.length > validatedData.length) {
+        console.log('🔧 Assets: Using direct asset array due to processing loss');
+        setAssetData(directAssetArray);
+      } else {
+        setAssetData(validatedData);
+      }
+      console.log('✅ Assets: Balance data loaded successfully');
+      
     } catch (error) {
-      console.log('❌ renderAssets: Error rendering assets list:', error);
-      return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ color: '#666', fontSize: 16, textAlign: 'center' }}>
-            Unable to load assets. Please try refreshing.
-          </Text>
-        </View>
-      );
+      console.log('❌ Assets: Balance loading failed:', error);
+      // Fallback to demo data
+      setAssetData(generateFallbackAssetData());
+    } finally {
+      setIsLoadingBalances(false);
     }
   }
 
-
-  const materialTheme = useTheme();
-
-  // Debug ticker data
-  const currentTicker = appState.getTicker();
-  console.log('Assets Render - Current ticker data:', currentTicker);
-  console.log('Assets Render - Ticker keys:', currentTicker ? Object.keys(currentTicker) : 'null');
-
-  console.log('Assets page rendering...');
-  
-  return (
-    <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
+  async function loadTicker() {
+    try {
+      console.log('📈 Assets: Loading ticker data...');
+      setIsLoadingTicker(true);
       
-      <Title 
-        rightElement={
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8
-          }}>
-            
-            {/* Refresh Button */}
-            <TouchableOpacity 
-              onPress={refreshData}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 12,
-                opacity: (isLoadingBalances || isLoadingTicker) ? 0.5 : 1
-              }}
-              disabled={isLoadingBalances || isLoadingTicker}
-            >
-              <Text style={{
-                color: 'white',
-                fontSize: 10,
-                fontWeight: '600'
-              }}>
-                🔄 REFRESH
-              </Text>
-            </TouchableOpacity>
-          </View>
+      // First, let's see what we currently have
+      console.log('📊 Current ticker data before refresh:', appState.apiData?.ticker);
+      
+      // Use shared utility to refresh live rates
+      console.log('🔄 Calling refreshLiveRates...');
+      const liveRatesSuccess = await refreshLiveRates(appState, ['BTC', 'ETH', 'LTC', 'XRP']);
+      console.log('📈 refreshLiveRates result:', liveRatesSuccess);
+      
+      // Also load internal ticker data as fallback
+      console.log('🔄 Loading internal ticker...');
+      await appState.loadTicker();
+      
+      // Force refresh CoinGecko data directly
+      console.log('🔄 Force refreshing CoinGecko...');
+      await appState.loadCoinGeckoPrices();
+      
+      // Access ticker data from the correct location
+      let tickerData = appState.apiData?.ticker || {};
+      console.log('📈 Assets: Final ticker data loaded:', tickerData);
+      console.log('📈 Assets: Available markets:', Object.keys(tickerData));
+      console.log('📈 Assets: Live rates success:', liveRatesSuccess);
+      
+      // Count different sources
+      const coinGeckoMarkets = Object.keys(tickerData).filter(k => tickerData[k]?.source === 'coingecko');
+      const apiMarkets = Object.keys(tickerData).filter(k => tickerData[k]?.source !== 'coingecko' && tickerData[k]?.price);
+      
+      console.log('🟢 CoinGecko markets:', coinGeckoMarkets);
+      console.log('🟡 API markets:', apiMarkets);
+      
+      // Log individual market prices with source indication
+      Object.keys(tickerData).forEach(market => {
+        const data = tickerData[market];
+        const source = data.source === 'coingecko' ? '🟢 CoinGecko' : '🟡 Internal';
+        console.log(`📈 Market ${market} (${source}):`, data);
+        if (data.price) {
+          console.log(`💰 Price for ${market}: £${data.price} (${source})`);
+        } else if (data.error) {
+          console.log(`❌ Error for ${market}: ${data.error}`);
         }
-        customContent={
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 24
-          }}>
-            {/* Total Value */}
-            <View style={{
-              flex: 1,
-              backgroundColor: '#ffffff',
-              padding: 16,
-              borderRadius: 8,
-              marginHorizontal: 4,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3
-            }}>
-              <Text variant="bodySmall" style={{
-                fontSize: 14,
-                color: '#666666',
-                marginBottom: 4
-              }}>
-                Total Value
-              </Text>
-              <Text variant="titleLarge" style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: '#000000'
-              }}>
-                {(() => {
-                  // Calculate total portfolio value
-                  let totalValue = 0;
-                  const ticker = appState.getTicker();
-                  
-                  // Try to get real balance data first
-                  let balanceData = {};
-                  if (appState.state && appState.state.apiData && appState.state.apiData.balance) {
-                    balanceData = appState.state.apiData.balance;
-                  } else {
-                    // Fallback to dummy data for demo purposes
-                    balanceData = {
-                      'BTC': '0.15420000',
-                      'ETH': '2.45000000',
-                      'LTC': '12.75000000',
-                      'XRP': '1500.00000000',
-                      'ADA': '850.00000000',
-                      'DOT': '45.50000000',
-                      'LINK': '25.75000000',
-                      'UNI': '18.25000000',
-                      'GBP': '2450.75',
-                      'USD': '1200.50',
-                      'EUR': '850.25',
-                    };
-                  }
-                  
-                  // Price data - prefer live ticker, fallback to demo prices
-                  const demoPrice = {
-                    'BTC': 45000,
-                    'ETH': 2800,
-                    'LTC': 95,
-                    'XRP': 0.45,
-                    'ADA': 0.38,
-                    'DOT': 5.25,
-                    'LINK': 14.75,
-                    'UNI': 6.85,
-                    'GBP': 1.0,
-                    'USD': 0.82,
-                    'EUR': 0.95
-                  };
-                  
-                  console.log('📈 Available ticker data:', ticker);
-                  
-                  Object.keys(balanceData).forEach(asset => {
-                    const balance = parseFloat(balanceData[asset]);
-                    const market = `${asset}/GBP`;
-                    let price = null;
-                    
-                    // Try to get live price from ticker first
-                    if (ticker && ticker[market] && ticker[market].price) {
-                      price = parseFloat(ticker[market].price);
-                    } else if (demoPrice[asset]) {
-                      price = demoPrice[asset];
-                    }
-                    
-                    if (!isNaN(balance) && price && !isNaN(price)) {
-                      const assetValue = balance * price;
-                      totalValue += assetValue;
-                    }
-                  });
-                  
-                  return totalValue > 0 ? `£${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '£0.00';
-                })()}
+      });
+      
+    } catch (error) {
+      console.log('❌ Assets: Ticker loading failed:', error);
+    } finally {
+      setIsLoadingTicker(false);
+    }
+  }
+
+  // Get real price from ticker data or fallback to demo price
+  function getAssetPrice(asset) {
+    try {
+      console.log(`� Getting price for ${asset}...`);
+      
+      const tickerData = appState.apiData?.ticker || {};
+      const marketKey = `${asset}/GBP`;
+      console.log(`� Looking for market: ${marketKey}`);
+      console.log(`📊 Available ticker data:`, Object.keys(tickerData));
+      
+      if (tickerData[marketKey]) {
+        const marketData = tickerData[marketKey];
+        console.log(`📊 Market data for ${marketKey}:`, marketData);
+        
+        // Prioritize CoinGecko live rates
+        if (marketData.source === 'coingecko' && marketData.price && marketData.price !== "DOWN") {
+          const livePrice = parseFloat(marketData.price);
+          console.log(`🟢 Using LIVE CoinGecko price for ${asset}: £${livePrice}`);
+          return livePrice;
+        }
+        
+        // Check if we have a direct price field (non-CoinGecko)
+        if (marketData.price && marketData.price !== "DOWN") {
+          const livePrice = parseFloat(marketData.price);
+          console.log(`� Using API price for ${asset}: £${livePrice}`);
+          return livePrice;
+        }
+        
+        // Check if we can use bid/ask prices
+        if (marketData.bid && marketData.bid !== "DOWN" && marketData.ask && marketData.ask !== "DOWN") {
+          const bidPrice = parseFloat(marketData.bid);
+          const askPrice = parseFloat(marketData.ask);
+          const midPrice = (bidPrice + askPrice) / 2;
+          console.log(`🟢 Using LIVE mid-price for ${asset}: £${midPrice} (bid: £${bidPrice}, ask: £${askPrice})`);
+          return midPrice;
+        }
+        
+        // Market is down
+        if (marketData.bid === "DOWN" || marketData.ask === "DOWN") {
+          console.log(`📉 Market ${marketKey} is DOWN - exchange unavailable`);
+        }
+      } else {
+        console.log(`⚠️ No market data available for ${marketKey}`);
+      }
+      
+      const demoData = getDemoPrice(asset);
+      console.log(`🔴 Using DEMO price for ${asset}: £${demoData.price} (live market unavailable)`);
+      return demoData.price;
+    } catch (error) {
+      console.log(`❌ Error getting price for ${asset}:`, error);
+      const demoData = getDemoPrice(asset);
+      console.log(`🔴 Using DEMO price due to error for ${asset}: £${demoData.price}`);
+      return demoData.price;
+    }
+  }
+
+  // Calculate total portfolio value using real ticker data
+  const calculatePortfolioValue = () => {
+    try {
+      let totalValue = new Big(0);
+      
+      assetData.forEach(asset => {
+        try {
+          const balance = new Big(asset.balance || 0);
+          const price = getAssetPrice(asset.asset);
+          const value = balance.times(price);
+          totalValue = totalValue.plus(value);
+        } catch (error) {
+          console.log(`❌ Assets: Error calculating value for ${asset.asset}:`, error);
+        }
+      });
+      
+      return totalValue.toFixed(2);
+    } catch (error) {
+      console.log('❌ Assets: Error calculating portfolio value:', error);
+      return '0.00';
+    }
+  };
+
+  const renderAssetItem = (asset, index) => {
+    try {
+      console.log(`🎨 Rendering asset ${index}:`, asset);
+      
+      // Validate asset object
+      if (!asset || typeof asset !== 'object') {
+        console.log(`❌ Invalid asset object at index ${index}:`, asset);
+        return (
+          <View key={`invalid-${index}`} style={styles.assetItem}>
+            <Text style={styles.errorText}>Invalid asset data</Text>
+          </View>
+        );
+      }
+
+      // Validate asset symbol
+      if (!asset.asset || typeof asset.asset !== 'string') {
+        console.log(`❌ Invalid asset symbol at index ${index}:`, asset);
+        return (
+          <View key={`no-symbol-${index}`} style={styles.assetItem}>
+            <Text style={styles.errorText}>Missing asset symbol</Text>
+          </View>
+        );
+      }
+
+      // Get asset info with fallback
+      let assetInfo;
+      try {
+        assetInfo = getAssetInfo(asset.asset);
+      } catch (error) {
+        console.log(`❌ Error getting asset info for ${asset.asset}:`, error);
+        assetInfo = { name: asset.asset, symbol: asset.asset }; // Fallback
+      }
+
+      // Get price with fallback
+      let price;
+      try {
+        price = getAssetPrice(asset.asset);
+      } catch (error) {
+        console.log(`❌ Error getting price for ${asset.asset}:`, error);
+        price = new Big(1); // Fallback price
+      }
+
+      // Process balance with fallback
+      let balance;
+      try {
+        balance = new Big(asset.balance || 0);
+      } catch (error) {
+        console.log(`❌ Error processing balance for ${asset.asset}:`, error);
+        balance = new Big(0); // Fallback balance
+      }
+
+      // Calculate value with fallback
+      let value;
+      try {
+        value = balance.times(price);
+      } catch (error) {
+        console.log(`❌ Error calculating value for ${asset.asset}:`, error);
+        value = new Big(0); // Fallback value
+      }
+      
+      // Get real market data for display
+      const tickerData = appState.apiData?.ticker || {};
+      const market = `${asset.asset}/GBP`;
+      const marketData = tickerData[market];
+      
+      // Check if we have live pricing (not DOWN and not using demo data)
+      const hasLivePrice = marketData && (
+        (marketData.price && marketData.price !== "DOWN") ||
+        (marketData.bid && marketData.bid !== "DOWN" && marketData.ask && marketData.ask !== "DOWN")
+      );
+      
+      // Determine status icon and text based on source
+      let statusIcon = '🔴';  // Default: demo data
+      let statusText = 'DEMO';
+      
+      if (hasLivePrice) {
+        if (marketData.source === 'coingecko') {
+          statusIcon = '🟢';
+          statusText = 'LIVE';
+        } else {
+          statusIcon = '🟡';
+          statusText = 'API';
+        }
+      } else if (marketData && (marketData.bid === "DOWN" || marketData.ask === "DOWN")) {
+        statusIcon = '📉';
+        statusText = 'DOWN';
+      }
+      
+      console.log(`✅ Successfully processed ${asset.asset}: balance=${balance.toString()}, price=${price.toString()}, value=${value.toString()}, status=${statusText}`);
+
+      return (
+        <View key={`${asset.asset}-${index}`} style={styles.assetItem}>
+          <View style={styles.assetHeader}>
+            <View style={styles.assetIcon}>
+              <Text style={styles.assetSymbol}>{asset.asset}</Text>
+            </View>
+            <View style={styles.assetInfo}>
+              <Text style={styles.assetName}>{assetInfo.name}</Text>
+              <Text style={styles.assetSymbolText}>
+                {asset.asset} {statusIcon}
               </Text>
             </View>
-            
-            {/* 24h Change */}
-            <View style={[
-              {
-                flex: 1,
-                backgroundColor: '#ffffff',
-                borderRadius: 12,
-                padding: 16,
-                alignItems: 'center',
-                justifyContent: 'center'
-              },
-              {
-                marginLeft: 8
-              }
-            ]}>
-              <Text variant="bodySmall" style={{
-                fontSize: 12,
-                color: '#666666',
-                fontWeight: '500',
-                marginBottom: 8,
-                textAlign: 'center'
-              }}>
-                24h Change
+            <View style={styles.assetValues}>
+              <Text style={styles.assetBalance}>
+                {balance.toFixed(asset.asset === 'GBP' ? 2 : 8)}
               </Text>
-              <View style={layout.rowCenter}>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: 'bold',
-                  color: '#4CAF50',
-                  marginRight: 4
-                }}>
-                  +5.2%
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: '#4CAF50',
-                  fontWeight: '600'
-                }}>
-                  £124
-                </Text>
-              </View>
+              <Text style={styles.assetValue}>£{value.toFixed(2)}</Text>
+              <Text style={styles.assetPrice}>
+                @ £{price.toFixed(asset.asset === 'GBP' ? 2 : 2)} ({statusText})
+              </Text>
             </View>
           </View>
+        </View>
+      );
+    } catch (error) {
+      console.log(`❌ Assets: Error rendering asset item at index ${index}:`, error);
+      console.log(`❌ Asset data that caused error:`, asset);
+      return (
+        <View key={`error-${index}`} style={styles.assetItem}>
+          <Text style={styles.errorText}>Error: {asset?.asset || 'Unknown'}</Text>
+          <Text style={styles.errorText}>Details: {error.message}</Text>
+        </View>
+      );
+    }
+  };
+
+  const portfolioValue = calculatePortfolioValue();
+
+  return (
+    <View style={[layout.flex1, { backgroundColor: colors.mainPanelBackground }]}>
+      <ScrollView 
+        style={layout.flex1}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshData}
+            tintColor={colors.primary}
+          />
         }
       >
-        My Assets
-      </Title>
-
-      {/* Content Section - Full width scrollable */}
-      <View style={{ flex: 1, paddingTop: 12 }}>
-
-
-        {/* Assets List - Full width with padding */}
-        <View style={{ flex: 1, paddingHorizontal: 16 }}>
-          
-          {(() => {
-            try {
-              const assetsComponent = renderAssets();
-              return assetsComponent || (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: '#666', fontSize: 16 }}>
-                    No assets to display
-                  </Text>
-                </View>
-              );
-            } catch (error) {
-              console.log('❌ Assets render error:', error);
-              return (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: '#666', fontSize: 16 }}>
-                    Loading assets...
-                  </Text>
-                </View>
-              );
-            }
-          })()}
-          
-          {/* Debug info */}
-          {console.log('Assets: Render - renderCount:', renderCount)}
+        {/* Header */}
+        <View style={styles.header}>
+          <Title title="Assets" />
+          <TouchableOpacity onPress={refreshData} style={styles.refreshButton}>
+            <Icon name="refresh" size={24} color={colors.primary} />
+          </TouchableOpacity>
         </View>
-      </View>
+
+        {/* Portfolio Summary */}
+        <View style={styles.portfolioSummary}>
+          <Text style={styles.portfolioLabel}>Total Portfolio Value</Text>
+          <Text style={styles.portfolioValue}>£{portfolioValue}</Text>
+          <Text style={styles.portfolioSubtext}>
+            {isLoadingBalances || isLoadingTicker ? 'Updating...' : `${assetData.length} assets`}
+          </Text>
+          {/* Debug info */}
+          <Text style={styles.debugText}>
+            Balance API: {appState.apiData?.balance ? '✅ Connected' : '❌ No Data'}
+          </Text>
+          <Text style={styles.debugText}>
+            Ticker API: {appState.apiData?.ticker ? '✅ Connected' : '❌ No Data'}
+          </Text>
+        </View>
+
+        {/* Assets List */}
+        <View style={styles.assetsList}>
+          <Text style={styles.assetsHeader}>Your Assets ({assetData.length})</Text>
+          {console.log('🎨 Rendering assets, total count:', assetData.length)}
+          {console.log('🎨 Asset data for rendering:', assetData)}
+          {assetData.map((asset, index) => {
+            console.log(`🎨 Rendering asset ${index}:`, asset);
+            return renderAssetItem(asset, index);
+          })}
+        </View>
+
+        {/* Loading Indicators */}
+        {(isLoadingBalances || isLoadingTicker) && (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>
+              {isLoadingBalances ? 'Loading balances...' : 'Loading prices...'}
+            </Text>
+          </View>
+        )}
+
+        {/* Data Status */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>
+            Data Ready: {isDataReady ? '✅' : '⏳'} | 
+            Balances: {isLoadingBalances ? '⏳' : '✅'} | 
+            Prices: {isLoadingTicker ? '⏳' : '✅'}
+          </Text>
+          <Text style={styles.statusSubtext}>
+            🟢 = Live CoinGecko | 🟡 = API data | 🔴 = Demo data
+          </Text>
+        </View>
+
+        {/* Debug Info */}
+        <View style={styles.debugContainer}>
+          <TouchableOpacity 
+            onPress={() => {
+              console.log('🔍 Current ticker data:', appState.apiData?.ticker);
+              const tickerData = appState.apiData?.ticker || {};
+              Object.keys(tickerData).forEach(market => {
+                const data = tickerData[market];
+                console.log(`${market}:`, data);
+              });
+            }}
+            style={styles.debugButton}
+          >
+            <Text style={styles.debugButtonText}>� Show Ticker Data in Console</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={async () => {
+              console.log('🔄 Manually refreshing CoinGecko data...');
+              try {
+                await appState.loadCoinGeckoPrices();
+                console.log('✅ CoinGecko refresh completed');
+                console.log('📊 Updated ticker data:', appState.apiData?.ticker);
+              } catch (error) {
+                console.log('❌ CoinGecko refresh failed:', error);
+              }
+            }}
+            style={styles.debugButton}
+          >
+            <Text style={styles.debugButtonText}>🟢 Refresh CoinGecko Data</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.debugText}>
+            Available Markets: {Object.keys(appState.apiData?.ticker || {}).join(', ')}
+          </Text>
+          
+          <Text style={styles.debugText}>
+            CoinGecko Markets: {Object.keys(appState.apiData?.ticker || {}).filter(k => 
+              appState.apiData?.ticker?.[k]?.source === 'coingecko'
+            ).join(', ')}
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
+};
 
-}
-
-
-let styles = StyleSheet.create({
-  ...sharedStyles,
-  
-  panelContainer: {
-    paddingHorizontal: scaledWidth(15),
-    paddingVertical: scaledHeight(15),
-    width: '100%',
-    height: '100%',
-  },
-  heading: {
-    ...sharedStyles.center,
-  },
-  heading1: {
-    marginTop: scaledHeight(10),
-    marginBottom: scaledHeight(30),
-  },
-  headingText: {
-    ...sharedStyles.titleText,
-  },
-  basicText: {
-    ...sharedStyles.bodyText,
-  },
-  // Common inline style replacements
-  cardContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  rowContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowSpaceBetween: {
+const styles = StyleSheet.create({
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  flexOne: {
-    flex: 1,
-  },
-  greenBadge: {
-    backgroundColor: sharedColors.success,
-  },
-  assetContainer: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerSection: {
-    paddingHorizontal: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  secureBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  refreshButton: {
+    padding: 8,
+  },
+  portfolioSummary: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 20,
     borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  secureText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '600',
+  portfolioLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
   },
-  whiteText: {
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 2,
+  portfolioValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
   },
-  rightAlign: {
-    flex: 1,
-    marginLeft: 4,
-    alignItems: 'flex-end',
-  },
-  leftAlign: {
-    flex: 1,
-    marginRight: 4,
-  },
-  smallText: {
-    fontSize: 8,
+  portfolioSubtext: {
+    fontSize: 14,
     color: '#999',
   },
-  balanceContainer: {
-    alignItems: 'flex-end',
-    minWidth: 70,
+  debugText: {
+    fontSize: 10,
+    color: '#bbb',
+    marginTop: 2,
   },
-  scrollContainer: {
-    paddingBottom: 0,
+  assetsList: {
+    marginHorizontal: 20,
   },
-  fullWidth: {
-    width: '100%',
-    marginTop: 0,
-  },
-  bold: {
+  assetsHeader: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
   },
-  assetCard: {
+  assetItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  assetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 0,
-    paddingHorizontal: scaledWidth(16),
-    paddingVertical: scaledHeight(16),
-    marginBottom: 0,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#e5e5ea',
-    width: '100%',
-    minHeight: scaledHeight(72),
-  },
-  assetIconContainer: {
-    width: scaledWidth(44),
-    height: scaledHeight(44),
-    borderRadius: scaledWidth(22),
-    backgroundColor: '#f2f2f7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: scaledWidth(14),
   },
   assetIcon: {
-    width: scaledWidth(28),
-    height: scaledHeight(28),
-    resizeMode: 'contain',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  assetSymbol: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
   },
   assetInfo: {
     flex: 1,
-    justifyContent: 'center',
-    paddingRight: scaledWidth(12),
-  },
-  assetSymbol: {
-    fontSize: normaliseFont(16),
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: scaledHeight(4),
   },
   assetName: {
-    fontSize: normaliseFont(13),
-    color: '#8e8e93',
-    fontWeight: '400',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 2,
+  },
+  assetSymbolText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  assetValues: {
+    alignItems: 'flex-end',
   },
   assetBalance: {
-    alignItems: 'flex-end',
-    minWidth: scaledWidth(120),
-    justifyContent: 'center',
-  },
-  balanceAmount: {
-    fontSize: normaliseFont(12),
+    fontSize: 16,
     fontWeight: '500',
-    color: '#8e8e93',
-    marginBottom: scaledHeight(4),
+    color: '#333',
+    marginBottom: 2,
   },
-  priceAmount: {
-    fontSize: normaliseFont(16),
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: scaledHeight(2),
+  assetValue: {
+    fontSize: 14,
+    color: '#666',
   },
-  priceChange: {
-    fontSize: normaliseFont(14),
-    fontWeight: '500',
+  assetPrice: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
   },
-  priceUp: {
-    color: '#34c759',
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
   },
-  priceDown: {
-    color: '#ff3b30',
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
   },
-  controls: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    justifyContent: "space-between",
-    zIndex: 1,
-    //borderWidth: 1, // testing
+  statusContainer: {
+    padding: 20,
+    alignItems: 'center',
   },
-  assetCategoryWrapper: {
-    width: '50%',
+  statusText: {
+    fontSize: 12,
+    color: '#999',
   },
-  assetCategory: {
-    height: scaledHeight(40),
+  statusSubtext: {
+    fontSize: 10,
+    color: '#bbb',
+    marginTop: 4,
   },
-  dropdownText: {
-    fontSize: normaliseFont(14),
-  },
-  flatListWrapper: {
-    height: '80%',
-    //borderWidth: 1, // testing
-  },
-  assetList: {
-    //borderWidth: 1, // testing
-    marginTop: scaledHeight(15),
-  },
-  flatListItem: {
-    marginBottom: scaledHeight(15),
-    paddingHorizontal: scaledWidth(10),
-    paddingVertical: scaledHeight(15),
-    borderWidth: 1,
-    borderColor: 'black',
+  debugContainer: {
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+    margin: 20,
     borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
-  assetText: {
-    fontSize: normaliseFont(16),
+  debugButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 6,
+    marginVertical: 5,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  debugText: {
+    fontSize: 10,
+    color: '#6c757d',
+    marginVertical: 2,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
-
 
 export default Assets;
