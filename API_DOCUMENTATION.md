@@ -2217,6 +2217,286 @@ The private API authentication is currently failing due to HMAC signature verifi
 - Requests include microsecond timestamps to prevent replay attacks
 - Rate limiting may apply (HTTP 429 responses)
 
+## 🆕 Enhanced APIs from example3-short.js
+
+**Source:** Additional APIs discovered from comprehensive example script  
+**Last Updated:** October 3, 2025  
+**Status:** Added to test suite for comprehensive coverage
+
+### Sub-User Management APIs
+
+#### Create Sub-User Account
+```
+POST /register_sub_user/{email}
+```
+Creates a new sub-user account under the parent account.
+
+**Parameters:**
+- `userData` (object): Complete user registration data
+  - `email` (string): Sub-user email address
+  - `firstName` (string): First name
+  - `lastName` (string): Last name
+  - `dateOfBirth` (string): Format "DD/MM/YYYY"
+  - `gender` (string): "Male" or "Female"
+  - `citizenship` (string): Country code (e.g., "GB")
+  - `password` (string): Account password
+  - `mobileNumber` (string): Phone number
+  - `emailPreferences` (array): Email preference options
+
+**Example Request:**
+```json
+{
+  "userData": {
+    "email": "subuser@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "dateOfBirth": "08/08/2000",
+    "gender": "Male",
+    "citizenship": "GB",
+    "password": "SecurePass123",
+    "mobileNumber": "07781234567",
+    "emailPreferences": ["newsAndFeatureUpdates", "promotionsAndSpecialOffers"]
+  }
+}
+```
+
+#### List Sub-Users
+```
+POST /subusers
+```
+Returns list of all sub-users under the parent account.
+
+#### Get Sub-User API Keys
+```
+POST /apikey/{uuid}
+```
+Retrieves API keys for a specific sub-user account.
+
+**Parameters:**
+- `uuid` (string): Sub-user UUID
+
+#### Update User Information
+```
+POST /update_user
+```
+Updates user account information.
+
+**Parameters:**
+- `userData` (object): Updated user data
+- `params` (object): Contains user UUID
+
+### Account Default Settings APIs
+
+#### Update Default GBP Account
+```
+POST /default_account/GBP/update
+```
+Updates default bank account details for GBP transactions.
+
+**Parameters:**
+- `sortCode` (string): UK bank sort code (format: "12-34-56")
+- `accountNumber` (string): Bank account number
+- `accountName` (string): Account holder name
+
+#### Get Default Account Details
+```
+GET /default_account/{asset}
+```
+Retrieves default account details for specific asset.
+
+**Supported Assets:**
+- `BTC` - Bitcoin account details
+- `ETH` - Ethereum account details  
+- `GBP` - Bank account details
+
+### Document Upload & KYC APIs
+
+#### Upload ID Documents
+```
+POST /upload/iddoc/poa
+```
+Uploads identity document for proof of address verification.
+
+**Parameters:**
+- File upload (multipart/form-data)
+- `media` (file): Image file (JPEG/PNG)
+
+### Internal Transfer APIs
+
+#### Transfer Between Accounts
+```
+POST /transfer/{asset}/
+```
+Transfers funds between parent and sub-user accounts.
+
+**Parameters:**
+- `cur` (string): Currency code (BTC, ETH, GBP)
+- `volume` (number): Amount to transfer
+- `uuid` (string): Target user UUID
+
+**Supported Assets:**
+- `BTC` - Bitcoin transfers
+- `ETH` - Ethereum transfers
+- `GBP` - Fiat currency transfers
+
+### Enhanced Deposit APIs
+
+#### Lightning Network Deposits
+```
+POST /deposit_details/BTC/LIGHTNING/{amount}/
+```
+Generates Lightning Network invoice for BTC deposits.
+
+**Parameters:**
+- `amount` (number): Amount in satoshis
+- `note` (string): Invoice description
+
+#### XRP Deposit Details
+```
+POST /deposit_details/XRP
+```
+Retrieves XRP deposit address and destination tag.
+
+### Address Book Management APIs
+
+#### Add Address Book Entry
+```
+POST /addressBook/{asset}/{type}
+```
+Adds new address to withdrawal address book.
+
+**Parameters:**
+- `asset` (string): Asset type (BTC, ETH, etc.)
+- `type` (string): Address type (CRYPTO_UNHOSTED, etc.)
+- `name` (string): Friendly name for address
+- `network` (string): Network type
+- `address` (object): Address details
+- `thirdparty` (boolean): Whether address belongs to third party
+
+**Example Request:**
+```json
+{
+  "name": "My Hardware Wallet",
+  "asset": "BTC",
+  "network": "BTC",
+  "address": {
+    "firstname": null,
+    "lastname": null,
+    "business": "Personal Wallet",
+    "address": "tb1qtest-bitcoin-address",
+    "dtag": null,
+    "vasp": null
+  },
+  "thirdparty": false
+}
+```
+
+#### List Address Book Entries
+```
+GET /addressBook/{asset}
+```
+Retrieves saved addresses for specific asset.
+
+**Supported Assets:**
+- `BTC` - Bitcoin addresses
+- `ETH` - Ethereum addresses
+- `GBP` - Bank account details
+
+#### Delete Address Book Entry
+```
+DELETE /addressBook/delete/{uuid}
+```
+Removes address from address book.
+
+**Parameters:**
+- `uuid` (string): Address entry UUID
+
+### Enhanced Transaction Search APIs
+
+#### Advanced Transaction Search
+```
+POST /transaction
+```
+Performs advanced transaction searches with filtering and sorting.
+
+**Parameters:**
+- `search` (array): Search criteria objects
+- `limit` (number): Maximum results per page
+- `offset` (number): Results offset for pagination
+- `sort` (array): Sort fields
+- `order` (array): Sort order (ASC/DESC)
+
+**Search Examples:**
+
+**Text Search:**
+```json
+{
+  "search": [{"search": "Transfer"}],
+  "limit": 10
+}
+```
+
+**Amount Range Search:**
+```json
+{
+  "search": [{
+    "min": 9.50,
+    "max": 10.00,
+    "col": "baseAssetVolume"
+  }],
+  "limit": 10
+}
+```
+
+**Sorted Results:**
+```json
+{
+  "search": [{}],
+  "sort": ["code", "baseAssetVolume"],
+  "order": ["ASC", "DESC"],
+  "limit": 10
+}
+```
+
+### Enhanced Trading APIs
+
+#### Private Volume Price Quote
+```
+POST /best_volume_price/{base}/{quote}
+```
+Gets private volume-based price quotes for trading.
+
+**Parameters:**
+- `side` (string): "BUY" or "SELL"
+- `quoteAssetVolume` (string): Volume in quote asset
+- `baseOrQuoteAsset` (string): "base" or "quote"
+
+#### Sell to Bank Account
+```
+POST /sell
+```
+Executes sell order with direct bank transfer.
+
+**Parameters:**
+- `market` (string): Trading pair (e.g., "BTC/GBPX")
+- `baseAssetVolume` (string): Amount of base asset
+- `quoteAssetVolume` (string): Amount of quote asset
+- `orderType` (string): Order type (e.g., "IMMEDIATE_OR_CANCEL")
+- `paymentMethod` (string): Payment method ("bank")
+
+### Enhanced Withdrawal APIs
+
+#### Withdraw to Address Book Entry
+```
+POST /withdraw
+```
+Withdraws to pre-saved address book entry.
+
+**Parameters:**
+- `address` (string): Address book entry UUID
+- `volume` (string): Withdrawal amount
+- `priority` (string): Fee priority ("low", "medium", "high")
+
 ## Testing
 
 Use the provided test script:

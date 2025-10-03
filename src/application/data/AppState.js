@@ -54,6 +54,7 @@ let jd = JSON.stringify;
 
 // Settings: Critical (check before making a new release)
 let autoLoginOnDevAndStag = false; // Only used during development (i.e. on 'dev' tier) to automatically login using a dev user.
+let autoLoginWithStoredCredentials = true; // Auto-login with stored API credentials in dev/stage mode (saves re-entering credentials after code updates)
 let preserveRegistrationData = false; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
 // - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
 let developmentModeBypass = true; // Skip network calls and use sample data when server is unreachable
@@ -755,6 +756,40 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       return "SUCCESS";
     }
 
+    // Auto-login function for development - loads stored credentials and logs in automatically
+    this.autoLoginWithStoredCredentials = async () => {
+      try {
+        log("🔑 autoLoginWithStoredCredentials: Attempting auto-login with stored credentials");
+        
+        // Check if credentials exist in keychain
+        let credentials = await Keychain.getInternetCredentials(this.state.apiCredentialsStorageKey);
+        
+        if (credentials && credentials.username && credentials.password) {
+          let apiKey = credentials.username;
+          let apiSecret = credentials.password;
+          
+          log("🔑 autoLoginWithStoredCredentials: Found stored credentials, attempting login");
+          log(`🔑 autoLoginWithStoredCredentials: API Key: ${apiKey}`);
+          if (appTier === 'dev') {
+            log(`🔑 autoLoginWithStoredCredentials: API Secret: ${apiSecret.substring(0, 20)}...`);
+          }
+          
+          // Login with the stored credentials
+          await this.loginWithAPIKeyAndSecret({apiKey, apiSecret});
+          
+          log("🔑 autoLoginWithStoredCredentials: Auto-login successful!");
+          return true;
+        } else {
+          log("🔑 autoLoginWithStoredCredentials: No stored credentials found");
+          return false;
+        }
+      } catch (error) {
+        log(`🔑 autoLoginWithStoredCredentials: Error during auto-login: ${error.message}`);
+        console.error('🔑 Auto-login error:', error);
+        return false;
+      }
+    }
+
 
     this.loginAsDifferentUser = async ({userID}) => {
       // Note: The PIN is local to the phone, so your own PIN will stay the same.
@@ -1076,7 +1111,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
-    this.authenticateUser = () => {
+    this.authenticateUser = async () => {
       // If API credentials (API Key and Secret) aren't stored in the Keychain, go to Authenticate (where the user can choose between Register and Login).
       let msg = "authenticateUser";
       msg += `\n- this.state.user.apiCredentialsFound = ${this.state.user.apiCredentialsFound}`;
@@ -1086,6 +1121,23 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (appTier !== 'prod') {
         log(msg);
       }
+
+      // 🔑 AUTO-LOGIN: In development mode, try to auto-login with stored credentials
+      if (autoLoginWithStoredCredentials && (appTier === 'dev' || appTier === 'stage') && this.state.user.apiCredentialsFound && !this.state.user.isAuthenticated) {
+        log("🔑 Development mode: Attempting auto-login with stored credentials");
+        try {
+          let autoLoginSuccess = await this.autoLoginWithStoredCredentials();
+          if (autoLoginSuccess) {
+            log("🔑 Auto-login successful! Going to Transfer page");
+            return this.state.changeState('Transfer');
+          } else {
+            log("🔑 Auto-login failed, continuing with normal flow");
+          }
+        } catch (error) {
+          log(`🔑 Auto-login error: ${error.message}`);
+        }
+      }
+
       if (! this.state.user.apiCredentialsFound && !bypassAuthentication) {
         if (! this.state.user.isAuthenticated) {
           log("authenticateUser (1) -> Authenticate");
@@ -2774,27 +2826,53 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
-    this.sendWithdraw = async ({asset, volume, addressInfo, priority, functionName}) => {
-      log(`Send withdraw to server: withdraw ${volume} ${asset} to ${JSON.stringify(addressInfo)}`);
-      let data = await this.state.privateMethod({
-        httpMethod: 'POST',
-        apiRoute: `withdraw/${asset}`,
-        params: {
-          volume,
-          addressInfo,
-          priority,
-        },
-        functionName,
-      });
-      /* Example data:
-        {"id": 9094}
-      */
-      /* Example error:
-      {
-        "error": "ValidationError: Amount (0.00000000) is zero."
+    this.sendWithdraw = async ({asset, volume, address, priority, functionName}) => {
+      log(`🔄 sendWithdraw: Starting withdrawal - ${volume} ${asset} to ${address} with priority ${priority}`);
+      console.log(`🔄 CONSOLE: sendWithdraw starting - ${volume} ${asset} to ${address} with priority ${priority}`);
+      
+      try {
+        log('🔍 sendWithdraw: Calling privateMethod with params:', {
+          httpMethod: 'POST',
+          apiRoute: `withdraw/${asset}`,
+          params: { volume, address, priority },
+          functionName
+        });
+        console.log('🔍 CONSOLE: About to call privateMethod for withdraw API');
+        
+        let data = await this.state.privateMethod({
+          httpMethod: 'POST',
+          apiRoute: `withdraw/${asset}`,
+          params: {
+            volume,
+            address,
+            priority,
+          },
+          functionName,
+        });
+        
+        log('📨 sendWithdraw: Raw response from privateMethod:', data);
+        console.log('📨 CONSOLE: Raw response from privateMethod:', data);
+        log('📊 sendWithdraw: Response type:', typeof data);
+        log('📊 sendWithdraw: Response stringified:', JSON.stringify(data, null, 2));
+        
+        /* Example data:
+          {"id": 9094}
+        */
+        /* Example error:
+        {
+          "error": "ValidationError: Amount (0.00000000) is zero."
+        }
+        */
+        return data;
+      } catch (error) {
+        log('❌ sendWithdraw: Exception during API call:', error);
+        console.log('❌ CONSOLE: Exception in sendWithdraw:', error);
+        log('❌ sendWithdraw: Error message:', error.message);
+        console.log('❌ CONSOLE: Error message:', error.message);
+        log('❌ sendWithdraw: Error stack:', error.stack);
+        log('❌ sendWithdraw: Error name:', error.name);
+        throw error;
       }
-      */
-      return data;
     }
 
 
@@ -3090,6 +3168,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       generalSetup: this.generalSetup,
       login: this.login,
       loginWithAPIKeyAndSecret: this.loginWithAPIKeyAndSecret,
+      autoLoginWithStoredCredentials: this.autoLoginWithStoredCredentials,
       loginAsDifferentUser: this.loginAsDifferentUser,
       createAbortController: this.createAbortController,
       abortAllRequests: this.abortAllRequests,

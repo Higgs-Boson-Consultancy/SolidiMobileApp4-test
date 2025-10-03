@@ -6,6 +6,7 @@ import ImageButton from './ImageButton/ImageButton';
 import Spinner from './Spinner';
 import PriceGraph from './PriceGraph';
 import QRScanner from '../QRScanner/QRScanner';
+import AddressBookPicker from './AddressBookPicker';
 
 export {
   Button,
@@ -15,4 +16,5 @@ export {
   Spinner,
   PriceGraph,
   QRScanner,
+  AddressBookPicker,
 };

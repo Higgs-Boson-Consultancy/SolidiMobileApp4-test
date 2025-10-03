@@ -106,17 +106,17 @@ export const DEFAULT_DEPOSIT_ADDRESSES = {
  * Asset display information for transfer dropdowns
  */
 export const TRANSFER_ASSET_DISPLAY = {
-  'BTC': { label: 'Bitcoin (BTC)', value: 'BTC', icon: 'bitcoin' },
-  'ETH': { label: 'Ethereum (ETH)', value: 'ETH', icon: 'ethereum' },
-  'LTC': { label: 'Litecoin (LTC)', value: 'LTC', icon: 'litecoin' },
-  'XRP': { label: 'Ripple (XRP)', value: 'XRP', icon: 'ripple' },
-  'ADA': { label: 'Cardano (ADA)', value: 'ADA', icon: 'cardano' },
-  'DOT': { label: 'Polkadot (DOT)', value: 'DOT', icon: 'polkadot' },
-  'LINK': { label: 'Chainlink (LINK)', value: 'LINK', icon: 'chainlink' },
-  'UNI': { label: 'Uniswap (UNI)', value: 'UNI', icon: 'uniswap' },
-  'GBP': { label: 'British Pound (GBP)', value: 'GBP', icon: 'pound' },
-  'USD': { label: 'US Dollar (USD)', value: 'USD', icon: 'dollar' },
-  'EUR': { label: 'Euro (EUR)', value: 'EUR', icon: 'euro' },
+  'BTC': { label: 'Bitcoin (BTC)', value: 'BTC' },
+  'ETH': { label: 'Ethereum (ETH)', value: 'ETH' },
+  'LTC': { label: 'Litecoin (LTC)', value: 'LTC' },
+  'XRP': { label: 'Ripple (XRP)', value: 'XRP' },
+  'ADA': { label: 'Cardano (ADA)', value: 'ADA' },
+  'DOT': { label: 'Polkadot (DOT)', value: 'DOT' },
+  'LINK': { label: 'Chainlink (LINK)', value: 'LINK' },
+  'UNI': { label: 'Uniswap (UNI)', value: 'UNI' },
+  'GBP': { label: 'British Pound (GBP)', value: 'GBP' },
+  'USD': { label: 'US Dollar (USD)', value: 'USD' },
+  'EUR': { label: 'Euro (EUR)', value: 'EUR' },
 };
 
 /**
@@ -220,18 +220,17 @@ export class TransferDataModel {
   getAssetDisplayInfo(asset) {
     try {
       if (!asset || typeof asset !== 'string') {
-        return { label: 'Unknown Asset', value: 'UNKNOWN', icon: 'help-circle' };
+        return { label: 'Unknown Asset', value: 'UNKNOWN' };
       }
       
       const upperAsset = asset.toUpperCase();
       return this.displayInfo[upperAsset] || {
         label: `${asset} (${upperAsset})`,
-        value: upperAsset,
-        icon: 'help-circle'
+        value: upperAsset
       };
     } catch (error) {
       console.warn('Error getting display info:', error);
-      return { label: 'Unknown Asset', value: 'UNKNOWN', icon: 'help-circle' };
+      return { label: 'Unknown Asset', value: 'UNKNOWN' };
     }
   }
 
@@ -247,15 +246,14 @@ export class TransferDataModel {
         return {
           label: displayInfo.label,
           value: displayInfo.value,
-          icon: displayInfo.icon,
         };
       });
     } catch (error) {
       console.warn('Error generating send asset items:', error);
       return [
-        { label: 'Bitcoin (BTC)', value: 'BTC', icon: 'bitcoin' },
-        { label: 'Ethereum (ETH)', value: 'ETH', icon: 'ethereum' },
-        { label: 'British Pound (GBP)', value: 'GBP', icon: 'pound' },
+        { label: 'Bitcoin (BTC)', value: 'BTC' },
+        { label: 'Ethereum (ETH)', value: 'ETH' },
+        { label: 'British Pound (GBP)', value: 'GBP' },
       ];
     }
   }
@@ -272,15 +270,14 @@ export class TransferDataModel {
         return {
           label: displayInfo.label,
           value: displayInfo.value,
-          icon: displayInfo.icon,
         };
       });
     } catch (error) {
       console.warn('Error generating receive asset items:', error);
       return [
-        { label: 'Bitcoin (BTC)', value: 'BTC', icon: 'bitcoin' },
-        { label: 'Ethereum (ETH)', value: 'ETH', icon: 'ethereum' },
-        { label: 'British Pound (GBP)', value: 'GBP', icon: 'pound' },
+        { label: 'Bitcoin (BTC)', value: 'BTC' },
+        { label: 'Ethereum (ETH)', value: 'ETH' },
+        { label: 'British Pound (GBP)', value: 'GBP' },
       ];
     }
   }

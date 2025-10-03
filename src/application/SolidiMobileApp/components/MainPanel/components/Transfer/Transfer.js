@@ -58,6 +58,7 @@ import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { TransferUtils, transferDataModel } from './TransferDataModel';
+import { AddressBookPicker } from 'src/components/atomic';
 
 // Logger
 import logger from 'src/util/logger';
@@ -65,7 +66,9 @@ let logger2 = logger.extend('Transfer');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 let Transfer = () => {
+  console.log('🎯 CONSOLE: Transfer component initializing...');
   let appState = useContext(AppStateContext);
+  console.log('🎯 CONSOLE: AppState context loaded:', !!appState);
   let materialTheme = useTheme();
   let [renderCount, triggerRender] = useState(0);
   let stateChangeID = appState?.stateChangeID || 0;
@@ -83,8 +86,8 @@ let Transfer = () => {
   ]);
 
   // Send form state
-  let [sendAmount, setSendAmount] = useState('');
-  let [recipientAddress, setRecipientAddress] = useState('');
+  let [sendAmount, setSendAmount] = useState('0.001'); // Pre-filled with your test amount
+  let [recipientAddress, setRecipientAddress] = useState('tb1qumc274tp6vjd6mvldcjavjjqd2xzak00eh4ell'); // Pre-filled with your test address
   let [selectedPriority, setSelectedPriority] = useState('medium'); // Fee priority selection
   let [errorMessage, setErrorMessage] = useState('');
   let [isLoading, setIsLoading] = useState(false);
@@ -105,40 +108,57 @@ let Transfer = () => {
     setComponentError(null);
   }, [transferType, selectedAsset]);
 
+  // Track selectedAsset changes for AddressBookPicker
+  useEffect(() => {
+    console.log('🎯 Transfer: ===== ASSET CHANGED - WILL TRIGGER ADDRESS BOOK RELOAD =====');
+    console.log('🎯 Transfer: Selected asset changed to:', selectedAsset);
+    console.log('🎯 Transfer: This will trigger AddressBookPicker to reload with new asset');
+    console.log('🎯 Transfer: Expected API call: GET /addressBook/' + selectedAsset);
+    
+    if (selectedAsset === 'BTC') {
+      console.log('🎯 Transfer: 🚀 BTC IS DEFAULT - ADDRESS BOOK SHOULD LOAD AUTOMATICALLY 🚀');
+      console.log('🎯 Transfer: Watch for BTC address book API response logs below...');
+    }
+    
+    console.log('🎯 Transfer: ===== ASSET CHANGE TRIGGER END =====');
+  }, [selectedAsset]);
+
+  // Force initial BTC load when Transfer component mounts
+  useEffect(() => {
+    console.log('🎯 Transfer: ===== TRANSFER COMPONENT MOUNTED =====');
+    console.log('🎯 Transfer: Default selectedAsset on mount:', selectedAsset);
+    console.log('🎯 Transfer: Transfer type on mount:', transferType);
+    console.log('🎯 Transfer: Should load BTC address book automatically');
+    console.log('🎯 Transfer: ===== TRANSFER COMPONENT MOUNT END =====');
+  }, []);
+
   // Fee loading effect
   useEffect(() => {
     const loadFees = async () => {
       try {
         if (!appState) {
-          log('AppState not available for fee loading');
+          log('❌ AppState not available for fee loading');
+          setWithdrawalFee('[error]');
+          return;
+        }
+        
+        if (!appState.loadFees) {
+          log('❌ loadFees method not available on appState');
+          setWithdrawalFee('[error]');
           return;
         }
         
         log('🔄 Loading fees for asset:', selectedAsset, 'priority:', selectedPriority);
         
+        // Reset fee state while loading
+        setWithdrawalFee('[loading]');
+        setFeesLoaded(false);
+        
         // Load fees from API
         await appState.loadFees();
         
-        // Check if current priority is available, if not, switch to an available one
-        const currentPriorityAvailable = isPriorityAvailable(selectedPriority);
-        if (!currentPriorityAvailable) {
-          // Try to find an available priority in order: medium, high, low
-          const priorities = ['medium', 'high', 'low'];
-          let newPriority = null;
-          
-          for (const priority of priorities) {
-            if (isPriorityAvailable(priority)) {
-              newPriority = priority;
-              break;
-            }
-          }
-          
-          if (newPriority && newPriority !== selectedPriority) {
-            log(`Switching from unavailable priority ${selectedPriority} to ${newPriority}`);
-            setSelectedPriority(newPriority);
-            return; // useEffect will re-run with new priority
-          }
-        }
+        // Mark fees as loaded
+        setFeesLoaded(true);
         
         // Get the specific fee for current asset and priority
         const fee = appState.getFee({
@@ -148,8 +168,39 @@ let Transfer = () => {
         });
         
         log('💰 Got fee from API:', fee);
-        setWithdrawalFee(fee);
-        setFeesLoaded(true);
+        
+        // If current priority is not available, try to find an available one
+        if (fee === '[loading]' || (typeof fee === 'string' && parseFloat(fee) < 0)) {
+          log('🔄 Current priority unavailable, looking for alternatives...');
+          const priorities = ['medium', 'high', 'low'];
+          let foundValidFee = null;
+          let foundValidPriority = null;
+          
+          for (const priority of priorities) {
+            const testFee = appState.getFee({
+              feeType: 'withdraw',
+              asset: selectedAsset,
+              priority: priority
+            });
+            
+            if (testFee !== '[loading]' && typeof testFee === 'string' && parseFloat(testFee) >= 0) {
+              foundValidFee = testFee;
+              foundValidPriority = priority;
+              log(`✅ Found valid fee for priority ${priority}: ${testFee}`);
+              break;
+            }
+          }
+          
+          if (foundValidFee && foundValidPriority !== selectedPriority) {
+            log(`🔄 Switching from ${selectedPriority} to ${foundValidPriority}`);
+            setSelectedPriority(foundValidPriority);
+            setWithdrawalFee(foundValidFee);
+          } else {
+            setWithdrawalFee(fee);
+          }
+        } else {
+          setWithdrawalFee(fee);
+        }
         
       } catch (error) {
         log('❌ Error loading fees:', error);
@@ -157,8 +208,12 @@ let Transfer = () => {
       }
     };
     
-    // Load fees when component mounts or when asset/priority changes
-    loadFees();
+    // Only load fees if we have a valid asset
+    if (selectedAsset && appState) {
+      loadFees();
+    } else {
+      log('⏸️ Skipping fee loading - selectedAsset:', selectedAsset, 'appState:', !!appState);
+    }
   }, [selectedAsset, selectedPriority, appState]);
 
   // Helper function to check if a priority level is available for the current asset
@@ -200,7 +255,13 @@ let Transfer = () => {
           let assetIcon = null;
           try {
             if (appState?.getAssetIcon) {
-              assetIcon = appState.getAssetIcon(asset);
+              let iconResult = appState.getAssetIcon(asset);
+              // Only use icon if it's a proper image source (object), not a string
+              if (iconResult && typeof iconResult === 'object') {
+                assetIcon = iconResult;
+              } else {
+                log('Skipping invalid icon for', asset, '- got:', typeof iconResult, iconResult);
+              }
             }
           } catch (iconError) {
             log('Error getting asset icon for', asset, ':', iconError);
@@ -223,26 +284,8 @@ let Transfer = () => {
             value: asset,
           };
           
-          // Only add icon if we successfully got one
-          if (assetIcon) {
-            assetItem.icon = () => {
-              try {
-                return (
-                  <Image 
-                    source={assetIcon} 
-                    style={{
-                      width: scaledWidth(27),
-                      height: scaledHeight(27),
-                      resizeMode: 'contain',
-                    }}
-                  />
-                );
-              } catch (renderError) {
-                log('Error rendering icon for', asset, ':', renderError);
-                return null;
-              }
-            };
-          }
+          // TODO: Icon functionality disabled temporarily to prevent rendering issues
+          // Icons will be re-enabled once the component rendering is stabilized
           
           return assetItem;
         } catch (error) {
@@ -391,55 +434,147 @@ let Transfer = () => {
   // Enhanced send transaction handler with validation
   let handleSend = async () => {
     try {
+      log('🚀 handleSend: Starting send transaction');
+      console.log('🚀 CONSOLE: handleSend starting - please check this appears in your logs!');
+      console.log('📱 CONSOLE: React Native environment details:', {
+        selectedAsset,
+        sendAmount,
+        recipientAddress,
+        selectedPriority,
+        appStateAvailable: !!appState,
+        sendWithdrawAvailable: !!(appState && appState.sendWithdraw)
+      });
       setErrorMessage('');
       
       // Validate amount using data model
+      log('📊 handleSend: Validating amount:', sendAmount, 'for asset:', selectedAsset);
+      console.log('📊 CONSOLE: Validating amount:', sendAmount, 'for asset:', selectedAsset);
       const validation = TransferUtils.validateAmount(selectedAsset, sendAmount);
       if (!validation.valid) {
+        log('❌ handleSend: Amount validation failed:', validation.error);
+        console.log('❌ CONSOLE: Amount validation failed:', validation.error);
         setErrorMessage(validation.error);
         return;
       }
+      log('✅ handleSend: Amount validation passed');
+      console.log('✅ CONSOLE: Amount validation passed');
       
       if (!recipientAddress.trim()) {
+        log('❌ handleSend: No recipient address provided');
         setErrorMessage('Please enter recipient address');
         return;
       }
+      log('✅ handleSend: Recipient address provided:', recipientAddress);
 
       // Get asset capabilities for additional validation
+      log('🔍 handleSend: Checking asset capabilities for:', selectedAsset);
       const capabilities = transferDataModel.getAssetCapabilities(selectedAsset);
+      log('📋 handleSend: Asset capabilities:', capabilities);
+      
       if (!capabilities.withdrawalEnabled) {
+        log('❌ handleSend: Withdrawals not enabled for asset:', selectedAsset);
         setErrorMessage(`${selectedAsset} withdrawals are not currently available`);
         return;
       }
+      log('✅ handleSend: Withdrawals enabled for asset');
+
+      // Check AppState availability
+      if (!appState) {
+        log('❌ handleSend: AppState not available');
+        setErrorMessage('Application state not available. Please try again.');
+        return;
+      }
+      log('✅ handleSend: AppState is available');
+
+      // Check authentication state
+      if (appState.state && appState.state.mainPanelState) {
+        const authState = appState.state.mainPanelState;
+        log('🔐 handleSend: Current auth state:', authState);
+        
+        if (authState === 'AuthSetup' || authState === 'Login' || authState === 'Register') {
+          log('❌ handleSend: Not authenticated');
+          setErrorMessage('Please log in before making transactions.');
+          return;
+        }
+        
+        if (authState === 'RequestFailed') {
+          log('❌ handleSend: Previous request failed, system in error state');
+          setErrorMessage('System is in error state. Please refresh and try again.');
+          return;
+        }
+        
+        if (authState === 'Maintenance') {
+          log('❌ handleSend: System in maintenance mode');
+          setErrorMessage('System is under maintenance. Please try again later.');
+          return;
+        }
+      }
+
+      // Check sendWithdraw method availability
+      if (!appState.sendWithdraw) {
+        log('❌ handleSend: sendWithdraw method not available on appState');
+        setErrorMessage('Send functionality not available. Please try again.');
+        return;
+      }
+      log('✅ handleSend: sendWithdraw method is available');
 
       setIsLoading(true);
 
-      log('Processing send:', {
-        asset: selectedAsset,
-        amount: sendAmount,
-        recipient: recipientAddress,
-        capabilities: capabilities
-      });
-      
-      // Call the actual withdraw API
-      const result = await appState.sendWithdraw({
+      log('📤 handleSend: Preparing API call with parameters:', {
         asset: selectedAsset,
         volume: sendAmount,
-        addressInfo: {
-          address: recipientAddress
-        },
+        address: recipientAddress,
         priority: selectedPriority,
         functionName: 'Transfer_handleSend'
       });
       
-      log('Send result:', result);
+      // Call the actual withdraw API
+      log('🔄 handleSend: Calling appState.sendWithdraw...');
+      console.log('🔄 CONSOLE: About to call sendWithdraw API...');
+      console.log('📋 CONSOLE: Final API parameters:', {
+        asset: selectedAsset,
+        volume: sendAmount,
+        address: recipientAddress,
+        priority: selectedPriority,
+        functionName: 'Transfer_handleSend'
+      });
+      
+      const result = await appState.sendWithdraw({
+        asset: selectedAsset,
+        volume: sendAmount,
+        address: recipientAddress,
+        priority: selectedPriority,
+        functionName: 'Transfer_handleSend'
+      });
+      
+      log('📨 handleSend: Raw API response:', result);
+      console.log('📨 CONSOLE: Raw API response:', result);
+      console.log('📨 CONSOLE: Response type:', typeof result);
+      console.log('📨 CONSOLE: Response JSON:', JSON.stringify(result, null, 2));
+      log('📊 handleSend: Response type:', typeof result);
+      log('📊 handleSend: Response keys:', result ? Object.keys(result) : 'null/undefined');
+      
+      if (result === 'DisplayedError') {
+        log('❌ handleSend: Got DisplayedError from API');
+        setErrorMessage('Transaction failed. Please check your inputs and try again.');
+        return;
+      }
+      
+      if (!result) {
+        log('❌ handleSend: No response from API');
+        setErrorMessage('No response from server. Please try again.');
+        return;
+      }
       
       if (result?.error) {
+        log('❌ handleSend: API returned error:', result.error);
+        log('❌ handleSend: Full error object:', JSON.stringify(result, null, 2));
         setErrorMessage(`Send failed: ${result.error}`);
         return;
       }
       
       if (result?.id) {
+        log('✅ handleSend: Transaction successful with ID:', result.id);
         // Success - show confirmation
         alert(`✅ Withdrawal successful! Transaction ID: ${result.id}`);
         
@@ -447,16 +582,45 @@ let Transfer = () => {
         setSendAmount('');
         setRecipientAddress('');
       } else {
+        log('⚠️ handleSend: Unexpected response format:', result);
         setErrorMessage('Unexpected response from server. Please check your transaction status.');
       }
       
     } catch (error) {
-      log('Send error:', error);
-      setErrorMessage('Failed to process send transaction. Please try again.');
+      log('💥 handleSend: Exception caught:', error);
+      console.log('💥 CONSOLE: Exception caught in handleSend:', error);
+      log('💥 handleSend: Error message:', error.message);
+      console.log('💥 CONSOLE: Error message:', error.message);
+      log('💥 handleSend: Error stack:', error.stack);
+      console.log('💥 CONSOLE: Error stack:', error.stack);
+      log('💥 handleSend: Error name:', error.name);
+      log('💥 handleSend: Error toString:', error.toString());
+      
+      // Show detailed error message to user
+      let errorMsg = `Failed to process send transaction: ${error.message || 'Unknown error'}`;
+      if (error.message && error.message.includes('privateMethod')) {
+        errorMsg += '\n\nThis appears to be an API authentication or connection issue.';
+      }
+      
+      setErrorMessage(errorMsg);
     } finally {
+      log('🏁 handleSend: Cleaning up, setting isLoading to false');
       setIsLoading(false);
     }
   }
+
+  // Handle address book selection
+  let handleAddressSelection = (address, addressDetails) => {
+    log('🏠 handleAddressSelection: Address selected from book:', address);
+    log('🏠 handleAddressSelection: Address details:', addressDetails);
+    
+    setRecipientAddress(address);
+    setErrorMessage(''); // Clear any existing error messages
+    
+    if (addressDetails) {
+      log(`📝 Address selected: ${addressDetails.label} - ${address}`);
+    }
+  };
 
   // Enhanced receive address getter with robust fallbacks
   let getReceiveAddress = () => {
@@ -677,9 +841,18 @@ let Transfer = () => {
         </View>
 
         {/* Send Form */}
-        {transferType === 'send' && (
+        {(() => {
+          console.log('🎯 Transfer: Checking if should render send form...');
+          console.log('🎯 Transfer: transferType is:', transferType);
+          console.log('🎯 Transfer: transferType === "send":', transferType === 'send');
+          return transferType === 'send';
+        })() && (
           <Card style={{ marginBottom: 16, elevation: 1, zIndex: 100 }}>
             <Card.Content style={{ padding: 20 }}>
+              {(() => {
+                console.log('🎯 Transfer: Rendering Send Form - AddressBookPicker should appear below');
+                return null;
+              })()}
               <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: '600' }}>
                 Send {selectedAsset}
               </Text>
@@ -748,12 +921,40 @@ let Transfer = () => {
                 })}
               </View>
               
+              {/* Address Book Section with Asset Context */}
+              <View style={{ marginVertical: 8, padding: 8, backgroundColor: '#f0f8ff', borderRadius: 4 }}>
+                <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                  📋 {selectedAsset === 'BTC' ? '🚀 AUTO-LOADING BTC ADDRESS BOOK' : `Loading Address Book for ${selectedAsset}`} (Check console for API response)
+                </Text>
+                {(() => {
+                  console.log('🎯 Transfer: About to render AddressBookPicker with asset:', selectedAsset);
+                  console.log('🎯 Transfer: AddressBookPicker component exists:', !!AddressBookPicker);
+                  if (selectedAsset === 'BTC') {
+                    console.log('🎯 Transfer: 🚀 RENDERING AddressBookPicker FOR BTC - SHOULD AUTO-LOAD ADDRESSES 🚀');
+                  }
+                  return (
+                    <AddressBookPicker
+                      selectedAsset={selectedAsset}
+                      onAddressSelect={(address, details) => {
+                        console.log('🎯 Transfer: Address selected from AddressBookPicker:', address);
+                        console.log('🎯 Transfer: Address details:', details);
+                        handleAddressSelection(address, details);
+                      }}
+                      label="Choose from Address Book"
+                      placeholder="Select a saved address..."
+                    />
+                  );
+                })()}
+              </View>
+              
               <TextInput
                 label="Recipient Address"
                 mode="outlined"
                 value={recipientAddress}
                 onChangeText={setRecipientAddress}
-                placeholder={`Enter ${selectedAsset} address`}
+                placeholder={selectedAsset === 'BTC' ? 
+                  'tb1qumc274tp6vjd6mvldcjavjjqd2xzak00eh4ell' : 
+                  `Enter ${selectedAsset} address`}
                 style={{ marginBottom: 16 }}
                 multiline={selectedAsset === 'BTC' || selectedAsset === 'ETH'}
               />

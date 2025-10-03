@@ -1,5 +1,5 @@
 // React imports
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { RadioButton, Title } from 'react-native-paper';
@@ -8,6 +8,7 @@ import { RadioButton, Title } from 'react-native-paper';
 import { StandardButton, QRScanner } from 'src/components/atomic';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { colors } from 'src/constants';
+import AppStateContext from 'src/application/data';
 
 // Logger
 import logger from 'src/util/logger';
@@ -15,6 +16,9 @@ let logger2 = logger.extend('AddressBook');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 let AddressBook = () => {
+  // Get app state for API access
+  let appState = useContext(AppStateContext);
+  
   // Navigation state
   let [currentStep, setCurrentStep] = useState(1);
   let [formData, setFormData] = useState({
@@ -29,6 +33,11 @@ let AddressBook = () => {
   let [errorMessage, setErrorMessage] = useState('');
   let [showAssetDropdown, setShowAssetDropdown] = useState(false);
   let [showQRScanner, setShowQRScanner] = useState(false);
+  
+  // API submission state
+  let [isSubmitting, setIsSubmitting] = useState(false);
+  let [submitError, setSubmitError] = useState('');
+  let [submitStatus, setSubmitStatus] = useState(''); // New status message
 
   // Step configuration
   const steps = [
@@ -81,14 +90,17 @@ let AddressBook = () => {
 
   // Validation for each step
   let validateCurrentStep = () => {
+    console.log('🔍 AddressBook: validateCurrentStep called for step:', currentStep);
     switch (currentStep) {
       case 1:
+        console.log('🔍 AddressBook: Validating step 1 - recipient:', formData.recipient);
         if (!formData.recipient) {
           setErrorMessage('Please select who will receive this withdraw.');
           return false;
         }
         break;
       case 2:
+        console.log('🔍 AddressBook: Validating step 2 - names:', formData.firstName, formData.lastName);
         if (!formData.firstName || !formData.lastName) {
           setErrorMessage('Please enter both first name and last name.');
           return false;
@@ -99,6 +111,7 @@ let AddressBook = () => {
         }
         break;
       case 3:
+        console.log('🔍 AddressBook: Validating step 3 - asset:', formData.asset, 'address:', formData.withdrawAddress);
         if (!formData.asset) {
           setErrorMessage('Please select an asset to withdraw.');
           return false;
@@ -109,18 +122,25 @@ let AddressBook = () => {
         }
         break;
       case 4:
+        console.log('🔍 AddressBook: Validating step 4 - destinationType:', formData.destinationType);
         if (!formData.destinationType) {
           setErrorMessage('Please select the destination type.');
           return false;
         }
         break;
       case 5:
+        console.log('🔍 AddressBook: Validating step 5 - destinationType:', formData.destinationType, 'exchangeName:', formData.exchangeName);
         if (formData.destinationType === 'crypto_exchange' && !formData.exchangeName) {
           setErrorMessage('Please enter the exchange name.');
           return false;
         }
         break;
+      case 6:
+        console.log('🔍 AddressBook: Validating step 6 (Summary) - all form data:', formData);
+        // Step 6 is summary, no additional validation needed
+        break;
     }
+    console.log('✅ AddressBook: Validation passed for step:', currentStep);
     return true;
   };
 
@@ -147,19 +167,163 @@ let AddressBook = () => {
   let isFirstStep = () => currentStep === 1;
   let isLastStep = () => currentStep === 6;
 
-  // Submit address book entry
-  let submitAddress = () => {
+  // Submit address book entry to API
+  let submitAddress = async () => {
+    console.log('🚀 AddressBook: submitAddress called!');
+    console.log('🚀 AddressBook: Current step:', currentStep);
+    console.log('🚀 AddressBook: Form data:', formData);
+    
     if (!validateCurrentStep()) {
+      console.log('❌ AddressBook: Validation failed');
       setTimeout(() => setErrorMessage(''), 3000);
       return;
     }
+    console.log('✅ AddressBook: Validation passed');
 
-    log('Address book entry submitted:', formData);
-    Alert.alert(
-      'Address Added',
-      'The address has been successfully added to your address book.',
-      [{ text: 'OK' }]
-    );
+    if (!appState) {
+      console.log('❌ AddressBook: No appState available');
+      setSubmitError('App state not available');
+      return;
+    }
+    console.log('✅ AddressBook: AppState available');
+    
+    if (!appState.state.apiClient) {
+      console.log('❌ AddressBook: No API client available');
+      setSubmitError('API client not available');
+      return;
+    }
+    console.log('✅ AddressBook: API client available');
+
+    try {
+      setIsSubmitting(true);
+      setSubmitError('');
+      setSubmitStatus('🔄 Preparing submission...');
+      console.log('🔄 AddressBook: Starting submission...');
+      
+      log('Address book entry being submitted:', formData);
+      
+      // Transform form data to API format
+      setSubmitStatus('🔄 Preparing API data...');
+      let apiPayload = {
+        name: `${formData.firstName} ${formData.lastName}`.trim() || formData.recipient,
+        asset: formData.asset.toUpperCase(),
+        network: formData.asset.toUpperCase(),
+        address: {
+          firstname: formData.firstName || null,
+          lastname: formData.lastName || null,
+          business: formData.exchangeName || null,
+          address: formData.withdrawAddress,
+          dtag: null,
+          vasp: null
+        },
+        thirdparty: formData.destinationType === 'thirdParty'
+      };
+      
+      // Determine address type based on destination
+      let addressType = 'CRYPTO_UNHOSTED'; // Default
+      if (formData.destinationType === 'exchange') {
+        addressType = 'CRYPTO_HOSTED';
+      } else if (formData.destinationType === 'thirdParty') {
+        addressType = 'CRYPTO_UNHOSTED';
+      }
+      
+      console.log('📝 AddressBook: API payload prepared:', apiPayload);
+      console.log('📝 AddressBook: Address type:', addressType);
+      log('API payload prepared:', apiPayload);
+      
+      // Make API call
+      setSubmitStatus('🌐 Sending to server...');
+      console.log('🌐 AddressBook: Making API call...');
+      console.log('🌐 AddressBook: API Route:', `addressBook/${formData.asset.toUpperCase()}/${addressType}`);
+      console.log('🌐 AddressBook: HTTP Method: POST');
+      console.log('🌐 AddressBook: API Payload:', JSON.stringify(apiPayload, null, 2));
+      
+      let result = await appState.state.apiClient.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: `addressBook/${formData.asset.toUpperCase()}/${addressType}`,
+        params: apiPayload
+      });
+      
+      setSubmitStatus('📥 Processing response...');
+      console.log('🌐 AddressBook: ===== API RESPONSE START =====');
+      console.log('🌐 AddressBook: Raw API Response:', result);
+      console.log('🌐 AddressBook: Response Type:', typeof result);
+      console.log('🌐 AddressBook: Response Keys:', result ? Object.keys(result) : 'null');
+      if (result) {
+        console.log('🌐 AddressBook: Response Success:', result.success);
+        console.log('🌐 AddressBook: Response Data:', result.data);
+        console.log('🌐 AddressBook: Response Error:', result.error);
+        console.log('🌐 AddressBook: Response Status:', result.status);
+        console.log('🌐 AddressBook: Response Message:', result.message);
+      }
+      console.log('🌐 AddressBook: ===== API RESPONSE END =====');
+      
+      console.log('✅ AddressBook: API call completed');
+      log('Address book API response:', result);
+      
+      if (result && result.success !== false) {
+        setSubmitStatus('✅ Address saved successfully!');
+        console.log('✅ AddressBook: SUCCESS - API returned positive response');
+        console.log('✅ AddressBook: Success criteria met - showing success alert');
+        
+        // Set a visible success message
+        setSubmitError('');
+        console.log('✅ AddressBook: About to show success Alert');
+        
+        Alert.alert(
+          'Address Added Successfully! ✅',
+          `${formData.firstName} ${formData.lastName}'s ${formData.asset.toUpperCase()} address has been successfully added to your address book.\n\nAddress: ${formData.withdrawAddress.substring(0, 20)}...`,
+          [{ 
+            text: 'OK', 
+            onPress: () => {
+              console.log('✅ AddressBook: User pressed OK on success alert - resetting form...');
+              // Reset form or navigate back
+              setCurrentStep(1);
+              setFormData({
+                recipient: '',
+                firstName: '',
+                lastName: '',
+                asset: '',
+                withdrawAddress: '',
+                destinationType: '',
+                exchangeName: ''
+              });
+              setSubmitStatus('');
+              console.log('✅ AddressBook: Form reset completed');
+            }
+          }]
+        );
+        console.log('✅ AddressBook: Success Alert displayed');
+      } else {
+        setSubmitStatus('❌ Failed to save address');
+        console.log('❌ AddressBook: FAILURE - API returned negative response');
+        console.log('❌ AddressBook: Response indicates failure, throwing error');
+        let errorDetails = result?.error?.message || result?.message || 'Failed to add address';
+        console.log('❌ AddressBook: Error details:', errorDetails);
+        throw new Error(errorDetails);
+      }
+      
+    } catch (error) {
+      setSubmitStatus('❌ Submission failed');
+      console.log('❌ AddressBook: Exception caught:', error);
+      console.log('❌ AddressBook: Error message:', error.message);
+      console.log('❌ AddressBook: Error stack:', error.stack);
+      log('Error submitting address book entry:', error);
+      let errorMsg = error.message || 'Failed to add address to address book';
+      setSubmitError(errorMsg);
+      Alert.alert(
+        'Error Adding Address ❌',
+        `Failed to add address to your address book.\n\nError: ${errorMsg}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      console.log('🏁 AddressBook: Submission process complete');
+      setIsSubmitting(false);
+      // Keep status message visible for a few seconds
+      setTimeout(() => {
+        setSubmitStatus('');
+      }, 3000);
+    }
   };
 
   // Render different steps
@@ -475,11 +639,21 @@ let AddressBook = () => {
 
             <View style={styles.submitButtonWrapper}>
               <StandardButton
-                title="Add to Address Book"
-                onPress={submitAddress}
-                style={styles.submitButton}
+                title={isSubmitting ? "Adding Address..." : "Add to Address Book"}
+                onPress={() => {
+                  console.log('🔥 AddressBook: Button pressed!');
+                  submitAddress();
+                }}
+                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
                 textStyle={styles.submitButtonText}
+                disabled={isSubmitting}
               />
+              {submitStatus ? (
+                <Text style={styles.submitStatusText}>{submitStatus}</Text>
+              ) : null}
+              {submitError ? (
+                <Text style={styles.submitErrorText}>{submitError}</Text>
+              ) : null}
             </View>
           </View>
         );
@@ -732,6 +906,23 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: colors.white,
     fontWeight: 'bold',
+  },
+  submitButtonDisabled: {
+    backgroundColor: colors.gray,
+    opacity: 0.6,
+  },
+  submitErrorText: {
+    color: colors.error,
+    fontSize: normaliseFont(12),
+    textAlign: 'center',
+    marginTop: scaledHeight(8),
+  },
+  submitStatusText: {
+    color: colors.primary,
+    fontSize: normaliseFont(12),
+    textAlign: 'center',
+    marginTop: scaledHeight(8),
+    fontWeight: '600',
   },
   navigationWrapper: {
     flexDirection: 'row',

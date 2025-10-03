@@ -477,7 +477,141 @@ async function runAllTests() {
       { name: 'transaction_history', apiRoute: 'transaction' },
       { name: 'fee_schedule', apiRoute: 'fee' },
       { name: 'market_status', apiRoute: 'market_status' },
-      { name: 'system_status', apiRoute: 'system_status' }
+      { name: 'system_status', apiRoute: 'system_status' },
+      
+      // === NEW APIs from example3-short.js ===
+      
+      // Sub-user Management
+      { name: 'register_sub_user', apiRoute: 'register_sub_user/test@example.com', params: {
+        userData: {
+          email: "test@example.com",
+          firstName: "Test",
+          lastName: "Person",
+          dateOfBirth: "08/08/2000",
+          gender: "Male",
+          citizenship: "GB",
+          password: "123456Qq",
+          mobileNumber: "07781234567",
+          emailPreferences: ['newsAndFeatureUpdates', 'promotionsAndSpecialOffers']
+        }
+      }},
+      { name: 'list_subusers', apiRoute: 'subusers' },
+      { name: 'subuser_apikeys', apiRoute: 'apikey/user-uuid-here' },
+      { name: 'update_user', apiRoute: 'update_user', params: {
+        userData: {
+          firstName: "Updated",
+          address_1: "10 Baker Street",
+          address_2: "London",
+          address_3: "",
+          address_4: "",
+          postcode: "NW1 6XE",
+          mobile: "07786573602"
+        },
+        params: { uuid: 'user-uuid-here' }
+      }},
+      
+      // Account Management
+      { name: 'update_gbp_account', apiRoute: 'default_account/GBP/update', params: {
+        sortCode: '12-34-56',
+        accountNumber: '12345678',
+        accountName: 'Test Person'
+      }},
+      { name: 'get_default_account_btc', apiRoute: 'default_account/BTC' },
+      { name: 'get_default_account_eth', apiRoute: 'default_account/ETH' },
+      { name: 'get_default_account_gbp', apiRoute: 'default_account/GBP' },
+      
+      // Document Upload & KYC
+      { name: 'upload_id_document', apiRoute: 'upload/iddoc/poa' },
+      { name: 'user_verification_status', apiRoute: 'user/' },
+      
+      // Transfers (Internal)
+      { name: 'transfer_btc', apiRoute: 'transfer/BTC/', params: {
+        cur: 'BTC',
+        volume: 0.01,
+        uuid: 'target-user-uuid'
+      }},
+      { name: 'transfer_eth', apiRoute: 'transfer/ETH/', params: {
+        cur: 'ETH',
+        volume: 0.1,
+        uuid: 'target-user-uuid'
+      }},
+      { name: 'transfer_gbp', apiRoute: 'transfer/GBP/', params: {
+        cur: 'GBP',
+        volume: 100,
+        uuid: 'target-user-uuid'
+      }},
+      
+      // Enhanced Deposit Details
+      { name: 'deposit_details_btc_lightning', apiRoute: 'deposit_details/BTC/LIGHTNING/1500/', params: {
+        note: 'Payment for test transaction'
+      }},
+      { name: 'deposit_details_xrp', apiRoute: 'deposit_details/XRP' },
+      
+      // Address Book Management
+      { name: 'add_address_book_entry', apiRoute: 'addressBook/BTC/CRYPTO_UNHOSTED', params: {
+        name: 'Test Address',
+        asset: 'BTC',
+        network: 'BTC',
+        address: {
+          firstname: null,
+          lastname: null,
+          business: 'Test Company',
+          address: 'tb1test-bitcoin-address',
+          dtag: null,
+          vasp: null
+        },
+        thirdparty: false
+      }},
+      { name: 'list_address_book_btc', apiRoute: 'addressBook/BTC' },
+      { name: 'list_address_book_eth', apiRoute: 'addressBook/ETH' },
+      { name: 'list_address_book_gbp', apiRoute: 'addressBook/GBP' },
+      { name: 'delete_address_book_entry', apiRoute: 'addressBook/delete/address-uuid-here' },
+      
+      // Enhanced Transaction Search
+      { name: 'transaction_search_paginated', apiRoute: 'transaction', params: {
+        search: [{}],
+        limit: 2,
+        offset: 2
+      }},
+      { name: 'transaction_search_by_text', apiRoute: 'transaction', params: {
+        search: [{ search: 'Transfer' }],
+        limit: 10
+      }},
+      { name: 'transaction_search_by_amount', apiRoute: 'transaction', params: {
+        search: [{
+          min: 9.50,
+          max: 10.00,
+          col: 'baseAssetVolume'
+        }],
+        limit: 10
+      }},
+      { name: 'transaction_search_sorted', apiRoute: 'transaction', params: {
+        search: [{}],
+        sort: ['code', 'baseAssetVolume'],
+        order: ['ASC', 'DESC'],
+        limit: 10
+      }},
+      
+      // Enhanced Trading APIs
+      { name: 'best_volume_price_private', apiRoute: 'best_volume_price/BTC/GBP', params: {
+        side: 'SELL',
+        quoteAssetVolume: '10',
+        baseOrQuoteAsset: 'quote'
+      }},
+      { name: 'sell_to_bank', apiRoute: 'sell', params: {
+        market: 'BTC/GBPX',
+        baseAssetVolume: '0.001',
+        quoteAssetVolume: '10',
+        orderType: 'IMMEDIATE_OR_CANCEL',
+        paymentMethod: 'bank'
+      }},
+      
+      // Advanced Withdrawal with Address Book
+      { name: 'withdraw_with_address_uuid', apiRoute: 'withdraw', params: {
+        address: 'address-uuid-from-address-book',
+        volume: '0.009',
+        priority: 'low'
+      }}
     ];
 
     for (const test of privateTests) {
