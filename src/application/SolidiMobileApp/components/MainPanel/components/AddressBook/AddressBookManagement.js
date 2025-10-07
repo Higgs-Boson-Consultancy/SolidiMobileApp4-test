@@ -904,20 +904,6 @@ const AddressBookManagement = () => {
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ paddingBottom: 20 }}
             >
-              {/* Test items to verify scrolling works */}
-              {Array.from({ length: 20 }, (_, i) => (
-                <View key={`test-${i}`} style={{ 
-                  height: 60, 
-                  backgroundColor: i % 2 === 0 ? '#f0f0f0' : '#e0e0e0',
-                  marginBottom: 5,
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <Text>Test Item {i + 1}</Text>
-                </View>
-              ))}
-              
-              {/* Actual address items */}
               {(filteredAddresses || []).map((item, index) => {
                 if (!item || typeof item !== 'object') {
                   return null;
@@ -942,6 +928,7 @@ const AddressBookManagement = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: '100%',
     backgroundColor: colors.white,
     position: 'relative',
   },
