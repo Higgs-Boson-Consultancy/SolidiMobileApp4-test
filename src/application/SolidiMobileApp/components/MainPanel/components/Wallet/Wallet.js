@@ -979,6 +979,56 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
     return 0; // No rate available
   };
 
+  // Navigate to CryptoContent page
+  const navigateToCrypto = (currency, balanceInfo, tickerData) => {
+    // Only allow navigation for crypto currencies
+    const isCrypto = ['BTC', 'ETH', 'XRP', 'LTC', 'ADA', 'DOT', 'LINK', 'UNI'].includes(currency);
+    if (!isCrypto) {
+      console.log(`${currency} is not a crypto currency, navigation skipped`);
+      return;
+    }
+
+    const { total } = balanceInfo;
+    const gbpValue = calculateGBPValue(currency, total, tickerData || {});
+    
+    // Get current price from ticker data
+    const currentPrice = tickerData?.[currency]?.price || 0;
+    
+    // Calculate 24h price change (mock data for now)
+    const priceChange = Math.random() * 10 - 5; // Random between -5% and +5%
+    
+    // Get crypto name mapping
+    const cryptoNames = {
+      'BTC': 'Bitcoin',
+      'ETH': 'Ethereum', 
+      'XRP': 'Ripple',
+      'LTC': 'Litecoin',
+      'ADA': 'Cardano',
+      'DOT': 'Polkadot',
+      'LINK': 'Chainlink',
+      'UNI': 'Uniswap'
+    };
+
+    // Set selected crypto data in app state
+    appState.selectedCrypto = {
+      asset: currency,
+      name: cryptoNames[currency] || currency,
+      symbol: currency,
+      balance: total.toString(),
+      currentPrice: currentPrice,
+      priceChange: priceChange,
+      portfolioValue: gbpValue.toString()
+    };
+
+    console.log(`🚀 Navigating to CryptoContent for ${currency}:`, appState.selectedCrypto);
+
+    // Navigate to CryptoContent page
+    appState.setMainPanelState({
+      mainPanelState: 'CryptoContent',
+      pageName: 'default'
+    });
+  };
+
   // Render balance list item for each currency
   let renderBalanceListItem = (currency, balanceInfo, tickerData) => {
     let { total } = balanceInfo;
@@ -1025,6 +1075,7 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
         key={currency}
         title={currency}
         description={description}
+        onPress={() => navigateToCrypto(currency, balanceInfo, tickerData)}
         left={props => (
           <View style={{ 
             justifyContent: 'center', 

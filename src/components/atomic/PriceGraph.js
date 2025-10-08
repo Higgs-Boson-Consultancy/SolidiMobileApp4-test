@@ -15,19 +15,27 @@ import logger from 'src/util/logger';
 let logger2 = logger.extend('PriceGraph ');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
-// OFFLINE MODE - Set to true to disable all API calls for layout testing
-const OFFLINE_MODE = true;
+// OFFLINE MODE - Set to false to use real data from CSV API
+const OFFLINE_MODE = false;
 
-let PriceGraph = ({assetBA, assetQA, historic_prices}) => {
+let PriceGraph = ({assetBA, assetQA, historic_prices, period, isLoading}) => {
   let appState = useContext(AppStateContext);
-  let selectedPeriod = '1D';
+  let selectedPeriod = period || '1D'; // Use the passed period or default to '1D'
   let market = assetBA + '/' + assetQA;
 
-  let [period, setPeriod] = useState(selectedPeriod);
+  let [graphPeriod, setGraphPeriod] = useState(selectedPeriod);
   let [graphMarket, setGraphMarket] = useState(market);
   let [liveData, setLiveData] = useState([]);
-  let [loading, setLoading] = useState(false);
+  let [loading, setLoading] = useState(isLoading || false);
   let [error, setError] = useState(null);
+  let [graphData, setGraphData] = useState([]);
+  let [currentPrice, setCurrentPrice] = useState(0);
+
+  // Update internal state when props change
+  useEffect(() => {
+    setGraphPeriod(period || '1D');
+    setLoading(isLoading || false);
+  }, [period, isLoading]);
 
   if(historic_prices['current']==undefined) {
     historic_prices['current'] = [];
