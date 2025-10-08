@@ -1,0 +1,18 @@
+// Gradle init script to set Node.js path for React Native
+allprojects {
+    beforeEvaluate { project ->
+        // Set Node.js path in environment
+        def nodePath = "/Users/henry/.nvm/versions/node/v22.20.0/bin"
+        def currentPath = System.getenv("PATH") ?: ""
+        def newPath = nodePath + ":" + currentPath
+        
+        // Set environment variables for this build
+        System.setProperty("PATH", newPath)
+        project.ext.set("REACT_NATIVE_NODE_PATH", nodePath + "/node")
+        
+        // Configure the node executable for React Native
+        if (project.hasProperty("react")) {
+            project.react.nodeExecutableAndArgs = [nodePath + "/node"]
+        }
+    }
+}

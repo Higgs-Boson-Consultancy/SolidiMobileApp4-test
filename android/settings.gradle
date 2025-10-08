@@ -1,3 +1,13 @@
+// Set Node.js environment before React Native module loading
+def nodeBinPath = "/Users/henry/.nvm/versions/node/v22.20.0/bin"
+def originalPath = System.getenv("PATH") ?: ""
+def newPath = nodeBinPath + ":" + originalPath
+def env = System.getenv()
+def newEnv = [:]
+newEnv.putAll(env)
+newEnv.put("PATH", newPath)
+newEnv.put("NODE_PATH", nodeBinPath + "/node")
+
 rootProject.name = 'SolidiMobileApp4'
 include ':@react-native-community_async-storage'
 project(':@react-native-community_async-storage').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-community/async-storage/android')
