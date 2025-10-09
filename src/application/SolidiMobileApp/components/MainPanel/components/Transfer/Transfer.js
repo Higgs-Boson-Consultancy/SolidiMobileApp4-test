@@ -32,7 +32,7 @@ if (typeof global.TextEncoder === 'undefined') {
 
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { Image, StyleSheet, View, ScrollView } from 'react-native';
+import { Image, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import QRCode from 'react-native-qrcode-svg';
@@ -50,6 +50,7 @@ import {
   HelperText,
   IconButton,
 } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Other imports
 import _ from 'lodash';
@@ -59,7 +60,7 @@ import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { TransferUtils, transferDataModel } from './TransferDataModel';
-import { AddressBookPicker, AddressBookModal } from 'src/components/atomic';
+import { AddressBookPicker, AddressBookModal, AddressBookSelectionPage } from 'src/components/atomic';
 
 // Logger
 import logger from 'src/util/logger';
@@ -106,6 +107,9 @@ let Transfer = () => {
 
   // Address book modal state
   let [showAddressBookModal, setShowAddressBookModal] = useState(false);
+  
+  // Address book selection modal state
+  let [showAddressBookSelectionPage, setShowAddressBookSelectionPage] = useState(false);
 
   // Error boundary effect
   useEffect(() => {
@@ -1255,16 +1259,30 @@ let Transfer = () => {
               </View>
               
               {/* Address Book Section */}
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 8, zIndex: 4000, elevation: 4000 }}>
-                <View style={{ flex: 1, zIndex: 4000, elevation: 4000 }}>
-                  <AddressBookPicker
-                    selectedAsset={selectedAsset}
-                    onAddressSelect={(address, details) => {
-                      handleAddressSelection(address, details);
-                    }}
-                    label="Choose from Address Book"
-                    placeholder="Select a saved address..."
-                  />
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Choose from Address Book</Text>
+                  <TouchableOpacity
+                    style={styles.addressBookButton}
+                    onPress={() => setShowAddressBookSelectionPage(true)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.addressBookButtonContent}>
+                      {recipientAddress ? (
+                        <View style={styles.selectedAddressContainer}>
+                          <Text style={styles.selectedAddressLabel}>Selected Address:</Text>
+                          <Text style={styles.selectedAddressText} numberOfLines={1} ellipsizeMode="middle">
+                            {recipientAddress}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.addressBookButtonPlaceholder}>
+                          Select a saved address...
+                        </Text>
+                      )}
+                      <Icon name="chevron-down" size={20} color={colors.textSecondary} />
+                    </View>
+                  </TouchableOpacity>
                 </View>
                 <IconButton
                   icon="plus"
@@ -1523,6 +1541,16 @@ let Transfer = () => {
           }
         }}
       />
+
+      {/* Address Book Selection Page */}
+      <AddressBookSelectionPage
+        visible={showAddressBookSelectionPage}
+        onClose={() => setShowAddressBookSelectionPage(false)}
+        selectedAsset={selectedAsset}
+        onSelectAddress={(address, details) => {
+          handleAddressSelection(address, details);
+        }}
+      />
     </View>
   );
   
@@ -1565,6 +1593,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  inputLabel: {
+    fontSize: normaliseFont(14),
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: scaledHeight(6),
+  },
+  addressBookButton: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: scaledWidth(12),
+    paddingVertical: scaledHeight(12),
+    minHeight: scaledHeight(48),
+  },
+  addressBookButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  addressBookButtonPlaceholder: {
+    fontSize: normaliseFont(14),
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  selectedAddressContainer: {
+    flex: 1,
+  },
+  selectedAddressLabel: {
+    fontSize: normaliseFont(12),
+    color: colors.textSecondary,
+    marginBottom: scaledHeight(2),
+  },
+  selectedAddressText: {
+    fontSize: normaliseFont(14),
+    color: colors.text,
+    fontFamily: 'monospace',
   },
 });
 

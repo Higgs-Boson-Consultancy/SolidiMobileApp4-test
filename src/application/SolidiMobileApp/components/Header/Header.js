@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 // Internal imports
 import { AppStateContext } from 'src/application/data';
@@ -80,11 +80,16 @@ let Header = (props) => {
   return (
     <View style={[styleArg, headerStyles.container]}>
       {/* Risk Warning Banner */}
-      <View style={headerStyles.riskBanner}>
+      <TouchableOpacity 
+        style={headerStyles.riskBanner}
+        onPress={() => changeState('RiskSummary')}
+        activeOpacity={0.8}
+      >
         <Text style={headerStyles.riskBannerText}>
-          ⚠️ Don't invest unless you're prepared to lose all the money you invest. This is a high-risk investment and you should not expect to be protected if something goes wrong. Take 2 mins to learn more.
+          ⚠️ Don't invest unless you're prepared to lose all the money you invest. This is a high-risk investment and you should not expect to be protected if something goes wrong. Take 2 mins to{' '}
+          <Text style={headerStyles.learnMoreText}>learn more</Text>.
         </Text>
-      </View>
+      </TouchableOpacity>
       
       {/* Main Header */}
       <View style={headerStyles.header}>
@@ -132,6 +137,14 @@ const headerStyles = StyleSheet.create({
     color: 'white',
     fontSize: normaliseFont(10),
     fontWeight: '600',
+    lineHeight: normaliseFont(14)
+  },
+  learnMoreText: {
+    textAlign: 'center',
+    color: 'white',
+    fontSize: normaliseFont(10),
+    fontWeight: '700',
+    textDecorationLine: 'underline',
     lineHeight: normaliseFont(14)
   },
   header: {

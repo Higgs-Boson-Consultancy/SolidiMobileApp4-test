@@ -53,4 +53,5 @@ export {default as SelfCategorisation} from './Questionnaires/SelfCategorisation
 export {default as AddressBook} from './AddressBook';
 export {default as Wallet} from './Wallet/Wallet';
 export {default as DepositInstructions} from './DepositInstructions';
+export {default as RiskSummary} from './RiskSummary/RiskSummary';
 

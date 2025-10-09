@@ -24,11 +24,22 @@
 - [x] If the app has no credentials / authenticated, any page redirect to the login page
 - [x] save the credentials to its cahce, so that even the app reopen, no need to be login again. 
 - [x] Address book list should auto changed according to asset type selected.
+- [x] In Transfer page, Choose from Address Book. Instead of dropdown box, use page load by model, like Add address book, load the Address Book List page, and get the selection if click one of the address in the list.
+- [x] Remove Explore item in Navigation Bar
+- [x] In Assets page, remove Total Portfolio Value block, remove Title component, the list style should reference on address book list. 
+- [x] Can the Address Book Model in Transfer is, to load the Address Book Page instead of another. 
+- In Assets page, use crypto icon that wallet page using. And just show the live price on the right. No need bullet about whether API data/ Demo data. No need any information about my assets, it's a public live assets information. 
+- Check and Update the upload functions and API in Identity Verification page. 
+- Set the index page to login page if unauthenticated, otherwise, set to the Trade page
+- In Deposit page, the list of bank, using icon instead of the whole row list. Also, use Grid list, 6 items per row. 
 
 
+## Latest Updates - October 8, 2025
+- **Transfer Address Book Modal**: Replaced dropdown with slide-up modal (`AddressBookSelectionModal`) for better mobile UX, matching the add address modal behavior
+- **Navigation Cleanup**: Removed 'Explore' item from footer navigation, streamlining to 4 essential items (Trade, Assets, Wallet, Transfer)
+- **Assets Page Redesign**: Complete layout simplification - removed title component and portfolio summary block, redesigned asset list to match address book styling for UI consistency
 
-
-## Latest Updates - September 30, 2025
+## Previous Updates - September 30, 2025
 - **Title Field Fixed**: Resolved disabled appearance by adding fallback text "Select Title" when field is empty
 - **Mobile Country Code Selector**: Implemented Alert-based country code selection for mobile number field using Register page pattern
 - **Country Dropdown Fixed**: Converted from unreliable Menu component to TouchableOpacity + Alert-based selection for better mobile UX
@@ -59,6 +70,15 @@
 ### ✅ Settings & Navigation
 - **Security Section Removed**: Cleaned up Settings page by removing unused Security section
 - **Consistent UI Patterns**: Standardized dropdown behavior using Alert-based selection across the app
+
+### ✅ UI/UX Improvements (October 2025)
+- **Address Book Modal Integration**: Created reusable `AddressBookSelectionModal` component for Transfer page, replacing dropdown with mobile-friendly slide-up modal
+- **Navigation Streamlining**: Removed 'Explore' tab from footer navigation, focusing on core functionality (Trade, Assets, Wallet, Transfer)
+- **Assets Page Redesign**: Complete layout overhaul with address book-inspired list styling:
+  - Removed title header and portfolio summary for cleaner interface
+  - Implemented consistent row-based layout with icon, content, and value sections
+  - Added proper spacing, borders, and typography matching address book design
+  - Enhanced mobile usability with better touch targets and visual hierarchy
 
 ### ✅ Crypto Distribution & APIs
 - **Real API Integration**: Configured Assets page to use live balance and ticker APIs instead of dummy data

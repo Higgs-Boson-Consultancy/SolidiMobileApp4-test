@@ -123,7 +123,6 @@ class CoinGeckoAPI {
       'USDT': 'tether',
       'USDC': 'usd-coin',
       'BNB': 'binancecoin',
-      'SOL': 'solana',
       'MATIC': 'matic-network',
       'AVAX': 'avalanche-2',
     };

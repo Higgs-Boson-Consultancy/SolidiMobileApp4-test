@@ -8,6 +8,8 @@ import PriceGraph from './PriceGraph';
 import QRScanner from '../QRScanner/QRScanner';
 import AddressBookPicker from './AddressBookPicker';
 import AddressBookModal from './AddressBookModal';
+import AddressBookSelectionPage from './AddressBookSelectionPage';
+import RiskSummaryModal from './RiskSummaryModal';
 
 export {
   Button,
@@ -19,4 +21,6 @@ export {
   QRScanner,
   AddressBookPicker,
   AddressBookModal,
+  AddressBookSelectionPage,
+  RiskSummaryModal,
 };

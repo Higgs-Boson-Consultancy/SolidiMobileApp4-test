@@ -56,6 +56,7 @@ export const mainPanelStates = [
   'AddressBook',
   'Wallet',
   'DepositInstructions',
+  'RiskSummary',
 ];
 
 export default mainPanelStates;

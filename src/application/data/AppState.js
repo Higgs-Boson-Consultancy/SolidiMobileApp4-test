@@ -57,7 +57,7 @@ let autoLoginOnDevAndStag = false; // Only used during development (i.e. on 'dev
 let autoLoginWithStoredCredentials = true; // Auto-login with stored API credentials in dev/stage mode (saves re-entering credentials after code updates)
 let preserveRegistrationData = false; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
 // - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
-let developmentModeBypass = true; // Skip network calls and use sample data when server is unreachable
+let developmentModeBypass = false; // Skip network calls and use sample data when server is unreachable
 let bypassAuthentication = true; // Skip authentication checks to view all page designs
 import appTier from 'src/application/appTier'; // dev / stag / prod.
 
@@ -124,6 +124,16 @@ const sampleData = {
       "price_usd": "2850.75", "change_24h": "-1.20%", "is_active": true
     },
     {
+      "key": "LTC", "name": "Litecoin", "decimal_places": 8, "group": "crypto",
+      "icon_url": "https://static.solidi.co/crypto_icons/LTC.png", 
+      "price_usd": "85.42", "change_24h": "+1.80%", "is_active": true
+    },
+    {
+      "key": "XRP", "name": "Ripple", "decimal_places": 6, "group": "crypto",
+      "icon_url": "https://static.solidi.co/crypto_icons/XRP.png", 
+      "price_usd": "0.52", "change_24h": "-0.95%", "is_active": true
+    },
+    {
       "key": "GBP", "name": "British Pound", "decimal_places": 2, "group": "fiat",
       "icon_url": "https://static.solidi.co/fiat_icons/GBP.png",
       "price_usd": "1.25", "change_24h": "+0.05%", "is_active": true
@@ -142,6 +152,14 @@ const sampleData = {
     {
       "asset1": "ETH", "asset2": "GBP", "price": "2280.60",
       "change_24h": "-1.25%", "volume_24h": "850000", "is_active": true
+    },
+    {
+      "asset1": "LTC", "asset2": "GBP", "price": "68.35",
+      "change_24h": "+1.80%", "volume_24h": "420000", "is_active": true
+    },
+    {
+      "asset1": "XRP", "asset2": "GBP", "price": "0.42",
+      "change_24h": "-0.95%", "volume_24h": "650000", "is_active": true
     },
     {
       "asset1": "BTC", "asset2": "EUR", "price": "41850.25",
@@ -676,6 +694,22 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           email: autoLoginCredentials['email'],
           password: autoLoginCredentials['password']
         });
+      }
+      
+      // Auto-login with stored credentials for all environments (if available)
+      if (!this.state.user.isAuthenticated) {
+        try {
+          console.log('🔐 APPSTATE: Attempting auto-login with stored credentials...');
+          let autoLoginResult = await this.state.autoLoginWithStoredCredentials();
+          if (autoLoginResult === "SUCCESS") {
+            console.log('✅ APPSTATE: Auto-login successful!');
+          } else {
+            console.log('ℹ️ APPSTATE: No stored credentials found for auto-login');
+          }
+        } catch (error) {
+          console.log('⚠️ APPSTATE: Auto-login failed:', error.message);
+          // Don't throw error - just continue without auto-login
+        }
       }
     }
 
