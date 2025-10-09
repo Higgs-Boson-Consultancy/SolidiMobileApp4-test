@@ -1,0 +1,414 @@
+// React imports
+import React, { useContext, useState } from 'react';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Text } from 'react-native';
+
+// Internal imports
+import AppStateContext from 'src/application/data';
+import { colors, sharedStyles, sharedColors } from 'src/constants';
+import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('Explore');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+let Explore = () => {
+  console.log('🔍 Explore component rendering...');
+  let appState = useContext(AppStateContext);
+  
+  return (
+    <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
+      
+      <View style={{ padding: 16, backgroundColor: colors.primary }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+          Explore - Debug Version
+        </Text>
+      </View>
+
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            Questionnaires
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Select and complete any available questionnaire or form.
+          </Text>
+          <Text style={{ color: '#888', fontStyle: 'italic' }}>
+            Component simplified for debugging - no react-native-paper dependencies
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+});
+
+export default Explore;
+
+let Explore = () => {
+  console.log('🔍 Explore component rendering...');
+  let appState = useContext(AppStateContext);
+  
+  return (
+    <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
+      
+      <View style={{ padding: 16, backgroundColor: colors.primary }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+          Explore - Debug Version
+        </Text>
+      </View>
+
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            Questionnaires
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Select and complete any available questionnaire or form.
+          </Text>
+          <Text style={{ color: '#888', fontStyle: 'italic' }}>
+            Component simplified for debugging - no react-native-paper dependencies
+          </Text>
+        </View>
+        
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            Crypto Content
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Browse crypto-related content and articles.
+          </Text>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: colors.primary,
+              padding: 12,
+              borderRadius: 6,
+              alignItems: 'center'
+            }}
+            onPress={() => {
+              appState.setMainPanelState({
+                mainPanelState: 'CryptoContent',
+                pageName: 'default'
+              });
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '600' }}>
+              Browse Content
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+  return (
+    <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
+      
+      <View style={{ padding: 16, backgroundColor: colors.primary }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+          Explore
+        </Text>
+      </View>
+
+      {/* Content */}
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        
+        {/* Questionnaires Section */}
+        <Card style={{ marginBottom: 16 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
+              Questionnaires
+            </Text>
+            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+              Select and complete any available questionnaire or form.
+            </Text>
+              
+              {/* Dropdown Selector */}
+              <TouchableOpacity 
+                style={styles.dropdown}
+                onPress={() => setShowDropdown(true)}
+              >
+                <Text style={styles.dropdownText}>
+                  {selectedForm ? availableForms[selectedForm] : 'Select a form...'}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
+
+              {/* Dropdown Modal */}
+              <Modal
+                visible={showDropdown}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDropdown(false)}
+              >
+                <TouchableOpacity 
+                  style={styles.modalOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowDropdown(false)}
+                >
+                  <View style={styles.dropdownModal}>
+                    <Text style={styles.modalTitle}>Select a Form</Text>
+                    <ScrollView style={styles.formList}>
+                      {Object.entries(availableForms).map(([key, label]) => (
+                        <TouchableOpacity
+                          key={key}
+                          style={styles.formItem}
+                          onPress={() => handleFormSelect(key)}
+                        >
+                          <Text style={styles.formItemText}>{label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                    <TouchableOpacity 
+                      style={styles.cancelButton}
+                      onPress={() => setShowDropdown(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+          </Card.Content>
+        </Card>
+
+        {/* Authentication Debug Panel */}
+        <Card style={{ marginBottom: 16, backgroundColor: appState.user.isAuthenticated ? '#e8f5e8' : '#fff3cd' }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
+              🔐 Authentication Status
+            </Text>
+            <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+              Status: {appState.user.isAuthenticated ? '✅ Logged In' : '❌ Not Logged In'}
+            </Text>
+            {appState.user.isAuthenticated && (
+              <Text variant="bodySmall" style={{ marginBottom: 16, color: '#666' }}>
+                User: {appState.user.email || 'Mock User'}
+              </Text>
+            )}
+            
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {!appState.user.isAuthenticated ? (
+                <Button 
+                  mode="contained" 
+                  onPress={() => {
+                    appState.setMainPanelState({
+                      mainPanelState: 'Login',
+                      pageName: 'default'
+                    });
+                  }}
+                  icon="login"
+                  compact
+                >
+                  Go to Login
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    mode="outlined" 
+                    onPress={() => {
+                      appState.setMainPanelState({
+                        mainPanelState: 'Assets',
+                        pageName: 'default'
+                      });
+                    }}
+                    icon="wallet"
+                    compact
+                  >
+                    Assets
+                  </Button>
+                  <Button 
+                    mode="outlined" 
+                    onPress={() => {
+                      appState.setMainPanelState({
+                        mainPanelState: 'History',
+                        pageName: 'default'
+                      });
+                    }}
+                    icon="history"
+                    compact
+                  >
+                    History
+                  </Button>
+                  <Button 
+                    mode="outlined" 
+                    onPress={() => {
+                      appState.setMainPanelState({
+                        mainPanelState: 'Settings',
+                        pageName: 'default'
+                      });
+                    }}
+                    icon="cog"
+                    compact
+                  >
+                    Settings
+                  </Button>
+                  <Button 
+                    mode="text" 
+                    onPress={() => {
+                      appState.logout();
+                    }}
+                    icon="logout"
+                    compact
+                    textColor="#d32f2f"
+                  >
+                    Logout
+                  </Button>
+                </>
+              )}
+            </View>
+
+            {/* Protected Pages List */}
+            {appState.user.isAuthenticated && (
+              <>
+                <Text variant="bodySmall" style={{ marginTop: 16, marginBottom: 8, fontWeight: '600' }}>
+                  🔒 Protected Pages (Require Authentication):
+                </Text>
+                <Text variant="bodySmall" style={{ color: '#666', lineHeight: 18 }}>
+                  Assets, History, Settings, Send, Receive, Trade (Buy/Sell), Bank Accounts, Personal Details, Security, Payments, Notifications
+                </Text>
+              </>
+            )}
+          </Card.Content>
+        </Card>
+
+        {/* Navigation Index */}
+        <Card style={{ marginBottom: 16 }}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
+              App Navigation Index
+            </Text>
+            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+              Access all pages and features through the comprehensive navigation index.
+            </Text>
+            <Button 
+              mode="contained" 
+              onPress={() => {
+                appState.setMainPanelState({
+                  mainPanelState: 'NavigationDebug',
+                  pageName: 'default'
+                });
+              }}
+              style={{ marginTop: 16 }}
+              contentStyle={{ paddingVertical: 4 }}
+            >
+              Open Navigation Index
+            </Button>
+          </Card.Content>
+        </Card>
+
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownModal: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    width: '90%',
+    maxHeight: '80%',
+    paddingVertical: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  formList: {
+    maxHeight: 400,
+  },
+  formItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  formItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  cancelButton: {
+    marginTop: 16,
+    marginHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+});
+
+export default Explore;

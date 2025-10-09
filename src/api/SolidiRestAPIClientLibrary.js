@@ -1,5 +1,6 @@
 // React imports
 import React, { useRef } from 'react';
+import { Platform } from 'react-native';
 
 // Imports
 import _ from 'lodash';
@@ -170,7 +171,15 @@ export default class SolidiRestAPIClientLibrary {
     // ===== API CALL DETECTION END =====
     
     let path = `/api2/${apiVersion}/${apiRoute}`;
-    let uri = 'https://' + this.domain + path;
+    // Use relative URLs on web to enable proxy, absolute URLs on mobile
+    let uri;
+    if (Platform.OS === 'web') {
+      uri = path; // Use relative URL for web proxy
+      console.log('🌐 WEB: Using relative URL for proxy:', uri);
+    } else {
+      uri = 'https://' + this.domain + path; // Use absolute URL for mobile
+      console.log('📱 MOBILE: Using absolute URL:', uri);
+    }
     if (params == null) params = {};
     if (_.keys(params).length > 0) {
       if ('GET HEAD'.split().includes(httpMethod)) {

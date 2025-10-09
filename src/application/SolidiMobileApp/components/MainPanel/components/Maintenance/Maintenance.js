@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Linking, Text, StyleSheet, View, ScrollView, Image } from 'react-native';
+import { Linking, Text, StyleSheet, View, ScrollView, Image, Platform } from 'react-native';
 
 // Other imports
 import _ from 'lodash';
@@ -195,8 +195,21 @@ let styleButton = StyleSheet.create({
   },
 });
 
-const {width, height} = Image.resolveAssetSource(ImageLookup['maintenance']);
-let nheight = baseScreenWidth * (height/width);
+// Get image dimensions - React Native Web compatible
+let width, height, nheight;
+if (Platform.OS === 'web') {
+  // For web, we need to provide fallback dimensions since Image.resolveAssetSource doesn't exist
+  // Based on the original image: dreamstime_xl_30079286-50percent.png
+  width = 1200; // approximate width
+  height = 800; // approximate height
+  nheight = baseScreenWidth * (height/width);
+} else {
+  // For mobile, use the original resolveAssetSource
+  const {width: imgWidth, height: imgHeight} = Image.resolveAssetSource(ImageLookup['maintenance']);
+  width = imgWidth;
+  height = imgHeight;
+  nheight = baseScreenWidth * (height/width);
+}
 
 let craneImage = StyleSheet.create({
   image: {

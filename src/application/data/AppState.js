@@ -554,9 +554,13 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (caller) msg += ` (called from ${caller})`;
       log(msg);
       this.state.logEntireStateHistory();
-      // Create a new event listener for the Android Back Button.
-      // This needs to occur on every page.
-      this.state.androidBackButtonHandler = BackHandler.addEventListener("hardwareBackPress", this.state.androidBackButtonAction);
+      // Create a new event listener for the Android Back Button (mobile only).
+      if (Platform.OS !== 'web') {
+        this.state.androidBackButtonHandler = BackHandler.addEventListener("hardwareBackPress", this.state.androidBackButtonAction);
+      } else {
+        console.log('🌐 AppState: Skipping BackHandler setup on web platform');
+        this.state.androidBackButtonHandler = null;
+      }
       // Create public API client.
       console.log('🔍 APPSTATE: Checking API client creation...');
       console.log('🔍 APPSTATE: this.state.apiClient exists:', !!this.state.apiClient);
@@ -3407,8 +3411,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         this.state.decrementStateHistory();
         return true;
       } else {
-        // Exit the app.
-        BackHandler.exitApp();
+        // Exit the app (mobile only).
+        if (Platform.OS !== 'web') {
+          BackHandler.exitApp();
+        } else {
+          console.log('🌐 AppState: BackHandler.exitApp not available on web, ignoring');
+        }
         return false;
       }
     }
@@ -3445,7 +3453,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       decrementStateHistory: this.decrementStateHistory,
       footerIndex: 0,
       setFooterIndex: this.setFooterIndex,
-      loadingPrices: Platform.OS === 'web' ? false : true, // Skip loading for web
+      loadingPrices: true, // Enable loading for all platforms
       graphPrices: [],
       maintenanceMode: false,
       setMaintenanceMode: this.setMaintenanceMode,
@@ -3775,12 +3783,19 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     // Initialise the state history.
     this.resetStateHistory();
 
-    // Load data from keychain.
-    this.loadPIN();
-    this.checkForAPICredentials();
-
-    // Start the lock-app timer.
-    this.resetLockAppTimer();
+    // Load data from keychain (mobile only).
+    if (Platform.OS !== 'web') {
+      this.loadPIN();
+      this.checkForAPICredentials();
+      
+      // Start the lock-app timer (mobile only).
+      this.resetLockAppTimer();
+    } else {
+      console.log('🌐 AppState: Skipping mobile-only initialization on web platform');
+      // For web, set default states without keychain operations
+      this.state.user.pin = '';
+      this.state.user.apiCredentialsFound = false;
+    }
 
 
 

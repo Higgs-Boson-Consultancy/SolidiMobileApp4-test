@@ -20,6 +20,8 @@ import { PaperProvider } from 'react-native-paper';
 import { AppStateProvider } from '../data';
 import { theme } from '../../constants';
 import ErrorBoundary from '../../components/web/ErrorBoundary';
+// Universal Theme System
+import { ThemeProvider, useTheme } from '../../styles/ThemeProvider';
 
 // Disable Inspector completely in development
 if (__DEV__) {
@@ -41,8 +43,16 @@ import logger from '../../util/logger';
 let logger2 = logger.extend('App');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
-let App = () => {
-  log('========== start: helloWorld ==========');
+// Inner App component that uses the theme
+const AppContent = () => {
+  const { theme: universalTheme, colors, isWeb } = useTheme();
+  
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+  });
 
   const initialFunction = () => {
     try {
@@ -69,18 +79,31 @@ let App = () => {
     <SafeAreaView style={styles.container}>
       <ErrorBoundary>
         <PaperProvider theme={theme}>
-          <AppStateProvider />
+          <AppStateProvider>
+            {/* AppStateProvider will render its own SafeAreaView and full app structure */}
+          </AppStateProvider>
         </PaperProvider>
       </ErrorBoundary>
     </SafeAreaView>
-  )
+  );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-  },
-});
+let App = () => {
+  log('========== start: helloWorld ==========');
+
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+};
+
+// Remove old hardcoded styles - now using theme
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#f0f0f0',
+//   },
+// });
 
 export default App;

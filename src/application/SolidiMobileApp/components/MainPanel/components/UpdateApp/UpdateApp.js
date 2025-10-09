@@ -170,9 +170,22 @@ let styleButton = StyleSheet.create({
   },
 });
 
+// Get image dimensions - React Native Web compatible
+let width, height, nheight;
+if (Platform.OS === 'web') {
+  // For web, we need to provide fallback dimensions since Image.resolveAssetSource doesn't exist
+  // Based on the original image: dreamstime_xxl_98694463-cropped-rotated.png
+  width = 1024; // approximate width
+  height = 768; // approximate height
+  nheight = baseScreenWidth * (height/width);
+} else {
+  // For mobile, use the original resolveAssetSource
+  const {width: imgWidth, height: imgHeight} = Image.resolveAssetSource(ImageLookup['update_required']);
+  width = imgWidth;
+  height = imgHeight;
+  nheight = baseScreenWidth * (height/width);
+}
 
-const {width, height} = Image.resolveAssetSource(ImageLookup['update_required']);
-let nheight = baseScreenWidth * (height/width);
 let updateImage = StyleSheet.create({
   image: {
     width: baseScreenWidth * 0.3,

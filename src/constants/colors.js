@@ -1,33 +1,46 @@
 
+// Legacy colors - now integrated with Universal Theme System
+// Import the universal theme for consistency
+import { baseTheme } from '../styles/universalTheme';
+
 export const colors = {
-  defaultBackground: 'white',
-  mainPanelBackground: 'white',
-  unavailableButton: 'white',
-  footerPanelButton: 'white',
-  buttonText: '#007AFF', // type of blue.
-  standardButton: 'rgb(20, 80, 255)',
-  standardButtonText: 'white',
-  linkText: 'rgb(29, 117, 253)',
-  greyedOutIcon: '#5b616e',
-  selectedIcon: '#1652f0',
-  lightgrey: 'rgb(204,204,204)',
-  placeHolderTextColor: 'grey',
-  warning: '#ff6b35', // Orange-red warning color
-  red: '#f44336', // Red color for destructive actions
-  border: '#e0e0e0', // Light grey border color
+  // Primary brand colors (now theme-aware)
+  primary: baseTheme.colors.primary,
+  standardButton: baseTheme.colors.primary,
+  buttonText: baseTheme.colors.primary,
+  selectedIcon: baseTheme.colors.primary,
+  linkText: baseTheme.colors.primary,
   
-  // Additional colors for Questionnaire component
+  // Background colors
+  defaultBackground: baseTheme.colors.background,
+  mainPanelBackground: baseTheme.colors.background,
+  unavailableButton: baseTheme.colors.surface,
+  footerPanelButton: baseTheme.colors.surface,
+  
+  // Text colors
+  standardButtonText: baseTheme.colors.text.onPrimary,
+  placeHolderTextColor: baseTheme.colors.text.secondary,
+  
+  // Status colors
+  warning: baseTheme.colors.warning || '#ff6b35',
+  red: baseTheme.colors.error,
+  success: baseTheme.colors.success,
+  successBackground: baseTheme.colors.successBackground || '#e8f5e8',
+  
+  // UI colors
+  greyedOutIcon: baseTheme.colors.text.disabled,
+  lightgrey: baseTheme.colors.border,
+  border: baseTheme.colors.border,
+  
+  // Direct color values (for backward compatibility)
   white: '#ffffff',
   black: '#000000',
   lightBlue: '#e3f2fd',
-  primary: '#1652f0',
   gray: '#9e9e9e',
   darkGray: '#424242',
   lightGray: '#f5f5f5',
   lightestGray: '#fafafa',
   mediumGray: '#757575',
-  success: '#4caf50',
-  successBackground: '#e8f5e8',
 }
 
 export default colors;
