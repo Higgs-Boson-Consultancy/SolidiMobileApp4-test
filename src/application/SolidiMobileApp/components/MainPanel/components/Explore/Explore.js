@@ -1,15 +1,11 @@
 // React imports
 import React, { useContext, useState } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Modal } from 'react-native';
-
-// Material Design imports
-import { Text, Card, Button } from 'react-native-paper';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, Text } from 'react-native';
 
 // Internal imports
 import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Title } from 'src/components/shared';
 
 // Logger
 import logger from 'src/util/logger';
@@ -17,236 +13,151 @@ let logger2 = logger.extend('Explore');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 let Explore = () => {
+  console.log('🔍 Explore component rendering...');
   let appState = useContext(AppStateContext);
   
-  // Available forms for dropdown
-  const availableForms = {
-    'account-purpose-questionnaire': 'Account Purpose Questionnaire',
-    'business-account-application-form': 'Business Account Application',
-    'business-account-application-review': 'Business Account Review',
-    'cryptobasket-limits-form': 'Cryptobasket Limits Form',
-    'enhanced-due-diligence-form': 'Enhanced Due Diligence',
-    'enhanced-due-diligence-review-form': 'Enhanced Due Diligence Review',
-    'finprom-categorisation': 'Financial Promotion Categorisation',
-    'finprom-suitability': 'Financial Promotion Suitability',
-    'finprom-suitability2': 'Financial Promotion Suitability 2',
-    'professional-tier-application-form': 'Professional Tier Application',
-    'professional-tier-application-review-form': 'Professional Tier Review',
-    'transaction-monitor-withdraw-questions': 'Transaction Monitor Withdraw',
-    'travel-rule-deposit-questions': 'Travel Rule Deposit',
-    'travel-rule-withdraw-questions': 'Travel Rule Withdraw',
-  };
-
-  // Dropdown state
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedForm, setSelectedForm] = useState('');
-
-  // Handle form selection
-  const handleFormSelect = (formKey) => {
-    setSelectedForm(formKey);
-    setShowDropdown(false);
-    
-    // Set the selected form in app state and navigate
-    appState.selectedQuestionnaireForm = formKey;
-    appState.setMainPanelState({
-      mainPanelState: 'Questionnaire',
-      pageName: 'default'
-    });
-  };
-
   return (
     <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
       
-      <Title>
-        Explore
-      </Title>
+      <View style={{ padding: 16, backgroundColor: colors.primary }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', textAlign: 'center' }}>
+          Explore - Debug Version
+        </Text>
+      </View>
 
-      {/* Content */}
       <ScrollView style={{ flex: 1, padding: 16 }}>
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            Questionnaires
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Select and complete any available questionnaire or form.
+          </Text>
+          <Text style={{ color: '#888', fontStyle: 'italic' }}>
+            Component simplified for debugging - no react-native-paper dependencies
+          </Text>
+        </View>
         
-        {/* Questionnaires Section */}
-        <Card style={{ marginBottom: 16 }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              Questionnaires
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            Crypto Content
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Browse crypto-related content and articles.
+          </Text>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: colors.primary,
+              padding: 12,
+              borderRadius: 6,
+              alignItems: 'center'
+            }}
+            onPress={() => {
+              appState.setMainPanelState({
+                mainPanelState: 'CryptoContent',
+                pageName: 'default'
+              });
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '600' }}>
+              Browse Content
             </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
-              Select and complete any available questionnaire or form.
-            </Text>
-              
-              {/* Dropdown Selector */}
-              <TouchableOpacity 
-                style={styles.dropdown}
-                onPress={() => setShowDropdown(true)}
-              >
-                <Text style={styles.dropdownText}>
-                  {selectedForm ? availableForms[selectedForm] : 'Select a form...'}
-                </Text>
-                <Text style={styles.dropdownArrow}>▼</Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
 
-              {/* Dropdown Modal */}
-              <Modal
-                visible={showDropdown}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowDropdown(false)}
-              >
-                <TouchableOpacity 
-                  style={styles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowDropdown(false)}
-                >
-                  <View style={styles.dropdownModal}>
-                    <Text style={styles.modalTitle}>Select a Form</Text>
-                    <ScrollView style={styles.formList}>
-                      {Object.entries(availableForms).map(([key, label]) => (
-                        <TouchableOpacity
-                          key={key}
-                          style={styles.formItem}
-                          onPress={() => handleFormSelect(key)}
-                        >
-                          <Text style={styles.formItemText}>{label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                    <TouchableOpacity 
-                      style={styles.cancelButton}
-                      onPress={() => setShowDropdown(false)}
-                    >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              </Modal>
-          </Card.Content>
-        </Card>
-
-        {/* Authentication Debug Panel */}
-        <Card style={{ marginBottom: 16, backgroundColor: appState.user.isAuthenticated ? '#e8f5e8' : '#fff3cd' }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              🔐 Authentication Status
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            🎨 Universal Theme System
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Test the new universal theme system that works across mobile and web platforms.
+          </Text>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: '#9c27b0',
+              padding: 12,
+              borderRadius: 6,
+              alignItems: 'center'
+            }}
+            onPress={() => {
+              appState.setMainPanelState({
+                mainPanelState: 'ThemeDemo',
+                pageName: 'default'
+              });
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '600' }}>
+              Try Theme Demo
             </Text>
-            <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-              Status: {appState.user.isAuthenticated ? '✅ Logged In' : '❌ Not Logged In'}
-            </Text>
-            {appState.user.isAuthenticated && (
-              <Text variant="bodySmall" style={{ marginBottom: 16, color: '#666' }}>
-                User: {appState.user.email || 'Mock User'}
-              </Text>
-            )}
-            
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {!appState.user.isAuthenticated ? (
-                <Button 
-                  mode="contained" 
-                  onPress={() => {
-                    appState.setMainPanelState({
-                      mainPanelState: 'Login',
-                      pageName: 'default'
-                    });
-                  }}
-                  icon="login"
-                  compact
-                >
-                  Go to Login
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    mode="outlined" 
-                    onPress={() => {
-                      appState.setMainPanelState({
-                        mainPanelState: 'Assets',
-                        pageName: 'default'
-                      });
-                    }}
-                    icon="wallet"
-                    compact
-                  >
-                    Assets
-                  </Button>
-                  <Button 
-                    mode="outlined" 
-                    onPress={() => {
-                      appState.setMainPanelState({
-                        mainPanelState: 'History',
-                        pageName: 'default'
-                      });
-                    }}
-                    icon="history"
-                    compact
-                  >
-                    History
-                  </Button>
-                  <Button 
-                    mode="outlined" 
-                    onPress={() => {
-                      appState.setMainPanelState({
-                        mainPanelState: 'Settings',
-                        pageName: 'default'
-                      });
-                    }}
-                    icon="cog"
-                    compact
-                  >
-                    Settings
-                  </Button>
-                  <Button 
-                    mode="text" 
-                    onPress={() => {
-                      appState.logout();
-                    }}
-                    icon="logout"
-                    compact
-                    textColor="#d32f2f"
-                  >
-                    Logout
-                  </Button>
-                </>
-              )}
-            </View>
+          </TouchableOpacity>
+        </View>
 
-            {/* Protected Pages List */}
-            {appState.user.isAuthenticated && (
-              <>
-                <Text variant="bodySmall" style={{ marginTop: 16, marginBottom: 8, fontWeight: '600' }}>
-                  🔒 Protected Pages (Require Authentication):
-                </Text>
-                <Text variant="bodySmall" style={{ color: '#666', lineHeight: 18 }}>
-                  Assets, History, Settings, Send, Receive, Trade (Buy/Sell), Bank Accounts, Personal Details, Security, Payments, Notifications
-                </Text>
-              </>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* Navigation Index */}
-        <Card style={{ marginBottom: 16 }}>
-          <Card.Content style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 12, fontWeight: '600' }}>
-              App Navigation Index
+        <View style={{ 
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          padding: 16,
+          marginVertical: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+            API & Icon Diagnostics
+          </Text>
+          <Text style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
+            Test API connectivity and icon loading to troubleshoot issues.
+          </Text>
+          <TouchableOpacity 
+            style={{
+              backgroundColor: '#e74c3c',
+              padding: 12,
+              borderRadius: 6,
+              alignItems: 'center'
+            }}
+            onPress={() => {
+              appState.setMainPanelState({
+                mainPanelState: 'Diagnostics',
+                pageName: 'default'
+              });
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '600' }}>
+              Run Diagnostics
             </Text>
-            <Text variant="bodyMedium" style={{ color: '#666', lineHeight: 22, marginBottom: 16 }}>
-              Access all pages and features through the comprehensive navigation index.
-            </Text>
-            <Button 
-              mode="contained" 
-              onPress={() => {
-                appState.setMainPanelState({
-                  mainPanelState: 'NavigationDebug',
-                  pageName: 'default'
-                });
-              }}
-              style={{ marginTop: 16 }}
-              contentStyle={{ paddingVertical: 4 }}
-            >
-              Open Navigation Index
-            </Button>
-          </Card.Content>
-        </Card>
-
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -255,73 +166,7 @@ let Explore = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: '#333',
-    flex: 1,
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#666',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dropdownModal: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    width: '90%',
-    maxHeight: '80%',
-    paddingVertical: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  formList: {
-    maxHeight: 400,
-  },
-  formItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  formItemText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  cancelButton: {
-    marginTop: 16,
-    marginHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
+    backgroundColor: '#f5f5f5',
   },
 });
 

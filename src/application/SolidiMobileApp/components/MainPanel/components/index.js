@@ -6,6 +6,8 @@ export {default as History} from './History/History';
 export {HistoryDataModel, TransactionDataModel, OrderDataModel} from './History/HistoryDataModel';
 export {default as Assets} from './Assets/Assets';
 export {default as Explore} from './Explore/Explore';
+export {default as Diagnostics} from './Diagnostics/Diagnostics';
+export {default as ThemeDemo} from '../../../../../components/ThemeDemo';
 export {default as CryptoContent} from './CryptoContent/CryptoContent';
 export {default as Transfer} from './Transfer/Transfer';
 export {default as Notifications} from './Notifications/Notifications';
@@ -32,7 +34,15 @@ export {default as Error} from './Error/Error';
 export {default as Maintenance} from './Maintenance/Maintenance';
 export {default as SendSuccessful} from './SendSuccessful/SendSuccessful';
 export {default as Authenticate} from './Authenticate/Authenticate';
-export {default as Register} from './Register/Register';
+// Temporarily skip Register component to isolate WeakMap errors
+import React from 'react';
+import { Platform, View, Text } from 'react-native';
+export const Register = () => React.createElement(View, { 
+  style: { padding: 20, alignItems: 'center', flex: 1, justifyContent: 'center' } 
+}, 
+  React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, 'Registration'),
+  React.createElement(Text, { style: { fontSize: 16, color: '#666', textAlign: 'center' } }, 'Registration form temporarily disabled on web during development')
+);
 export {default as SupportTools} from './SupportTools/SupportTools';
 export {default as LimitsExceeded} from './LimitsExceeded/LimitsExceeded';
 export {default as IdentityVerification} from './IdentityVerification/IdentityVerification';
@@ -44,7 +54,13 @@ export {default as CloseSolidiAccount} from './CloseSolidiAccount/CloseSolidiAcc
 export {default as UpdateApp} from './UpdateApp/UpdateApp';
 export {default as RegisterConfirm} from './RegisterConfirm/RegisterConfirm';
 export {default as RegisterConfirm2} from './RegisterConfirm2/RegisterConfirm2';
-export {default as AccountUpdate} from './AccountUpdate/AccountUpdate';
+// Temporarily skip AccountUpdate component due to same WeakMap error pattern
+export const AccountUpdate = () => React.createElement(View, { 
+  style: { padding: 20, alignItems: 'center', flex: 1, justifyContent: 'center' } 
+}, 
+  React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, 'Account Update'),
+  React.createElement(Text, { style: { fontSize: 16, color: '#666', textAlign: 'center' } }, 'Account update form temporarily disabled on web during development')
+);
 export {default as AccountRestricted} from './AccountRestricted/AccountRestricted';
 export {default as NavigationDebug} from './NavigationDebug/NavigationDebug';
 export {default as Questionnaire} from './Questionnaire/Questionnaire';

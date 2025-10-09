@@ -21,6 +21,8 @@ module.exports = {
       'react-native$': 'react-native-web',
       // Map source directory for easier imports
       'src': path.resolve(__dirname, 'src'),
+      // React Native Paper web compatibility layer to prevent WeakMap errors
+      'react-native-paper': path.resolve(__dirname, 'src/components/web/react-native-paper-web.js'),
       // Mobile-only library stubs for web compatibility
       'react-native-qrcode-scanner': path.resolve(__dirname, 'src/components/web/stubs/QRCodeScannerStub.js'),
       'react-native-image-picker': path.resolve(__dirname, 'src/components/web/stubs/ImagePickerStub.js'),
@@ -215,6 +217,22 @@ module.exports = {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
       'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
     },
+    // Proxy API calls to avoid CORS issues
+    proxy: [
+      {
+        context: ['/api2', '/v1'],
+        target: 'https://t2.solidi.co',
+        secure: true,
+        changeOrigin: true,
+        logLevel: 'debug',
+        onProxyReq: (proxyReq, req, res) => {
+          console.log('🔄 Proxying:', req.method, req.url, '→', proxyReq.path);
+        },
+        onError: (err, req, res) => {
+          console.error('❌ Proxy error:', err);
+        }
+      }
+    ],
   },
 
   // Source maps for debugging

@@ -207,7 +207,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#fff',
     marginBottom: 30,
     ...(Platform.OS === 'web' && {
-      animation: 'spin 1s linear infinite',
+      animationKeyframes: 'spin',
+      animationDuration: '1s',
+      animationTimingFunction: 'linear',
+      animationIterationCount: 'infinite',
     }),
   },
   title: {

@@ -25,18 +25,44 @@ self.addEventListener('install', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
+  // Don't cache API calls - let them pass through to the proxy
+  if (event.request.url.includes('/api2/') || event.request.url.includes('/v1/')) {
+    console.log('🚫 Skipping cache for API call:', event.request.url);
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
-        return response || fetch(event.request);
+        if (response) {
+          console.log('📦 Serving from cache:', event.request.url);
+          return response;
+        }
+        
+        console.log('🌐 Fetching from network:', event.request.url);
+        return fetch(event.request).catch((error) => {
+          console.log('❌ Network fetch failed:', error);
+          // Return a fallback response for navigation requests
+          if (event.request.destination === 'document') {
+            return caches.match('/');
+          }
+          // For other requests, throw the error to prevent invalid Response conversion
+          throw error;
+        });
       })
       .catch((error) => {
-        console.log('Fetch failed:', error);
+        console.log('🚨 Cache match failed:', error);
         // Return a fallback response for navigation requests
         if (event.request.destination === 'document') {
           return caches.match('/');
         }
+        // Don't try to convert invalid responses
+        return new Response('Service Worker Error', { 
+          status: 503, 
+          statusText: 'Service Worker Error' 
+        });
       })
   );
 });

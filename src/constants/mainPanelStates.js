@@ -6,6 +6,8 @@ export const mainPanelStates = [
   'Assets',
   'CryptoContent',
   'Explore',
+  'Diagnostics',
+  'ThemeDemo',
   'Transfer',
 
   'History',

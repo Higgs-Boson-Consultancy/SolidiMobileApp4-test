@@ -42,6 +42,8 @@ let ImageButton = ({
   let Touchable = Platform.select({
     ios: TouchableHighlight,
     android: TouchableHighlight,
+    web: TouchableHighlight,
+    default: TouchableHighlight,
   });
 
   let titleExists = !!title;

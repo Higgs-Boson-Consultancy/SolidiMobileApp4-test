@@ -2,6 +2,10 @@ import { AppRegistry, Platform } from 'react-native';
 import ApplicationRoot from '../src/application';
 import { name as appName } from '../app.json';
 
+// Load web-specific overrides and debugging helpers first
+import '../src/components/web/webOverrides';
+import '../src/components/web/webAppStateOverrides';
+
 // Configure the app for web
 console.log('🌐 Starting Solidi Web Application...');
 console.log('Platform:', Platform.OS);

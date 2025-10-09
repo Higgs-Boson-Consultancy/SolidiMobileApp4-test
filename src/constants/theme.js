@@ -1,4 +1,44 @@
-import { MD3LightTheme as DefaultTheme } from 'react-native-paper';
+import { Platform } from 'react-native';
+import { getPlatformTheme } from '../styles/universalTheme';
+
+// Get the universal theme for current platform
+const universalTheme = getPlatformTheme(false, Platform.OS === 'web');
+
+// Web-compatible theme fallback with universal theme integration
+const webTheme = {
+  colors: {
+    primary: universalTheme.colors.primary,
+    secondary: universalTheme.colors.secondary,
+    background: universalTheme.colors.background,
+    surface: universalTheme.colors.surface,
+    error: universalTheme.colors.error,
+    onPrimary: universalTheme.colors.text.onPrimary,
+    onSecondary: universalTheme.colors.text.onSecondary,
+    onBackground: universalTheme.colors.text.onBackground,
+    onSurface: universalTheme.colors.text.onSurface,
+    onError: universalTheme.colors.text.onPrimary
+  }
+};
+
+let DefaultTheme;
+if (Platform.OS === 'web') {
+  DefaultTheme = webTheme;
+} else {
+  try {
+    const { MD3LightTheme } = require('react-native-paper');
+    // Merge with universal theme for consistency
+    DefaultTheme = {
+      ...MD3LightTheme,
+      colors: {
+        ...MD3LightTheme.colors,
+        ...universalTheme.colors
+      }
+    };
+  } catch (error) {
+    console.log('🌐 Using web theme fallback');
+    DefaultTheme = webTheme;
+  }
+}
 
 export const theme = {
   ...DefaultTheme,
