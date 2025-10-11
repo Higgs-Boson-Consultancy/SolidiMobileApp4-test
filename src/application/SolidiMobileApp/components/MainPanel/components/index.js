@@ -34,15 +34,9 @@ export {default as Error} from './Error/Error';
 export {default as Maintenance} from './Maintenance/Maintenance';
 export {default as SendSuccessful} from './SendSuccessful/SendSuccessful';
 export {default as Authenticate} from './Authenticate/Authenticate';
-// Temporarily skip Register component to isolate WeakMap errors
-import React from 'react';
-import { Platform, View, Text } from 'react-native';
-export const Register = () => React.createElement(View, { 
-  style: { padding: 20, alignItems: 'center', flex: 1, justifyContent: 'center' } 
-}, 
-  React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, 'Registration'),
-  React.createElement(Text, { style: { fontSize: 16, color: '#666', textAlign: 'center' } }, 'Registration form temporarily disabled on web during development')
-);
+export {default as Register} from './Register/Register';
+export {default as EmailVerification} from './EmailVerification/EmailVerification';
+export {default as PhoneVerification} from './PhoneVerification/PhoneVerification';
 export {default as SupportTools} from './SupportTools/SupportTools';
 export {default as LimitsExceeded} from './LimitsExceeded/LimitsExceeded';
 export {default as IdentityVerification} from './IdentityVerification/IdentityVerification';

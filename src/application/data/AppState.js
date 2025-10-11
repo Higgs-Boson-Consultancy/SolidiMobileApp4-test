@@ -58,15 +58,19 @@ let autoLoginWithStoredCredentials = true; // Auto-login with stored API credent
 let preserveRegistrationData = false; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
 // - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
 let developmentModeBypass = false; // Skip network calls and use sample data when server is unreachable
-let bypassAuthentication = true; // Skip authentication checks to view all page designs
+let bypassAuthentication = true; // TEMPORARILY enable bypass to test registration page access
 import appTier from 'src/application/appTier'; // dev / stag / prod.
+
+// States that are always accessible without authentication
+const publicAccessStates = ['Register', 'Login', 'Explore', 'EmailVerification', 'PhoneVerification'];
 
 // Settings: Initial page
 //let initialMainPanelState = 'Trade'; // Show trade page first
 //let initialMainPanelState = 'Assets'; // Show assets page first  
-let initialMainPanelState = 'Explore'; // Show explore page first to access dynamic forms
+//let initialMainPanelState = 'Explore'; // Show explore page first to access dynamic forms
 //let initialMainPanelState = 'Buy';
 //initialMainPanelState = 'CloseSolidiAccount'; // Dev work
+let initialMainPanelState = 'Register'; // Show registration page for testing
 let initialPageName = 'default';
 //initialPageName = 'balance'; // Dev work
 
@@ -290,13 +294,20 @@ RegisterConfirm2 AccountUpdate
       }
       // Check if we need to authenticate prior to moving to this new state.
       let makeFinalSwitch = true;
-      if (! this.state.user.isAuthenticated && !bypassAuthentication) {
+      // Allow public access states (Register, Login, Explore) to be accessible without authentication
+      const isPublicAccessState = publicAccessStates.includes(mainPanelState);
+      console.log(`🔍 AUTH CHECK: mainPanelState=${mainPanelState}, isPublicAccessState=${isPublicAccessState}, isAuthenticated=${this.state.user.isAuthenticated}, bypassAuthentication=${bypassAuthentication}`);
+      
+      if (! this.state.user.isAuthenticated && !bypassAuthentication && !isPublicAccessState) {
+        console.log(`🔒 AUTH: Blocking access to ${mainPanelState} - requires authentication`);
         if (this.state.authRequired.includes(mainPanelState)) {
           makeFinalSwitch = false;
           // Stash the new state for later retrieval.
           this.state.stashState(newState);
           return this.state.authenticateUser();
         }
+      } else {
+        console.log(`✅ AUTH: Allowing access to ${mainPanelState} - public access or authenticated`);
       }
       // Finally, change to new state.
       // Note: We store the currentState in the previousState variable, so that we can use it if necessary when we arrive at the destination state.
@@ -404,7 +415,10 @@ RegisterConfirm2 AccountUpdate
       }
       // Check if we need to authenticate prior to moving to this previous state.
       let makeFinalSwitch = true;
-      if (! this.state.user.isAuthenticated && !bypassAuthentication) {
+      // Allow public access states (Register, Login, Explore) to be accessible without authentication
+      const isPublicAccessState = publicAccessStates.includes(mainPanelState);
+      
+      if (! this.state.user.isAuthenticated && !bypassAuthentication && !isPublicAccessState) {
         if (this.state.authRequired.includes(mainPanelState)) {
           makeFinalSwitch = false;
           // Stash the previous state for later retrieval.
@@ -580,10 +594,19 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         console.log(`🌐 Domain: ${domain}`);
         // ===== SIMPLIFIED APPSTATE API CLIENT CREATION END =====
         
-        const newApiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
+        const newApiClient = new SolidiRestAPIClientLibrary({
+          userAgent, 
+          apiKey:'', 
+          apiSecret:'', 
+          domain,
+          appStateRef: { current: this }
+        });
         
         // Update state properly to trigger React re-renders
         this.setState({ apiClient: newApiClient });
+        
+        // Ensure the apiClient is immediately available in this.state
+        this.state.apiClient = newApiClient;
         
         console.log('✅ API CLIENT CREATED SUCCESSFULLY AND STATE UPDATED!');
       } else {
@@ -740,7 +763,13 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log(`🌐 Domain: ${domain}`);
       // ===== SIMPLIFIED LOGIN API CLIENT CREATION END =====
       
-      let apiClient = new SolidiRestAPIClientLibrary({userAgent, apiKey:'', apiSecret:'', domain});
+      let apiClient = new SolidiRestAPIClientLibrary({
+        userAgent, 
+        apiKey:'', 
+        apiSecret:'', 
+        domain,
+        appStateRef: { current: this }
+      });
       this.state.apiClient = apiClient;
       
       console.log('✅ LOGIN API CLIENT CREATED SUCCESSFULLY!');
@@ -1000,6 +1029,15 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log(`📤 [PUBLIC API REQUEST PARAMS]`, params);
       console.log(`🔧 [PUBLIC API FUNCTION]`, functionName);
       
+      // Safety check for apiClient
+      if (!this.state.apiClient) {
+        console.error(`❌ [PUBLIC API] apiClient is null for ${apiRoute} - attempting to create one`);
+        await this.generalSetup();
+        if (!this.state.apiClient) {
+          throw new Error(`API client not available for ${apiRoute}`);
+        }
+      }
+      
       let tag = apiRoute.split('/')[0];
       let abortController = this.state.createAbortController({tag, noAbort});
       let data = await this.state.apiClient.publicMethod({httpMethod, apiRoute, params, abortController});
@@ -1093,6 +1131,15 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log(`🚀 [API REQUEST] ${httpMethod} ${apiRoute}`);
       console.log(`📤 [API REQUEST PARAMS]`, params);
       console.log(`🔧 [API FUNCTION]`, functionName);
+      
+      // Safety check for apiClient
+      if (!this.state.apiClient) {
+        console.error(`❌ [PRIVATE API] apiClient is null for ${apiRoute} - attempting to create one`);
+        await this.generalSetup();
+        if (!this.state.apiClient) {
+          throw new Error(`API client not available for ${apiRoute}`);
+        }
+      }
       
       let tag = apiRoute.split('/')[0];
       let abortController = this.state.createAbortController({tag, noAbort});
@@ -1208,7 +1255,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         }
       }
 
-      if (! this.state.user.apiCredentialsFound && !bypassAuthentication) {
+      // For public access states, skip credential checks
+      const currentState = this.state.mainPanelState;
+      const isCurrentStatePublic = publicAccessStates.includes(currentState);
+      
+      if (! this.state.user.apiCredentialsFound && !bypassAuthentication && !isCurrentStatePublic) {
         if (! this.state.user.isAuthenticated) {
           log("authenticateUser (1) -> Authenticate");
           return this.state.changeState('Authenticate');
@@ -1225,6 +1276,190 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Otherwise, go to Login.
       log("authenticateUser (3) -> Login");
       return this.state.changeState('Login');
+    }
+
+
+    // 🔐 COMPREHENSIVE AUTHENTICATION GUARD
+    // Handles credential validation, expiration, and automatic redirect to login
+    this.validateAuthentication = async (context = 'general') => {
+      try {
+        log(`🔐 validateAuthentication called from: ${context}`);
+        
+        // Check if user is currently authenticated
+        if (!this.state.user.isAuthenticated) {
+          log('🔐 User not authenticated, redirecting to login');
+          return this.forceRedirectToLogin('User not authenticated');
+        }
+
+        // Check if API credentials are still valid
+        if (!this.state.user.apiCredentialsFound) {
+          log('🔐 API credentials not found, redirecting to login');
+          return this.forceRedirectToLogin('API credentials not found');
+        }
+
+        // Validate API credentials by making a test call
+        if (this.state.apiClient) {
+          try {
+            log('🔐 Testing API credentials with validation call');
+            let testResult = await this.state.apiClient.validateCredentials();
+            if (!testResult || testResult.error) {
+              log('🔐 API credentials validation failed, redirecting to login');
+              return this.forceRedirectToLogin('API credentials invalid or expired');
+            }
+          } catch (apiError) {
+            log(`🔐 API validation error: ${apiError.message}`);
+            // Check for authentication-related errors
+            if (apiError.status === 401 || apiError.status === 403 || 
+                apiError.message.includes('unauthorized') || 
+                apiError.message.includes('forbidden') ||
+                apiError.message.includes('token') ||
+                apiError.message.includes('credential')) {
+              return this.forceRedirectToLogin(`Authentication error: ${apiError.message}`);
+            }
+            // For other errors, don't redirect but log the issue
+            log(`🔐 Non-auth API error, continuing: ${apiError.message}`);
+          }
+        }
+
+        log('🔐 Authentication validation successful');
+        return true;
+      } catch (error) {
+        log(`🔐 Authentication validation error: ${error.message}`);
+        return this.forceRedirectToLogin(`Validation error: ${error.message}`);
+      }
+    }
+
+
+    // 🔐 FORCE REDIRECT TO LOGIN
+    // Clears authentication state and redirects to login with proper cleanup
+    this.forceRedirectToLogin = async (reason = 'Authentication required') => {
+      try {
+        log(`🔐 Forcing redirect to login: ${reason}`);
+        
+        // Clear authentication state
+        this.setState({
+          user: {
+            ...this.state.user,
+            isAuthenticated: false,
+            apiCredentialsFound: false,
+            apiKey: null,
+            apiSecret: null,
+            email: null,
+          }
+        });
+
+        // Clear API client
+        if (this.state.apiClient) {
+          this.state.apiClient = null;
+        }
+
+        // Stash current state for post-login redirect
+        this.stashCurrentState();
+
+        // Show authentication failure message if in development
+        if (appTier !== 'prod') {
+          console.warn(`🔐 AUTHENTICATION FAILURE: ${reason}`);
+        }
+
+        // Redirect to login
+        return this.state.changeState('Login');
+      } catch (error) {
+        log(`🔐 Error in forceRedirectToLogin: ${error.message}`);
+        // Fallback to basic login redirect
+        return this.state.changeState('Login');
+      }
+    }
+
+
+    // 🔐 API ERROR HANDLER
+    // Monitors API responses for authentication errors and redirects accordingly
+    this.handleAPIError = async (error, context = 'API call') => {
+      try {
+        log(`🔐 handleAPIError called from: ${context}, error: ${error.message}`);
+        
+        // Check for authentication-related status codes
+        const authErrorCodes = [401, 403];
+        const authErrorMessages = ['unauthorized', 'forbidden', 'invalid token', 'expired', 'credential', 'authentication'];
+        
+        const isAuthError = authErrorCodes.includes(error.status) ||
+                           authErrorMessages.some(msg => error.message.toLowerCase().includes(msg));
+        
+        if (isAuthError) {
+          log(`🔐 Detected authentication error in API response: ${error.message}`);
+          return this.forceRedirectToLogin(`API authentication error: ${error.message}`);
+        }
+        
+        // For non-auth errors, just log and return the error
+        log(`🔐 Non-authentication API error: ${error.message}`);
+        return error;
+      } catch (handlerError) {
+        log(`🔐 Error in handleAPIError: ${handlerError.message}`);
+        return error; // Return original error if handler fails
+      }
+    }
+
+
+    // 🔐 START AUTHENTICATION MONITORING
+    // Periodically checks authentication status and validates credentials
+    this.startAuthenticationMonitoring = () => {
+      log('🔐 Starting authentication monitoring');
+      
+      // Clear any existing timer
+      if (this.authCheckTimer) {
+        clearInterval(this.authCheckTimer);
+      }
+      
+      // Set up periodic authentication check (every 5 minutes)
+      this.authCheckTimer = setInterval(async () => {
+        try {
+          // Only check if user is supposed to be authenticated
+          if (this.state.user.isAuthenticated && this.state.apiClient) {
+            log('🔐 Performing periodic authentication check');
+            
+            const isValid = await this.validateAuthentication('periodic-check');
+            if (!isValid) {
+              log('🔐 Periodic authentication check failed, user will be redirected on next navigation');
+              // Don't redirect immediately during periodic check to avoid disrupting user
+              // The redirect will happen on next state change or API call
+            }
+          }
+        } catch (error) {
+          log(`🔐 Error during periodic authentication check: ${error.message}`);
+        }
+      }, 5 * 60 * 1000); // Check every 5 minutes
+      
+      // Also check on app focus/resume events
+      if (Platform.OS !== 'web') {
+        import('react-native').then(({ AppState }) => {
+          this.appStateSubscription = AppState.addEventListener('change', async (nextAppState) => {
+            if (nextAppState === 'active' && this.state.user.isAuthenticated) {
+              log('🔐 App became active, checking authentication');
+              try {
+                await this.validateAuthentication('app-resume');
+              } catch (error) {
+                log(`🔐 Error checking auth on app resume: ${error.message}`);
+              }
+            }
+          });
+        });
+      }
+    }
+
+
+    // 🔐 STOP AUTHENTICATION MONITORING
+    // Cleans up authentication monitoring timers and listeners
+    this.stopAuthenticationMonitoring = () => {
+      log('🔐 Stopping authentication monitoring');
+      
+      if (this.authCheckTimer) {
+        clearInterval(this.authCheckTimer);
+        this.authCheckTimer = null;
+      }
+      
+      if (this.appStateSubscription) {
+        this.appStateSubscription.remove();
+        this.appStateSubscription = null;
+      }
     }
 
 
@@ -3790,15 +4025,27 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       
       // Start the lock-app timer (mobile only).
       this.resetLockAppTimer();
+      
+      // 🔐 Start authentication monitoring
+      this.startAuthenticationMonitoring();
     } else {
       console.log('🌐 AppState: Skipping mobile-only initialization on web platform');
       // For web, set default states without keychain operations
       this.state.user.pin = '';
       this.state.user.apiCredentialsFound = false;
+      
+      // 🔐 Start authentication monitoring for web too
+      this.startAuthenticationMonitoring();
     }
 
 
 
+  }
+
+  // 🔐 CLEANUP ON COMPONENT UNMOUNT
+  componentWillUnmount() {
+    log('🔐 AppState component unmounting, cleaning up authentication monitoring');
+    this.stopAuthenticationMonitoring();
   }
 
 

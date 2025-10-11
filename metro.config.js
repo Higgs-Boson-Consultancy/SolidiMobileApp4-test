@@ -42,6 +42,9 @@ const config = {
     extraNodeModules: {
       src: path.resolve(__dirname, 'src')
     },
+    // Add resolver to handle NativeEventEmitter issues
+    resolverMainFields: ['react-native', 'browser', 'main'],
+    platforms: ['ios', 'android', 'native', 'web'],
   },
   watchFolders: [
     path.resolve(__dirname, 'src')

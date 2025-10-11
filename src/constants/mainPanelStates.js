@@ -38,6 +38,8 @@ export const mainPanelStates = [
   'SendSuccessful',
   'Authenticate',
   'Register',
+  'EmailVerification',
+  'PhoneVerification',
   'SupportTools',
   'LimitsExceeded',
   'IdentityVerification',

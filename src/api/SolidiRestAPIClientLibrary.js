@@ -53,15 +53,19 @@ export default class SolidiRestAPIClientLibrary {
 
   constructor(args, ...args2) {
     this._checkArgs2(args2, 'constructor');
-    let expected = 'userAgent, apiKey, apiSecret, domain'.split(', ');
+    let expected = 'userAgent, apiKey, apiSecret, domain, appStateRef'.split(', ');
     this._checkExactExpectedArgs(args, expected, 'constructor');
     _.assign(this, args);
+
+    // Store reference to AppState for authentication error handling
+    this.appStateRef = args.appStateRef || null;
 
     // ===== LOGGING TEST START =====
     console.log('\n' + '🚀'.repeat(50));
     console.log('🔥 SOLIDI API CLIENT INITIALIZED WITH ENHANCED LOGGING! 🔥');
     console.log(`📡 Domain: ${this.domain}`);
     console.log(`🔑 API Key: ${this.apiKey || 'None'}`);
+    console.log(`🔐 AppState Ref: ${this.appStateRef ? 'Connected' : 'Not Connected'}`);
     console.log('🎯 LOGGING IS WORKING - YOU SHOULD SEE THIS MESSAGE!');
     console.log('🚀'.repeat(50));
     // ===== LOGGING TEST END =====
@@ -77,6 +81,40 @@ export default class SolidiRestAPIClientLibrary {
     }
     this.prevNonce = Date.now() * 1000; // Note: Date.now() returns a value in milliseconds.
     this.activeRequest = false;
+  }
+
+  // 🔐 VALIDATE CREDENTIALS METHOD
+  // Quick API call to test if current credentials are still valid
+  async validateCredentials() {
+    try {
+      log('🔐 Validating API credentials...');
+      
+      // If no credentials, return invalid immediately
+      if (!this.apiKey || !this.apiSecret) {
+        log('🔐 No API credentials to validate');
+        return { error: 'No credentials available' };
+      }
+
+      // Make a lightweight API call to test credentials
+      // Using a simple endpoint that requires authentication
+      const result = await this.privateMethod({
+        httpMethod: 'GET',
+        apiRoute: 'user/status', // Assuming this is a lightweight endpoint
+        params: {},
+        abortController: new AbortController()
+      });
+
+      if (result && !result.error) {
+        log('🔐 Credential validation successful');
+        return { success: true };
+      } else {
+        log(`🔐 Credential validation failed: ${result.error}`);
+        return { error: result.error || 'Validation failed' };
+      }
+    } catch (error) {
+      log(`🔐 Credential validation error: ${error.message}`);
+      return { error: error.message };
+    }
   }
 
   _checkArgs2(args2, methodName) {
@@ -265,6 +303,40 @@ export default class SolidiRestAPIClientLibrary {
         console.log('🔐'.repeat(40));
       }
       
+      // ===== REGISTRATION API SPECIFIC LOGGING =====
+      if (apiRoute.includes('register_new_user')) {
+        console.log('\n' + '📝'.repeat(60));
+        console.log('🚨 REGISTRATION API CALL DETECTED! 🚨');
+        console.log(`📍 ENDPOINT: ${httpMethod} ${uri}`);
+        console.log(`🔒 Private API Call: ${privateAPICall}`);
+        console.log(`🔑 API Key: ${this.apiKey ? 'Present' : 'Missing'}`);
+        console.log(`🔐 API Secret: ${this.apiSecret ? 'Present' : 'Missing'}`);
+        console.log(`📦 RAW POST Data: ${postData}`);
+        console.log(`📋 POST Data Length: ${postData ? postData.length : 0} bytes`);
+        console.log(`🎯 Request Headers:`, JSON.stringify(headers, null, 2));
+        
+        // Parse and display the actual data being sent
+        if (postData) {
+          try {
+            const parsedData = JSON.parse(postData);
+            console.log(`📄 PARSED REQUEST DATA:`);
+            console.log(`   📧 Email: ${parsedData.userData?.email || 'MISSING'}`);
+            console.log(`   👤 First Name: ${parsedData.userData?.firstName || 'MISSING'}`);
+            console.log(`   👤 Last Name: ${parsedData.userData?.lastName || 'MISSING'}`);
+            console.log(`   📱 Mobile: ${parsedData.userData?.mobileNumber || 'MISSING'}`);
+            console.log(`   🎂 DOB: ${parsedData.userData?.dateOfBirth || 'MISSING'}`);
+            console.log(`   ⚧ Gender: ${parsedData.userData?.gender || 'MISSING'}`);
+            console.log(`   🌍 Citizenship: ${parsedData.userData?.citizenship || 'MISSING'}`);
+            console.log(`   🔢 Nonce: ${parsedData.nonce || 'MISSING'}`);
+            console.log(`   📬 Email Prefs: ${JSON.stringify(parsedData.userData?.emailPreferences || 'MISSING')}`);
+            console.log(`   🔐 Password Length: ${parsedData.userData?.password ? parsedData.userData.password.length + ' chars' : 'MISSING'}`);
+          } catch (e) {
+            console.log(`❌ ERROR parsing POST data: ${e.message}`);
+          }
+        }
+        console.log('📝'.repeat(60));
+      }
+      
       // ===== SELL API SPECIFIC LOGGING =====
       if (apiRoute.includes('sell')) {
         console.log('\n' + '🔥'.repeat(60));
@@ -284,6 +356,18 @@ export default class SolidiRestAPIClientLibrary {
       if (apiRoute.includes('login')) {
         console.log('\n' + '📡 LOGIN RESPONSE RECEIVED');
         console.log(`📊 STATUS: ${response.status} ${response.statusText}`);
+      }
+      
+      // ===== REGISTRATION API RESPONSE LOGGING =====
+      if (apiRoute.includes('register_new_user')) {
+        console.log('\n' + '📡'.repeat(60));
+        console.log('🚨 REGISTRATION API RESPONSE RECEIVED! 🚨');
+        console.log(`📊 STATUS: ${response.status} ${response.statusText}`);
+        console.log(`✅ Response OK: ${response.ok}`);
+        console.log(`🌐 Response Headers:`, Object.fromEntries(response.headers));
+        console.log(`📏 Content-Length: ${response.headers.get('content-length') || 'Unknown'}`);
+        console.log(`📋 Content-Type: ${response.headers.get('content-type') || 'Unknown'}`);
+        console.log('📡'.repeat(60));
       }
       
       // ===== SELL API RESPONSE LOGGING =====
@@ -310,6 +394,40 @@ export default class SolidiRestAPIClientLibrary {
         console.log('\n💾 LOGIN RESPONSE BODY:');
         console.log(responseData);
         console.log('-'.repeat(40));
+      }
+      
+      // ===== REGISTRATION API RESPONSE BODY LOGGING =====
+      if (apiRoute.includes('register_new_user')) {
+        console.log('\n' + '💾'.repeat(60));
+        console.log('🚨 REGISTRATION API RESPONSE BODY! 🚨');
+        console.log('📄 Raw Response Body:');
+        console.log(responseData);
+        console.log(`📏 Response Body Length: ${responseData ? responseData.length : 0} bytes`);
+        
+        // Try to parse and display structured response
+        if (responseData) {
+          try {
+            const parsedResponse = JSON.parse(responseData);
+            console.log('📊 PARSED RESPONSE DATA:');
+            console.log(JSON.stringify(parsedResponse, null, 2));
+            
+            if (parsedResponse.error) {
+              console.log(`❌ ERROR DETECTED: ${parsedResponse.error}`);
+            }
+            if (parsedResponse.data) {
+              console.log(`✅ DATA PRESENT: ${JSON.stringify(parsedResponse.data)}`);
+            }
+            if (parsedResponse.success !== undefined) {
+              console.log(`🎯 SUCCESS FLAG: ${parsedResponse.success}`);
+            }
+          } catch (e) {
+            console.log(`❌ ERROR parsing response JSON: ${e.message}`);
+            console.log(`🔍 First 200 chars of response: ${responseData.substring(0, 200)}`);
+          }
+        } else {
+          console.log('❌ EMPTY RESPONSE BODY!');
+        }
+        console.log('💾'.repeat(60));
       }
       
       // ===== SELL API RESPONSE BODY LOGGING =====

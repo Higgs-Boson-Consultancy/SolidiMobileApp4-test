@@ -17,11 +17,12 @@ let QRCodeScanner, request, PERMISSIONS, RESULTS, WebQRScanner;
 if (Platform.OS === 'web') {
   WebQRScanner = require('../web/WebQRScanner').default;
 } else {
-  QRCodeScanner = require('react-native-qrcode-scanner').default;
-  const permissions = require('react-native-permissions');
-  request = permissions.request;
-  PERMISSIONS = permissions.PERMISSIONS;
-  RESULTS = permissions.RESULTS;
+  // Use safe wrappers to prevent NativeEventEmitter issues
+  const { SafeQRCodeScanner, SafePermissions } = require('../../util/SafeNativeModules');
+  QRCodeScanner = SafeQRCodeScanner.create();
+  request = SafePermissions.request;
+  PERMISSIONS = SafePermissions.PERMISSIONS;
+  RESULTS = SafePermissions.RESULTS;
 }
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
