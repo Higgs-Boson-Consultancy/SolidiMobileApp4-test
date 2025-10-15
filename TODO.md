@@ -28,8 +28,14 @@
 - [x] Remove Explore item in Navigation Bar
 - [x] In Assets page, remove Total Portfolio Value block, remove Title component, the list style should reference on address book list. 
 - [x] Can the Address Book Model in Transfer is, to load the Address Book Page instead of another. 
-- In Assets page, use crypto icon that wallet page using. And just show the live price on the right. No need bullet about whether API data/ Demo data. No need any information about my assets, it's a public live assets information. 
-- Check and Update the upload functions and API in Identity Verification page. 
+- In profile page, change Premium to Normal. 
+- [TESTING] Check and Update the upload functions and API in Identity Verification page. 
+- [COMPLETED] ✅ **Persistent Login System**: Implemented comprehensive persistent login functionality
+  - **Regular Logout**: Preserves credentials for automatic re-login when app reopens
+  - **Complete Sign Out**: Clears all stored credentials, requires fresh login
+  - **Auto-Login**: Automatically logs users back in using stored keychain credentials
+  - **Enhanced Security**: Validates credential format and handles expired/invalid credentials
+  - **User Choice**: Logout dialog offers both regular logout and complete sign out options
 - Set the index page to login page if unauthenticated, otherwise, set to the Trade page
 - In Deposit page, the list of bank, using icon instead of the whole row list. Also, use Grid list, 6 items per row. 
 

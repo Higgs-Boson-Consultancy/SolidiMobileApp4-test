@@ -1,0 +1,770 @@
+// React imports
+import React, { useContext, useState, useEffect } from 'react';
+import { StyleSheet, View, Alert, Text, ActivityIndicator } from 'react-native';
+
+// Material Design imports
+import { Button } from 'react-native-paper';
+
+// Internal imports
+import AppStateContext from 'src/application/data';
+import { QuestionnaireForm } from 'src/components/Questionnaire';
+import { Title } from 'src/components/shared';
+import { sharedStyles, sharedColors } from 'src/constants';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('AccountReview');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+// Form UUID for Self Categorisation
+const CATEGORISATION_FORM_UUID = '12312cc5-a949-49ed-977e-c81fecc2476f';
+
+const AccountReview = () => {
+  const appState = useContext(AppStateContext);
+  
+  // State management
+  const [currentFormData, setCurrentFormData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Load the Self Categorisation form on component mount
+  useEffect(() => {
+    loadCategorizationForm();
+  }, []);
+
+  const loadCategorizationForm = async () => {
+    log('📋 [AccountReview] Loading Self Categorisation form...');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch the categorisation form using the UUID
+      const result = await appState.privateMethod({
+        functionName: 'getCategorizationForm',
+        apiRoute: `forms/${CATEGORISATION_FORM_UUID}.json`,
+        params: {}
+      });
+      
+      if (result && !result.error) {
+        const formData = result.data || result;
+        log('✅ [AccountReview] Self Categorisation form loaded successfully:', formData);
+        setCurrentFormData(formData);
+      } else {
+        throw new Error(result.error || 'Failed to load Self Categorisation form');
+      }
+    } catch (error) {
+      log('❌ [AccountReview] Error loading Self Categorisation form:', error);
+      setError(`Failed to load form: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handle form submission
+  const handleFormSubmit = async (formData) => {
+    log('📤 [AccountReview] Submitting Self Categorisation form:', formData);
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      // Submit the categorisation form
+      const result = await appState.privateMethod({
+        functionName: 'submitFinpromCategorisation',
+        apiRoute: 'user/finprom/categorisation/submit',
+        params: formData
+      });
+      
+      log('✅ [AccountReview] Self Categorisation form submitted successfully:', result);
+      
+      if (result && !result.error) {
+        Alert.alert(
+          'Form Submitted',
+          'Your Self Categorisation has been submitted successfully.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        throw new Error(result.error || 'Submission failed');
+      }
+      
+    } catch (error) {
+      log('❌ [AccountReview] Form submission error:', error);
+      setError(error.message || 'Failed to submit form. Please try again.');
+      Alert.alert(
+        'Submission Error',
+        error.message || 'Failed to submit form. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Render the component
+  if (loading) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={sharedColors.primary} />
+        <Text style={styles.loadingText}>Loading Self Categorisation form...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button
+          mode="contained"
+          onPress={loadCategorizationForm}
+          style={styles.refreshButton}
+        >
+          Retry
+        </Button>
+      </View>
+    );
+  }
+
+  if (!currentFormData) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>No form data available</Text>
+        <Button
+          mode="contained"
+          onPress={loadCategorizationForm}
+          style={styles.refreshButton}
+        >
+          Reload Form
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <View style={sharedStyles.container}>
+      <Title style={styles.title}>Account Review - Self Categorisation</Title>
+      <QuestionnaireForm
+        questionnaire={currentFormData}
+        onSubmit={handleFormSubmit}
+        submitting={submitting}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: sharedColors.errorMain,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  refreshButton: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+  },
+});
+
+export default AccountReview;
+import { Title } from 'src/components/shared';
+import { sharedStyles, sharedColors } from 'src/constants';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('AccountReview');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+// Form UUIDs for API fetching
+const FORM_UUIDS = {
+  CATEGORISATION: '12312cc5-a949-49ed-977e-c81fecc2476f',
+  SUITABILITY: 'f47fa99b-728c-4305-a6f9-3fece7f6c80d',
+  SUITABILITY2: 'e822a3cb-7a94-47da-ae5f-7984efd642a5'
+};
+
+// Workflow states
+const WORKFLOW_STATES = {
+  LOADING: 'loading',
+  CATEGORISATION: 'categorisation',
+  SUITABILITY: 'suitability', 
+  SUITABILITY_RETRY: 'suitability_retry',
+  COMPLETED: 'completed',
+  COOLDOWN: 'cooldown'
+};
+
+const AccountReview = () => {
+  const appState = useContext(AppStateContext);
+  
+  // State management
+  const [currentFormData, setCurrentFormData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Load the Self Categorisation form on component mount
+  useEffect(() => {
+    loadCategorizationForm();
+  }, []);
+
+  const loadCategorizationForm = async () => {
+    log('📋 [AccountReview] Loading Self Categorisation form...');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch the categorisation form using the UUID
+      const result = await appState.privateMethod({
+        functionName: 'getCategorizationForm',
+        apiRoute: `forms/${FORM_UUIDS.CATEGORISATION}.json`,
+        params: {}
+      });
+      
+      if (result && !result.error) {
+        const formData = result.data || result;
+        log('✅ [AccountReview] Self Categorisation form loaded successfully:', formData);
+        setCurrentFormData(formData);
+      } else {
+        throw new Error(result.error || 'Failed to load Self Categorisation form');
+      }
+    } catch (error) {
+      log('❌ [AccountReview] Error loading Self Categorisation form:', error);
+      setError(`Failed to load form: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+    log('📋 [AccountReview] Fetching form data for:', formType, 'UUID:', formUuid);
+    
+    try {
+      // Use appState.privateMethod to handle authentication
+      const result = await appState.privateMethod({
+        functionName: `getForm${formType.charAt(0).toUpperCase() + formType.slice(1)}`,
+        apiRoute: `forms/${formUuid}.json`,
+        params: {}
+      });
+      
+      if (result && !result.error) {
+        const formData = result.data || result;
+        log('✅ [AccountReview] Form data fetched successfully:', formType, formData);
+  
+  // Handle form submission
+  const handleFormSubmit = async (formData) => {
+    log('📤 [AccountReview] Submitting Self Categorisation form:', formData);
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      // Submit the categorisation form
+      const result = await appState.privateMethod({
+        functionName: 'submitFinpromCategorisation',
+        apiRoute: 'user/finprom/categorisation/submit',
+        params: formData
+      });
+      
+      log('✅ [AccountReview] Self Categorisation form submitted successfully:', result);
+      
+      if (result && !result.error) {
+        Alert.alert(
+          'Form Submitted',
+          'Your Self Categorisation has been submitted successfully.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        throw new Error(result.error || 'Submission failed');
+      }
+      
+    } catch (error) {
+      log('❌ [AccountReview] Form submission error:', error);
+      setError(error.message || 'Failed to submit form. Please try again.');
+      Alert.alert(
+        'Submission Error',
+        error.message || 'Failed to submit form. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Render the component
+  if (loading) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={sharedColors.primary} />
+        <Text style={styles.loadingText}>Loading Self Categorisation form...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button
+          mode="contained"
+          onPress={loadCategorizationForm}
+          style={styles.refreshButton}
+        >
+          Retry
+        </Button>
+      </View>
+    );
+  }
+
+  if (!currentFormData) {
+    return (
+      <View style={[sharedStyles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>No form data available</Text>
+        <Button
+          mode="contained"
+          onPress={loadCategorizationForm}
+          style={styles.refreshButton}
+        >
+          Reload Form
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <View style={sharedStyles.container}>
+      <Title style={styles.title}>Account Review</Title>
+      <QuestionnaireForm
+        questionnaire={currentFormData}
+        onSubmit={handleFormSubmit}
+        submitting={submitting}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    textAlign: 'center',
+
+  const determineWorkflowState = useCallback(async (status) => {
+    log('🎯 [AccountReview] Determining workflow state from status:', status);
+    
+    // Determine which form to show based on user status
+    if (!status.categorisation_completed) {
+      // Never completed categorisation
+      setWorkflowState(WORKFLOW_STATES.CATEGORISATION);
+      await loadFormData(WORKFLOW_STATES.CATEGORISATION);
+    } else if (!status.suitability_completed) {
+      // Categorisation passed, but never completed suitability
+      setWorkflowState(WORKFLOW_STATES.SUITABILITY);
+      await loadFormData(WORKFLOW_STATES.SUITABILITY);
+    } else if (status.suitability_passed) {
+      // Passed suitability - user is fully approved
+      setWorkflowState(WORKFLOW_STATES.COMPLETED);
+      setCurrentFormData(null);
+    } else {
+      // Failed suitability - check retry logic
+      const failCount = status.suitability_fail_count || 0;
+      setRetryCount(failCount);
+      
+      if (failCount === 1) {
+        // First fail - show suitability2
+        setWorkflowState(WORKFLOW_STATES.SUITABILITY_RETRY);
+        await loadFormData(WORKFLOW_STATES.SUITABILITY_RETRY);
+      } else if (failCount >= 2) {
+        // Multiple fails - check 24h cooldown
+        const lastFailTime = new Date(status.last_fail_time);
+        const cooldownEnd = new Date(lastFailTime.getTime() + 24 * 60 * 60 * 1000);
+        
+        if (new Date() < cooldownEnd) {
+          // Still in cooldown
+          setWorkflowState(WORKFLOW_STATES.COOLDOWN);
+          setCooldownEndTime(cooldownEnd);
+          setCurrentFormData(null);
+        } else {
+          // Cooldown ended - can retry original suitability
+          setWorkflowState(WORKFLOW_STATES.SUITABILITY);
+          await loadFormData(WORKFLOW_STATES.SUITABILITY);
+        }
+      }
+    }
+  }, [loadFormData]);
+
+  const checkUserStatus = useCallback(async () => {
+    log('🔍 [AccountReview] Checking user finprom status...');
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Call API to get user's current finprom status
+      const statusResult = await appState.privateMethod({
+        functionName: 'getUserFinpromStatus',
+        apiRoute: 'user/finprom/status',
+        params: {}
+      });
+      
+      log('🎯 [AccountReview] User status response:', statusResult);
+      
+      if (statusResult && !statusResult.error) {
+        const status = statusResult.data || statusResult;
+        setUserStatus(status);
+        await determineWorkflowState(status);
+      } else {
+        // If no status endpoint exists, start from categorisation
+        log('🎯 [AccountReview] No status endpoint, starting from categorisation');
+        setWorkflowState(WORKFLOW_STATES.CATEGORISATION);
+        await loadFormData(WORKFLOW_STATES.CATEGORISATION);
+      }
+      
+    } catch (error) {
+      log('❌ [AccountReview] Error checking user status:', error);
+      // Fallback to categorisation if API fails
+      setWorkflowState(WORKFLOW_STATES.CATEGORISATION);
+      await loadFormData(WORKFLOW_STATES.CATEGORISATION);
+    } finally {
+      setLoading(false);
+    }
+  }, [appState, loadFormData, determineWorkflowState]);
+
+  useEffect(() => {
+    checkUserStatus();
+  }, [checkUserStatus]);
+
+  const handleSubmit = async (formData) => {
+    log('🚀 [AccountReview] Submitting form data for state:', workflowState, formData);
+    
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      let apiRoute;
+      let functionName;
+      
+      // Determine API endpoint based on current workflow state
+      switch(workflowState) {
+        case WORKFLOW_STATES.CATEGORISATION:
+          apiRoute = 'user/finprom/categorisation/submit';
+          functionName = 'submitFinpromCategorisation';
+          break;
+        case WORKFLOW_STATES.SUITABILITY:
+          apiRoute = 'user/finprom/suitability/submit';
+          functionName = 'submitFinpromSuitability';
+          break;
+        case WORKFLOW_STATES.SUITABILITY_RETRY:
+          apiRoute = 'user/finprom/suitability2/submit';
+          functionName = 'submitFinpromSuitability2';
+          break;
+        default:
+          throw new Error('Invalid workflow state for submission');
+      }
+      
+      // Submit the form data
+      const result = await appState.privateMethod({
+        functionName,
+        apiRoute,
+        params: formData
+      });
+      
+      log('✅ [AccountReview] Form submitted successfully:', result);
+      
+      if (result && !result.error) {
+        await handleSubmissionResult(result.data || result);
+      } else {
+        throw new Error(result.error || 'Submission failed');
+      }
+      
+    } catch (error) {
+      log('❌ [AccountReview] Form submission error:', error);
+      setError(error.message || 'Failed to submit form. Please try again.');
+      Alert.alert(
+        'Submission Error',
+        error.message || 'Failed to submit form. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmissionResult = async (result) => {
+    log('🎯 [AccountReview] Processing submission result:', result);
+    
+    // Update user status based on result
+    const updatedStatus = { ...userStatus, ...result };
+    setUserStatus(updatedStatus);
+    
+    // Show success message
+    let successMessage = 'Form submitted successfully!';
+    
+    switch(workflowState) {
+      case WORKFLOW_STATES.CATEGORISATION:
+        if (result.categorisation_passed) {
+          successMessage = 'Categorisation completed! Moving to suitability assessment.';
+          // Move to suitability assessment
+          setWorkflowState(WORKFLOW_STATES.SUITABILITY);
+          await loadFormData(WORKFLOW_STATES.SUITABILITY);
+        } else {
+          successMessage = 'Categorisation submitted. Please check back later for results.';
+          setWorkflowState(WORKFLOW_STATES.COMPLETED);
+          setCurrentFormData(null);
+        }
+        break;
+        
+      case WORKFLOW_STATES.SUITABILITY:
+        if (result.suitability_passed) {
+          successMessage = 'Suitability assessment passed! Your account is fully approved.';
+          setWorkflowState(WORKFLOW_STATES.COMPLETED);
+          setCurrentFormData(null);
+        } else {
+          successMessage = 'Suitability assessment completed. Moving to enhanced assessment.';
+          setWorkflowState(WORKFLOW_STATES.SUITABILITY_RETRY);
+          await loadFormData(WORKFLOW_STATES.SUITABILITY_RETRY);
+          setRetryCount(1);
+        }
+        break;
+        
+      case WORKFLOW_STATES.SUITABILITY_RETRY:
+        if (result.suitability_passed) {
+          successMessage = 'Enhanced suitability assessment passed! Your account is fully approved.';
+          setWorkflowState(WORKFLOW_STATES.COMPLETED);
+          setCurrentFormData(null);
+        } else {
+          successMessage = 'Assessment completed. Please wait 24 hours before retrying.';
+          const cooldownEnd = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          setWorkflowState(WORKFLOW_STATES.COOLDOWN);
+          setCooldownEndTime(cooldownEnd);
+          setCurrentFormData(null);
+          setRetryCount(2);
+        }
+        break;
+    }
+    
+    Alert.alert('Success', successMessage, [{ text: 'OK' }]);
+  };
+
+  const handleRetryAfterCooldown = async () => {
+    log('🔄 [AccountReview] Retrying after cooldown');
+    setWorkflowState(WORKFLOW_STATES.SUITABILITY);
+    await loadFormData(WORKFLOW_STATES.SUITABILITY);
+    setCooldownEndTime(null);
+  };
+
+  const renderLoadingState = () => (
+    <View style={[styles.container, styles.centerContent]}>
+      <ActivityIndicator size="large" color={sharedColors.primaryMain} />
+      <Text style={styles.loadingText}>Loading assessment...</Text>
+    </View>
+  );
+
+  const renderCompletedState = () => (
+    <View style={[styles.container, styles.centerContent]}>
+      <Title style={styles.completedTitle}>✅ Assessment Complete</Title>
+      <Text style={styles.completedText}>
+        Your account review has been successfully completed. 
+        Your account is now fully approved for trading.
+      </Text>
+      <Button 
+        mode="contained" 
+        onPress={() => {
+          // Navigate back or refresh status
+          checkUserStatus();
+        }}
+        style={styles.refreshButton}
+      >
+        Refresh Status
+      </Button>
+    </View>
+  );
+
+  const renderCooldownState = () => {
+    const timeLeft = cooldownEndTime ? cooldownEndTime - new Date() : 0;
+    const hoursLeft = Math.max(0, Math.ceil(timeLeft / (60 * 60 * 1000)));
+    
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Title style={styles.cooldownTitle}>⏳ Assessment Cooldown</Title>
+        <Text style={styles.cooldownText}>
+          You've reached the maximum number of attempts. 
+          Please wait {hoursLeft} hours before retrying.
+        </Text>
+        {timeLeft <= 0 && (
+          <Button 
+            mode="contained" 
+            onPress={handleRetryAfterCooldown}
+            style={styles.retryButton}
+          >
+            Retry Assessment
+          </Button>
+        )}
+      </View>
+    );
+  };
+
+  const renderErrorState = () => (
+    <View style={[styles.container, styles.centerContent]}>
+      <Text style={styles.errorText}>{error}</Text>
+      <Button 
+        mode="outlined" 
+        onPress={checkUserStatus}
+        style={styles.retryButton}
+      >
+        Retry
+      </Button>
+    </View>
+  );
+
+  const renderFormState = () => {
+    if (!currentFormData) return null;
+    
+    let formTitle = '';
+    let formDescription = '';
+    
+    switch(workflowState) {
+      case WORKFLOW_STATES.CATEGORISATION:
+        formTitle = 'Account Categorisation';
+        formDescription = 'Please complete this assessment to categorise your account type.';
+        break;
+      case WORKFLOW_STATES.SUITABILITY:
+        formTitle = 'Suitability Assessment';
+        formDescription = 'Please complete this suitability assessment to verify your trading knowledge.';
+        break;
+      case WORKFLOW_STATES.SUITABILITY_RETRY:
+        formTitle = 'Enhanced Suitability Assessment';
+        formDescription = 'Please complete this enhanced assessment to continue with your account approval.';
+        break;
+    }
+    
+    return (
+      <View style={styles.container}>
+        <Title style={styles.formTitle}>{formTitle}</Title>
+        <Text style={styles.formDescription}>{formDescription}</Text>
+        
+        <QuestionnaireForm
+          questionnaire={currentFormData}
+          onSubmit={handleSubmit}
+          loading={submitting}
+          submitButtonText={submitting ? 'Submitting...' : 'Submit Assessment'}
+        />
+      </View>
+    );
+  };
+
+  // Main render logic
+  if (loading) {
+    return renderLoadingState();
+  }
+  
+  if (error && workflowState === WORKFLOW_STATES.LOADING) {
+    return renderErrorState();
+  }
+  
+  switch(workflowState) {
+    case WORKFLOW_STATES.COMPLETED:
+      return renderCompletedState();
+    case WORKFLOW_STATES.COOLDOWN:
+      return renderCooldownState();
+    case WORKFLOW_STATES.CATEGORISATION:
+    case WORKFLOW_STATES.SUITABILITY:
+    case WORKFLOW_STATES.SUITABILITY_RETRY:
+      return renderFormState();
+    default:
+      return renderErrorState();
+  }
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: sharedColors.backgroundSecondary,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    textAlign: 'center',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: sharedColors.textPrimary,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  formDescription: {
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    marginBottom: 25,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  completedTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: sharedColors.successMain,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  completedText: {
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    marginBottom: 30,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  cooldownTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: sharedColors.warningMain,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  cooldownText: {
+    fontSize: 16,
+    color: sharedColors.textSecondary,
+    marginBottom: 30,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  errorText: {
+    fontSize: 16,
+    color: sharedColors.errorMain,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  refreshButton: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    marginTop: 15,
+    paddingHorizontal: 20,
+  },
+});
+
+export default AccountReview;

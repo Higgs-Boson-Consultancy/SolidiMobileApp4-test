@@ -58,8 +58,8 @@ export default function PhoneVerification() {
   };
 
   const handleVerifyPhone = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter a 6-digit verification code');
+    if (!verificationCode || verificationCode.length !== 4) {
+      Alert.alert('Invalid Code', 'Please enter a 4-digit verification code');
       return;
     }
 
@@ -69,14 +69,11 @@ export default function PhoneVerification() {
     try {
       log(`Verifying phone with code: ${verificationCode}`);
       
-      // Call phone verification API
+      // Call phone verification API - using same pattern as RegisterConfirm
       const result = await appState.publicMethod({
         functionName: 'verifyPhone',
-        apiRoute: `verify_phone/${verificationCode}`,
-        params: {
-          phoneNumber: registrationPhone,
-          verificationCode: verificationCode
-        }
+        apiRoute: `confirm_mobile/${appState.registrationEmail}/${verificationCode}`,
+        params: {}
       });
 
       if (result && !result.error) {
@@ -193,7 +190,7 @@ export default function PhoneVerification() {
             <Button
               mode="contained"
               onPress={handleVerifyPhone}
-              disabled={isVerifying || verificationCode.length !== 6}
+              disabled={isVerifying || verificationCode.length !== 4}
               style={styles.verifyButton}
             >
               {isVerifying ? 'Verifying...' : 'Verify Phone'}

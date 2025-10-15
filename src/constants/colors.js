@@ -41,6 +41,11 @@ export const colors = {
   lightGray: '#f5f5f5',
   lightestGray: '#fafafa',
   mediumGray: '#757575',
+  
+  // Additional colors for AccountUpdate tabs
+  lightBackground: '#f8f9fa',
+  darkText: '#212529',
+  primaryLight: '#e3f2fd',
 }
 
 export default colors;

@@ -193,6 +193,7 @@ let Settings = () => {
               <List.Item
                 title="Personal Details"
                 description="Manage your personal information"
+                left={props => <List.Icon {...props} icon="account-edit" />}
                 right={props => <List.Icon {...props} icon="chevron-right" />}
                 onPress={() => { appState.changeState('PersonalDetails'); }}
                 style={{ paddingVertical: 4 }}
@@ -203,6 +204,7 @@ let Settings = () => {
               <List.Item
                 title="Identity Verification"
                 description="Verify your identity for enhanced features"
+                left={props => <List.Icon {...props} icon="shield-check" />}
                 right={props => <List.Icon {...props} icon="chevron-right" />}
                 onPress={() => { appState.changeState('IdentityVerification'); }}
                 style={{ paddingVertical: 4 }}
@@ -213,8 +215,20 @@ let Settings = () => {
               <List.Item
                 title="Bank Account"
                 description="Manage your banking details"
+                left={props => <List.Icon {...props} icon="bank" />}
                 right={props => <List.Icon {...props} icon="chevron-right" />}
                 onPress={() => { appState.changeState('BankAccounts'); }}
+                style={{ paddingVertical: 4 }}
+              />
+              
+              <Divider />
+              
+              <List.Item
+                title="Account Update"
+                description="Update your account information and preferences"
+                left={props => <List.Icon {...props} icon="account-edit" />}
+                right={props => <List.Icon {...props} icon="chevron-right" />}
+                onPress={() => { appState.changeState('AccountUpdate'); }}
                 style={{ paddingVertical: 4 }}
               />
               
@@ -224,7 +238,7 @@ let Settings = () => {
                 title="Account Review"
                 description="Complete enhanced due diligence form"
                 right={props => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => { appState.changeState('Questionnaire'); }}
+                onPress={() => { appState.changeState('AccountReview'); }}
                 style={{ paddingVertical: 4 }}
               />
             </List.Section>
@@ -291,9 +305,17 @@ let Settings = () => {
           onDismiss={() => setShowLogoutDialog(false)}
           style={{ borderRadius: 8 }}
         >
-          <Dialog.Title>Confirm Logout</Dialog.Title>
+          <Dialog.Title>Logout Options</Dialog.Title>
           <Dialog.Content>
-            <Paragraph>Are you sure you want to logout? You will need to login again to access your account.</Paragraph>
+            <Paragraph style={{ marginBottom: 12 }}>
+              Choose your logout preference:
+            </Paragraph>
+            <Paragraph style={{ fontSize: 14, color: materialTheme.colors.onSurfaceVariant }}>
+              • <Text style={{ fontWeight: 'bold' }}>Regular Logout:</Text> Stay logged in when you reopen the app
+            </Paragraph>
+            <Paragraph style={{ fontSize: 14, color: materialTheme.colors.onSurfaceVariant }}>
+              • <Text style={{ fontWeight: 'bold' }}>Complete Sign Out:</Text> Require login when reopening the app
+            </Paragraph>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setShowLogoutDialog(false)}>Cancel</Button>
@@ -301,16 +323,29 @@ let Settings = () => {
               onPress={async () => {
                 setShowLogoutDialog(false);
                 try {
-                  await appState.logout();
-                  // After logout, redirect to login page
+                  // Regular logout - preserves credentials for persistent login
+                  await appState.logout(false);
                   appState.changeState('Login');
                 } catch (error) {
                   console.error('Logout error:', error);
                 }
               }}
+            >
+              Regular Logout
+            </Button>
+            <Button 
+              onPress={async () => {
+                setShowLogoutDialog(false);
+                try {
+                  // Complete logout - clears all stored credentials  
+                  await appState.signOutCompletely();
+                } catch (error) {
+                  console.error('Complete logout error:', error);
+                }
+              }}
               textColor={materialTheme.colors.error}
             >
-              Logout
+              Complete Sign Out
             </Button>
           </Dialog.Actions>
         </Dialog>

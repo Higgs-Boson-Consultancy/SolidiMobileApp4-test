@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Text, TextInput, StyleSheet, View, ScrollView, Alert, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { RadioButton, Checkbox, Title } from 'react-native-paper';
-import RenderHtml from 'react-native-render-html';
+// import RenderHtml from 'react-native-render-html'; // Temporarily commented out to fix bundling issue
 
 // Other imports
 import _ from 'lodash';
@@ -19,6 +19,70 @@ import { colors } from 'src/constants';
 import logger from 'src/util/logger';
 let logger2 = logger.extend('Questionnaire');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+// Simple HTML renderer for basic tags
+const renderHtmlText = (htmlString) => {
+  if (!htmlString) return '';
+  
+  // Split by HTML tags and render accordingly
+  const parts = htmlString.split(/(<[^>]*>)/);
+  let result = [];
+  let key = 0;
+  
+  const processText = (text, style = {}) => {
+    // Handle <br> tags by splitting on them
+    if (text.includes('<br>')) {
+      return text.split('<br>').map((part, index) => (
+        <React.Fragment key={`br-${key++}`}>
+          {index > 0 && '\n'}
+          {part}
+        </React.Fragment>
+      ));
+    }
+    return text;
+  };
+  
+  let currentStyle = {};
+  let skipNext = false;
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    
+    const part = parts[i];
+    
+    if (part.startsWith('<') && part.endsWith('>')) {
+      const tag = part.toLowerCase();
+      if (tag === '<h5>') {
+        currentStyle = { fontWeight: 'bold', fontSize: 16 };
+      } else if (tag === '</h5>') {
+        currentStyle = {};
+      } else if (tag === '<h2>') {
+        currentStyle = { fontWeight: 'bold', fontSize: 20 };
+      } else if (tag === '</h2>') {
+        currentStyle = {};
+      } else if (tag === '<b>') {
+        currentStyle = { ...currentStyle, fontWeight: 'bold' };
+      } else if (tag === '</b>') {
+        currentStyle = { ...currentStyle, fontWeight: 'normal' };
+      } else if (tag.startsWith('<a ')) {
+        currentStyle = { ...currentStyle, color: 'blue', textDecorationLine: 'underline' };
+      } else if (tag === '</a>') {
+        currentStyle = { ...currentStyle, color: 'black', textDecorationLine: 'none' };
+      }
+    } else if (part.trim()) {
+      result.push(
+        <Text key={key++} style={currentStyle}>
+          {processText(part, currentStyle)}
+        </Text>
+      );
+    }
+  }
+  
+  return result.length > 0 ? result : htmlString;
+};
 
 // Available forms - add new forms here as needed
 const availableForms = {
@@ -45,11 +109,11 @@ let Questionnaire = () => {
   let stateChangeID = appState.stateChangeID;
   const { width } = useWindowDimensions();
 
-  // Form selection state - get from appState
-  let selectedForm = appState.selectedQuestionnaireForm || 'account-purpose-questionnaire';
+  // Form selection state - get from appState - DISABLED FOR CATEGORISATION TESTING
+  let selectedForm = null; // appState.selectedQuestionnaireForm || 'account-purpose-questionnaire';
   let [questionnaireData, setQuestionnaireData] = useState({
-    formtitle: 'Loading...',
-    formintro: '',
+    formtitle: 'Old Form Disabled',
+    formintro: 'This old questionnaire has been disabled. Please use AccountReview for categorisation.',
     questions: []
   });
 
@@ -776,11 +840,9 @@ let Questionnaire = () => {
     // Check if the guidance contains HTML tags
     if (guidance.includes('<') && guidance.includes('>')) {
       return (
-        <RenderHtml
-          contentWidth={width - 64}
-          source={{ html: guidance }}
-          baseStyle={styles.guidanceText}
-        />
+        <Text style={styles.guidanceText}>
+          {renderHtmlText(guidance)}
+        </Text>
       );
     } else {
       return <Text style={styles.guidanceText}>{guidance}</Text>;
@@ -795,11 +857,9 @@ let Questionnaire = () => {
         return (
           <View key={question.id || `legend-${index}`} style={styles.legendWrapper}>
             {question.label && question.label.includes('<') && question.label.includes('>') ? (
-              <RenderHtml
-                contentWidth={width - 32}
-                source={{ html: question.label }}
-                baseStyle={styles.legendText}
-              />
+              <Text style={styles.legendText}>
+                {renderHtmlText(question.label)}
+              </Text>
             ) : (
               <Text style={styles.legendText}>{question.label}</Text>
             )}
@@ -848,11 +908,9 @@ let Questionnaire = () => {
         return (
           <View key={question.id} style={styles.questionWrapper}>
             {question.label && question.label.includes('<') && question.label.includes('>') ? (
-              <RenderHtml
-                contentWidth={width - 32}
-                source={{ html: question.label }}
-                baseStyle={styles.questionLabel}
-              />
+              <Text style={styles.questionLabel}>
+                {renderHtmlText(question.label)}
+              </Text>
             ) : (
               <Text style={styles.questionLabel}>{question.label}</Text>
             )}
@@ -899,14 +957,12 @@ let Questionnaire = () => {
                 >
                   <RadioButton value={option.id} />
                   {option.text && option.text.includes('<') && option.text.includes('>') ? (
-                    <RenderHtml
-                      contentWidth={width - 120}
-                      source={{ html: option.text }}
-                      baseStyle={[
-                        styles.radioText,
-                        answers[question.id] === option.id && styles.selectedRadioText
-                      ]}
-                    />
+                    <Text style={[
+                      styles.radioText,
+                      answers[question.id] === option.id && styles.selectedRadioText
+                    ]}>
+                      {renderHtmlText(option.text)}
+                    </Text>
                   ) : (
                     <Text style={[
                       styles.radioText,
@@ -944,14 +1000,12 @@ let Questionnaire = () => {
                   onPress={() => handleCheckboxChange(question.id, option.id)}
                 />
                 {option.text && option.text.includes('<') && option.text.includes('>') ? (
-                  <RenderHtml
-                    contentWidth={width - 120}
-                    source={{ html: option.text }}
-                    baseStyle={[
-                      styles.checkboxText,
-                      answers[question.id] && answers[question.id].includes(option.id) && styles.selectedCheckboxText
-                    ]}
-                  />
+                  <Text style={[
+                    styles.checkboxText,
+                    answers[question.id] && answers[question.id].includes(option.id) && styles.selectedCheckboxText
+                  ]}>
+                    {renderHtmlText(option.text)}
+                  </Text>
                 ) : (
                   <Text style={[
                     styles.checkboxText,
@@ -991,14 +1045,15 @@ let Questionnaire = () => {
     }
   };
 
-  console.log('=== MAIN RENDER DEBUG ===');
-  console.log('questionnaireData exists:', questionnaireData ? 'yes' : 'no');
-  console.log('questionnaireData.questions exists:', questionnaireData?.questions ? 'yes' : 'no');
-  console.log('questionnaireData.questions is array:', Array.isArray(questionnaireData?.questions));
-  console.log('questionnaireData.pages exists:', questionnaireData?.pages ? 'yes' : 'no');
-  console.log('questionnaireData.pages is array:', Array.isArray(questionnaireData?.pages));
-  console.log('isPageBasedForm:', isPageBasedForm);
-  console.log('========================');
+  // DISABLED DEBUG LOGS FOR CATEGORISATION TESTING
+  // console.log('=== MAIN RENDER DEBUG ===');
+  // console.log('questionnaireData exists:', questionnaireData ? 'yes' : 'no');
+  // console.log('questionnaireData.questions exists:', questionnaireData?.questions ? 'yes' : 'no');
+  // console.log('questionnaireData.questions is array:', Array.isArray(questionnaireData?.questions));
+  // console.log('questionnaireData.pages exists:', questionnaireData?.pages ? 'yes' : 'no');
+  // console.log('questionnaireData.pages is array:', Array.isArray(questionnaireData?.pages));
+  // console.log('isPageBasedForm:', isPageBasedForm);
+  // console.log('========================');
 
   return (
     <View style={styles.panelContainer}>
@@ -1015,11 +1070,9 @@ let Questionnaire = () => {
             {questionnaireData.formintro ? (
               <View style={styles.introWrapper}>
                 {questionnaireData.formintro.includes('<') && questionnaireData.formintro.includes('>') ? (
-                  <RenderHtml
-                    contentWidth={width - 32}
-                    source={{ html: questionnaireData.formintro }}
-                    baseStyle={styles.introText}
-                  />
+                  <Text style={styles.introText}>
+                    {renderHtmlText(questionnaireData.formintro)}
+                  </Text>
                 ) : (
                   <Text style={styles.introText}>{questionnaireData.formintro}</Text>
                 )}
@@ -1099,7 +1152,7 @@ let Questionnaire = () => {
               questionnaireData.questions && questionnaireData.questions[currentQuestionIndex] ? (
                 (() => {
                   const questionGroup = getQuestionGroup(questionnaireData.questions, currentQuestionIndex);
-                  console.log(`Rendering question group:`, questionGroup.legends.length, 'legends +', questionGroup.mainQuestion?.type);
+                  // console.log(`Rendering question group:`, questionGroup.legends.length, 'legends +', questionGroup.mainQuestion?.type);
                   
                   return (
                     <View>

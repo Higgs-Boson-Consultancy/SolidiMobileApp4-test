@@ -119,8 +119,15 @@ let BankAccounts = () => {
       console.log(`✅ [UI] Bank account update successful`);
       await misc.sleep(0.1);
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-      setUpdateMessage('Update successful');
+      setUpdateMessage('Update Success');
       setErrorMessage('');
+      
+      // Auto-hide success message after 4 seconds
+      setTimeout(() => {
+        if (!appState.stateChangeIDHasChanged(stateChangeID)) {
+          setUpdateMessage('');
+        }
+      }, 4000);
       await misc.sleep(0.2);
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       // tmp
@@ -298,9 +305,24 @@ let BankAccounts = () => {
 
             {/* Update Message */}
             {updateMessage && (
-              <HelperText type="info" visible={true}>
-                {updateMessage}
-              </HelperText>
+              <Card style={{ 
+                marginTop: 12,
+                backgroundColor: '#E8F5E8',
+                borderLeftWidth: 4,
+                borderLeftColor: '#4CAF50',
+                elevation: 1
+              }}>
+                <Card.Content style={{ paddingVertical: 12, paddingHorizontal: 16 }}>
+                  <Text style={{ 
+                    color: '#2E7D32',
+                    fontWeight: '600',
+                    fontSize: 16,
+                    textAlign: 'center'
+                  }}>
+                    ✅ {updateMessage}
+                  </Text>
+                </Card.Content>
+              </Card>
             )}
           </Card.Content>
         </Card>

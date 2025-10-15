@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Platform, Alert } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -18,6 +18,7 @@ import {launchCamera} from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 // Other imports
 import _ from 'lodash';
@@ -134,6 +135,12 @@ let IdentityVerification = () => {
   let [disablePhoto1Buttons, setDisablePhoto1Buttons] = useState(false);
   let [disablePhoto2Buttons, setDisablePhoto2Buttons] = useState(false);
 
+  // Photo state for new camera implementation
+  let [takePhoto1FileURI, setTakePhoto1FileURI] = useState('');
+  let [takePhoto1FileExtension, setTakePhoto1FileExtension] = useState('');
+  let [takePhoto2FileURI, setTakePhoto2FileURI] = useState('');
+  let [takePhoto2FileExtension, setTakePhoto2FileExtension] = useState('');
+
 
 
 
@@ -236,20 +243,80 @@ let IdentityVerification = () => {
     return s;
   }
 
+  // Camera permission check function
+  let checkCameraPermission = async () => {
+    try {
+      const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
+      
+      const result = await check(permission);
+      
+      if (result === RESULTS.GRANTED) {
+        return true;
+      } else if (result === RESULTS.DENIED) {
+        // Request permission
+        const requestResult = await request(permission);
+        return requestResult === RESULTS.GRANTED;
+      } else if (result === RESULTS.BLOCKED) {
+        Alert.alert(
+          'Camera Permission Required',
+          'Camera access is blocked. Please enable it in your device settings to take photos.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Permission check error:', error);
+      return false;
+    }
+  };
 
   let takePhotoOfDocument = async (documentCategory) => {
     try {
-      log('Taking photo...');
+      log('Taking photo for document category:', documentCategory);
+      console.log('🎥 Take Photo button pressed for:', documentCategory);
+      
+      // Check camera permission first
+      log('Checking camera permission...');
+      const hasPermission = await checkCameraPermission();
+      log('Camera permission result:', hasPermission);
+      
+      if (!hasPermission) {
+        let message = 'Camera permission is required to take photos. Please enable it in settings.';
+        log('Permission denied, setting message:', message);
+        if (documentCategory === 'identity') {
+          setUploadPhoto1Message(message);
+        } else if (documentCategory === 'address') {
+          setUploadPhoto2Message(message);
+        }
+        return;
+      }
+      
+      // Show loading message to indicate button press was detected
+      log('Preparing to launch camera...');
+      if (documentCategory === 'identity') {
+        setUploadPhoto1Message('Opening camera...');
+      } else if (documentCategory === 'address') {
+        setUploadPhoto2Message('Opening camera...');
+      }
+      
       let options = {
         mediaType: 'photo',
         cameraType: 'back',
         quality: 0.8, // Add quality setting
+        includeBase64: true, // Include base64 for processing
       }
       
+      log('Camera options:', options);
       let result = await launchCamera(options);
+      log('Camera launch result received');
       
-      // Check if component is still mounted
-      if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      // Check if user is still logged in
+      if (!appState.user.isAuthenticated) {
+        console.log('[WARNING] User logged out during camera operation');
+        return;
+      }
       
       // Log result for debugging
       log('Camera result:', JSON.stringify(result));
@@ -264,6 +331,12 @@ let IdentityVerification = () => {
       if (result.errorMessage) {
         console.error('Camera error:', result.errorMessage);
         let message = `Camera error: ${result.errorMessage}`;
+        
+        // Check if this is a simulator-related error
+        if (result.errorMessage.includes('simulator') || result.errorMessage.includes('device')) {
+          message = 'Camera not available in simulator. Please use "Upload Photo" to select an image from the photo library instead.';
+        }
+        
         if (documentCategory === 'identity') {
           setUploadPhoto1Message(message);
         } else if (documentCategory === 'address') {
@@ -286,13 +359,24 @@ let IdentityVerification = () => {
       let image = result.assets[0];
       log('Image captured:', image);
       
-      // Save result in app state (more resilient than page state)
+      // Save result in local state
+      if (documentCategory === 'identity') {
+        setTakePhoto1FileURI(image.uri);
+        setTakePhoto1FileExtension('.jpg');
+        setUploadPhoto1Message('');
+        console.log('[DEBUG] Identity photo captured, URI:', image.uri);
+      } else if (documentCategory === 'address') {
+        setTakePhoto2FileURI(image.uri);
+        setTakePhoto2FileExtension('.jpg');
+        setUploadPhoto2Message('');
+        console.log('[DEBUG] Address photo captured, URI:', image.uri);
+      }
+      
+      // Also save in app state for backward compatibility
       if (documentCategory === 'identity') {
         appState.panels.identityVerification.photo1 = image;
-        setUploadPhoto1Message('');
       } else if (documentCategory === 'address') {
         appState.panels.identityVerification.photo2 = image;
-        setUploadPhoto2Message('');
       }
       
       triggerRender(renderCount + 1); // Ensure re-render
@@ -310,19 +394,23 @@ let IdentityVerification = () => {
 
 
   let generateTakePhoto1Message = () => {
+    console.log('🔍 [PHOTO CHECK] generateTakePhoto1Message called - takePhoto1FileURI:', takePhoto1FileURI);
     let msg = '';
-    if (! _.isNil(appState.panels.identityVerification.photo1)) {
-      log('Photo 1: ' + JSON.stringify(appState.panels.identityVerification.photo1))
+    if (takePhoto1FileURI && takePhoto1FileURI.length > 0) {
+      console.log('[DEBUG] Photo 1 ready, URI length:', takePhoto1FileURI.length);
       msg = 'Photo ready.';
+    } else {
+      console.log('🔍 [PHOTO CHECK] No photo ready - takePhoto1FileURI is empty or null');
     }
+    console.log('🔍 [PHOTO CHECK] Returning message:', msg);
     return msg;
   }
 
 
   let generateTakePhoto2Message = () => {
     let msg = '';
-    if (! _.isNil(appState.panels.identityVerification.photo2)) {
-      log('Photo 2: ' + JSON.stringify(appState.panels.identityVerification.photo2))
+    if (takePhoto2FileURI && takePhoto2FileURI.length > 0) {
+      console.log('[DEBUG] Photo 2 ready, URI length:', takePhoto2FileURI.length);
       msg = 'Photo ready.';
     }
     return msg;
@@ -350,13 +438,30 @@ let IdentityVerification = () => {
           fileSize: file.size,
         };
 
-        // Save result in app state (same as camera photos)
+        // Determine file extension
+        let fileExtension = '.jpg';
+        if (file.type && file.type.includes('png')) {
+          fileExtension = '.png';
+        }
+
+        // Save result in local state
+        if (documentCategory == 'identity') {
+          setTakePhoto1FileURI(file.uri);
+          setTakePhoto1FileExtension(fileExtension);
+          setUploadPhoto1Message('');
+          console.log('[DEBUG] Identity photo selected from library, URI:', file.uri);
+        } else if (documentCategory == 'address') {
+          setTakePhoto2FileURI(file.uri);
+          setTakePhoto2FileExtension(fileExtension);
+          setUploadPhoto2Message('');
+          console.log('[DEBUG] Address photo selected from library, URI:', file.uri);
+        }
+
+        // Also save in app state for backward compatibility
         if (documentCategory == 'identity') {
           appState.panels.identityVerification.photo1 = photoData;
-          setUploadPhoto1Message('');
         } else if (documentCategory == 'address') {
           appState.panels.identityVerification.photo2 = photoData;
-          setUploadPhoto2Message('');
         }
         
         triggerRender(renderCount + 1); // Ensure re-render
@@ -378,75 +483,192 @@ let IdentityVerification = () => {
 
 
   let uploadPhoto = async (documentCategory) => {
-    let panel = appState.panels.identityVerification;
-    let photo;
-    let documentType;
-    if (documentCategory == 'identity') {
-      setUploadPhoto1Message('Uploading...');
-      documentType = idType; // E.g. 'passportUK'
-      let otherDocumentType = getDocumentType('address');
-      if (documentType == otherDocumentType) {
-        // The user has already uploaded this specific document type (e.g. 'photocardDriversLicenceUK') for the other document requirement.
-        let msg = `For documentCategory ${documentCategory}, user has chosen to upload a ${documentType}, but this documentType has already been uploaded previously for the documentCategory 'address'.`;
-        log(msg);
-        let description = identityDocumentTypes[documentType];
-        let msg2 = `Error: This document (${description}) has already been uploaded as the identity document. Please choose a different identity document.`;
-        setUploadPhoto1Message('');
-        setErrorMessage(msg2);
-        return;
-      }
-      photo = panel.photo1;
-      // testing:
-      //photo = {"fileSize":5169332,"height":4032,"uri":"file:///var/mobile/Containers/Data/Application/6B354087-5CA1-4560-A7E3-237CB8504DA4/tmp/EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","type":"image/jpg","fileName":"EC710A32-F187-40EF-ACDD-A49CCF64E6B5.jpg","width":3024}
-    } else if (documentCategory == 'address') {
-      setUploadPhoto2Message('Uploading...');
-      documentType = adType; // E.g. 'bankStatement'
-      let otherDocumentType = getDocumentType('identity');
-      if (documentType == otherDocumentType) {
-        // The user has already uploaded this specific document type (e.g. 'photocardDriversLicenceUK') for the other document requirement.
-        let msg = `For documentCategory ${documentCategory}, user has chosen to upload a ${documentType}, but this documentType has already been uploaded previously for the documentCategory 'identity'.`;
-        log(msg);
-        let description = addressDocumentTypes[documentType];
-        let msg2 = `Error: This document (${description}) has already been uploaded as the identity document. Please choose a different address document.`;
-        setUploadPhoto2Message('');
-        setErrorMessage(msg2);
-        return;
-      }
-      photo = panel.photo2;
-    } else {
-      let msg = `Unrecognised document type: ${documentCategory}`;
-      logger.error(msg);
-      return;
-    }
-    if (_.isNil(photo)) {
-      let msg = `Photo not taken.`;
+    console.log('[DEBUG] uploadPhoto called with documentCategory:', documentCategory);
+    
+    try {
+      let documentType;
+      let fileURI;
+      let fileExtension;
+      
       if (documentCategory == 'identity') {
-        setUploadPhoto1Message(msg);
+        console.log('[DEBUG] Processing identity document upload');
+        setUploadPhoto1Message('Uploading...');
+        documentType = idType; // E.g. 'passportUK'
+        
+        // Check for duplicate document types
+        let otherDocumentType = getDocumentType('address');
+        if (documentType == otherDocumentType) {
+          let msg = `For documentCategory ${documentCategory}, user has chosen to upload a ${documentType}, but this documentType has already been uploaded previously for the documentCategory 'address'.`;
+          log(msg);
+          let description = identityDocumentTypes[documentType];
+          let msg2 = `Error: This document (${description}) has already been uploaded as the address document. Please choose a different identity document.`;
+          setUploadPhoto1Message('');
+          setErrorMessage(msg2);
+          return;
+        }
+        
+        // Use new local state variables instead of panel state
+        fileURI = takePhoto1FileURI;
+        fileExtension = takePhoto1FileExtension;
+        
       } else if (documentCategory == 'address') {
-        setUploadPhoto2Message(msg);
+        console.log('[DEBUG] Processing address document upload');
+        setUploadPhoto2Message('Uploading...');
+        documentType = adType; // E.g. 'bankStatement'
+        
+        // Check for duplicate document types
+        let otherDocumentType = getDocumentType('identity');
+        if (documentType == otherDocumentType) {
+          let msg = `For documentCategory ${documentCategory}, user has chosen to upload a ${documentType}, but this documentType has already been uploaded previously for the documentCategory 'identity'.`;
+          log(msg);
+          let description = addressDocumentTypes[documentType];
+          let msg2 = `Error: This document (${description}) has already been uploaded as the identity document. Please choose a different address document.`;
+          setUploadPhoto2Message('');
+          setErrorMessage(msg2);
+          return;
+        }
+        
+        // Use new local state variables instead of panel state
+        fileURI = takePhoto2FileURI;
+        fileExtension = takePhoto2FileExtension;
+        
+      } else {
+        let msg = `Unrecognised document type: ${documentCategory}`;
+        console.error('[ERROR]', msg);
+        return;
       }
-      return;
+      
+      console.log('[DEBUG] Upload parameters - documentType:', documentType, 'fileURI:', fileURI, 'fileExtension:', fileExtension);
+      
+      // Validation
+      if (!documentType) {
+        let msg = `Please select a document type first.`;
+        console.log('[ERROR]', msg);
+        if (documentCategory == 'identity') {
+          setUploadPhoto1Message(msg);
+        } else if (documentCategory == 'address') {
+          setUploadPhoto2Message(msg);
+        }
+        return;
+      }
+      
+      if (!fileURI) {
+        let msg = `Photo not taken. Please take a photo or select one from library first.`;
+        console.log('[ERROR]', msg);
+        if (documentCategory == 'identity') {
+          setUploadPhoto1Message(msg);
+        } else if (documentCategory == 'address') {
+          setUploadPhoto2Message(msg);
+        }
+        return;
+      }
+      
+      if (!fileExtension) {
+        let msg = `Invalid file format. Please use a JPEG image.`;
+        console.log('[ERROR]', msg);
+        if (documentCategory == 'identity') {
+          setUploadPhoto1Message(msg);
+        } else if (documentCategory == 'address') {
+          setUploadPhoto2Message(msg);
+        }
+        return;
+      }
+      
+      console.log('[DEBUG] Validation passed, reading file data');
+      
+      // Load the file data from the fileURI
+      let fileData = await RNFS.readFile(fileURI, 'base64');
+      console.log('[DEBUG] File data loaded, length:', fileData ? fileData.length : 'null');
+      
+      // Start progress indicator
+      let progressCounter = 0;
+      const progressInterval = setInterval(() => {
+        progressCounter++;
+        let dots = '.'.repeat((progressCounter % 4) + 1);
+        if (documentCategory == 'identity') {
+          setUploadPhoto1Message(`Uploading${dots} (${progressCounter * 2}s)`);
+        } else if (documentCategory == 'address') {
+          setUploadPhoto2Message(`Uploading${dots} (${progressCounter * 2}s)`);
+        }
+      }, 2000);
+      
+      console.log('[DEBUG] About to call appState.uploadDocument with params:', {documentType, documentCategory, fileDataLength: fileData ? fileData.length : 'null', fileExtension});
+      console.log('[DEBUG] Current app state - mainPanelState:', appState.mainPanelState);
+      console.log('[DEBUG] Current app state - apiClient exists:', !!appState.apiClient);
+      console.log('[DEBUG] Current app state - user logged in:', !!appState.user);
+      
+      // Ensure user is still authenticated before upload
+      if (!appState.user.isAuthenticated) {
+        throw new Error('User must be logged in to upload documents');
+      }
+      
+      // Add timeout wrapper to detect stuck uploads
+      const uploadWithTimeout = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Upload timeout after 30 seconds'));
+        }, 30000);
+        
+        appState.uploadDocument({documentType, documentCategory, fileData, fileExtension})
+          .then(result => {
+            clearTimeout(timeout);
+            resolve(result);
+          })
+          .catch(error => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+      });
+      
+      let uploadResult = await uploadWithTimeout;
+      
+      // Clear progress indicator
+      clearInterval(progressInterval);
+      
+      console.log('[DEBUG] Upload completed successfully, result:', uploadResult);
+      console.log('🔐 [AUTH CHECK] Authentication status after API call:', {
+        isAuthenticated: !!appState.user.isAuthenticated,
+        apiCredentialsFound: !!appState.user.apiCredentialsFound,
+        mainPanelState: appState.mainPanelState
+      });
+      
+      // Check if upload result contains any logout triggers
+      if (uploadResult && uploadResult.error) {
+        console.log('⚠️ [UPLOAD RESULT] Upload result contains error:', uploadResult.error);
+      }
+      
+      // Success
+      console.log('🎉 [UPLOAD SUCCESS] Upload completed successfully, setting success messages');
+      console.log('🔐 [AUTH CHECK] User authenticated after upload:', !!appState.user.isAuthenticated);
+      
+      if (documentCategory == 'identity') {
+        setUploadPhoto1Message('✅ Upload finished successfully!');
+        setDisablePhoto1Buttons(true);
+      } else if (documentCategory == 'address') {
+        setUploadPhoto2Message('✅ Upload finished successfully!');
+        setDisablePhoto2Buttons(true);
+      }
+      
+      console.log('🔄 [RENDER] About to trigger render - auth status:', !!appState.user.isAuthenticated);
+      triggerRender(renderCount+1); // Ensure a reload, so that the identityVerificationDetails are refreshed.
+      console.log('🔄 [RENDER] Render triggered - auth status:', !!appState.user.isAuthenticated);
+      
+
+      
+    } catch (error) {
+      // Clear progress indicator on error
+      clearInterval(progressInterval);
+      
+      console.log('[ERROR] uploadPhoto failed:', error);
+      let errorMsg = '❌ Upload failed: ' + (error.message || 'Unknown error');
+      
+      if (documentCategory == 'identity') {
+        setUploadPhoto1Message(errorMsg);
+      } else if (documentCategory == 'address') {
+        setUploadPhoto2Message(errorMsg);
+      }
+      
+
     }
-    lj({photo})
-    let fileExtension = ''; // An empty fileExtension will trigger an error on the server.
-    let jpgTypes = 'image/jpg image/jpeg'.split(' ');
-    if (_.has(photo, 'type') && jpgTypes.includes(photo.type)) fileExtension = '.jpg';
-    // Load the file data from the photo object's uri.
-    let fileURI = photo.uri;
-    // Example fileURI:
-    // "file:///var/mobile/Containers/Data/Application/F0223DE7-9A3A-4B58-B180-AE77018AAD30/tmp/25A9EAC6-64CC-43C5-ACF9-3B2CC42F7439.jpg"
-    //lj({fileURI})
-    let fileData = await RNFS.readFile(fileURI, 'base64');
-    await appState.uploadDocument({documentType, documentCategory, fileData, fileExtension});
-    if (appState.stateChangeIDHasChanged(stateChangeID)) return;
-    if (documentCategory == 'identity') {
-      setUploadPhoto1Message('Upload finished.');
-      setDisablePhoto1Buttons(true);
-    } else if (documentCategory == 'address') {
-      setUploadPhoto2Message('Upload finished.');
-      setDisablePhoto2Buttons(true);
-    }
-    triggerRender(renderCount+1); // Ensure a reload, so that the identityVerificationDetails are refreshed.
   }
 
 
@@ -472,6 +694,19 @@ let IdentityVerification = () => {
           {errorMessage}
         </HelperText>
       }
+
+      {/* Debug State Display */}
+      <Card style={{ marginBottom: 16, backgroundColor: '#f0f0f0' }}>
+        <Card.Content>
+          <Text variant="labelSmall">🔧 Debug Info:</Text>
+          <Text variant="bodySmall">Identity Photo URI: {takePhoto1FileURI || 'Not set'}</Text>
+          <Text variant="bodySmall">Identity Extension: {takePhoto1FileExtension || 'Not set'}</Text>
+          <Text variant="bodySmall">Identity Doc Type: {idType}</Text>
+          <Text variant="bodySmall">Photo1 Message: {generateTakePhoto1Message() || 'None'}</Text>
+          <Text variant="bodySmall">Upload1 Message: {uploadPhoto1Message || 'None'}</Text>
+          <Text variant="bodySmall">Buttons Disabled: {disablePhoto1Buttons ? 'Yes' : 'No'}</Text>
+        </Card.Content>
+      </Card>
 
 
 
@@ -580,7 +815,10 @@ let IdentityVerification = () => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
                   <PaperButton
                     mode="outlined"
-                    onPress={() => takePhotoOfDocument('identity')}
+                    onPress={() => {
+                      console.log('📸 [TAKE PHOTO] Button pressed for identity');
+                      takePhotoOfDocument('identity');
+                    }}
                     disabled={disablePhoto1Buttons}
                     style={{ flex: 0.48 }}
                     icon="camera"
@@ -589,7 +827,10 @@ let IdentityVerification = () => {
                   </PaperButton>
                   <PaperButton
                     mode="contained"
-                    onPress={() => selectPhotoFromLibrary('identity')}
+                    onPress={() => {
+                      console.log('📁 [UPLOAD PHOTO] Button pressed for identity');
+                      selectPhotoFromLibrary('identity');
+                    }}
                     disabled={disablePhoto1Buttons}
                     style={{ flex: 0.48 }}
                     icon="upload"
@@ -607,7 +848,26 @@ let IdentityVerification = () => {
                     {generateTakePhoto1Message() && (
                       <PaperButton
                         mode="contained"
-                        onPress={() => uploadPhoto('identity')}
+onPress={async () => {
+                          try {
+                            console.log('🔴 [BUTTON PRESS] Identity Upload button pressed at:', new Date().toISOString());
+                            console.log('🔴 [BUTTON STATE] Current panel.photo1:', appState.panels.identityVerification.photo1);
+                            console.log('🔴 [BUTTON STATE] Current takePhoto1FileURI:', takePhoto1FileURI);
+                            console.log('🔴 [BUTTON STATE] Current takePhoto1FileExtension:', takePhoto1FileExtension);
+                            console.log('🔴 [BUTTON STATE] Current idType:', idType);
+                            console.log('🔴 [BUTTON STATE] Button disabled state:', disablePhoto1Buttons);
+                            
+                            // Add immediate feedback
+                            setUploadPhoto1Message('🚀 Button pressed, starting upload...');
+                            
+                            await uploadPhoto('identity');
+                            
+                            console.log('🟢 [BUTTON SUCCESS] Upload function completed');
+                          } catch (error) {
+                            console.error('🔴 [BUTTON ERROR] Upload button handler failed:', error);
+                            setUploadPhoto1Message('❌ Upload button error: ' + error.message);
+                          }
+                        }}
                         style={{ marginTop: 8 }}
                         icon="cloud-upload"
                       >
@@ -712,7 +972,26 @@ let IdentityVerification = () => {
                     {generateTakePhoto2Message() && (
                       <PaperButton
                         mode="contained"
-                        onPress={() => uploadPhoto('address')}
+onPress={async () => {
+                          try {
+                            console.log('🔴 [BUTTON PRESS] Address Upload button pressed at:', new Date().toISOString());
+                            console.log('🔴 [BUTTON STATE] Current panel.photo2:', appState.panels.identityVerification.photo2);
+                            console.log('🔴 [BUTTON STATE] Current takePhoto2FileURI:', takePhoto2FileURI);
+                            console.log('🔴 [BUTTON STATE] Current takePhoto2FileExtension:', takePhoto2FileExtension);
+                            console.log('🔴 [BUTTON STATE] Current adType:', adType);
+                            console.log('🔴 [BUTTON STATE] Button disabled state:', disablePhoto2Buttons);
+                            
+                            // Add immediate feedback
+                            setUploadPhoto2Message('🚀 Button pressed, starting upload...');
+                            
+                            await uploadPhoto('address');
+                            
+                            console.log('🟢 [BUTTON SUCCESS] Upload function completed');
+                          } catch (error) {
+                            console.error('🔴 [BUTTON ERROR] Upload button handler failed:', error);
+                            setUploadPhoto2Message('❌ Upload button error: ' + error.message);
+                          }
+                        }}
                         style={{ marginTop: 8 }}
                         icon="cloud-upload"
                       >

@@ -84,10 +84,20 @@ let Error = () => {
 
       <View style={styles.infoSection}>
           <Text style={styles.basicText}>Please take a screenshot of this page in order to record the error message, and then:{'\n'}</Text>
-          <Button title="Contact Us"
-            onPress={ () => { appState.changeState('ContactUs') } }
-            styles={styleContactUsButton}
-          />
+          
+          <View style={styles.buttonContainer}>
+            <Button title="Return to Login"
+              onPress={ async () => { 
+                await appState.recoverFromErrorState();
+              } }
+              styles={styleRecoverButton}
+            />
+            
+            <Button title="Contact Us"
+              onPress={ () => { appState.changeState('ContactUs') } }
+              styles={styleContactUsButton}
+            />
+          </View>
       </View>
 
       </ScrollView>
@@ -135,8 +145,28 @@ let styles = StyleSheet.create({
   infoItem: {
     marginBottom: scaledHeight(5),
   },
+  buttonContainer: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    width: '100%',
+    marginTop: scaledHeight(10),
+  },
 });
 
+
+let styleRecoverButton = StyleSheet.create({
+  container: {
+    backgroundColor: colors.primary,
+    marginBottom: scaledHeight(10),
+    paddingVertical: scaledHeight(12),
+  },
+  text: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: normaliseFont(16),
+    textAlign: 'center',
+  },
+});
 
 let styleContactUsButton = StyleSheet.create({
   text: {

@@ -48,13 +48,7 @@ export {default as CloseSolidiAccount} from './CloseSolidiAccount/CloseSolidiAcc
 export {default as UpdateApp} from './UpdateApp/UpdateApp';
 export {default as RegisterConfirm} from './RegisterConfirm/RegisterConfirm';
 export {default as RegisterConfirm2} from './RegisterConfirm2/RegisterConfirm2';
-// Temporarily skip AccountUpdate component due to same WeakMap error pattern
-export const AccountUpdate = () => React.createElement(View, { 
-  style: { padding: 20, alignItems: 'center', flex: 1, justifyContent: 'center' } 
-}, 
-  React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, 'Account Update'),
-  React.createElement(Text, { style: { fontSize: 16, color: '#666', textAlign: 'center' } }, 'Account update form temporarily disabled on web during development')
-);
+export {default as AccountUpdate} from './AccountUpdate/AccountUpdate';
 export {default as AccountRestricted} from './AccountRestricted/AccountRestricted';
 export {default as NavigationDebug} from './NavigationDebug/NavigationDebug';
 export {default as Questionnaire} from './Questionnaire/Questionnaire';

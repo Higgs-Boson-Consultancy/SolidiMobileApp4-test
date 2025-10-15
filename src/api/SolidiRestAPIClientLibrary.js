@@ -96,10 +96,10 @@ export default class SolidiRestAPIClientLibrary {
       }
 
       // Make a lightweight API call to test credentials
-      // Using a simple endpoint that requires authentication
+      // Using the 'user' endpoint which is known to exist
       const result = await this.privateMethod({
-        httpMethod: 'GET',
-        apiRoute: 'user/status', // Assuming this is a lightweight endpoint
+        httpMethod: 'POST',
+        apiRoute: 'user',
         params: {},
         abortController: new AbortController()
       });
@@ -350,7 +350,34 @@ export default class SolidiRestAPIClientLibrary {
       }
       // ===== SELL API SPECIFIC LOGGING END =====
 
+      // ===== GENERAL REQUEST LOGGING =====
+      console.log('\n' + '🌐'.repeat(50));
+      console.log('📨 HTTP REQUEST DETAILS');
+      console.log(`🎯 METHOD: ${httpMethod}`);
+      console.log(`🔗 URL: ${uri}`);
+      console.log(`📋 Headers:`, JSON.stringify(headers, null, 2));
+      if (postData) {
+        console.log(`📦 Request Body:`, postData);
+        try {
+          const parsedData = JSON.parse(postData);
+          console.log(`📊 PARSED REQUEST JSON:`, JSON.stringify(parsedData, null, 2));
+        } catch (e) {
+          console.log(`📄 Request body is not JSON or multipart/form-data`);
+        }
+      }
+      console.log('🌐'.repeat(50));
+
       let response = await fetch(uri, options);
+
+      // ===== GENERAL RESPONSE LOGGING =====
+      console.log('\n' + '📡'.repeat(50));
+      console.log('📡 HTTP RESPONSE DETAILS');
+      console.log(`📊 STATUS: ${response.status} ${response.statusText}`);
+      console.log(`✅ Response OK: ${response.ok}`);
+      console.log(`🌐 Response Headers:`, Object.fromEntries(response.headers));
+      console.log(`📏 Content-Length: ${response.headers.get('content-length') || 'Unknown'}`);
+      console.log(`📋 Content-Type: ${response.headers.get('content-type') || 'Unknown'}`);
+      console.log('📡'.repeat(50));
 
       // ===== SIMPLIFIED RESPONSE LOGGING =====
       if (apiRoute.includes('login')) {
@@ -388,6 +415,34 @@ export default class SolidiRestAPIClientLibrary {
         }
       }
       let responseData = await response.text();
+      
+      // ===== GENERAL RESPONSE BODY LOGGING =====
+      console.log('\n' + '💾'.repeat(50));
+      console.log('📄 RAW RESPONSE BODY:');
+      console.log(responseData);
+      console.log(`📏 Response Body Length: ${responseData ? responseData.length : 0} bytes`);
+      
+      // Try to parse and display structured JSON response
+      if (responseData) {
+        try {
+          const parsedResponse = JSON.parse(responseData);
+          console.log('\n📊 PARSED RESPONSE JSON:');
+          console.log(JSON.stringify(parsedResponse, null, 2));
+          
+          if (parsedResponse.error) {
+            console.log(`\n❌ ERROR DETECTED: ${parsedResponse.error}`);
+          }
+          if (parsedResponse.data) {
+            console.log(`\n✅ DATA PRESENT:`, JSON.stringify(parsedResponse.data, null, 2));
+          }
+          if (parsedResponse.success !== undefined) {
+            console.log(`\n🎯 SUCCESS STATUS: ${parsedResponse.success}`);
+          }
+        } catch (e) {
+          console.log('\n📄 Response is not valid JSON');
+        }
+      }
+      console.log('💾'.repeat(50));
       
       // ===== SIMPLIFIED RESPONSE BODY LOGGING =====
       if (apiRoute.includes('login')) {

@@ -54,11 +54,11 @@ let jd = JSON.stringify;
 
 // Settings: Critical (check before making a new release)
 let autoLoginOnDevAndStag = false; // Only used during development (i.e. on 'dev' tier) to automatically login using a dev user.
-let autoLoginWithStoredCredentials = true; // Auto-login with stored API credentials in dev/stage mode (saves re-entering credentials after code updates)
+let autoLoginWithStoredCredentials = true; // Auto-login with stored API credentials for all environments (persistent login)
 let preserveRegistrationData = false; // Only used during development (i.e. on 'dev' tier) to preserve registration data after a successful registration.
 // - This is useful for testing the registration process, as it allows you to re-register without having to re-enter all the registration data.
 let developmentModeBypass = false; // Skip network calls and use sample data when server is unreachable
-let bypassAuthentication = true; // TEMPORARILY enable bypass to test registration page access
+let bypassAuthentication = false; // Enable proper authentication flow for persistent login
 import appTier from 'src/application/appTier'; // dev / stag / prod.
 
 // States that are always accessible without authentication
@@ -70,7 +70,7 @@ const publicAccessStates = ['Register', 'Login', 'Explore', 'EmailVerification',
 //let initialMainPanelState = 'Explore'; // Show explore page first to access dynamic forms
 //let initialMainPanelState = 'Buy';
 //initialMainPanelState = 'CloseSolidiAccount'; // Dev work
-let initialMainPanelState = 'Register'; // Show registration page for testing
+let initialMainPanelState = 'PersonalDetails'; // Default authenticated state
 let initialPageName = 'default';
 //initialPageName = 'balance'; // Dev work
 
@@ -210,12 +210,27 @@ Authenticate Login PIN
     // Shortcut function for changing the mainPanelState.
     this.changeState = (stateName, pageName) => {
       let fName = 'changeState';
+      console.log('🚀 [AppState] changeState called with:', stateName, pageName);
+      
       // We check for this error in setMainPanelState as well, but it's useful to have it occur here as well, for debugging purposes.
       if (! mainPanelStates.includes(stateName)) {
         var msg = `${fName}: Unrecognised stateName: ${JSON.stringify(stateName)}`
+        console.log('❌ [AppState] Unrecognised stateName:', stateName);
         throw Error(msg);
       }
+      
+      if (stateName === 'AccountUpdate') {
+        console.log('🔥🔥🔥 [AppState] About to change to AccountUpdate state! 🔥🔥🔥');
+        console.log('🎯 [AppState] Navigation triggered to AccountUpdate');
+        console.log('🎯 [AppState] pageName:', pageName);
+      }
+      
       this.state.setMainPanelState({mainPanelState: stateName, pageName});
+      console.log('✅ [AppState] State change completed to:', stateName);
+      
+      if (stateName === 'AccountUpdate') {
+        console.log('🔥🔥🔥 [AppState] AccountUpdate state change COMPLETED! 🔥🔥🔥');
+      }
     }
 
 
@@ -474,7 +489,20 @@ RegisterConfirm2 AccountUpdate
           var extraInfoRequired = await appState.checkIfExtraInformationRequired();
         } catch(err) {
           logger.error(err);
-          return appState.switchToErrorState({message: String(err)});
+          
+          // Check if this is an authentication-related error
+          if (err.message && (err.message.includes('401') || err.message.includes('403') || 
+              err.message.includes('unauthorized') || err.message.includes('invalid'))) {
+            logger.error('Authentication error during initialization, forcing logout');
+            // Clear authentication and go to login instead of error state
+            appState.user.isAuthenticated = false;
+            appState.user.apiCredentialsFound = false;
+            return appState.changeState('Login');
+          } else {
+            // For non-auth errors, provide option to recover
+            logger.error('Non-authentication error during initialization');
+            return appState.switchToErrorState({message: `${String(err)} (Tap to retry login)`});
+          }
         }
 
         // If the state has changed since we loaded data from the server, we exit so that we don't set any new state (which would probably cause an error).
@@ -727,15 +755,35 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (!this.state.user.isAuthenticated) {
         try {
           console.log('🔐 APPSTATE: Attempting auto-login with stored credentials...');
+          
+          // Ensure we check for credentials first if not already done
+          if (!this.state.user.apiCredentialsFound) {
+            await this.state.checkForAPICredentials();
+          }
+          
           let autoLoginResult = await this.state.autoLoginWithStoredCredentials();
-          if (autoLoginResult === "SUCCESS") {
+          if (autoLoginResult === true) {
             console.log('✅ APPSTATE: Auto-login successful!');
           } else {
             console.log('ℹ️ APPSTATE: No stored credentials found for auto-login');
           }
         } catch (error) {
           console.log('⚠️ APPSTATE: Auto-login failed:', error.message);
-          // Don't throw error - just continue without auto-login
+          
+          // If auto-login fails, clear potentially problematic credentials
+          // and ensure we don't get stuck in error state
+          try {
+            if (error.message.includes('401') || error.message.includes('invalid') || error.message.includes('expired')) {
+              console.log('🔐 APPSTATE: Clearing invalid credentials from auto-login failure');
+              await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+              this.state.user.apiCredentialsFound = false;
+            }
+          } catch (clearError) {
+            console.log('⚠️ APPSTATE: Could not clear credentials:', clearError.message);
+          }
+          
+          // Don't throw error or trigger error state - just continue to login screen
+          console.log('🔐 APPSTATE: Continuing to login screen after auto-login failure');
         }
       }
     }
@@ -787,12 +835,26 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let params = {password, tfa, optionalParams};
       let abortController = this.state.createAbortController();
       let data = await apiClient.publicMethod({httpMethod: 'POST', apiRoute, params, abortController});
-      //lj(data);
+      
+      // ===== LOGIN RESPONSE LOGGING =====
+      console.log('🚀 LOGIN API RESPONSE:');
+      console.log('📧 Email:', email);
+      console.log('🔍 Response data:', JSON.stringify(data, null, 2));
+      if (data.apiKey) {
+        console.log('🔑 API Key received:', data.apiKey);
+        console.log('🔐 API Secret received:', data.apiSecret ? '[REDACTED]' : 'NOT_PROVIDED');
+      }
+      log('LOGIN: Full API response received', data);
+      // ===== LOGIN RESPONSE LOGGING END =====
+      
       // Issue: We may get a security block here, e.g.
       // {"error":{"code":400,"message":"Error in login","details":{"tfa_required":true}}}
       if (data.error) {
+        console.log('❌ LOGIN ERROR:', data.error);
+        log('LOGIN: Error in response', data.error);
         if (data.error.code == 400 && data.error.details) {
           if (data.error.details.tfa_required) {
+            console.log('🔒 TFA Required for login');
             return "TFA_REQUIRED";
           }
         }
@@ -800,12 +862,176 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       let keyNames = 'apiKey, apiSecret'.split(', ');
       // Future: if error is "cannot_parse_data", return a different error.
       if (! misc.hasExactKeys('data', data, keyNames, 'submitLoginRequest')) {
+        console.log('❌ LOGIN VALIDATION FAILED: Missing required keys', keyNames);
+        log('LOGIN: Validation failed - missing keys', { expected: keyNames, received: Object.keys(data) });
         throw Error('Invalid username or password.');
       }
       let {apiKey, apiSecret} = data;
+      console.log('✅ LOGIN SUCCESS: API credentials extracted successfully');
       _.assign(this.state.user, {email, password});
       await this.state.loginWithAPIKeyAndSecret({apiKey, apiSecret});
       return "SUCCESS";
+    }
+
+    this.register = async (registerData) => {
+      const fName = 'register';
+      
+      console.log(`${fName}: Starting registration for email: ${registerData.email}`);
+      
+      // Validate input data first
+      const validationErrors = this.validateRegistrationData(registerData);
+      if (validationErrors && Object.keys(validationErrors).length > 0) {
+        console.log(`${fName}: Validation errors:`, validationErrors);
+        return { result: "VALIDATION_ERROR", details: validationErrors };
+      }
+      
+      console.log(`${fName}: Validation passed`);
+      
+      // OFFLINE MODE - Skip API and return mock success
+      if (OFFLINE_MODE) {
+        console.log(`${fName}: [OFFLINE MODE] Mock registration for email: ${registerData.email}`);
+        return { 
+          result: "SUCCESS", 
+          message: "Registration successful (offline mode)",
+          data: { userId: 'mock_user_123', email: registerData.email }
+        };
+      }
+      
+      // Create public API client for registration
+      let {userAgent, domain} = this.state;
+      
+      console.log(`${fName}: Creating API client for registration`);
+      console.log(`📧 Email: ${registerData.email}`);
+      console.log(`🌐 Domain: ${domain}`);
+      
+      let apiClient = new SolidiRestAPIClientLibrary({
+        userAgent, 
+        apiKey:'',     // Empty for public registration
+        apiSecret:'',  // Empty for public registration
+        domain,
+        appStateRef: { current: this }
+      });
+      
+      // Prepare API route and parameters
+      let apiRoute = 'register_new_user' + `/${registerData.email}`;
+      let optionalParams = {
+        origin: {
+          clientType: 'mobile',
+          os: Platform.OS,
+          appVersion,
+          appBuildNumber,
+          appTier,
+          timestamp: Date.now()
+        }
+      };
+      
+      // Convert emailPreferences to array format
+      let emailPreferences = [];
+      if (registerData.emailPreferences) {
+        Object.keys(registerData.emailPreferences).forEach(key => {
+          if (registerData.emailPreferences[key]) {
+            emailPreferences.push(key);
+          }
+        });
+      }
+      
+      // Only include fields expected by the registration API
+      let params = {
+        userData: {
+          email: registerData.email,
+          firstName: registerData.firstName,
+          lastName: registerData.lastName,
+          dateOfBirth: registerData.dateOfBirth,
+          gender: registerData.gender,
+          citizenship: registerData.citizenship,
+          password: registerData.password,
+          mobileNumber: registerData.mobileNumber,
+          emailPreferences
+        },
+        optionalParams
+      };
+      
+      try {
+        console.log(`${fName}: Making API call to ${apiRoute}`);
+        let abortController = this.state.createAbortController();
+        let data = await apiClient.publicMethod({
+          httpMethod: 'POST',
+          apiRoute,
+          params,
+          abortController
+        });
+        
+        console.log(`${fName}: API response received:`, data);
+        
+        if (data.error) {
+          console.log(`${fName}: Registration failed with error:`, data.error);
+          return { 
+            result: "ERROR", 
+            error: data.error,
+            message: data.error.message || "Registration failed"
+          };
+        }
+        
+        console.log(`${fName}: Registration successful!`);
+        return { 
+          result: "SUCCESS", 
+          message: "Registration successful. Please check your email.",
+          data: data
+        };
+        
+      } catch (error) {
+        console.error(`${fName}: Registration error:`, error);
+        return { 
+          result: "ERROR", 
+          error: error,
+          message: error.message || "Registration failed"
+        };
+      }
+    }
+
+    this.validateRegistrationData = (data) => {
+      const errors = {};
+      
+      // Email validation
+      if (!data.email || !/\S+@\S+\.\S+/.test(data.email)) {
+        errors.email = 'Valid email is required';
+      }
+      
+      // Password validation
+      if (!data.password || data.password.length < 8) {
+        errors.password = 'Password must be at least 8 characters';
+      }
+      
+      // Name validation
+      if (!data.firstName || data.firstName.trim().length < 2) {
+        errors.firstName = 'First name must be at least 2 characters';
+      }
+      
+      if (!data.lastName || data.lastName.trim().length < 2) {
+        errors.lastName = 'Last name must be at least 2 characters';
+      }
+      
+      // Mobile number validation
+      if (!data.mobileNumber || data.mobileNumber.length < 8) {
+        errors.mobileNumber = 'Valid mobile number is required';
+      }
+      
+      // Date of birth validation (DD/MM/YYYY format)
+      if (!data.dateOfBirth || !/^\d{2}\/\d{2}\/\d{4}$/.test(data.dateOfBirth)) {
+        errors.dateOfBirth = 'Date of birth must be in DD/MM/YYYY format';
+      }
+      
+      // Gender validation
+      if (!data.gender || !['Male', 'Female', 'Other'].includes(data.gender)) {
+        errors.gender = 'Valid gender selection is required';
+      }
+      
+      // Citizenship validation (2-letter country code)
+      if (!data.citizenship || data.citizenship.length !== 2) {
+        errors.citizenship = 'Valid country selection is required';
+      }
+      
+      return Object.keys(errors).length > 0 ? errors : null;
     }
 
 
@@ -813,6 +1039,19 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // This isn't really a "log in" function, it's more of a data-storage-and-gathering function.
       // Nonetheless, it installs the particular user's data at the "base" of the application data storage.
       // If we've arrived at this function, we've authenticated elsewhere.
+      
+      // ===== USER AUTHENTICATION LOGGING =====
+      console.log('🔐 SETTING UP AUTHENTICATED USER:');
+      console.log('🆔 API Key:', apiKey);
+      console.log('🔑 API Secret:', apiSecret ? `${apiSecret.substring(0, 12)}...` : 'NOT_PROVIDED');
+      console.log('👤 Current user state before auth:', JSON.stringify(this.state.user, null, 2));
+      log('AUTHENTICATION: Starting loginWithAPIKeyAndSecret', { 
+        apiKey, 
+        apiSecretLength: apiSecret ? apiSecret.length : 0,
+        currentUserState: this.state.user 
+      });
+      // ===== USER AUTHENTICATION LOGGING END =====
+      
       this.state.user.isAuthenticated = true;
       apiClient = this.state.apiClient;
       // Store the API Key and Secret in the apiClient.
@@ -829,19 +1068,64 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (appTier === 'dev') {
         log(`apiSecret: ${apiSecret}`);
       }
+      
+      // ===== POST-AUTHENTICATION USER OBJECT LOGGING =====
+      console.log('✅ USER AUTHENTICATED SUCCESSFULLY:');
+      console.log('👤 Updated user state:', JSON.stringify(this.state.user, null, 2));
+      console.log('🔧 API Client updated with credentials');
+      console.log('💾 Credentials stored in keychain');
+      log('AUTHENTICATION: User object updated', {
+        userState: this.state.user,
+        apiCredentialsStored: true,
+        storageKey: this.state.apiCredentialsStorageKey
+      });
+      // ===== POST-AUTHENTICATION USER OBJECT LOGGING END =====
+      
       // Load user stuff.
       if (OFFLINE_MODE) {
         log(`[OFFLINE MODE] Skipping loadInitialStuffAboutUser`);
+        console.log('🔄 [OFFLINE MODE] Skipping loadInitialStuffAboutUser');
       } else {
+        console.log('🔄 Loading initial user data...');
         await this.state.loadInitialStuffAboutUser();
+        console.log('✅ Initial user data loaded');
+        log('AUTHENTICATION: Initial user data loaded');
+        
+        // ===== FINAL USER STATE LOGGING AFTER COMPLETE LOGIN =====
+        console.log('🎉 ===== LOGIN COMPLETE - FINAL USER STATE =====');
+        console.log('🔐 Authentication Status:', this.state.user.isAuthenticated);
+        console.log('🔑 API Credentials Found:', this.state.user.apiCredentialsFound);
+        console.log('👤 User Info Available:', !!this.state.user.info.user);
+        console.log('📊 User Status Available:', !!this.state.user.info.user_status);
+        if (this.state.user.info.user) {
+          console.log('📧 Logged in as:', this.state.user.info.user.email);
+          console.log('👨‍💼 User Name:', `${this.state.user.info.user.firstName || ''} ${this.state.user.info.user.lastName || ''}`.trim());
+          console.log('🆔 User UUID:', this.state.user.info.user.uuid);
+        }
+        console.log('🔍 COMPLETE FINAL USER STATE:');
+        console.log(JSON.stringify({
+          isAuthenticated: this.state.user.isAuthenticated,
+          apiCredentialsFound: this.state.user.apiCredentialsFound,
+          email: this.state.user.email,
+          userInfo: this.state.user.info.user,
+          userStatus: this.state.user.info.user_status
+        }, null, 2));
+        console.log('🎉 ===== END LOGIN COMPLETE LOGGING =====');
+        // ===== FINAL USER STATE LOGGING AFTER COMPLETE LOGIN END =====
       }
       return "SUCCESS";
     }
 
-    // Auto-login function for development - loads stored credentials and logs in automatically
+    // Auto-login function - loads stored credentials and logs in automatically (for persistent login)
     this.autoLoginWithStoredCredentials = async () => {
       try {
         log("🔑 autoLoginWithStoredCredentials: Attempting auto-login with stored credentials");
+        
+        // Skip if already authenticated
+        if (this.state.user.isAuthenticated) {
+          log("🔑 autoLoginWithStoredCredentials: User already authenticated, skipping");
+          return true;
+        }
         
         // Check if credentials exist in keychain
         let credentials = await Keychain.getInternetCredentials(this.state.apiCredentialsStorageKey);
@@ -849,6 +1133,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         if (credentials && credentials.username && credentials.password) {
           let apiKey = credentials.username;
           let apiSecret = credentials.password;
+          
+          // Validate credentials format (basic check)
+          if (!apiKey || !apiSecret || apiKey.length < 10 || apiSecret.length < 10) {
+            log("🔑 autoLoginWithStoredCredentials: Invalid credential format, clearing stored credentials");
+            await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+            this.state.user.apiCredentialsFound = false;
+            return false;
+          }
           
           log("🔑 autoLoginWithStoredCredentials: Found stored credentials, attempting login");
           log(`🔑 autoLoginWithStoredCredentials: API Key: ${apiKey}`);
@@ -859,15 +1151,35 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           // Login with the stored credentials
           await this.loginWithAPIKeyAndSecret({apiKey, apiSecret});
           
-          log("🔑 autoLoginWithStoredCredentials: Auto-login successful!");
-          return true;
+          // Verify login succeeded
+          if (this.state.user.isAuthenticated) {
+            log("🔑 autoLoginWithStoredCredentials: Auto-login successful!");
+            return true;
+          } else {
+            log("🔑 autoLoginWithStoredCredentials: Login failed despite no errors");
+            return false;
+          }
+          
         } else {
           log("🔑 autoLoginWithStoredCredentials: No stored credentials found");
+          this.state.user.apiCredentialsFound = false;
           return false;
         }
       } catch (error) {
         log(`🔑 autoLoginWithStoredCredentials: Error during auto-login: ${error.message}`);
         console.error('🔑 Auto-login error:', error);
+        
+        // If credentials are invalid/expired, clear them
+        if (error.message.includes('invalid') || error.message.includes('expired') || error.message.includes('401')) {
+          log("🔑 autoLoginWithStoredCredentials: Credentials appear invalid, clearing them");
+          try {
+            await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+            this.state.user.apiCredentialsFound = false;
+          } catch (clearError) {
+            log(`🔑 autoLoginWithStoredCredentials: Error clearing invalid credentials: ${clearError.message}`);
+          }
+        }
+        
         return false;
       }
     }
@@ -1130,7 +1442,16 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Log API request details
       console.log(`🚀 [API REQUEST] ${httpMethod} ${apiRoute}`);
       console.log(`📤 [API REQUEST PARAMS]`, params);
-      console.log(`🔧 [API FUNCTION]`, functionName);
+      console.log(`� [REQUEST JSON]`, JSON.stringify({
+        method: httpMethod,
+        route: apiRoute,
+        params: {
+          ...params,
+          fileData: params.fileData ? `[Base64 Data: ${params.fileData.length} chars]` : params.fileData
+        },
+        functionName
+      }, null, 2));
+      console.log(`�🔧 [API FUNCTION]`, functionName);
       
       // Safety check for apiClient
       if (!this.state.apiClient) {
@@ -1148,6 +1469,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Log API response details
       console.log(`📥 [API RESPONSE] ${httpMethod} ${apiRoute}`);
       console.log(`📊 [API RESPONSE DATA]`, data);
+      console.log(`📄 [RESPONSE JSON]`, JSON.stringify(data, null, 2));
       if (_.has(data, 'error')) {
         let error = data.error;
         
@@ -1239,14 +1561,17 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       }
 
       // 🔑 AUTO-LOGIN: Try to auto-login with stored credentials for all environments
-      if (autoLoginWithStoredCredentials && this.state.user.apiCredentialsFound && !this.state.user.isAuthenticated) {
+      if (autoLoginWithStoredCredentials && !this.state.user.isAuthenticated) {
         log("🔑 Attempting auto-login with stored credentials");
         try {
           let autoLoginSuccess = await this.autoLoginWithStoredCredentials();
           if (autoLoginSuccess) {
             log("🔑 Auto-login successful! User is now authenticated");
-            // Don't change state here - let the normal flow continue to check PIN
-            // This allows the app to proceed with authentication flow properly
+            // If auto-login succeeded and user is authenticated, skip further authentication flows
+            if (this.state.user.isAuthenticated) {
+              log("🔑 Auto-login complete, redirecting to default state");
+              return this.state.changeState(initialMainPanelState);
+            }
           } else {
             log("🔑 Auto-login failed, continuing with normal flow");
           }
@@ -1297,8 +1622,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           return this.forceRedirectToLogin('API credentials not found');
         }
 
-        // Validate API credentials by making a test call
-        if (this.state.apiClient) {
+        // Skip API validation for periodic checks to avoid unnecessary logouts
+        // Only validate when there's a specific need (like after failed API calls)
+        if (context !== 'periodic-check' && this.state.apiClient) {
           try {
             log('🔐 Testing API credentials with validation call');
             let testResult = await this.state.apiClient.validateCredentials();
@@ -1409,24 +1735,34 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         clearInterval(this.authCheckTimer);
       }
       
-      // Set up periodic authentication check (every 5 minutes)
+      // Set up periodic authentication check (every 10 minutes, less aggressive)
       this.authCheckTimer = setInterval(async () => {
         try {
-          // Only check if user is supposed to be authenticated
-          if (this.state.user.isAuthenticated && this.state.apiClient) {
-            log('🔐 Performing periodic authentication check');
+          // Only check basic authentication state, not API validity
+          if (this.state.user.isAuthenticated && this.state.user.apiCredentialsFound) {
+            log('🔐 Performing lightweight periodic authentication check');
             
-            const isValid = await this.validateAuthentication('periodic-check');
-            if (!isValid) {
-              log('🔐 Periodic authentication check failed, user will be redirected on next navigation');
-              // Don't redirect immediately during periodic check to avoid disrupting user
-              // The redirect will happen on next state change or API call
+            // Just verify the basic auth state is consistent
+            // Don't make API calls that could trigger false positives
+            if (!this.state.apiClient || !this.state.apiClient.apiKey) {
+              log('🔐 Periodic check: API client missing, attempting to restore from keychain');
+              // Try to restore from stored credentials instead of logging out
+              if (this.state.user.apiCredentialsFound) {
+                try {
+                  await this.autoLoginWithStoredCredentials();
+                } catch (restoreError) {
+                  log('🔐 Failed to restore credentials during periodic check');
+                }
+              }
+            } else {
+              log('🔐 Periodic check: Authentication state appears healthy');
             }
           }
         } catch (error) {
           log(`🔐 Error during periodic authentication check: ${error.message}`);
+          // Don't logout on periodic check errors - too disruptive
         }
-      }, 5 * 60 * 1000); // Check every 5 minutes
+      }, 10 * 60 * 1000); // Check every 10 minutes (less frequent)
       
       // Also check on app focus/resume events
       if (Platform.OS !== 'web') {
@@ -1544,19 +1880,28 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
 
-    this.logout = async () => {
-      log("Start: logout");
+    this.logout = async (clearStoredCredentials = false) => {
+      log(`Start: logout (clearStoredCredentials: ${clearStoredCredentials})`);
       // Note: We don't ever delete the PIN from app memory or from the keychain.
       // Delete user's email and password from memory.
       this.state.user.email = '';
       this.state.user.password = '';
-      // Delete user's API Key and Secret from memory and from the keychain.
+      // Delete user's API Key and Secret from memory only (preserve in keychain for persistent login)
       this.state.apiClient.apiKey = '';
       this.state.apiClient.apiSecret = '';
-      await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+      
+      // Only clear stored credentials if explicitly requested (complete logout)
+      if (clearStoredCredentials) {
+        log("🔑 Clearing stored credentials for complete logout");
+        await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+        this.state.user.apiCredentialsFound = false;
+      } else {
+        log("🔑 Preserving stored credentials for persistent login");
+        // Keep apiCredentialsFound = true so auto-login can work on next app start
+      }
+      
       // Set user to 'not authenticated'.
       this.state.user.isAuthenticated = false;
-      this.state.user.apiCredentialsFound = false;
       // Reset the state history and wipe any stashed state.
       this.state.resetStateHistory();
       log("Logout complete.");
@@ -1581,8 +1926,20 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         }
       }
       // Note: The user's data is still actually stored on the phone, when they've logged out. Future: Delete some of it when they log out ? E.g. the user status info.
-      // Change to Trade state.
-      this.changeState('Trade');
+      // Change to appropriate state after logout
+      if (clearStoredCredentials) {
+        // Complete logout - go to login page
+        this.changeState('Login');
+      } else {
+        // Regular logout - go to trade page (user can re-authenticate easily)
+        this.changeState('Trade');
+      }
+    }
+
+    // Complete logout - clears all stored credentials and forces re-login
+    this.signOutCompletely = async () => {
+      log("🔓 Complete sign out - clearing all stored credentials");
+      await this.logout(true); // Pass true to clear stored credentials
     }
 
 
@@ -1671,6 +2028,54 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       this.cancelTimers();
       this.abortAllRequests();
       this.state.changeState('Error');
+    }
+
+    // 🔧 ERROR STATE RECOVERY
+    // Allow users to escape from error state back to login
+    this.recoverFromErrorState = async () => {
+      try {
+        log('🔧 Recovering from error state');
+        
+        // Clear error state
+        this.state.error.message = '';
+        
+        // Clear authentication state to ensure clean login
+        this.setState({
+          user: {
+            ...this.state.user,
+            isAuthenticated: false,
+            apiCredentialsFound: false,
+            apiKey: null,
+            apiSecret: null,
+            email: null,
+          }
+        });
+
+        // Clear API client
+        this.state.apiClient = null;
+        
+        // Clear any stored credentials that might be causing issues
+        try {
+          await Keychain.resetInternetCredentials(this.state.apiCredentialsStorageKey);
+          log('🔧 Cleared potentially problematic stored credentials');
+        } catch (keychainError) {
+          log(`🔧 Could not clear keychain: ${keychainError.message}`);
+        }
+        
+        // Cancel any ongoing timers
+        this.cancelTimers();
+        
+        // Go to login state
+        this.state.changeState('Login');
+        log('🔧 Successfully recovered from error state');
+        
+        return true;
+      } catch (error) {
+        log(`🔧 Error during recovery: ${error.message}`);
+        // If recovery fails, at least try to get to login
+        this.state.changeState('Login');
+        return false;
+      }
     }
 
 
@@ -2477,6 +2882,33 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         log(msg + " New data saved to appState. " + jd(data));
         this.state.user.info.user = data;
       }
+      
+      // ===== DETAILED USER OBJECT LOGGING =====
+      console.log('👤 ===== COMPLETE USER OBJECT AFTER LOGIN =====');
+      console.log('🆔 User UUID:', data.uuid || 'NOT_PROVIDED');
+      console.log('📧 Email:', data.email || 'NOT_PROVIDED');
+      console.log('👨‍💼 Full Name:', `${data.firstName || ''} ${data.middleNames || ''} ${data.lastName || ''}`.trim() || 'NOT_PROVIDED');
+      console.log('🎂 Date of Birth:', data.dateOfBirth || 'NOT_PROVIDED');
+      console.log('⚧ Gender:', data.gender || 'NOT_PROVIDED');
+      console.log('🌍 Citizenship:', data.citizenship || 'NOT_PROVIDED');
+      console.log('🏠 Address:', `${data.address_1 || ''}, ${data.address_2 || ''}, ${data.address_3 || ''}, ${data.postcode || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '') || 'NOT_PROVIDED');
+      console.log('📱 Mobile:', data.mobile || 'NOT_PROVIDED');
+      console.log('📞 Landline:', data.landline || 'NOT_PROVIDED');
+      console.log('💰 Bank Limit:', data.bankLimit || 'NOT_PROVIDED');
+      console.log('₿ BTC Limit:', data.btcLimit || 'NOT_PROVIDED');
+      console.log('🔐 Crypto Limit:', data.cryptoLimit || 'NOT_PROVIDED');
+      console.log('🎁 Free Withdraw:', data.freeWithdraw || 'NOT_PROVIDED');
+      console.log('📊 Monthly Bank Limit:', data.monthBankLimit || 'NOT_PROVIDED');
+      console.log('📊 Monthly BTC Limit:', data.monthBtcLimit || 'NOT_PROVIDED');
+      console.log('📊 Monthly Crypto Limit:', data.monthCryptoLimit || 'NOT_PROVIDED');
+      console.log('📈 Yearly Bank Limit:', data.yearBankLimit || 'NOT_PROVIDED');
+      console.log('📈 Yearly BTC Limit:', data.yearBtcLimit || 'NOT_PROVIDED');
+      console.log('📈 Yearly Crypto Limit:', data.yearCryptoLimit || 'NOT_PROVIDED');
+      console.log('🔍 COMPLETE USER DATA JSON:');
+      console.log(JSON.stringify(data, null, 2));
+      console.log('👤 ===== END USER OBJECT LOGGING =====');
+      // ===== DETAILED USER OBJECT LOGGING END =====
+      
       return true;
     }
 
@@ -3497,23 +3929,42 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.uploadDocument = async (params) => {
+      console.log('🎯 [UPLOAD DOCUMENT] Function called with params:', params);
+      
       let {documentType, documentCategory, fileData, fileExtension} = params;
+      console.log('🎯 [UPLOAD DOCUMENT] Extracted params:', {documentType, documentCategory, fileDataLength: fileData ? fileData.length : 'null', fileExtension});
+      
       let noAbort = true;
-      let data = await this.state.privateMethod({
-        apiRoute: `private_upload/document/${documentType}`,
-        params: {
-          documentCategory,
-          fileData,
-          fileExtension,
-        },
-        functionName: 'uploadDocument',
-        noAbort,
-      });
-      lj(data);
-      /* Example response:
-{"result":"success"}
-      */
-      return data;
+      let apiRoute = `private_upload/document/${documentType}`;
+      // let apiRoute = `private_upload/document/appropriateness`;
+      console.log('🎯 [UPLOAD DOCUMENT] API route:', apiRoute);
+      
+      try {
+        console.log('🎯 [UPLOAD DOCUMENT] About to call privateMethod...');
+        let data = await this.state.privateMethod({
+          apiRoute,
+          params: {
+            documentCategory,
+            fileData,
+            fileExtension,
+          },
+          functionName: 'uploadDocument',
+          noAbort,
+        });
+        
+        console.log('🎯 [UPLOAD DOCUMENT] API call completed. Response data:', data);
+        console.log('📄 [RESPONSE JSON]', JSON.stringify(data, null, 2));
+        lj(data);
+        
+        /* Example response:
+  {"result":"success"}
+        */
+        return data;
+      } catch (error) {
+        console.error('🎯 [UPLOAD DOCUMENT] API call failed with error:', error);
+        console.error('🎯 [UPLOAD DOCUMENT] Error stack:', error.stack);
+        throw error;
+      }
     }
 
 
@@ -3710,10 +4161,12 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       loadPIN: this.loadPIN,
       checkForAPICredentials: this.checkForAPICredentials,
       logout: this.logout,
+      signOutCompletely: this.signOutCompletely,
       lockApp: this.lockApp,
       resetLockAppTimer: this.resetLockAppTimer,
       cancelTimers: this.cancelTimers,
       switchToErrorState: this.switchToErrorState,
+      recoverFromErrorState: this.recoverFromErrorState,
       /* Misc network methods */
       loadTerms: this.loadTerms,
       /* Public API methods */
@@ -4014,6 +4467,10 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
     this.state.registerData = this.state.blankRegisterData;
     this.state.registerConfirmData = this.state.blankRegisterConfirmData;
+
+    // Bind functions to state for React Context access
+    this.state.register = this.register.bind(this);
+    this.state.validateRegistrationData = this.validateRegistrationData.bind(this);
 
     // Initialise the state history.
     this.resetStateHistory();

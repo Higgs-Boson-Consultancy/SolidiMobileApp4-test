@@ -39,6 +39,16 @@ let MainPanel = (props) => {
 
     let {mainPanelState, pageName} = appState;
 
+    // Debug logging for MainPanel state changes
+    console.log('🎯 [MainPanel] selectPanelComponent called');
+    console.log('🎯 [MainPanel] mainPanelState:', mainPanelState);
+    console.log('🎯 [MainPanel] pageName:', pageName);
+    
+    // Special debug for AccountUpdate
+    if (mainPanelState === 'AccountUpdate') {
+      console.log('🔥 [MainPanel] AccountUpdate state detected! Should load AccountUpdate component');
+    }
+
     // appState.changeState also checks for an unrecognised panel, but we check here too, just in case. Other functions besides changeState can be used to change the panel.
     if (! mainPanelStates.includes(mainPanelState)) {
       return <Text>Error in MainPanel.js: mainPanelState '{}' not found in src/constants/mainPanelStates.js. </Text>
@@ -46,9 +56,14 @@ let MainPanel = (props) => {
 
     // Check that there is a component file with the specified name.
     let componentNames = _.keys(allPanels);
+    console.log('🎯 [MainPanel] Available component names:', componentNames.slice(0, 10), '... (showing first 10)');
+    
     if(! componentNames.includes(mainPanelState)) {
+      console.log('❌ [MainPanel] Component not found for state:', mainPanelState);
       return <Text>Error in MainPanel.js: No component file found in MainPanel/components with the same name as mainPanelState '{mainPanelState}'.</Text>
     }
+    
+    console.log('✅ [MainPanel] Component found for state:', mainPanelState);
 
     // Special cases
     if (mainPanelState === 'PIN') {
@@ -68,6 +83,17 @@ let MainPanel = (props) => {
     - Create the React element from the component and return it.
     */
     let selectedComponent = allPanels[appState.mainPanelState];
+    console.log('🎯 [MainPanel] Selected component for', appState.mainPanelState, ':', !!selectedComponent);
+    
+    if (appState.mainPanelState === 'AccountUpdate') {
+      console.log('🔥🔥🔥 [MainPanel] Creating AccountUpdate component! 🔥🔥🔥');
+      console.log('🎯 [MainPanel] Component details:', {
+        exists: !!selectedComponent,
+        name: selectedComponent?.name || 'unknown',
+        type: typeof selectedComponent
+      });
+    }
+    
     return React.createElement(selectedComponent);
   }
 

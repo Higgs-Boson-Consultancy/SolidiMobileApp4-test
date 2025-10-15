@@ -263,52 +263,89 @@ const Register = () => {
       userData2.gender = gender || userData2.gender;
       userData2.citizenship = citizenship || userData2.citizenship;
       
-      // Restructure emailPreferences into a list for transmission
-      userData2.emailPreferences = _.keys(_.pick(userData2.emailPreferences, _.identity));
+      // Keep emailPreferences as object for API
+      userData2.emailPreferences = userData.emailPreferences;
 
       console.log('🎯 [UI] Processed registration data:', userData2);
 
-      // ALWAYS treat registration as successful (API has issues with error responses)
-      console.log('✅ [UI] Registration complete! Treating as successful regardless of API response');
+      // Call the actual register API
+      console.log('📡 [UI] Calling appState.register() with real API');
+      const result = await appState.register(userData2);
+      
+      console.log('📡 [UI] Registration API result:', result);
 
-      // Store registration data for verification process
-      appState.registrationEmail = userData2.email;
-      appState.registrationPhone = userData2.mobileNumber;
-      appState.registrationSuccess = true;
+      if (result.result === "SUCCESS") {
+        console.log('✅ [UI] Registration successful!');
+        
+        // Store registration data for verification process
+        appState.registrationEmail = userData2.email;
+        appState.registrationPhone = userData2.mobileNumber;
+        appState.registrationSuccess = true;
 
-      // Save some of the userData for use in RegisterConfirm
-      appState.registerConfirmData = {
-        email: userData.email,
-        password: userData.password,
-      };
+        // Save some of the userData for use in RegisterConfirm
+        appState.registerConfirmData = {
+          email: userData.email,
+          password: userData.password,
+        };
 
-      // Delete the temporarily stored registerData from the appState
-      appState.registerData = appState.blankRegisterData;
+        // Delete the temporarily stored registerData from the appState
+        appState.registerData = appState.blankRegisterData;
 
-      // Show success message and redirect to email verification
-      Alert.alert(
-        "Registration Successful!",
-        "Please check your email for a verification code.",
-        [
-          {
-            text: "Continue",
-            onPress: () => {
-              // Reset UI state
-              setUploadMessage('');
-              setDisableRegisterButton(false);
-              
-              // Redirect to email verification page
-              appState.setMainPanelState({
-                mainPanelState: 'EmailVerification',
-                pageName: 'default'
-              });
+        // Show success message and redirect to email verification
+        Alert.alert(
+          "Registration Successful!",
+          result.message || "Please check your email for a verification code.",
+          [
+            {
+              text: "Continue",
+              onPress: () => {
+                // Reset UI state
+                setUploadMessage('');
+                setDisableRegisterButton(false);
+                
+                // Redirect to email verification page
+                appState.setMainPanelState({
+                  mainPanelState: 'EmailVerification',
+                  pageName: 'default'
+                });
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+        
+      } else if (result.result === "VALIDATION_ERROR") {
+        console.log('❌ [UI] Registration validation errors:', result.details);
+        let errorMessages = [];
+        Object.keys(result.details).forEach(field => {
+          errorMessages.push(`${field}: ${result.details[field]}`);
+        });
+        
+        Alert.alert(
+          "Validation Error",
+          errorMessages.join('\n'),
+          [{ text: "OK" }]
+        );
+        
+      } else {
+        // Handle other errors
+        console.log('❌ [UI] Registration failed:', result);
+        
+        Alert.alert(
+          "Registration Failed",
+          result.message || "Please try again later.",
+          [{ text: "OK" }]
+        );
+      }
 
     } catch (err) {
       console.error('❌ [UI] Registration error:', err);
+      
+      Alert.alert(
+        "Registration Error",
+        "An unexpected error occurred. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
       setUploadMessage('');
       setDisableRegisterButton(false);
     }

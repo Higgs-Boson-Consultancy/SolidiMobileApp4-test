@@ -21,11 +21,11 @@ let Header = (props) => {
 
   let logoImageName = 'solidi_logo_landscape_black_1924x493';
 
-  let statesWhereBackButtonIsHidden = [
+    let statesWhereBackButtonIsHidden = [
+    'Trade',
     'PIN',
     'RegisterConfirm',
     'RegisterConfirm2',
-    'AccountUpdate',
   ]
   let hideBackButton = statesWhereBackButtonIsHidden.includes(appState.mainPanelState);
 
@@ -34,7 +34,6 @@ let Header = (props) => {
   let statesWhereSettingsButtonIsHidden = [
     'RegisterConfirm',
     'RegisterConfirm2',
-    'AccountUpdate',
   ]
   let hideSettingsButton = statesWhereSettingsButtonIsHidden.includes(appState.mainPanelState);
 

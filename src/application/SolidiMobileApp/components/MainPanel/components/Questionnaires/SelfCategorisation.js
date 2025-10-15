@@ -128,6 +128,13 @@ const selfCategorisationFormData = {
 const SelfCategorisation = () => {
   const appState = useContext(AppStateContext);
 
+  // Add debugging to see if component is loading
+  console.log('=== SelfCategorisation Component Loading ===');
+  console.log('SelfCategorisation component mounted');
+  console.log('Form data available:', !!selfCategorisationFormData);
+  console.log('Form pages count:', selfCategorisationFormData?.pages?.length || 0);
+  console.log('==========================================');
+
   const handleSubmit = (formData) => {
     log('Self Categorisation form submitted:', formData);
     

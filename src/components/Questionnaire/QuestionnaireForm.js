@@ -15,7 +15,76 @@ import logger from 'src/util/logger';
 let logger2 = logger.extend('QuestionnaireForm');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
-const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
+// Simple HTML renderer for basic tags
+const renderHtmlText = (htmlString) => {
+  if (!htmlString) return '';
+  
+  // Split by HTML tags and render accordingly
+  const parts = htmlString.split(/(<[^>]*>)/);
+  let result = [];
+  let key = 0;
+  
+  const processText = (text, style = {}) => {
+    // Handle <br> tags by splitting on them
+    if (text.includes('<br>')) {
+      return text.split('<br>').map((part, index) => (
+        <React.Fragment key={`br-${key++}`}>
+          {index > 0 && '\n'}
+          {part}
+        </React.Fragment>
+      ));
+    }
+    return text;
+  };
+  
+  let currentStyle = {};
+  let skipNext = false;
+  
+  for (let i = 0; i < parts.length; i++) {
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+    
+    const part = parts[i];
+    
+    if (part.startsWith('<') && part.endsWith('>')) {
+      const tag = part.toLowerCase();
+      
+      if (tag === '<h2>') {
+        currentStyle = { fontSize: 24, fontWeight: 'bold', marginBottom: 10 };
+      } else if (tag === '</h2>') {
+        currentStyle = {};
+      } else if (tag === '<h5>') {
+        currentStyle = { fontSize: 16, fontWeight: '600', marginBottom: 8 };
+      } else if (tag === '</h5>') {
+        currentStyle = {};
+      } else if (tag === '<b>') {
+        currentStyle = { ...currentStyle, fontWeight: 'bold' };
+      } else if (tag === '</b>') {
+        currentStyle = { ...currentStyle, fontWeight: 'normal' };
+      } else if (tag.startsWith('<a ')) {
+        // Extract href for links
+        const hrefMatch = part.match(/href="([^"]*)"/);
+        if (hrefMatch) {
+          currentStyle = { ...currentStyle, color: sharedColors.primaryMain, textDecorationLine: 'underline' };
+        }
+      } else if (tag === '</a>') {
+        currentStyle = { ...currentStyle, color: undefined, textDecorationLine: undefined };
+      }
+    } else if (part.trim()) {
+      result.push(
+        <Text key={key++} style={currentStyle}>
+          {processText(part)}
+        </Text>
+      );
+    }
+  }
+  
+  return result.length > 0 ? result : htmlString.replace(/<[^>]*>/g, '');
+};
+
+const QuestionnaireForm = ({ questionnaire, onSubmit, loading, submitButtonText }) => {
   const [answers, setAnswers] = useState({});
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -29,26 +98,26 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
 
   // Get current questions (for single page forms or multi-page forms)
   const getCurrentQuestions = () => {
-    if (formData.pages) {
+    if (questionnaire.pages) {
       // Multi-page form
-      return formData.pages[currentPage]?.questions || [];
+      return questionnaire.pages[currentPage]?.questions || [];
     } else {
       // Single page form
-      return formData.questions || [];
+      return questionnaire.questions || [];
     }
   };
 
   // Get current page info
   const getCurrentPageInfo = () => {
-    if (formData.pages) {
-      return formData.pages[currentPage] || {};
+    if (questionnaire.pages) {
+      return questionnaire.pages[currentPage] || {};
     }
     return {};
   };
 
   // Handle next page navigation
   const handleNext = () => {
-    if (formData.pages && currentPage < formData.pages.length - 1) {
+    if (questionnaire.pages && currentPage < questionnaire.pages.length - 1) {
       setCurrentPage(prev => prev + 1);
     } else {
       handleSubmit();
@@ -66,12 +135,12 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
 
   // Handle form submission
   const handleSubmit = () => {
-    log('Submitting questionnaire', { formId: formData.formid, answers });
+    log('Submitting questionnaire', { formId: questionnaire.formid, answers });
     
     if (onSubmit) {
       onSubmit({
-        formId: formData.formid,
-        uuid: formData.uuid,
+        formId: questionnaire.formid,
+        uuid: questionnaire.uuid,
         answers: answers
       });
     } else {
@@ -88,9 +157,9 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
       case 'legend':
         return (
           <View key={question.id} style={[styles.questionSection, isLastQuestion && styles.lastQuestionSection]}>
-            <Text style={styles.legendText}>
-              {question.label.replace(/<[^>]*>/g, '')} {/* Strip HTML tags for now */}
-            </Text>
+            <View style={styles.legendText}>
+              {renderHtmlText(question.label)}
+            </View>
           </View>
         );
 
@@ -178,14 +247,14 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
                   >
                     <View style={styles.radioRow}>
                       <RadioButton value={option.id} />
-                      <Text 
+                      <View 
                         style={[
                           styles.radioText,
                           currentAnswer === option.id && styles.selectedRadioText
                         ]}
                       >
-                        {option.text.replace(/<[^>]*>/g, '')} {/* Strip HTML tags */}
-                      </Text>
+                        {renderHtmlText(option.text)}
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -226,7 +295,7 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
 
   const currentQuestions = getCurrentQuestions();
   const pageInfo = getCurrentPageInfo();
-  const isLastPage = !formData.pages || currentPage === formData.pages.length - 1;
+  const isLastPage = !questionnaire.pages || currentPage === questionnaire.pages.length - 1;
   const isFirstPage = currentPage === 0;
 
   return (
@@ -237,16 +306,16 @@ const QuestionnaireForm = ({ formData, onSubmit, onBack }) => {
         <Card style={styles.headerCard}>
           <Card.Content>
             <Text variant="headlineSmall" style={styles.formTitle}>
-              {formData.formtitle}
+              {questionnaire.formtitle}
             </Text>
-            {formData.formintro && (
+            {questionnaire.formintro && (
               <Text variant="bodyMedium" style={styles.formIntro}>
-                {formData.formintro}
+                {questionnaire.formintro}
               </Text>
             )}
-            {formData.pages && (
+            {questionnaire.pages && (
               <Text variant="bodySmall" style={styles.pageIndicator}>
-                Page {currentPage + 1} of {formData.pages.length}
+                Page {currentPage + 1} of {questionnaire.pages.length}
               </Text>
             )}
           </Card.Content>

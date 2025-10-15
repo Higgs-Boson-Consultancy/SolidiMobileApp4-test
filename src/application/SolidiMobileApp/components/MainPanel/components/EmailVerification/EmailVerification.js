@@ -74,11 +74,8 @@ export default function EmailVerification() {
       // Call email verification API
       const result = await appState.publicMethod({
         functionName: 'verifyEmail',
-        apiRoute: `verify_email/${verificationCode}`,
-        params: {
-          email: registrationEmail,
-          verificationCode: verificationCode
-        }
+        apiRoute: `confirm_email_and_send_mobile_code/${registrationEmail}/${verificationCode}`,
+        params: {}
       });
 
       if (result && !result.error) {

@@ -136,6 +136,12 @@ let PersonalDetails = () => {
     email: ''
   });
 
+  // Track which fields have been changed from their original values
+  let [changedFields, setChangedFields] = useState(new Set());
+  
+  // Store original values to compare against
+  let [originalValues, setOriginalValues] = useState({});
+
   // Country code dropdown for phone numbers
   let [countryCode, setCountryCode] = useState('+44');
   let generateCountryCodeOptionsList = () => {
@@ -265,6 +271,10 @@ let PersonalDetails = () => {
       await appState.loadInitialStuffAboutUser();
       await appState.loadCountries();
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      
+      // Wait a moment for data to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       setTitle(getUserInfo('title'));
       setTitleOptionsList(generateTitleOptionsList());
       setGender(getUserInfo('gender'));
@@ -280,12 +290,79 @@ let PersonalDetails = () => {
       });
       setCountry(getUserInfo('country'));
       setCountryOptionsList(generateCountryOptionsList());
+      
+      // Store original values for change tracking - only if data is actually loaded
+      let originalData = {
+        title: getUserInfo('title'),
+        firstName: getUserInfo('firstName'),
+        middleNames: getUserInfo('middleNames'),
+        lastName: getUserInfo('lastName'),
+        gender: getUserInfo('gender'),
+        dateOfBirth: getUserInfo('dateOfBirth'),
+        citizenship: getUserInfo('citizenship'),
+        mobile: getUserInfo('mobile'),
+        landline: getUserInfo('landline'),
+        email: getUserInfo('email'),
+        country: getUserInfo('country')
+      };
+      
+      // Check if any values are still loading
+      let hasLoadingValues = Object.values(originalData).some(value => value === '[loading]' || value === null || value === undefined);
+      
+      if (!hasLoadingValues) {
+        console.log(`👤 [UI] Setting original values:`, originalData);
+        setOriginalValues(originalData);
+        // Clear changed fields tracker
+        setChangedFields(new Set());
+      } else {
+        console.log(`👤 [UI] Some data still loading, will retry setting original values`);
+        // Retry after a delay
+        setTimeout(() => {
+          let retryOriginalData = {
+            title: getUserInfo('title'),
+            firstName: getUserInfo('firstName'),
+            middleNames: getUserInfo('middleNames'),
+            lastName: getUserInfo('lastName'),
+            gender: getUserInfo('gender'),
+            dateOfBirth: getUserInfo('dateOfBirth'),
+            citizenship: getUserInfo('citizenship'),
+            mobile: getUserInfo('mobile'),
+            landline: getUserInfo('landline'),
+            email: getUserInfo('email'),
+            country: getUserInfo('country')
+          };
+          console.log(`👤 [UI] Retry: Setting original values:`, retryOriginalData);
+          setOriginalValues(retryOriginalData);
+          setChangedFields(new Set());
+        }, 500);
+      }
+      
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `PersonalDetails.setup: Error = ${err}`;
       console.log(msg);
     }
   }
+
+
+  // Helper function to track field changes
+  let trackFieldChange = (fieldName, newValue) => {
+    let originalValue = originalValues[fieldName];
+    let newChangedFields = new Set(changedFields);
+    
+    if (newValue !== originalValue) {
+      // Value is different from original, mark as changed
+      newChangedFields.add(fieldName);
+    } else {
+      // Value is same as original, remove from changed fields
+      newChangedFields.delete(fieldName);
+    }
+    
+    setChangedFields(newChangedFields);
+    
+    console.log(`👤 [UI] Field ${fieldName} changed from "${originalValue}" to "${newValue}"`);
+    console.log(`👤 [UI] Changed fields:`, Array.from(newChangedFields));
+  };
 
 
   let updateUserData = async ({detail, value}) => {
@@ -303,6 +380,10 @@ let PersonalDetails = () => {
       setErrorDisplay({...errorDisplay, [detail]: null});
       return;
     }
+    
+    // Track the field change for bulk updates
+    trackFieldChange(detail, value);
+    
     // Proceed with update.
     let functionName = 'updateUserData';
     let info = appState.user.info;
@@ -490,13 +571,21 @@ country
 
   let savePersonalDetails = async () => {
     /*
-    Save all personal details at once:
-    - Collect all current form values
-    - Send them to the server in a single request
+    Save only changed personal details:
+    - Check which fields have been modified from their original values
+    - Only send changed fields to the server in the request
     - Show loading message and disable button during save
     - Show success/error feedback to user
     */
     console.log(`👤 [UI] Personal Details Save button pressed`);
+    
+    // Check if any fields have been changed
+    if (changedFields.size === 0) {
+      console.log(`👤 [UI] No changes detected, skipping save`);
+      setSaveMessage('No changes to save');
+      setTimeout(() => setSaveMessage(''), 2000);
+      return;
+    }
     
     setDisableSaveButton(true);
     setSaveMessage('Saving personal details...');
@@ -505,25 +594,46 @@ country
     try {
       let functionName = 'savePersonalDetails';
       
-      // Collect all current form data
-      let personalData = {
-        title: title,
-        firstName: formData.firstName || getUserInfo('firstName'),
-        middleNames: formData.middleNames || getUserInfo('middleNames'),
-        lastName: formData.lastName || getUserInfo('lastName'), 
-        gender: gender,
-        dateOfBirth: formData.dateOfBirth || getUserInfo('dateOfBirth'),
-        citizenship: citizenship,
-        mobile: formData.mobile || getUserInfo('mobile'),
-        landline: formData.landline || getUserInfo('landline'),
-        email: formData.email || getUserInfo('email'),
-        country: country
-      };
-
-      console.log(`👤 [UI] Personal data to save:`, personalData);
-      log(`API request: Save personal details: ${jd(personalData)}`);
+      // Collect only changed fields
+      let personalData = {};
       
-      let apiRoute = 'user/update_bulk';
+      // Check each possible field and include only if changed
+      if (changedFields.has('title')) {
+        personalData.title = title;
+      }
+      if (changedFields.has('firstName')) {
+        personalData.firstName = formData.firstName || getUserInfo('firstName');
+      }
+      if (changedFields.has('middleNames')) {
+        personalData.middleNames = formData.middleNames || getUserInfo('middleNames');
+      }
+      if (changedFields.has('lastName')) {
+        personalData.lastName = formData.lastName || getUserInfo('lastName');
+      }
+      if (changedFields.has('gender')) {
+        personalData.gender = gender;
+      }
+      if (changedFields.has('dateOfBirth')) {
+        personalData.dateOfBirth = formData.dateOfBirth || getUserInfo('dateOfBirth');
+      }
+      if (changedFields.has('citizenship')) {
+        personalData.citizenship = citizenship;
+      }
+      if (changedFields.has('mobile')) {
+        personalData.mobile = formData.mobile || getUserInfo('mobile');
+      }
+      if (changedFields.has('landline')) {
+        personalData.landline = formData.landline || getUserInfo('landline');
+      }
+      if (changedFields.has('country')) {
+        personalData.country = country;
+      }
+
+      console.log(`👤 [UI] Personal data to save (only changed fields):`, personalData);
+      console.log(`👤 [UI] Changed fields:`, Array.from(changedFields));
+      log(`API request: Save personal details (partial update): ${jd(personalData)}`);
+      
+      let apiRoute = 'user/update';
       let params = { userData: personalData };
       let result = await appState.privateMethod({ functionName, apiRoute, params });
       
@@ -566,13 +676,24 @@ country
         
         setSaveMessage('');
       } else {
-        // Success - update appState with all the new values
+        // Success - update appState with all the new values and clear changed fields
         Object.keys(personalData).forEach(key => {
           if (personalData[key] && personalData[key] !== '[loading]') {
             appState.setUserInfo({[key]: personalData[key]});
           }
         });
         
+        // Clear the changed fields since they've been successfully saved
+        setChangedFields(new Set());
+        
+        // Update original values to current values
+        let newOriginalValues = {...originalValues};
+        Object.keys(personalData).forEach(key => {
+          newOriginalValues[key] = personalData[key];
+        });
+        setOriginalValues(newOriginalValues);
+        
+        console.log(`👤 [UI] Personal details saved successfully. Cleared changed fields.`);
         setSaveMessage('Personal details saved successfully!');
         setTimeout(() => setSaveMessage(''), 3000); // Clear success message after 3 seconds
       }
@@ -588,6 +709,18 @@ country
 
 
   const materialTheme = useTheme();
+
+  // Helper function to get style for changed fields
+  let getFieldStyle = (fieldName) => {
+    return changedFields.has(fieldName) 
+      ? { 
+          marginBottom: 16, 
+          borderWidth: 2, 
+          borderColor: materialTheme.colors.primary,
+          borderRadius: 4
+        }
+      : { marginBottom: 16 };
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
@@ -684,6 +817,7 @@ country
               defaultValue={formData.firstName || getUserInfo('firstName')}
               onChangeText={(value) => {
                 setFormData({...formData, firstName: value});
+                trackFieldChange('firstName', value);
               }}
               autoComplete={'off'}
               autoCapitalize={'words'}
@@ -700,6 +834,7 @@ country
               defaultValue={formData.middleNames || getUserInfo('middleNames')}
               onChangeText={(value) => {
                 setFormData({...formData, middleNames: value});
+                trackFieldChange('middleNames', value);
               }}
               autoComplete={'off'}
               autoCapitalize={'words'}
@@ -716,6 +851,7 @@ country
               defaultValue={formData.lastName || getUserInfo('lastName')}
               onChangeText={(value) => {
                 setFormData({...formData, lastName: value});
+                trackFieldChange('lastName', value);
               }}
               autoComplete={'off'}
               autoCapitalize={'words'}
@@ -763,6 +899,7 @@ country
               defaultValue={formData.dateOfBirth || getUserInfo('dateOfBirth')}
               onChangeText={(value) => {
                 setFormData({...formData, dateOfBirth: value});
+                trackFieldChange('dateOfBirth', value);
               }}
               keyboardType='default'
               placeholder="DD/MM/YYYY"
@@ -846,6 +983,7 @@ country
                 defaultValue={formData.mobile || getUserInfo('mobile')}
                 onChangeText={(value) => {
                   setFormData({...formData, mobile: value});
+                  trackFieldChange('mobile', value);
                 }}
                 keyboardType="phone-pad"
                 style={{ flex: 0.7 }}
@@ -863,6 +1001,7 @@ country
               defaultValue={formData.landline || getUserInfo('landline')}
               onChangeText={(value) => {
                 setFormData({...formData, landline: value});
+                trackFieldChange('landline', value);
               }}
               autoCapitalize='none'
               keyboardType='phone-pad'
@@ -1130,19 +1269,26 @@ country
             <Button
               mode="contained"
               onPress={savePersonalDetails}
-              disabled={disableSaveButton}
+              disabled={disableSaveButton || changedFields.size === 0}
               loading={disableSaveButton}
               icon="content-save"
               style={{ 
                 paddingVertical: 8,
-                backgroundColor: materialTheme.colors.primary
+                backgroundColor: changedFields.size > 0 
+                  ? materialTheme.colors.primary 
+                  : materialTheme.colors.surfaceVariant
               }}
               labelStyle={{ 
                 fontSize: 16, 
                 fontWeight: '600' 
               }}
             >
-              {disableSaveButton ? 'Saving...' : 'Save Personal Details'}
+              {disableSaveButton 
+                ? 'Saving...' 
+                : changedFields.size > 0 
+                  ? `Save Changes (${changedFields.size})` 
+                  : 'No Changes to Save'
+              }
             </Button>
           </Card.Content>
         </Card>
