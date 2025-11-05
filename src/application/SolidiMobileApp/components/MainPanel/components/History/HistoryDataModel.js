@@ -215,23 +215,208 @@ class HistoryDataModel {
   // Load orders with fallback data
   loadOrders(data) {
     try {
-      if (!data || !Array.isArray(data)) {
-        this.orders = this.getDefaultOrders();
-        return this.orders;
-      }
-
-      this.orders = data.map(order => new OrderDataModel(order));
+      console.log('[HISTORY-MODEL] 📦 loadOrders called');
+      console.log('[HISTORY-MODEL] 📦 Raw data type:', typeof data);
+      console.log('[HISTORY-MODEL] 📦 Raw data:', JSON.stringify(data, null, 2));
+      console.log('[HISTORY-MODEL] 📦 Is Array?:', Array.isArray(data));
+      console.log('[HISTORY-MODEL] 📦 Has data property?:', data?.data);
+      console.log('[HISTORY-MODEL] 📦 Has orders property?:', data?.orders);
+      console.log('[HISTORY-MODEL] 📦 Has error?:', data?.error);
+      console.log('[HISTORY-MODEL] 📦 Object keys:', data && typeof data === 'object' ? Object.keys(data) : 'N/A');
       
-      // If no real data, provide sample data for testing
-      if (this.orders.length === 0) {
-        this.orders = this.getDefaultOrders();
+      // Handle different data structures flexibly
+      let orderData = [];
+      
+      if (Array.isArray(data)) {
+        // Direct array format: [order1, order2, ...]
+        console.log('[HISTORY-MODEL] ✅ Format: Direct array');
+        orderData = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        // API response format: { error: null, data: [order1, order2, ...] }
+        console.log('[HISTORY-MODEL] ✅ Format: API response with data property');
+        orderData = data.data;
+      } else if (data && data.orders && Array.isArray(data.orders)) {
+        // Alternative nested format: { orders: [order1, order2, ...] }
+        console.log('[HISTORY-MODEL] ✅ Format: Nested orders property');
+        orderData = data.orders;
+      } else if (data && typeof data === 'object' && data !== null) {
+        // Check if data is an object with numeric/string keys (like { "0": {...}, "1": {...} })
+        const keys = Object.keys(data).filter(k => k !== 'error' && k !== 'data');
+        console.log('[HISTORY-MODEL] 🔍 Checking object keys:', keys);
+        
+        if (keys.length > 0 && typeof data[keys[0]] === 'object') {
+          console.log('[HISTORY-MODEL] ✅ Format: Object with order keys (converting to array)');
+          // Convert object to array
+          orderData = keys.map(key => {
+            const orderObj = data[key];
+            return { ...orderObj, id: orderObj.id || key };
+          });
+        } else if (!data.error) {
+          // Single order object
+          console.log('[HISTORY-MODEL] ✅ Format: Single order object');
+          orderData = [data];
+        }
+      } else {
+        // Unknown format or error
+        console.log('[HISTORY-MODEL] ⚠️ No valid order data found');
+        orderData = [];
       }
 
+      console.log(`[HISTORY-MODEL] 📦 Processing ${orderData.length} orders`);
+      console.log(`[HISTORY-MODEL] 📦 Order data array:`, JSON.stringify(orderData, null, 2));
+      
+      // Map API order format to OrderDataModel format
+      this.orders = orderData.map((order, index) => {
+        console.log(`[HISTORY-MODEL] 🔄 Processing order ${index + 1}:`, order);
+        
+        // API returns: { id, amount, currency_pair, price, type, unixtime }
+        // type: "0" or 0 = BUY, "1" or 1 = SELL
+        const baseAsset = 'BTC'; // Default to BTC if not provided
+        const quoteAsset = 'GBP'; // Default to GBP if not provided
+        const market = `${baseAsset}/${quoteAsset}`;
+        const side = (order.type === 0 || order.type === "0") ? 'BUY' : 'SELL';
+        
+        // Convert Unix timestamp to date and time
+        let date = new Date().toISOString().split('T')[0];
+        let time = '00:00:00';
+        
+        if (order.unixtime) {
+          try {
+            const timestamp = parseInt(order.unixtime) * 1000; // Convert to milliseconds
+            const dateObj = new Date(timestamp);
+            
+            // Format date as DD MMM YYYY
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = monthNames[dateObj.getMonth()];
+            const year = dateObj.getFullYear();
+            date = `${day} ${month} ${year}`;
+            
+            // Format time as HH:MM
+            const hours = String(dateObj.getHours()).padStart(2, '0');
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            time = `${hours}:${minutes}`;
+            
+            console.log(`[HISTORY-MODEL] 🕐 Converted timestamp ${order.unixtime} to ${date} ${time}`);
+          } catch (err) {
+            console.log(`[HISTORY-MODEL] ⚠️ Error converting timestamp:`, err);
+          }
+        }
+        
+        const orderModel = new OrderDataModel({
+          id: order.id,
+          market: market,
+          side: side,
+          baseVolume: order.amount || '0',
+          quoteVolume: '0', // Not provided by API
+          status: 'LIVE', // Open orders are live
+          date: date,
+          time: time,
+          price: order.price || '0',
+          type: 'LIMIT' // Open orders are typically limit orders
+        });
+        
+        console.log(`[HISTORY-MODEL] ✅ Created OrderDataModel ${index + 1}:`, orderModel);
+        return orderModel;
+      });
+      
+      // Sort orders by timestamp descending (newest first)
+      this.orders.sort((a, b) => {
+        // Extract original unixtime from the source data for accurate sorting
+        const orderA = orderData.find(o => o.id === a.id);
+        const orderB = orderData.find(o => o.id === b.id);
+        const timestampA = parseInt(orderA?.unixtime || 0);
+        const timestampB = parseInt(orderB?.unixtime || 0);
+        return timestampB - timestampA; // Descending order (newest first)
+      });
+      
+      console.log(`[HISTORY-MODEL] ✅ Sorted ${this.orders.length} orders by datetime (newest first)`);
+      
+      // Don't use default sample data - show empty if no real data
+      // if (this.orders.length === 0) {
+      //   console.log('⚠️ No orders loaded, using default sample data');
+      //   this.orders = this.getDefaultOrders();
+      // }
+
+      console.log(`[HISTORY-MODEL] ✅ Successfully loaded ${this.orders.length} orders from /open_orders`);
       return this.orders;
     } catch (err) {
-      console.log('Error loading orders:', err);
-      this.orders = this.getDefaultOrders();
-      return this.orders;
+      console.log('[HISTORY-MODEL] ❌ Error loading orders:', err);
+      // Don't use default data on error
+      return [];
+    }
+  }
+
+  // Load incomplete settlements (orders awaiting payment like bank transfers)
+  loadIncompleteSettlements(data) {
+    try {
+      console.log('[HISTORY-MODEL] 📦 loadIncompleteSettlements called');
+      console.log('[HISTORY-MODEL] 📦 Raw data type:', typeof data);
+      console.log('[HISTORY-MODEL] 📦 Raw data:', JSON.stringify(data, null, 2));
+      
+      // Handle different data structures flexibly
+      let settlementData = [];
+      
+      if (Array.isArray(data)) {
+        // Direct array format
+        console.log('[HISTORY-MODEL] ✅ Format: Direct array');
+        settlementData = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        // API response format: { error: null, data: [...] }
+        console.log('[HISTORY-MODEL] ✅ Format: API response with data property');
+        settlementData = data.data;
+      } else if (data && data.settlements && Array.isArray(data.settlements)) {
+        // Alternative nested format: { settlements: [...] }
+        console.log('[HISTORY-MODEL] ✅ Format: Nested settlements property');
+        settlementData = data.settlements;
+      } else if (typeof data === 'object' && data !== null && !data.error) {
+        // Single settlement object
+        console.log('[HISTORY-MODEL] ✅ Format: Single settlement object');
+        settlementData = [data];
+      } else {
+        console.log('[HISTORY-MODEL] ⚠️ No valid settlement data found');
+        settlementData = [];
+      }
+
+      console.log(`[HISTORY-MODEL] 📦 Processing ${settlementData.length} incomplete settlements`);
+      console.log(`[HISTORY-MODEL] 📦 Settlement data array:`, JSON.stringify(settlementData, null, 2));
+      
+      // Convert settlements to OrderDataModel format and add to existing orders
+      const settlementOrders = settlementData.map((settlement, index) => {
+        console.log(`[HISTORY-MODEL] 🔄 Processing settlement ${index + 1}:`, settlement);
+        
+        // Parse settlement data - adjust based on actual API response format
+        // Common fields: id, amount, market/currency_pair, datetime, status, reference
+        const market = settlement.market || settlement.currency_pair || 'BTC/GBP';
+        const [baseAsset, quoteAsset] = market.toUpperCase().split(/[/_]/);
+        const side = settlement.side || settlement.type || 'BUY';
+        const [date, time] = (settlement.datetime || settlement.created_at || '').split(' ');
+        
+        const orderModel = new OrderDataModel({
+          id: settlement.id || settlement.settlementID || settlement.settlement_id,
+          market: `${baseAsset}/${quoteAsset}`,
+          side: side.toUpperCase(),
+          baseVolume: settlement.amount || settlement.base_volume || settlement.baseVolume || '0',
+          quoteVolume: settlement.quote_volume || settlement.quoteVolume || '0',
+          status: 'PENDING', // Incomplete settlements are pending payment
+          date: date || new Date().toISOString().split('T')[0],
+          time: time || '00:00:00',
+          price: settlement.price || '0',
+          type: 'SETTLEMENT' // Mark as settlement order
+        });
+        
+        console.log(`[HISTORY-MODEL] ✅ Created OrderDataModel from settlement ${index + 1}:`, orderModel);
+        return orderModel;
+      });
+      
+      // Add settlement orders to existing orders
+      this.orders = [...this.orders, ...settlementOrders];
+      
+      console.log(`[HISTORY-MODEL] ✅ Total orders after adding settlements: ${this.orders.length}`);
+      return settlementOrders;
+    } catch (err) {
+      console.log('[HISTORY-MODEL] ❌ Error loading incomplete settlements:', err);
+      return [];
     }
   }
 

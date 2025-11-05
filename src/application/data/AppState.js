@@ -3322,7 +3322,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
     this.getMarkets = () => {
       // Note: This defaultList also produces the default base and quote assets in various pages.
-      let defaultList = ['BTC/GBP'];
+      // Extended default list to show common cryptocurrencies before markets are loaded from API
+      let defaultList = ['BTC/GBP', 'ETH/GBP', 'LTC/GBP', 'XRP/GBP', 'BCH/GBP'];
       let markets = this.state.apiData.market;
       if (_.isEmpty(markets)) return defaultList;
       return markets;
@@ -4288,41 +4289,110 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       return balanceString;
     }
 
+    // Helper function to fetch price for a single cryptocurrency
+    this.fetchCryptoPrice = async (currency) => {
+      try {
+        console.log(`[CRYPTO-CACHE] Fetching ${currency} price from /best_volume_price...`);
+        const response = await this.state.publicMethod({
+          httpMethod: 'GET',
+          apiRoute: `best_volume_price/${currency}/GBP/SELL/quote/1`,
+          params: {},
+        });
+        
+        if (response && response.data && response.data.price) {
+          const pricePerUnit = parseFloat(response.data.price);
+          if (pricePerUnit > 0) {
+            // API returns "how much GBP for 1 crypto unit"
+            // We need "how many GBP per 1 full crypto"
+            const gbpPerCrypto = 1 / pricePerUnit;
+            console.log(`[CRYPTO-CACHE] ${currency}: £${gbpPerCrypto.toFixed(2)}`);
+            return gbpPerCrypto;
+          }
+        }
+        console.log(`[CRYPTO-CACHE] ${currency}: no valid price in response`);
+        return null;
+      } catch (error) {
+        console.log(`[CRYPTO-CACHE] ${currency}: error -`, error.message);
+        return null;
+      }
+    }
+
     // Background crypto rate updater - fetches and pre-calculates ALL rates
     this.updateCryptoRates = async () => {
-      const cryptoCurrencies = ['BTC', 'ETH', 'LTC', 'XRP', 'BCH', 'LINK'];
-      
       console.log('[CRYPTO-CACHE] ========================================');
       console.log('[CRYPTO-CACHE] BACKGROUND UPDATE STARTED');
       console.log('[CRYPTO-CACHE] ========================================');
       
       try {
         const newRates = {
-          sellPrices: {},      // GBP per 1 crypto (calculated from local_balance / avail)
-          buyPrices: {},       // GBP per 1 crypto (same as sell for now)
+          sellPrices: {},      // Mid-price (ask + bid) / 2 for selling
+          buyPrices: {},       // Mid-price (ask + bid) / 2 for buying
           balancesInGBP: {}    // Pre-calculated balance values in GBP
         };
         
-        // Fetch balance data which includes prices
-        console.log('[CRYPTO-CACHE] Fetching /v2/balance...');
-        const response = await this.state.apiClient.privateMethod({
-          httpMethod: 'POST',
-          apiRoute: 'balance',
-          params: {},
-          apiVersion: 'v2',
-          abortController: this.createAbortController({tag: 'crypto-cache-balance'})
-        });
+        const baseCurrency = 'GBP';
+        const balances = this.state.apiData?.balance || {};
         
-        if (!response) {
-          console.log('[CRYPTO-CACHE] ❌ No response from /v2/balance');
-          return null;
+        console.log('[CRYPTO-CACHE] Will process only cryptocurrencies available in ticker response');
+        
+        // Fetch ticker data which includes current market prices
+        console.log('[CRYPTO-CACHE] Fetching /ticker...');
+        
+        let response;
+        
+        // First, try to use existing ticker data if available
+        if (this.state.apiData?.ticker && Object.keys(this.state.apiData.ticker).length > 0) {
+          console.log('[CRYPTO-CACHE] ✅ Using existing ticker data from apiData.ticker');
+          response = this.state.apiData.ticker;
+        } else {
+          // SPECIAL: Use www.solidi.co for ticker endpoint only
+          console.log('[CRYPTO-CACHE] 🌐 Creating temporary API client with www.solidi.co for /ticker');
+          const tickerApiClient = new SolidiRestAPIClientLibrary({
+            userAgent: this.state.userAgent, 
+            apiKey:'', 
+            apiSecret:'', 
+            domain: 'www.solidi.co',
+            appStateRef: { current: this }
+          });
+          
+          // Use public method for ticker
+          console.log('[CRYPTO-CACHE] 🔓 Using PUBLIC method for /ticker');
+          let tag = 'ticker';
+          let abortController = this.state.createAbortController({tag, noAbort: false});
+          response = await tickerApiClient.publicMethod({
+            httpMethod: 'GET', 
+            apiRoute: 'ticker', 
+            params: {},
+            abortController
+          });
+          
+          console.log('[CRYPTO-CACHE] 📋 Response type:', typeof response);
+          console.log('[CRYPTO-CACHE] 📋 Response:', response);
+          
+          if (!response || response === 'DisplayedError') {
+            console.log('[CRYPTO-CACHE] ❌ No valid response from public method, trying loadTicker instead...');
+            // Fallback to loadTicker method which is known to work
+            await this.loadTicker();
+            response = this.state.apiData.ticker;
+          }
+          
+          // Handle case where response might have error property but data property with actual ticker data
+          if (response && response.error === null && response.data) {
+            console.log('[CRYPTO-CACHE] ✅ Response has data property, using that');
+            response = response.data;
+          }
         }
         
-        console.log('[CRYPTO-CACHE] ✅ Response received, processing accounts...');
-        console.log('[CRYPTO-CACHE] 📋 Response type:', typeof response);
-        console.log('[CRYPTO-CACHE] 📋 Response keys:', Object.keys(response || {}).length);
-        console.log('[CRYPTO-CACHE] 📋 FULL RESPONSE:');
+        console.log('[CRYPTO-CACHE] ✅ Processing ticker data');
+        console.log('[CRYPTO-CACHE] 📋 Ticker keys:', Object.keys(response || {}).join(', '));
+        console.log('[CRYPTO-CACHE] 📋 Number of markets in ticker:', Object.keys(response || {}).length);
+        console.log('[CRYPTO-CACHE] 📋 Full response dump:');
         console.log(JSON.stringify(response, null, 2));
+        
+        // List each market individually
+        Object.keys(response || {}).forEach(key => {
+          console.log(`[CRYPTO-CACHE] 📋 Market "${key}":`, JSON.stringify(response[key]));
+        });
         
         // Check for error in response
         if (response && response.error) {
@@ -4330,71 +4400,100 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           return null;
         }
         
-        // Process each account
-        const accounts = Object.values(response);
-        console.log(`[CRYPTO-CACHE] 📋 Total accounts found: ${accounts.length}`);
+        // Process ticker data for each currency
+        // Response format: {"BTC/GBP":{"price":"31712.51"},"ETH/GBP":{"price":"2324.00"},...}
+        // Or potentially: {"BTC/GBP":{"bid":"31700.00","ask":"31725.00"},...}
         
-        accounts.forEach((account, index) => {
-          const currency = account.currency;
-          
-          console.log(`[CRYPTO-CACHE] 🔍 Processing account:`, {
-            currency,
-            acctype: account.acctype,
-            enabled: account.enabled,
-            local_balance: account.local_balance,
-            cur: account.cur
-          });
-          
-          // Skip non-crypto accounts and multi-currency accounts
-          if (!currency || currency === '*' || !cryptoCurrencies.includes(currency)) {
-            console.log(`[CRYPTO-CACHE] ⏭️ Skipping ${currency} (not in crypto list)`);
-            return;
-          }
-          
+        // Extract cryptocurrencies from the ticker response keys
+        const markets = Object.keys(response || {});
+        console.log(`[CRYPTO-CACHE] Processing ${markets.length} markets from ticker`);
+        
+        for (const market of markets) {
           try {
-            const currencyData = account.cur?.[currency];
-            if (!currencyData) {
-              console.log(`[CRYPTO-CACHE] ⚠️ ${currency}: No currency data in cur object`);
-              return;
+            const tickerData = response[market];
+            
+            // Extract crypto symbol from market (handle XBT as BTC)
+            const parts = market.split('/');
+            if (parts.length !== 2) {
+              console.log(`[CRYPTO-CACHE] Invalid market format: ${market}`);
+              continue;
             }
             
-            const avail = parseFloat(currencyData.avail) || 0;
-            const localBalance = parseFloat(account.local_balance) || 0;
+            const currency = parts[0];
+            const quoteCurrency = parts[1];
+            const cryptoSymbol = currency === 'XBT' ? 'BTC' : currency;
             
-            console.log(`[CRYPTO-CACHE] 📊 ${currency} calculation:`, {
-              avail,
-              localBalance,
-              formula: `${localBalance} / ${avail}`,
-              result: avail > 0 ? (localBalance / avail) : 0
-            });
+            console.log(`[CRYPTO-CACHE] Processing ${market} (${cryptoSymbol}):`, JSON.stringify(tickerData, null, 2));
             
-            if (avail > 0) {
-              // Calculate price per unit: local_balance / avail
-              const pricePerUnit = localBalance / avail;
-              
-              newRates.sellPrices[currency] = pricePerUnit;
-              newRates.buyPrices[currency] = pricePerUnit;
-              newRates.balancesInGBP[currency] = localBalance;
-              
-              console.log(`[CRYPTO-CACHE] ${currency}: ${avail} × £${pricePerUnit.toFixed(2)} = £${localBalance.toFixed(2)}`);
+            // Skip if not a GBP pair
+            if (quoteCurrency !== baseCurrency) {
+              console.log(`[CRYPTO-CACHE] Skipping ${market} - not a ${baseCurrency} pair`);
+              continue;
+            }
+            
+            if (!tickerData) {
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: No ticker data available`);
+              newRates.sellPrices[cryptoSymbol] = 0;
+              newRates.buyPrices[cryptoSymbol] = 0;
+              newRates.balancesInGBP[cryptoSymbol] = 0;
+              continue;
+            }
+            
+            // Use cryptoSymbol (BTC for both BTC and XBT) to get balance
+            const balance = parseFloat(balances[cryptoSymbol]) || 0;
+            
+            if (tickerData.error) {
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: ${tickerData.error}`);
+              newRates.sellPrices[cryptoSymbol] = 0;
+              newRates.buyPrices[cryptoSymbol] = 0;
+              newRates.balancesInGBP[cryptoSymbol] = 0;
+              continue;
+            }
+            
+            let price;
+            
+            // Check if we have bid/ask prices for mid-price calculation
+            if (tickerData.bid && tickerData.ask) {
+              const bid = parseFloat(tickerData.bid);
+              const ask = parseFloat(tickerData.ask);
+              price = (bid + ask) / 2; // Mid-price
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: bid=£${bid.toFixed(2)}, ask=£${ask.toFixed(2)}, mid=£${price.toFixed(2)}`);
+            } else if (tickerData.price) {
+              // Fallback to single price if bid/ask not available
+              price = parseFloat(tickerData.price);
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: price=£${price.toFixed(2)} (no bid/ask available)`);
             } else {
-              newRates.sellPrices[currency] = 0;
-              newRates.buyPrices[currency] = 0;
-              newRates.balancesInGBP[currency] = 0;
-              console.log(`[CRYPTO-CACHE] ${currency}: No available balance (avail = 0)`);
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: No price data available`);
+              newRates.sellPrices[cryptoSymbol] = 0;
+              newRates.buyPrices[cryptoSymbol] = 0;
+              newRates.balancesInGBP[cryptoSymbol] = 0;
+              continue;
+            }
+            
+            if (price && price > 0) {
+              // Calculate GBP value: balance × price
+              const gbpValue = balance * price;
+              
+              newRates.sellPrices[cryptoSymbol] = price;
+              newRates.buyPrices[cryptoSymbol] = price;
+              newRates.balancesInGBP[cryptoSymbol] = gbpValue;
+              
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: ${balance} × £${price.toFixed(2)} = £${gbpValue.toFixed(2)}`);
+            } else {
+              newRates.sellPrices[cryptoSymbol] = 0;
+              newRates.buyPrices[cryptoSymbol] = 0;
+              newRates.balancesInGBP[cryptoSymbol] = 0;
+              console.log(`[CRYPTO-CACHE] ${cryptoSymbol}: No valid price`);
             }
           } catch (error) {
-            console.log(`[CRYPTO-CACHE] ❌ ${currency} processing error:`, error.message);
+            console.log(`[CRYPTO-CACHE] Error processing market ${market}:`, error.message);
           }
-        });
+        }
         
         // Add GBP balance (always 1:1)
-        const gbpAccount = Object.values(response).find(acc => acc.currency === 'GBP');
-        if (gbpAccount) {
-          const gbpBalance = parseFloat(gbpAccount.local_balance) || 0;
-          newRates.balancesInGBP['GBP'] = gbpBalance;
-          console.log(`[CRYPTO-CACHE] GBP: £${gbpBalance.toFixed(2)} (base currency)`);
-        }
+        const gbpBalance = parseFloat(balances['GBP']) || 0;
+        newRates.balancesInGBP['GBP'] = gbpBalance;
+        console.log(`[CRYPTO-CACHE] GBP: £${gbpBalance.toFixed(2)} (base currency)`);
         
         // Update state
         this.state.cryptoRates = newRates;
@@ -4467,7 +4566,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         this.updateCryptoRates();
       }, 30000); // Update every 30 seconds
       
-      console.log('[CRYPTO-CACHE] ✅ Background updates started (30s interval)');
+      console.log('[CRYPTO-CACHE] ✅ Background updates started (30-second interval)');
     }
 
     // Stop background rate updates

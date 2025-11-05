@@ -52,7 +52,7 @@ let ChooseHowToPay = () => {
   let [renderCount, triggerRender] = useState(0);
 
   let pageName = appState.pageName;
-  let permittedPageNames = 'default solidi balance openbank buy'.split(' ');
+  let permittedPageNames = 'default solidi balance openbank'.split(' ');
   misc.confirmItemInArray('permittedPageNames', permittedPageNames, pageName, 'ChooseHowToPay');
   if (pageName == 'default') pageName = 'solidi';
   //pageName = 'openbank'; //testing
@@ -279,17 +279,7 @@ let ChooseHowToPay = () => {
 
 
   let payDirectly = async ({buyOrder, selectedPaymentChoice}) => {
-    console.log('🔄 CONSOLE: ===== SEND BUY ORDER API CALL (ChooseHowToPay.js) =====');
-    console.log('📤 CONSOLE: About to call appState.sendBuyOrder...');
-    console.log('📤 CONSOLE: buyOrder:', buyOrder);
-    console.log('📤 CONSOLE: selectedPaymentChoice:', selectedPaymentChoice);
     let output = await appState.sendBuyOrder(buyOrder);
-    console.log('📨 CONSOLE: ===== SEND BUY ORDER API RESPONSE (ChooseHowToPay.js) =====');
-    console.log('📨 CONSOLE: Raw sendBuyOrder response:', output);
-    console.log('📨 CONSOLE: Response type:', typeof output);
-    console.log('📨 CONSOLE: Response JSON:', JSON.stringify(output, null, 2));
-    console.log('📨 CONSOLE: ===== END SEND BUY ORDER API RESPONSE (ChooseHowToPay.js) =====');
-    
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
     lj(output);
     appState.panels.buy.output = output;
@@ -435,6 +425,25 @@ let ChooseHowToPay = () => {
 
   return (
     <View style={[layout.flex1, { backgroundColor: '#f5f5f5' }]}>
+      {/* Header */}
+      <Surface style={modernStyles.header} elevation={2}>
+        <View style={modernStyles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => appState.changeState('Trade')} 
+            style={modernStyles.backButton}
+          >
+            <Icon2 name="arrow-left" size={24} color="#333" />
+          </TouchableOpacity>
+          <View style={modernStyles.headerTitleContainer}>
+            <Text style={modernStyles.headerTitle}>Confirm & Pay</Text>
+            <Text style={modernStyles.headerSubtitle}>Choose your payment method</Text>
+          </View>
+          <View style={modernStyles.headerProgress}>
+            <Text style={modernStyles.progressText}>Step 2 of 3</Text>
+          </View>
+        </View>
+      </Surface>
+
       <KeyboardAwareScrollView 
         ref={refScrollView} 
         style={layout.flex1}
@@ -664,7 +673,7 @@ let ChooseHowToPay = () => {
                         <Icon name="wallet" size={24} color="#007AFF" />
                       </View>
                       <View style={modernStyles.paymentMethodInfo}>
-                        <Text style={modernStyles.paymentMethodTitle}>Use Wallet Balance</Text>
+                        <Text style={modernStyles.paymentMethodTitle}>Solidi Balance</Text>
                         <View style={modernStyles.feeBadge}>
                           <Text style={modernStyles.feeBadgeText}>NO FEE</Text>
                         </View>
@@ -679,16 +688,26 @@ let ChooseHowToPay = () => {
                     <View style={modernStyles.paymentMethodDetails}>
                       <View style={modernStyles.featureRow}>
                         <Icon name="lightning-bolt" size={16} color="#4CAF50" />
-                        <Text style={modernStyles.featureText}>Instant</Text>
+                        <Text style={modernStyles.featureText}>Processed instantly</Text>
                       </View>
                       <View style={modernStyles.featureRow}>
-                        <Icon name="wallet" size={16} color="#4CAF50" />
+                        <Icon name="account-balance-wallet" size={16} color="#4CAF50" />
                         <Text style={modernStyles.featureText}>{getBalanceDescriptionLine()}</Text>
                       </View>
+                      <View style={modernStyles.featureRow}>
+                        <Icon name="security" size={16} color="#4CAF50" />
+                        <Text style={modernStyles.featureText}>Pay from your secure balance</Text>
+                      </View>
+                      {balanceTooSmall() && (
+                        <View style={modernStyles.featureRow}>
+                          <Icon name="alert-circle" size={16} color="#FF5722" />
+                          <Text style={modernStyles.disabledFeatureText}>Balance is too low for this option</Text>
+                        </View>
+                      )}
                       {paymentOptionDisabled('balance') && (
                         <View style={modernStyles.featureRow}>
                           <Icon name="alert-circle" size={16} color="#FF5722" />
-                          <Text style={modernStyles.disabledFeatureText}>Insufficient balance</Text>
+                          <Text style={modernStyles.disabledFeatureText}>This payment option is currently inactive</Text>
                         </View>
                       )}
                       {isLoading && (

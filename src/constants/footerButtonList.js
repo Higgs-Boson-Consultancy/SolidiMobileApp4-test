@@ -4,6 +4,7 @@ let footerButtonList = [
   'Assets',
   'Wallet',
   'Transfer',
+  'History',
 ];
 
 export default footerButtonList;

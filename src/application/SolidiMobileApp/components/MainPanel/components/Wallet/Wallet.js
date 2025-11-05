@@ -160,6 +160,16 @@ let Wallet = () => {
   let [withdrawAmountInput, setWithdrawAmountInput] = useState('');
   let [isWithdrawing, setIsWithdrawing] = useState(false);
   
+  // Fiat withdrawal modal state
+  let [showFiatWithdrawModal, setShowFiatWithdrawModal] = useState(false);
+  let [fiatWithdrawCurrency, setFiatWithdrawCurrency] = useState('');
+  let [fiatWithdrawAmount, setFiatWithdrawAmount] = useState('');
+  let [isFiatWithdrawing, setIsFiatWithdrawing] = useState(false);
+  
+  // Bank account data
+  let [userBankAccount, setUserBankAccount] = useState(null);
+  let [isLoadingBankAccount, setIsLoadingBankAccount] = useState(false);
+  
   let stateChangeID = appState.stateChangeID;
 
   let pageName = appState.pageName;
@@ -191,6 +201,21 @@ let Wallet = () => {
         await calculateTotalPortfolioValue(balanceData);
       } catch (error) {
         log('Wallet: Error loading balances:', error);
+      }
+      
+      // Load user's default bank account for GBP withdrawals
+      try {
+        console.log('🏦 Wallet: Loading default bank account for GBP...');
+        setIsLoadingBankAccount(true);
+        await appState.loadDefaultAccountForAsset('GBP');
+        const bankAccount = appState.getDefaultAccountForAsset('GBP');
+        console.log('✅ Wallet: Bank account loaded:', bankAccount);
+        setUserBankAccount(bankAccount);
+      } catch (error) {
+        console.log('⚠️ Wallet: Error loading bank account:', error);
+        setUserBankAccount(null);
+      } finally {
+        setIsLoadingBankAccount(false);
       }
 
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -707,41 +732,139 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
       return;
     }
 
-    // For fiat currencies, check if bank account is linked
-    Alert.alert(
-      `Withdraw ${currency}`,
-      'Withdrawal will be sent to your linked bank account.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Continue', 
-          onPress: () => handleBankWithdrawal(currency)
-        }
-      ]
-    );
+    // For fiat currencies, open fiat withdrawal modal
+    setFiatWithdrawCurrency(currency);
+    setFiatWithdrawAmount('');
+    setShowFiatWithdrawModal(true);
   };
 
-  // Handle bank withdrawal
-  let handleBankWithdrawal = (currency) => {
-    // Check if user has bank account setup
-    Alert.alert(
-      'Bank Withdrawal',
-      'Please ensure your bank account is set up in your profile before withdrawing.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Check Bank Details', 
-          onPress: () => appState.changeState('BankAccounts')
-        },
-        { 
-          text: 'Proceed Anyway', 
-          onPress: () => {
-            // In real implementation, process withdrawal
-            Alert.alert('Withdrawal Initiated', `Your ${currency} withdrawal has been initiated.`);
+  // Handle fiat withdrawal submission
+  let handleFiatWithdrawal = async () => {
+    if (!fiatWithdrawAmount) {
+      Alert.alert('Error', 'Please enter an amount');
+      return;
+    }
+
+    const amount = parseFloat(fiatWithdrawAmount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    // Check if user has sufficient balance
+    const balanceData = getBalanceData();
+    const availableBalance = balanceData[fiatWithdrawCurrency]?.available || 0;
+    
+    if (amount > availableBalance) {
+      Alert.alert('Insufficient Balance', `You only have ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(availableBalance.toString(), fiatWithdrawCurrency)} available.`);
+      return;
+    }
+
+    // Check if bank account is set up
+    if (!userBankAccount || userBankAccount === '[loading]') {
+      Alert.alert(
+        'Bank Account Required',
+        'Please set up your bank account details before making a withdrawal.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Add Bank Account', 
+            onPress: () => {
+              setShowFiatWithdrawModal(false);
+              appState.changeState('BankAccounts');
+            }
           }
+        ]
+      );
+      return;
+    }
+
+    try {
+      setIsFiatWithdrawing(true);
+      
+      console.log('🏦 Starting fiat withdrawal...');
+      console.log('🏦 Currency:', fiatWithdrawCurrency);
+      console.log('🏦 Amount:', amount);
+      console.log('🏦 Bank Account:', userBankAccount);
+
+      console.log('🔄 CONSOLE: ===== FIAT WITHDRAW API CALL =====');
+      console.log('📤 CONSOLE: About to call appState.apiClient.privateMethod for fiat withdraw...');
+      console.log('📤 CONSOLE: API parameters:', {
+        httpMethod: 'POST',
+        apiRoute: 'withdraw',
+        params: {
+          asset: fiatWithdrawCurrency,
+          volume: amount.toString(),
+          priority: 'normal'
         }
-      ]
-    );
+      });
+
+      // Call withdraw API for fiat - uses user's default bank account
+      let result = await appState.apiClient.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: 'withdraw',
+        params: {
+          asset: fiatWithdrawCurrency,
+          volume: amount.toString(),
+          priority: 'normal'
+        }
+      });
+
+      console.log('📨 CONSOLE: ===== FIAT WITHDRAW API RESPONSE =====');
+      console.log('📨 CONSOLE: Raw privateMethod (withdraw) response:', result);
+      console.log('📨 CONSOLE: Response type:', typeof result);
+      console.log('📨 CONSOLE: Response JSON:', JSON.stringify(result, null, 2));
+      console.log('📨 CONSOLE: ===== END FIAT WITHDRAW API RESPONSE =====');
+
+      // Check for success (same logic as crypto withdrawal)
+      let isSuccess = false;
+      let successMessage = '';
+
+      if (result && result.error === null) {
+        isSuccess = true;
+        console.log('🏦 Top-level error is null - treating as success');
+        
+        if (result?.data?.error && typeof result.data.error === 'string') {
+          successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} - ${result.data.error}`;
+        } else if (result?.id) {
+          successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} has been initiated.\n\nTransaction ID: ${result.id}\n\nThe funds will be transferred to your bank account within 1-3 business days.`;
+        } else {
+          successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} has been initiated.\n\nThe funds will be transferred to your bank account within 1-3 business days.`;
+        }
+      }
+
+      if (isSuccess) {
+        Alert.alert(
+          'Withdrawal Initiated',
+          successMessage,
+          [
+            { 
+              text: 'View History', 
+              onPress: () => {
+                setShowFiatWithdrawModal(false);
+                appState.changeState('History');
+              }
+            },
+            { 
+              text: 'OK', 
+              onPress: () => setShowFiatWithdrawModal(false) 
+            }
+          ]
+        );
+        
+        // Refresh balances
+        await setup();
+      } else {
+        let errorMsg = result?.error || 'Unknown error occurred';
+        console.log('🏦 Fiat withdrawal failed with error:', errorMsg);
+        Alert.alert('Withdrawal Failed', errorMsg);
+      }
+    } catch (error) {
+      console.error('🏦 Fiat withdrawal error:', error);
+      Alert.alert('Withdrawal Failed', 'An error occurred while processing your withdrawal');
+    } finally {
+      setIsFiatWithdrawing(false);
+    }
   };
 
   // Handle crypto withdrawal with address book UUID
@@ -991,33 +1114,57 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
     };
     
     return (
-      <List.Item
-        key={currency}
-        title={currency}
-        description={description}
-        onPress={() => navigateToCrypto(currency, balanceInfo, tickerData)}
-        left={props => (
-          <View style={{ 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: theme.colors.surfaceVariant,
-            marginRight: 12
-          }}>
-            <Icon name={icon} size={24} color={getAssetColor(currency)} />
-          </View>
-        )}
-        right={props => (
-          <View style={{ justifyContent: 'center' }}>
-            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
-              {displayValue}
-            </Text>
-          </View>
-        )}
-        style={{ paddingVertical: 8 }}
-      />
+      <View key={currency} style={{ paddingVertical: 8 }}>
+        <List.Item
+          title={currency}
+          description={description}
+          onPress={() => navigateToCrypto(currency, balanceInfo, tickerData)}
+          left={props => (
+            <View style={{ 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: theme.colors.surfaceVariant,
+              marginRight: 12
+            }}>
+              <Icon name={icon} size={24} color={getAssetColor(currency)} />
+            </View>
+          )}
+          right={props => (
+            <View style={{ justifyContent: 'center' }}>
+              <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                {displayValue}
+              </Text>
+            </View>
+          )}
+          style={{ paddingVertical: 4 }}
+        />
+        
+        {/* Action Buttons for each currency */}
+        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 8 }}>
+          <Button
+            mode="contained-tonal"
+            onPress={() => handleDeposit(currency)}
+            style={{ flex: 1 }}
+            icon="plus"
+            compact
+          >
+            Deposit
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => handleWithdraw(currency)}
+            style={{ flex: 1 }}
+            icon="minus"
+            compact
+            disabled={total <= 0}
+          >
+            Withdraw
+          </Button>
+        </View>
+      </View>
     );
   };
 
@@ -1352,6 +1499,202 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                   fontWeight: 'bold'
                 }}>
                   {isWithdrawing ? 'Processing...' : 'Withdraw'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Fiat Withdraw Modal */}
+      <Modal
+        visible={showFiatWithdrawModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFiatWithdrawModal(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20
+        }}>
+          <View style={{
+            backgroundColor: 'white',
+            borderRadius: 12,
+            padding: 20,
+            width: '100%',
+            maxWidth: 400,
+            maxHeight: '80%'
+          }}>
+            <Text variant="titleLarge" style={{ fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
+              Withdraw {fiatWithdrawCurrency}
+            </Text>
+
+            {/* Amount Input */}
+            <View style={{ marginBottom: 20 }}>
+              <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+                Amount to Withdraw
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text variant="titleLarge" style={{ marginRight: 8 }}>
+                  {getCurrencySymbol(fiatWithdrawCurrency)}
+                </Text>
+                <TextInput
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: theme.colors.outline,
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16
+                  }}
+                  placeholder={`Enter amount`}
+                  value={fiatWithdrawAmount}
+                  onChangeText={setFiatWithdrawAmount}
+                  keyboardType="decimal-pad"
+                  autoCapitalize="none"
+                />
+              </View>
+              {fiatWithdrawAmount && balanceData[fiatWithdrawCurrency] ? (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                  Available: {getCurrencySymbol(fiatWithdrawCurrency)}{formatCurrency(balanceData[fiatWithdrawCurrency].available.toString(), fiatWithdrawCurrency)}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Bank Account Display */}
+            <View style={{ marginBottom: 20 }}>
+              <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+                Withdrawal Destination
+              </Text>
+              {isLoadingBankAccount ? (
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.outline,
+                  borderRadius: 8,
+                  padding: 12,
+                  backgroundColor: theme.colors.surfaceVariant
+                }}>
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                    Loading bank account...
+                  </Text>
+                </View>
+              ) : userBankAccount && userBankAccount !== '[loading]' ? (
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.primary,
+                  borderRadius: 8,
+                  padding: 12,
+                  backgroundColor: theme.colors.surfaceVariant
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Icon name="bank" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
+                    <Text variant="titleSmall" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                      {userBankAccount.accountName || 'Bank Account'}
+                    </Text>
+                  </View>
+                  {userBankAccount.sortCode && (
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Sort Code: {userBankAccount.sortCode}
+                    </Text>
+                  )}
+                  {userBankAccount.accountNumber && (
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Account: ****{userBankAccount.accountNumber.slice(-4)}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.error,
+                  borderRadius: 8,
+                  padding: 12,
+                  backgroundColor: theme.colors.errorContainer
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Icon name="alert-circle" size={20} color={theme.colors.error} style={{ marginRight: 8 }} />
+                    <Text variant="titleSmall" style={{ fontWeight: 'bold', color: theme.colors.error }}>
+                      No Bank Account
+                    </Text>
+                  </View>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer, marginBottom: 8 }}>
+                    Please set up your bank account details to withdraw funds.
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setShowFiatWithdrawModal(false);
+                      appState.changeState('BankAccounts');
+                    }}
+                    style={{
+                      backgroundColor: theme.colors.error,
+                      padding: 8,
+                      borderRadius: 6,
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                      Add Bank Account
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Processing Time Notice */}
+            <View style={{ 
+              backgroundColor: theme.colors.surfaceVariant, 
+              padding: 12, 
+              borderRadius: 8,
+              marginBottom: 20 
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <Icon name="information" size={20} color={theme.colors.onSurfaceVariant} style={{ marginRight: 8, marginTop: 2 }} />
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Bank transfers typically take 1-3 business days to process.
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderRadius: 8,
+                  backgroundColor: theme.colors.surfaceVariant,
+                  marginRight: 10
+                }}
+                onPress={() => setShowFiatWithdrawModal(false)}
+                disabled={isFiatWithdrawing}
+              >
+                <Text style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderRadius: 8,
+                  backgroundColor: isFiatWithdrawing ? theme.colors.surfaceVariant : theme.colors.primary,
+                  marginLeft: 10
+                }}
+                onPress={handleFiatWithdrawal}
+                disabled={isFiatWithdrawing || !fiatWithdrawAmount}
+              >
+                <Text style={{ 
+                  textAlign: 'center', 
+                  color: isFiatWithdrawing ? theme.colors.onSurfaceVariant : theme.colors.onPrimary,
+                  fontWeight: 'bold'
+                }}>
+                  {isFiatWithdrawing ? 'Processing...' : 'Withdraw'}
                 </Text>
               </TouchableOpacity>
             </View>

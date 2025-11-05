@@ -620,52 +620,32 @@ let CryptoContent = ({ onClose }) => {
   // State to store fetched price
   const [fetchedPrice, setFetchedPrice] = useState(null);
 
-  // Fetch current price from best_volume_price API (same as Assets page)
+  // Fetch current price from AppState cache (same as Assets page)
   useEffect(() => {
-    const fetchPrice = async () => {
+    const fetchPrice = () => {
       try {
-        setIsLoadingTicker(true);  // Use existing loading state
-        console.log(`🔍 CryptoContent: Fetching price for ${asset}/GBP...`);
+        console.log(`🔍 CryptoContent: Getting cached price for ${asset}...`);
         
-        const volume = 100; // Use £100 GBP volume for better price discovery
+        // Use the same cached price as Assets page
+        const cachedPrice = appState.getCryptoSellPrice(asset);
         
-        const response = await appState.publicMethod({
-          httpMethod: 'GET',
-          apiRoute: `best_volume_price/${asset}/GBP/BUY/quote/${volume}`,
-        });
-
-        console.log(`📊 CryptoContent: Price API response for ${asset}:`, response);
-
-        if (response && response.price) {
-          // For BUY/quote, response.price is the amount of crypto we get for our GBP volume
-          // To get price per unit: price_per_unit = volume_spent / crypto_amount_received
-          const cryptoAmountReceived = parseFloat(response.price);
-          
-          if (cryptoAmountReceived > 0) {
-            const pricePerUnit = volume / cryptoAmountReceived;
-            console.log(`✅ CryptoContent: Successfully fetched price for ${asset}: £${pricePerUnit.toFixed(2)}`);
-            console.log(`   📊 Details: £${volume} → ${cryptoAmountReceived} ${asset} = £${pricePerUnit.toFixed(2)}/${asset}`);
-            setFetchedPrice(pricePerUnit);
-          } else {
-            console.log(`⚠️ CryptoContent: Invalid crypto amount received for ${asset}: ${cryptoAmountReceived}`);
-            setFetchedPrice(null);
-          }
+        if (cachedPrice && cachedPrice > 0) {
+          console.log(`✅ CryptoContent: Using cached price for ${asset}: £${cachedPrice.toFixed(2)}`);
+          setFetchedPrice(cachedPrice);
         } else {
-          console.log(`⚠️ CryptoContent: No price data in response for ${asset}`, response);
+          console.log(`⚠️ CryptoContent: No cached price available for ${asset}`);
           setFetchedPrice(null);
         }
       } catch (error) {
-        console.log(`❌ CryptoContent: Error fetching price for ${asset}:`, error);
+        console.log(`❌ CryptoContent: Error getting cached price for ${asset}:`, error);
         setFetchedPrice(null);
-      } finally {
-        setIsLoadingTicker(false);  // Stop loading when done
       }
     };
 
     fetchPrice();
     
-    // Refresh price every 30 seconds
-    const interval = setInterval(fetchPrice, 30000);
+    // Refresh price every 5 seconds to pick up cache updates
+    const interval = setInterval(fetchPrice, 5000);
     
     return () => clearInterval(interval);
   }, [asset]);

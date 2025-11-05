@@ -82,71 +82,153 @@ let History = () => {
 
 
   const setup = async () => {
-    console.log('History setup - loading transaction history');
+    console.log('[HISTORY] Setup - loading transaction history and orders');
     
     try {
       // Check if API client is available
       if (!appState.apiClient) {
-        console.log('API client not available yet');
+        console.log('[HISTORY] ❌ API client not available yet');
         setIsLoading(false);
         return;
       }
       
-      // Load data from API using the correct appState method
-      let response = await appState.privateMethod({
+      // Create data model
+      const dataModel = new HistoryDataModel();
+      
+      // Load transactions from API
+      console.log('[HISTORY] � REQUEST: /transaction');
+      console.log('[HISTORY] 📤 REQUEST PARAMS:', {
         apiRoute: 'transaction',
-        functionName: 'History.setup'
+        functionName: 'History.setup.transactions'
       });
       
-      if (response.error) {
-        console.log('Error loading transaction history:', response.error);
-        setIsLoading(false);
-        return;
+      let transactionResponse = await appState.privateMethod({
+        apiRoute: 'transaction',
+        functionName: 'History.setup.transactions'
+      });
+      
+      console.log('[HISTORY] 📥 RESPONSE: /transaction');
+      console.log('[HISTORY] 📥 RESPONSE TYPE:', typeof transactionResponse);
+      console.log('[HISTORY] 📥 RESPONSE DATA:', transactionResponse);
+      
+      if (transactionResponse && !transactionResponse.error) {
+        const loadedTransactions = dataModel.loadTransactions(transactionResponse);
+        console.log(`[HISTORY] ✅ Transactions loaded - Count: ${loadedTransactions.length}`);
+        
+        // Analyze transaction types to help identify bank transfer orders
+        const buyTransactions = loadedTransactions.filter(t => t.code === 'BY');
+        const sellTransactions = loadedTransactions.filter(t => t.code === 'SL');
+        const pendingTransactions = loadedTransactions.filter(t => t.status && t.status.toLowerCase().includes('pending'));
+        
+        console.log(`[HISTORY] 📊 Transaction breakdown:`);
+        console.log(`[HISTORY] 📊   - BUY (BY): ${buyTransactions.length}`);
+        console.log(`[HISTORY] 📊   - SELL (SL): ${sellTransactions.length}`);
+        console.log(`[HISTORY] 📊   - PENDING status: ${pendingTransactions.length}`);
+        
+        if (pendingTransactions.length > 0) {
+          console.log(`[HISTORY] 💡 Found ${pendingTransactions.length} pending transactions - these might be bank transfer orders!`);
+          console.log(`[HISTORY] 💡 Pending transactions:`, pendingTransactions);
+        }
+      } else {
+        console.log('[HISTORY] ⚠️ Error loading transactions:', transactionResponse?.error);
       }
       
-      // Create data model and load transaction data
-      const dataModel = new HistoryDataModel();
-      const loadedTransactions = dataModel.loadTransactions(response);
+      // Load orders from API
+      console.log('[HISTORY] � REQUEST: /open_orders');
+      console.log('[HISTORY] 📤 REQUEST PARAMS:', {
+        apiRoute: 'open_orders',
+        functionName: 'History.setup.orders'
+      });
       
-      console.log('Transaction history loaded successfully - Count:', loadedTransactions.length);
+      let orderResponse = await appState.privateMethod({
+        apiRoute: 'open_orders',
+        functionName: 'History.setup.orders'
+      });
+      
+      console.log('[HISTORY] 📥 RESPONSE: /open_orders');
+      console.log('[HISTORY] 📥 RESPONSE TYPE:', typeof orderResponse);
+      console.log('[HISTORY] 📥 RESPONSE DATA:', orderResponse);
+      
+      if (orderResponse && !orderResponse.error) {
+        const loadedOrders = dataModel.loadOrders(orderResponse);
+        console.log(`[HISTORY] ✅ Orders loaded - Count: ${loadedOrders.length}`);
+      } else {
+        console.log('[HISTORY] ⚠️ Error loading orders:', orderResponse?.error);
+      }
+      
+      // Bank transfer orders appear in either /transaction or /open_orders
+      // No separate settlement endpoint needed
+      console.log('[HISTORY] 💡 Bank transfer orders are included in /transaction (pending) or /open_orders');
+      
       setHistoryDataModel(dataModel);
+      console.log('[HISTORY] ✅ History data loaded successfully');
       
-      console.log('Transaction history loaded successfully');
+      // Log final summary
+      console.log('[HISTORY] 📊 FINAL SUMMARY:');
+      console.log('[HISTORY] 📊 Total transactions:', dataModel.getTransactions()?.length || 0);
+      console.log('[HISTORY] 📊 Total orders:', dataModel.getOrders()?.length || 0);
+      console.log('[HISTORY] 📊 Transactions list:', dataModel.getTransactions());
+      console.log('[HISTORY] 📊 Orders list:', dataModel.getOrders());
+      
       setIsLoading(false);
     } catch (error) {
-      console.log('Exception loading transaction history:', error);
+      console.log('[HISTORY] ❌ Exception loading transaction history:', error);
       setIsLoading(false);
     }
   }
 
 
   let displayHistoryControls = () => {
+    // Get data counts
+    const transactions = historyDataModel?.getTransactions() || [];
+    const orders = historyDataModel?.getOrders() || [];
+    
+    // Analyze transaction types
+    const buyTransactions = transactions.filter(t => t.code === 'BY');
+    const sellTransactions = transactions.filter(t => t.code === 'SL');
+    const pendingTransactions = transactions.filter(t => t.status && t.status.toLowerCase().includes('pending'));
+    
     return (
-      <Card style={{ marginBottom: 16, elevation: 2 }}>
-        <Card.Content>
-          <SegmentedButtons
-            value={selectedHistoryCategory}
-            onValueChange={setSelectedHistoryCategory}
-            buttons={[
-              {
-                value: 'Transactions',
-                label: 'Transactions',
-                icon: 'swap-horizontal',
-                style: selectedHistoryCategory === 'Transactions' ? { backgroundColor: '#10b981' } : {},
-                labelStyle: selectedHistoryCategory === 'Transactions' ? { color: 'white', fontWeight: '600' } : { fontWeight: '500' }
-              },
-              {
-                value: 'Orders',
-                label: 'Orders',
-                icon: 'format-list-bulleted',
-                style: selectedHistoryCategory === 'Orders' ? { backgroundColor: '#6366f1' } : {},
-                labelStyle: selectedHistoryCategory === 'Orders' ? { color: 'white', fontWeight: '600' } : { fontWeight: '500' }
-              },
-            ]}
-            style={{ marginBottom: 8 }}
-          />
-        </Card.Content>
-      </Card>
+      <View>
+        {/* Main Controls */}
+        <Card style={{ marginBottom: 16, elevation: 2 }}>
+          <Card.Content>
+            <SegmentedButtons
+              value={selectedHistoryCategory}
+              onValueChange={setSelectedHistoryCategory}
+              buttons={[
+                {
+                  value: 'Transactions',
+                  label: 'Transactions',
+                  icon: 'swap-horizontal',
+                  style: selectedHistoryCategory === 'Transactions' ? { backgroundColor: '#10b981' } : {},
+                  labelStyle: selectedHistoryCategory === 'Transactions' ? { color: 'white', fontWeight: '600' } : { fontWeight: '500' }
+                },
+                {
+                  value: 'PendingOrders',
+                  label: 'Pending Orders',
+                  icon: 'clock-outline',
+                  style: selectedHistoryCategory === 'PendingOrders' ? { backgroundColor: '#ff9800' } : {},
+                  labelStyle: selectedHistoryCategory === 'PendingOrders' ? { color: 'white', fontWeight: '600' } : { fontWeight: '500' }
+                },
+              ]}
+              style={{ marginBottom: 8 }}
+            />
+            <Button 
+              mode="outlined" 
+              icon="refresh" 
+              onPress={() => {
+                console.log('[HISTORY] 🔄 Manual refresh triggered');
+                setIsLoading(true);
+                setup();
+              }}
+              style={{ marginTop: 8 }}
+            >
+              Refresh History
+            </Button>
+          </Card.Content>
+        </Card>
+      </View>
     );
   }
 
@@ -211,21 +293,17 @@ let History = () => {
       );
     }
     
-    console.log('🔍 Rendering ScrollView with', data.length, 'transactions');
+    console.log('🔍 Rendering', data.length, 'transactions');
     
-    // Show the actual transactions in a working ScrollView (with fixed height)
+    // Render transactions directly (parent ScrollView handles scrolling)
     return (
-      <ScrollView 
-        style={{ height: 400 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 10 }}
-      >
+      <View>
         {data.map((item, index) => (
           <View key={item.id || index.toString()}>
             {renderTransactionItem({ item })}
           </View>
         ))}
-      </ScrollView>
+      </View>
     );
   }
 
@@ -445,7 +523,11 @@ let History = () => {
 
 
   let renderOrders = () => {
+    console.log('[HISTORY] 🔍 renderOrders called');
+    console.log('[HISTORY] 🔍 historyDataModel exists:', !!historyDataModel);
+    
     if (!historyDataModel) {
+      console.log('[HISTORY] 🔍 No historyDataModel - showing no data card');
       return (
         <Card>
           <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
@@ -462,113 +544,245 @@ let History = () => {
     }
     
     let data = historyDataModel.getOrders();
+    console.log('[HISTORY] 🔍 Order data:', data);
+    console.log('[HISTORY] 🔍 Order data length:', data?.length);
+    console.log('[HISTORY] 🔍 Order data type:', typeof data);
+    console.log('[HISTORY] 🔍 Order data isArray:', Array.isArray(data));
+    console.log('[HISTORY] 🔍 First order:', data?.[0]);
+    console.log('[HISTORY] 🔍 Second order:', data?.[1]);
+    console.log('[HISTORY] 🔍 All orders:', JSON.stringify(data, null, 2));
     
     if (!data || data.length === 0) {
+      console.log('[HISTORY] 🔍 No order data - showing empty card');
       return (
-        <Card>
-          <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
-            <Avatar.Icon icon="shopping-outline" size={64} style={{ marginBottom: 16 }} />
-            <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-              No orders found
+        <View>
+          <Card style={{ marginBottom: 16, backgroundColor: '#fff3cd', borderLeftWidth: 4, borderLeftColor: '#ff9800' }}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ fontWeight: 'bold', marginBottom: 8, color: '#856404' }}>
+                📊 Debug Info
+              </Text>
+              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
+                Orders array: {data ? 'exists but empty' : 'null'}
+              </Text>
+              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
+                Orders count: {data?.length || 0}
+              </Text>
+              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
+                Check console logs with [HISTORY] prefix for full data
+              </Text>
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
+              <Avatar.Icon icon="shopping-outline" size={64} style={{ marginBottom: 16 }} />
+              <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+                No orders found
+              </Text>
+              <Text variant="bodyMedium" style={{ textAlign: 'center', color: 'rgba(0,0,0,0.6)' }}>
+                Your trading orders will appear here once you make some trades.
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
+      );
+    }
+    
+    console.log(`[HISTORY] 🔍 Rendering ${data.length} orders`);
+    
+    // Render each order
+    return (
+      <View>
+        <Card style={{ marginBottom: 16, backgroundColor: '#e8f5e9', borderLeftWidth: 4, borderLeftColor: '#4caf50' }}>
+          <Card.Content>
+            <Text variant="titleSmall" style={{ fontWeight: 'bold', marginBottom: 8, color: '#2e7d32' }}>
+              ✅ Found {data.length} Orders
             </Text>
-            <Text variant="bodyMedium" style={{ textAlign: 'center', color: 'rgba(0,0,0,0.6)' }}>
-              Your trading orders will appear here once you make some trades.
+            <Text variant="bodySmall" style={{ color: '#2e7d32' }}>
+              Scroll down to view all orders
             </Text>
+          </Card.Content>
+        </Card>
+        
+        {data.map((item, index) => {
+          console.log(`[HISTORY] 🎨 Mapping order ${index + 1}/${data.length}:`, item);
+          return (
+            <View key={item?.id || `order-${index}`}>
+              {renderOrderItem({ item, index })}
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
+
+  let renderOrderItem = ({ item, index }) => {
+    // item is already an OrderDataModel instance with safe fallbacks
+    console.log(`[HISTORY] 🎨 Rendering order ${index + 1}:`, item);
+    
+    if (!item) {
+      console.log(`[HISTORY] ❌ Order ${index + 1} is null/undefined`);
+      return (
+        <Card style={{ marginBottom: 12, borderRadius: 16, backgroundColor: '#ffebee' }}>
+          <Card.Content>
+            <Text style={{ color: '#c62828' }}>Error: Order data is missing</Text>
           </Card.Content>
         </Card>
       );
     }
     
-    console.log(`Rendering ${data.length} orders with ScrollView`);
-    
-    // Use ScrollView instead of FlatList as workaround for React Native bug
-    return (
-      <ScrollView 
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        {data.map((item, index) => (
-          <View key={item.id || index.toString()}>
-            {renderOrderItem({ item })}
-          </View>
-        ))}
-      </ScrollView>
-    );
-  }
-
-
-  let renderOrderItem = ({ item }) => {
-    // item is already an OrderDataModel instance with safe fallbacks
     try {
-      let orderID = item.id;
-      let market = item.market;
-      let orderSide = item.side;
-      let baseAsset = item.parsedMarket.baseAsset;
-      let quoteAsset = item.parsedMarket.quoteAsset;
+      let orderID = item.id || `order-${index}`;
+      let market = item.market || 'UNKNOWN/UNKNOWN';
+      let orderSide = item.side || 'UNKNOWN';
+      let baseAsset = item.parsedMarket?.baseAsset || item.market?.split('/')[0] || 'BTC';
+      let quoteAsset = item.parsedMarket?.quoteAsset || item.market?.split('/')[1] || 'GBP';
+      
+      console.log(`[HISTORY] 🎨 Order ${index + 1} details:`, {
+        orderID,
+        market,
+        orderSide,
+        baseAsset,
+        quoteAsset,
+        status: item.status,
+        type: item.type,
+        baseVolume: item.baseVolume,
+        quoteVolume: item.quoteVolume
+      });
       
       // Safe asset info retrieval
-      let baseAssetInfo = appState.getAssetInfo(baseAsset) || { decimalPlaces: 8, displayString: baseAsset };
-      let quoteAssetInfo = appState.getAssetInfo(quoteAsset) || { decimalPlaces: 2, displayString: quoteAsset };
+      let baseAssetInfo = { decimalPlaces: 8, displayString: baseAsset };
+      let quoteAssetInfo = { decimalPlaces: 2, displayString: quoteAsset };
       
-      let { baseVolume, quoteVolume } = item.getFormattedVolumes(baseAssetInfo, quoteAssetInfo);
-      let orderStatus = item.status;
-      let orderDate = item.date;
-      let orderTime = item.time;
+      try {
+        baseAssetInfo = appState.getAssetInfo(baseAsset) || baseAssetInfo;
+        quoteAssetInfo = appState.getAssetInfo(quoteAsset) || quoteAssetInfo;
+      } catch (err) {
+        console.log(`[HISTORY] ⚠️ Could not get asset info:`, err);
+      }
+      
+      let baseVolume = item.baseVolume || '0';
+      let quoteVolume = item.quoteVolume || '0';
+      
+      try {
+        const formatted = item.getFormattedVolumes(baseAssetInfo, quoteAssetInfo);
+        baseVolume = formatted.baseVolume;
+        quoteVolume = formatted.quoteVolume;
+      } catch (err) {
+        console.log(`[HISTORY] ⚠️ Could not format volumes:`, err);
+      }
+      
+      let orderStatus = item.status || 'UNKNOWN';
+      let orderDate = item.date || 'Unknown';
+      let orderTime = item.time || '00:00:00';
+      let orderType = item.type || 'UNKNOWN';
     
-    const getStatusColor = (status) => {
-      return item.getStatusColor();
+    const getStatusColor = () => {
+      try {
+        return item.getStatusColor();
+      } catch (err) {
+        return '#757575';
+      }
     };
 
-    const getOrderIcon = (side) => {
-      return item.getIcon();
+    const getOrderIcon = () => {
+      try {
+        return item.getIcon();
+      } catch (err) {
+        return orderSide === 'BUY' ? 'trending-up' : 'trending-down';
+      }
     };
 
     return (
-      <Surface style={{ marginBottom: 8, borderRadius: 12 }} elevation={1}>
-        <TouchableOpacity 
-          onPress={() => {
-            if (!item.isClickable()) return;
-            // Move to order-specific page.
-            let side = orderSide.toLowerCase();
-            appState.changeStateParameters.orderID = orderID;
-            if (side == 'buy') {
-              appState.changeState('PurchaseSuccessful');
-            } else {
-              appState.changeState('SaleSuccessful');
-            }
-          }}
-          style={{ padding: 16 }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Avatar.Icon 
-                icon={getOrderIcon(orderSide)}
-                size={32}
-                style={{ marginRight: 8 }}
-              />
-              <Text variant="titleMedium" style={{ fontWeight: '600' }}>
-                {orderSide}
-              </Text>
+      <Card style={{ 
+        marginBottom: 12, 
+        borderRadius: 16,
+        elevation: 2,
+        backgroundColor: '#ffffff',
+        borderLeftWidth: 4,
+        borderLeftColor: orderSide === 'BUY' ? '#4caf50' : '#f44336'
+      }}>
+        <Card.Content style={{ padding: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View style={{ 
+                width: 48, 
+                height: 48, 
+                borderRadius: 24, 
+                backgroundColor: orderSide === 'BUY' ? '#e8f5e9' : '#ffebee',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 12,
+              }}>
+                <Avatar.Icon 
+                  icon={getOrderIcon(orderSide)}
+                  size={24}
+                  style={{ backgroundColor: 'transparent' }}
+                  color={orderSide === 'BUY' ? '#4caf50' : '#f44336'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="titleMedium" style={{ fontWeight: '600', fontSize: 16, marginBottom: 4 }}>
+                  {orderSide} {baseAsset}
+                </Text>
+                <Text variant="bodySmall" style={{ color: '#666', fontSize: 12 }}>
+                  {market} • {orderType}
+                </Text>
+              </View>
             </View>
             <Chip 
               mode="flat"
-              textStyle={{ fontSize: 12, color: getStatusColor(orderStatus) }}
-              style={{ backgroundColor: `${getStatusColor(orderStatus)}20` }}
+              textStyle={{ fontSize: 11, fontWeight: '600' }}
+              style={{ 
+                backgroundColor: `${getStatusColor(orderStatus)}20`,
+                borderWidth: 1,
+                borderColor: getStatusColor(orderStatus)
+              }}
             >
               {orderStatus}
             </Chip>
           </View>
           
-          <Text variant="bodyMedium" style={{ color: 'rgba(0,0,0,0.6)', marginBottom: 4 }}>
-            {orderDate} {orderTime}
-          </Text>
+          <View style={{ 
+            backgroundColor: '#f5f5f5', 
+            padding: 12, 
+            borderRadius: 8,
+            marginBottom: 8
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+              <Text variant="bodySmall" style={{ color: '#666' }}>Amount:</Text>
+              <Text variant="bodySmall" style={{ fontWeight: '600' }}>
+                {baseVolume} {baseAsset}
+              </Text>
+            </View>
+            {quoteVolume !== '0' && (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text variant="bodySmall" style={{ color: '#666' }}>Value:</Text>
+                <Text variant="bodySmall" style={{ fontWeight: '600' }}>
+                  {quoteVolume} {quoteAsset}
+                </Text>
+              </View>
+            )}
+          </View>
           
-          <Text variant="bodyMedium">
-            Spent {quoteVolume} {quoteAsset} to get {baseVolume} {baseAsset}
-          </Text>
-        </TouchableOpacity>
-      </Surface>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Avatar.Icon 
+                icon="clock-outline" 
+                size={16} 
+                style={{ backgroundColor: 'transparent', marginRight: 4 }} 
+                color="#999"
+              />
+              <Text variant="bodySmall" style={{ color: '#999', fontSize: 11 }}>
+                {orderDate} {orderTime}
+              </Text>
+            </View>
+            <Text variant="bodySmall" style={{ color: '#999', fontSize: 11 }}>
+              ID: {orderID}
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
     );
     } catch (error) {
       console.log('Error rendering order item:', error);
@@ -585,6 +799,20 @@ let History = () => {
 
   const materialTheme = useTheme();
 
+  // DEBUG: Check raw data
+  const rawOrders = historyDataModel?.getOrders();
+  const rawTransactions = historyDataModel?.getTransactions();
+  
+  console.log('[HISTORY] 🎬 Main render - selectedHistoryCategory:', selectedHistoryCategory);
+  console.log('[HISTORY] 🎬 Main render - isLoading:', isLoading);
+  console.log('[HISTORY] 🎬 Main render - historyDataModel exists:', !!historyDataModel);
+  console.log('[HISTORY] 🎬 RAW ORDERS:', rawOrders);
+  console.log('[HISTORY] 🎬 RAW ORDERS COUNT:', rawOrders?.length);
+  console.log('[HISTORY] 🎬 RAW TRANSACTIONS:', rawTransactions);
+  console.log('[HISTORY] 🎬 RAW TRANSACTIONS COUNT:', rawTransactions?.length);
+  console.log('[HISTORY] 🎬 Will render Pending Orders tab?', !isLoading && selectedHistoryCategory === 'PendingOrders');
+  console.log('[HISTORY] 🎬 Will render Transactions tab?', !isLoading && selectedHistoryCategory === 'Transactions');
+
   return (
     <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
       
@@ -592,20 +820,20 @@ let History = () => {
         Transaction History
       </Title>
 
-      <View style={{ padding: 16 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
 
       { isLoading && (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
           <Spinner/>
         </View>
       )}
 
       {! isLoading && displayHistoryControls()}
 
-      {! isLoading && selectedHistoryCategory === 'Orders' && renderOrders()}
+      {! isLoading && selectedHistoryCategory === 'PendingOrders' && renderOrders()}
 
       {! isLoading && selectedHistoryCategory === 'Transactions' && renderTransactions()}
-      </View>
+      </ScrollView>
     </View>
   );
 

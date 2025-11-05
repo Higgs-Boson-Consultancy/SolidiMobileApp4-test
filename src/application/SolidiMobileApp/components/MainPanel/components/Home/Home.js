@@ -967,25 +967,16 @@ const Home = () => {
     // }
   }, [portfolioValue]);
 
-  // Live price updates - refresh every 30 seconds
+  // Load prices once on mount - AppState handles background updates every 30 seconds
   useEffect(() => {
     if (assetData.length === 0) return;
     
-    console.log('⏰ Setting up live price updates (30 second interval)');
+    console.log('💰 Home: Loading prices from AppState cache (initial load)');
     
-    // Initial load
+    // Initial load only - AppState background updates handle refreshes
     loadPricesForAssets(assetData);
     
-    // Set up interval for live updates
-    const priceUpdateInterval = setInterval(() => {
-      console.log('🔄 Refreshing prices...');
-      loadPricesForAssets(assetData);
-    }, 30000); // Update every 30 seconds
-    
-    return () => {
-      console.log('🛑 Clearing price update interval');
-      clearInterval(priceUpdateInterval);
-    };
+    // No interval needed - AppState updates every 30 seconds globally
   }, [assetData]);
 
   // Live balance updates - refresh every 60 seconds when authenticated
