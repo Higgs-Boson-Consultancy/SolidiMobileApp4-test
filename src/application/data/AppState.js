@@ -3733,47 +3733,93 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
     // This is called immediately after a successful Login or PIN entry.
     this.loadInitialStuffAboutUser = async () => {
+      console.log('\n' + '🔄'.repeat(60));
+      console.log('[REG-CHECK] ===== loadInitialStuffAboutUser CALLED =====');
+      console.log('[REG-CHECK] This function loads user data and checks registration status');
+      console.log('🔄'.repeat(60) + '\n');
+      
       // Future: If the security check results are negative, stop.
+      console.log('[REG-CHECK] Step 1: Loading security checks...');
       await this.loadSecurityChecks();
+      console.log('[REG-CHECK] ✅ Security checks loaded');
+      
       if (! this.state.assetsInfoLoaded) {
         // This is needed for loading the deposit details & the default account.
+        console.log('[REG-CHECK] Step 2: Loading assets info (first time)...');
         await this.state.loadAssetsInfo();
         this.state.assetsInfoLoaded = true;
+        console.log('[REG-CHECK] ✅ Assets info loaded and marked as loaded');
+      } else {
+        console.log('[REG-CHECK] Step 2: Assets info already loaded, skipping');
       }
-      // The following information can be changed by the user while the app is in use, so we reload it every time this function is called.
-      await this.loadUserInfo();
-      await this.loadUserStatus();
-      await this.loadPersonalDetailOptions(); // Load dropdown options for Personal Details page
-      await this.loadDepositDetailsForAsset('GBP');
-      await this.loadDefaultAccountForAsset('GBP');
       
+      // The following information can be changed by the user while the app is in use, so we reload it every time this function is called.
+      console.log('[REG-CHECK] Step 3: Loading user info...');
+      await this.loadUserInfo();
+      console.log('[REG-CHECK] ✅ User info loaded');
+      
+      console.log('[REG-CHECK] Step 4: Loading user status...');
+      await this.loadUserStatus();
+      console.log('[REG-CHECK] ✅ User status loaded');
+      
+      console.log('[REG-CHECK] Step 5: Loading personal detail options...');
+      await this.loadPersonalDetailOptions(); // Load dropdown options for Personal Details page
+      console.log('[REG-CHECK] ✅ Personal detail options loaded');
+      
+      console.log('[REG-CHECK] Step 6: Loading GBP deposit details...');
+      await this.loadDepositDetailsForAsset('GBP');
+      console.log('[REG-CHECK] ✅ GBP deposit details loaded');
+      
+      console.log('[REG-CHECK] Step 7: Loading default GBP account...');
+      await this.loadDefaultAccountForAsset('GBP');
+      console.log('[REG-CHECK] ✅ Default GBP account loaded');
+      
+      console.log('[REG-CHECK] Step 8: Starting crypto price updates...');
       // Start background crypto price updates after login
       this.state.startCryptoPriceUpdates();
+      console.log('[REG-CHECK] ✅ Crypto price updates started');
+      
+      console.log('\n' + '✅'.repeat(60));
+      console.log('[REG-CHECK] ===== loadInitialStuffAboutUser COMPLETED =====');
+      console.log('✅'.repeat(60) + '\n');
     }
 
     // LEVEL 2 VALIDATION: Check user status and return redirect target 
     this.checkUserStatusRedirect = async () => {
       try {
-        console.log('🔍 [LEVEL 2] Checking user status for form completion requirements...');
+        console.log('\n' + '🔍'.repeat(60));
+        console.log('[REG-CHECK] ===== checkUserStatusRedirect CALLED =====');
+        console.log('[REG-CHECK] This determines if user needs to complete registration steps');
+        console.log('🔍'.repeat(60) + '\n');
+        
+        console.log('[REG-CHECK] LEVEL 2: Checking user status for form completion requirements...');
         
         // ===== AUTHENTICATION CHECKS FIRST =====
-        // 1. Check if user is properly authenticated and logged in
-        if (!this.state.user.isAuthenticated) {
-          console.log('🔒 [LEVEL 2] User not authenticated - redirecting to Login');
-          return 'Login';
-        }
+        console.log('[REG-CHECK] Phase 1: Authentication validation...');
         
-        if (!this.state.user.apiCredentialsFound) {
-          console.log('🔒 [LEVEL 2] No API credentials found - redirecting to Login');
+        // 1. Check if user is properly authenticated and logged in
+        console.log('[REG-CHECK] Checking isAuthenticated:', this.state.user.isAuthenticated);
+        if (!this.state.user.isAuthenticated) {
+          console.log('[REG-CHECK] ❌ User not authenticated - REDIRECT TO: Login');
           return 'Login';
         }
+        console.log('[REG-CHECK] ✅ User is authenticated');
+        
+        console.log('[REG-CHECK] Checking apiCredentialsFound:', this.state.user.apiCredentialsFound);
+        if (!this.state.user.apiCredentialsFound) {
+          console.log('[REG-CHECK] ❌ No API credentials found - REDIRECT TO: Login');
+          return 'Login';
+        }
+        console.log('[REG-CHECK] ✅ API credentials found');
         
         // 2. Check for credential expiry (if applicable)
         // Add any credential expiry logic here if needed
         
-        console.log('✅ [LEVEL 2] Authentication valid - checking user status...');
+        console.log('[REG-CHECK] ✅ Phase 1 Complete: Authentication valid');
+        console.log('[REG-CHECK] Phase 2: Checking account review dismissal...');
         
         // Check if user has dismissed AccountReview modal
+        console.log('[REG-CHECK] accountReviewDismissed flag:', this.state.user.accountReviewDismissed);
         if (this.state.user.accountReviewDismissed) {
           console.log('🚫 [LEVEL 2] User has dismissed AccountReview modal - skip redirect');
           console.log('🚫 [LEVEL 2] accountReviewDismissed flag is:', this.state.user.accountReviewDismissed);

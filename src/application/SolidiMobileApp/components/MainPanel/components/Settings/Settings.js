@@ -270,11 +270,11 @@ let Settings = () => {
               <Divider />
               
               <List.Item
-                title="Account Review"
-                description="Review and update account preferences"
-                left={props => <List.Icon {...props} icon="account-check" />}
+                title="Solidi Account"
+                description="Terms & Conditions and Delete Account"
+                left={props => <List.Icon {...props} icon="account-cog" />}
                 right={props => <List.Icon {...props} icon="chevron-right" />}
-                onPress={() => { appState.changeState('AccountReview'); }}
+                onPress={() => { appState.changeState('SolidiAccount'); }}
                 style={{ paddingVertical: 4 }}
               />
               

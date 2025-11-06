@@ -254,6 +254,31 @@ let ChooseHowToReceivePayment = () => {
   }
 
 
+  let paymentOptionDisabled = (methodKey) => {
+    // If still loading, disable all options
+    if (isLoading) {
+      return true;
+    }
+    
+    // If no payment choice details available, disable
+    if (_.isEmpty(paymentChoiceDetails)) {
+      return true;
+    }
+    
+    // If this specific method isn't available, disable
+    if (!_.has(paymentChoiceDetails, methodKey)) {
+      return false; // Keep the original "hacky" behavior for now
+    }
+    
+    // Check if the payment method has an error
+    if (_.has(paymentChoiceDetails[methodKey], 'error')) {
+      return true;
+    }
+    
+    return false;
+  }
+
+
   let readPaymentConditions = async () => {
     appState.changeState('ReadArticle', 'payment_conditions');
   }
@@ -549,6 +574,139 @@ let ChooseHowToReceivePayment = () => {
             </View>
           </Card.Content>
         </Card>
+
+        {/* Payment Methods Section */}
+        <Card style={modernStyles.sectionCard}>
+          <Card.Content>
+            <View style={modernStyles.sectionHeader}>
+              <Icon2 name="credit-card" size={24} color="#007AFF" />
+              <Text style={modernStyles.sectionTitle}>Select Payment Method</Text>
+            </View>
+            <Text style={modernStyles.sectionSubtitle}>Choose how you'd like to receive your payment</Text>
+          </Card.Content>
+        </Card>
+
+        {/* Bank Transfer (Solidi) Option */}
+        <TouchableOpacity 
+          onPress={() => {
+            if (!isLoading && !paymentOptionDisabled('solidi')) {
+              setPaymentChoice('solidi');
+            }
+          }}
+          disabled={isLoading || paymentOptionDisabled('solidi')}
+          activeOpacity={0.7}
+        >
+          <Card style={[
+            modernStyles.paymentMethodCard,
+            paymentChoice === 'solidi' && modernStyles.selectedPaymentCard,
+            (isLoading || paymentOptionDisabled('solidi')) && modernStyles.disabledPaymentCard
+          ]}>
+            <Card.Content style={modernStyles.paymentCardContent}>
+              <View style={modernStyles.paymentMethodHeader}>
+                <View style={modernStyles.paymentMethodIcon}>
+                  <Icon2 name="bank" size={24} color="#007AFF" />
+                </View>
+                <View style={modernStyles.paymentMethodInfo}>
+                  <Text style={modernStyles.paymentMethodTitle}>Bank Transfer</Text>
+                  <View style={modernStyles.feeBadge}>
+                    <Text style={modernStyles.feeBadgeText}>RECOMMENDED</Text>
+                  </View>
+                </View>
+                <RadioButton 
+                  value="solidi"
+                  status={paymentChoice === 'solidi' ? 'checked' : 'unchecked'}
+                  color="#007AFF"
+                  disabled={isLoading || paymentOptionDisabled('solidi')}
+                />
+              </View>
+              <View style={modernStyles.paymentMethodDetails}>
+                <View style={modernStyles.featureRow}>
+                  <Icon2 name="clock-fast" size={16} color="#4CAF50" />
+                  <Text style={modernStyles.featureText}>Usually processed in under a minute</Text>
+                </View>
+                <View style={modernStyles.featureRow}>
+                  <Icon2 name="shield-check" size={16} color="#4CAF50" />
+                  <Text style={modernStyles.featureText}>Secure and reliable</Text>
+                </View>
+                <View style={modernStyles.featureRow}>
+                  <Icon2 name="star" size={16} color="#FFB300" />
+                  <Text style={modernStyles.featureText}>Most popular choice</Text>
+                </View>
+                {paymentOptionDisabled('solidi') && (
+                  <View style={modernStyles.featureRow}>
+                    <Icon2 name="alert-circle" size={16} color="#FF5722" />
+                    <Text style={modernStyles.disabledFeatureText}>This payment option is currently inactive</Text>
+                  </View>
+                )}
+                {isLoading && (
+                  <View style={modernStyles.featureRow}>
+                    <Icon2 name="loading" size={16} color="#666" />
+                    <Text style={modernStyles.disabledFeatureText}>Loading payment details...</Text>
+                  </View>
+                )}
+              </View>
+            </Card.Content>
+          </Card>
+        </TouchableOpacity>
+
+        {/* Wallet Balance Option */}
+        <TouchableOpacity 
+          onPress={() => {
+            if (!isLoading && !paymentOptionDisabled('balance')) {
+              setPaymentChoice('balance');
+            }
+          }}
+          disabled={isLoading || paymentOptionDisabled('balance')}
+          activeOpacity={0.7}
+        >
+          <Card style={[
+            modernStyles.paymentMethodCard,
+            paymentChoice === 'balance' && modernStyles.selectedPaymentCard,
+            (isLoading || paymentOptionDisabled('balance')) && modernStyles.disabledPaymentCard
+          ]}>
+            <Card.Content style={modernStyles.paymentCardContent}>
+              <View style={modernStyles.paymentMethodHeader}>
+                <View style={modernStyles.paymentMethodIcon}>
+                  <Icon2 name="wallet" size={24} color="#007AFF" />
+                </View>
+                <View style={modernStyles.paymentMethodInfo}>
+                  <Text style={modernStyles.paymentMethodTitle}>Add to Wallet Balance</Text>
+                  <View style={modernStyles.feeBadge}>
+                    <Text style={modernStyles.feeBadgeText}>NO FEE</Text>
+                  </View>
+                </View>
+                <RadioButton 
+                  value="balance"
+                  status={paymentChoice === 'balance' ? 'checked' : 'unchecked'}
+                  color="#007AFF"
+                  disabled={isLoading || paymentOptionDisabled('balance')}
+                />
+              </View>
+              <View style={modernStyles.paymentMethodDetails}>
+                <View style={modernStyles.featureRow}>
+                  <Icon2 name="lightning-bolt" size={16} color="#4CAF50" />
+                  <Text style={modernStyles.featureText}>Instant</Text>
+                </View>
+                <View style={modernStyles.featureRow}>
+                  <Icon2 name="wallet" size={16} color="#4CAF50" />
+                  <Text style={modernStyles.featureText}>Adds {assetQA} to your wallet balance</Text>
+                </View>
+                {paymentOptionDisabled('balance') && (
+                  <View style={modernStyles.featureRow}>
+                    <Icon2 name="alert-circle" size={16} color="#FF5722" />
+                    <Text style={modernStyles.disabledFeatureText}>This payment option is currently inactive</Text>
+                  </View>
+                )}
+                {isLoading && (
+                  <View style={modernStyles.featureRow}>
+                    <Icon2 name="loading" size={16} color="#666" />
+                    <Text style={modernStyles.disabledFeatureText}>Loading payment details...</Text>
+                  </View>
+                )}
+              </View>
+            </Card.Content>
+          </Card>
+        </TouchableOpacity>
 
         {/* Payment Conditions Button */}
         <View style={modernStyles.conditionsContainer}>
@@ -885,6 +1043,82 @@ let modernStyles = StyleSheet.create({
     color: '#555',
     marginLeft: scaledWidth(8),
     flex: 1,
+  },
+  disabledFeatureText: {
+    fontSize: normaliseFont(14),
+    color: '#999',
+    marginLeft: scaledWidth(8),
+    flex: 1,
+    fontStyle: 'italic',
+  },
+  
+  // Section Card Styles
+  sectionCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: scaledHeight(15),
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: normaliseFont(18),
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: scaledWidth(10),
+  },
+  sectionSubtitle: {
+    fontSize: normaliseFont(14),
+    color: '#666',
+    marginTop: scaledHeight(5),
+    marginLeft: scaledWidth(34),
+  },
+  
+  // Payment Method Card Styles
+  paymentMethodCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginBottom: scaledHeight(12),
+    borderWidth: 2,
+    borderColor: 'transparent',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+  },
+  selectedPaymentCard: {
+    borderColor: '#007AFF',
+    borderWidth: 2,
+    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  disabledPaymentCard: {
+    opacity: 0.5,
+    backgroundColor: '#f8f8f8',
+  },
+  paymentCardContent: {
+    paddingHorizontal: scaledWidth(16),
+    paddingVertical: scaledHeight(16),
+  },
+  paymentMethodIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paymentMethodInfo: {
+    flex: 1,
+    marginLeft: scaledWidth(12),
   },
   conditionsContainer: {
     alignItems: 'center',

@@ -590,50 +590,28 @@ let Questionnaire = () => {
     try {
       setUploadMessage('Submitting questionnaire...');
       
-      // Prepare submission data
-      let submissionData = {
-        formId: questionnaireData.formid,
-        uuid: questionnaireData.uuid,
-        answers: answers,
-        uploadedFiles: Object.keys(uploadedFiles).map(key => ({
-          questionId: key,
-          fileName: uploadedFiles[key].name,
-          fileUri: uploadedFiles[key].uri,
-          fileType: uploadedFiles[key].type
-        }))
-      };
+      console.log('🔵 [QUEST-SUBMIT] Starting questionnaire submission');
+      console.log('🔵 [QUEST-SUBMIT] Form ID:', questionnaireData.formid);
+      console.log('🔵 [QUEST-SUBMIT] Form submission will be handled by parent component');
       
-      // In offline mode, just simulate success
-      if (true) { // OFFLINE_MODE is true
-        log('[OFFLINE MODE] Simulating questionnaire submission');
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
-        
-        Alert.alert(
-          'Success',
-          'Your questionnaire has been submitted successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate back or to success page
-                appState.changeState('Settings');
-              }
-            }
-          ]
-        );
-        return;
-      }
+      // IMPORTANT: The actual submission logic is handled by the parent component
+      // (AccountReview.js or RegistrationCompletion.js via DynamicQuestionnaireForm)
+      // This function should NOT directly submit - instead it should trigger the
+      // onComplete callback which handles the base64 encoding and file upload flow
       
-      // TODO: Real API submission would go here
-      // let result = await appState.privateMethod({
-      //   functionName: 'submitQuestionnaire',
-      //   apiRoute: questionnaireData.submiturl,
-      //   params: submissionData
-      // });
+      // Notify parent component that form is ready to submit
+      console.log('� [QUEST-SUBMIT] Form validated - ready for submission');
+      
+      setUploadMessage('');
+      setDisableSubmitButton(false);
+      
+      // The parent component will handle submission via the DynamicQuestionnaireForm component
+      // which converts answers to base64 JSON file and uploads it
       
     } catch (err) {
+      console.log('❌ [QUEST-SUBMIT] Error during validation:', err);
       logger.error(err);
-      setErrorMessage('Failed to submit questionnaire. Please try again.');
+      setErrorMessage('Failed to validate questionnaire. Please try again.');
       setUploadMessage('');
       setDisableSubmitButton(false);
     }

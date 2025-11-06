@@ -205,17 +205,47 @@ let Wallet = () => {
       
       // Load user's default bank account for GBP withdrawals
       try {
-        console.log('🏦 Wallet: Loading default bank account for GBP...');
+        console.log('\n' + '🏦'.repeat(60));
+        console.log('[WALLET-SETUP] Loading default bank account for GBP...');
         setIsLoadingBankAccount(true);
+        
+        console.log('[WALLET-SETUP] Calling appState.loadDefaultAccountForAsset("GBP")...');
         await appState.loadDefaultAccountForAsset('GBP');
+        
+        console.log('[WALLET-SETUP] Calling appState.getDefaultAccountForAsset("GBP")...');
         const bankAccount = appState.getDefaultAccountForAsset('GBP');
-        console.log('✅ Wallet: Bank account loaded:', bankAccount);
+        
+        console.log('[WALLET-SETUP] Bank account retrieved:', JSON.stringify(bankAccount, null, 2));
+        console.log('[WALLET-SETUP] Bank account type:', typeof bankAccount);
+        console.log('[WALLET-SETUP] Bank account is null:', bankAccount === null);
+        console.log('[WALLET-SETUP] Bank account is undefined:', bankAccount === undefined);
+        
+        if (bankAccount) {
+          console.log('[WALLET-SETUP] ✅ Bank account loaded successfully');
+          console.log('[WALLET-SETUP] Account name:', bankAccount.accountName);
+          console.log('[WALLET-SETUP] Sort code:', bankAccount.sortCode);
+          console.log('[WALLET-SETUP] Account number:', bankAccount.accountNumber);
+          console.log('[WALLET-SETUP] UUID:', bankAccount.uuid);
+        } else {
+          console.log('[WALLET-SETUP] ⚠️ No bank account found (null or undefined)');
+        }
+        
         setUserBankAccount(bankAccount);
+        console.log('[WALLET-SETUP] setUserBankAccount called with:', bankAccount ? 'valid account' : 'null/undefined');
+        console.log('🏦'.repeat(60) + '\n');
       } catch (error) {
-        console.log('⚠️ Wallet: Error loading bank account:', error);
+        console.log('\n' + '❌'.repeat(60));
+        console.log('[WALLET-SETUP] 🚨 ERROR loading bank account!');
+        console.log('[WALLET-SETUP] Error type:', typeof error);
+        console.log('[WALLET-SETUP] Error message:', error?.message);
+        console.log('[WALLET-SETUP] Error stack:', error?.stack);
+        console.log('[WALLET-SETUP] Full error:', JSON.stringify(error, null, 2));
+        console.error('[WALLET-SETUP] Original error:', error);
+        console.log('❌'.repeat(60) + '\n');
         setUserBankAccount(null);
       } finally {
         setIsLoadingBankAccount(false);
+        console.log('[WALLET-SETUP] Bank account loading complete, isLoadingBankAccount set to false');
       }
 
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
@@ -723,45 +753,88 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
 
   // Handle withdrawal
   let handleWithdraw = (currency) => {
+    console.log('\n' + '🏦'.repeat(60));
+    console.log('[WALLET] handleWithdraw called');
+    console.log('[WALLET] Currency:', currency);
+    console.log('[WALLET] Is crypto (BTC/ETH):', ['BTC', 'ETH'].includes(currency));
+    console.log('🏦'.repeat(60) + '\n');
+    
     if (['BTC', 'ETH'].includes(currency)) {
+      console.log('[WALLET] Opening crypto withdrawal modal for', currency);
       // Open withdraw modal for crypto currencies
       setWithdrawCurrency(currency);
       setWithdrawToAddress('');
       setWithdrawAmountInput('');
       setShowWithdrawModal(true);
+      console.log('[WALLET] Crypto withdrawal modal opened');
       return;
     }
 
+    console.log('[WALLET] Opening fiat withdrawal modal for', currency);
+    console.log('[WALLET] Current userBankAccount:', JSON.stringify(userBankAccount, null, 2));
+    
     // For fiat currencies, open fiat withdrawal modal
     setFiatWithdrawCurrency(currency);
     setFiatWithdrawAmount('');
     setShowFiatWithdrawModal(true);
+    console.log('[WALLET] Fiat withdrawal modal opened');
+    console.log('🏦'.repeat(60) + '\n');
   };
 
   // Handle fiat withdrawal submission
   let handleFiatWithdrawal = async () => {
+    console.log('\n' + '💰'.repeat(60));
+    console.log('🚨 [FIAT-WITHDRAW] handleFiatWithdrawal FUNCTION CALLED');
+    console.log('💰'.repeat(60));
+    console.log('[FIAT-WITHDRAW] Step 1: Validating input amount...');
+    console.log('[FIAT-WITHDRAW] fiatWithdrawAmount:', fiatWithdrawAmount);
+    console.log('[FIAT-WITHDRAW] fiatWithdrawCurrency:', fiatWithdrawCurrency);
+    
     if (!fiatWithdrawAmount) {
+      console.log('[FIAT-WITHDRAW] ❌ ERROR: No amount provided');
       Alert.alert('Error', 'Please enter an amount');
       return;
     }
 
     const amount = parseFloat(fiatWithdrawAmount);
+    console.log('[FIAT-WITHDRAW] Parsed amount:', amount);
+    console.log('[FIAT-WITHDRAW] Amount is NaN:', isNaN(amount));
+    console.log('[FIAT-WITHDRAW] Amount <= 0:', amount <= 0);
+    
     if (isNaN(amount) || amount <= 0) {
+      console.log('[FIAT-WITHDRAW] ❌ ERROR: Invalid amount (NaN or <= 0)');
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
 
+    console.log('[FIAT-WITHDRAW] ✅ Amount validation passed');
+    console.log('[FIAT-WITHDRAW] Step 2: Checking user balance...');
+    
     // Check if user has sufficient balance
     const balanceData = getBalanceData();
+    console.log('[FIAT-WITHDRAW] Balance data:', JSON.stringify(balanceData, null, 2));
+    
     const availableBalance = balanceData[fiatWithdrawCurrency]?.available || 0;
+    console.log('[FIAT-WITHDRAW] Available balance for', fiatWithdrawCurrency, ':', availableBalance);
+    console.log('[FIAT-WITHDRAW] Requested amount:', amount);
+    console.log('[FIAT-WITHDRAW] Sufficient balance:', amount <= availableBalance);
     
     if (amount > availableBalance) {
+      console.log('[FIAT-WITHDRAW] ❌ ERROR: Insufficient balance');
       Alert.alert('Insufficient Balance', `You only have ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(availableBalance.toString(), fiatWithdrawCurrency)} available.`);
       return;
     }
 
+    console.log('[FIAT-WITHDRAW] ✅ Balance check passed');
+    console.log('[FIAT-WITHDRAW] Step 3: Checking bank account setup...');
+    console.log('[FIAT-WITHDRAW] userBankAccount:', JSON.stringify(userBankAccount, null, 2));
+    console.log('[FIAT-WITHDRAW] userBankAccount is null:', userBankAccount === null);
+    console.log('[FIAT-WITHDRAW] userBankAccount is undefined:', userBankAccount === undefined);
+    console.log('[FIAT-WITHDRAW] userBankAccount is "[loading]":', userBankAccount === '[loading]');
+    
     // Check if bank account is set up
     if (!userBankAccount || userBankAccount === '[loading]') {
+      console.log('[FIAT-WITHDRAW] ❌ ERROR: Bank account not set up or loading');
       Alert.alert(
         'Bank Account Required',
         'Please set up your bank account details before making a withdrawal.',
@@ -770,6 +843,7 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
           { 
             text: 'Add Bank Account', 
             onPress: () => {
+              console.log('[FIAT-WITHDRAW] User chose to add bank account');
               setShowFiatWithdrawModal(false);
               appState.changeState('BankAccounts');
             }
@@ -779,25 +853,32 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
       return;
     }
 
+    console.log('[FIAT-WITHDRAW] ✅ Bank account check passed');
+    console.log('[FIAT-WITHDRAW] Bank account details:', {
+      accountName: userBankAccount.accountName,
+      sortCode: userBankAccount.sortCode,
+      accountNumber: userBankAccount.accountNumber
+    });
+
     try {
       setIsFiatWithdrawing(true);
-      
-      console.log('🏦 Starting fiat withdrawal...');
-      console.log('🏦 Currency:', fiatWithdrawCurrency);
-      console.log('🏦 Amount:', amount);
-      console.log('🏦 Bank Account:', userBankAccount);
+      console.log('[FIAT-WITHDRAW] Step 4: Preparing API call...');
+      console.log('[FIAT-WITHDRAW] Set isWithdrawing to true');
+      console.log('[FIAT-WITHDRAW] Currency:', fiatWithdrawCurrency);
+      console.log('[FIAT-WITHDRAW] Amount:', amount);
+      console.log('[FIAT-WITHDRAW] Bank Account UUID:', userBankAccount.uuid || 'N/A');
 
-      console.log('🔄 CONSOLE: ===== FIAT WITHDRAW API CALL =====');
-      console.log('📤 CONSOLE: About to call appState.apiClient.privateMethod for fiat withdraw...');
-      console.log('📤 CONSOLE: API parameters:', {
-        httpMethod: 'POST',
-        apiRoute: 'withdraw',
-        params: {
-          asset: fiatWithdrawCurrency,
-          volume: amount.toString(),
-          priority: 'normal'
-        }
+      console.log('[FIAT-WITHDRAW] Bank Account UUID:', userBankAccount.uuid || 'N/A');
+
+      console.log('\n' + '📤'.repeat(60));
+      console.log('[FIAT-WITHDRAW] ===== MAKING API CALL =====');
+      console.log('[FIAT-WITHDRAW] API Route: POST /withdraw');
+      console.log('[FIAT-WITHDRAW] API Parameters:', {
+        asset: fiatWithdrawCurrency,
+        volume: amount.toString(),
+        priority: 'normal'
       });
+      console.log('📤'.repeat(60) + '\n');
 
       // Call withdraw API for fiat - uses user's default bank account
       let result = await appState.apiClient.privateMethod({
@@ -810,30 +891,58 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
         }
       });
 
-      console.log('📨 CONSOLE: ===== FIAT WITHDRAW API RESPONSE =====');
-      console.log('📨 CONSOLE: Raw privateMethod (withdraw) response:', result);
-      console.log('📨 CONSOLE: Response type:', typeof result);
-      console.log('📨 CONSOLE: Response JSON:', JSON.stringify(result, null, 2));
-      console.log('📨 CONSOLE: ===== END FIAT WITHDRAW API RESPONSE =====');
+      console.log('\n' + '📨'.repeat(60));
+      console.log('[FIAT-WITHDRAW] ===== API RESPONSE RECEIVED =====');
+      console.log('[FIAT-WITHDRAW] Raw response:', result);
+      console.log('[FIAT-WITHDRAW] Response type:', typeof result);
+      console.log('[FIAT-WITHDRAW] Response is null:', result === null);
+      console.log('[FIAT-WITHDRAW] Response is undefined:', result === undefined);
+      console.log('[FIAT-WITHDRAW] Response JSON:', JSON.stringify(result, null, 2));
+      
+      if (result && typeof result === 'object') {
+        console.log('[FIAT-WITHDRAW] Response keys:', Object.keys(result));
+        console.log('[FIAT-WITHDRAW] Has "error" property:', 'error' in result);
+        console.log('[FIAT-WITHDRAW] Error value:', result.error);
+        console.log('[FIAT-WITHDRAW] Error type:', typeof result.error);
+        console.log('[FIAT-WITHDRAW] Error is null:', result.error === null);
+        console.log('[FIAT-WITHDRAW] Has "data" property:', 'data' in result);
+        console.log('[FIAT-WITHDRAW] Data value:', result.data);
+        console.log('[FIAT-WITHDRAW] Has "id" property:', 'id' in result);
+        console.log('[FIAT-WITHDRAW] ID value:', result.id);
+      }
+      console.log('📨'.repeat(60) + '\n');
 
+      console.log('[FIAT-WITHDRAW] Step 5: Processing API response...');
+      
       // Check for success (same logic as crypto withdrawal)
       let isSuccess = false;
       let successMessage = '';
 
+      console.log('[FIAT-WITHDRAW] Checking if result.error === null...');
       if (result && result.error === null) {
         isSuccess = true;
-        console.log('🏦 Top-level error is null - treating as success');
+        console.log('[FIAT-WITHDRAW] ✅ Top-level error is null - treating as success');
         
         if (result?.data?.error && typeof result.data.error === 'string') {
+          console.log('[FIAT-WITHDRAW] Found data.error string:', result.data.error);
           successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} - ${result.data.error}`;
         } else if (result?.id) {
+          console.log('[FIAT-WITHDRAW] Found transaction ID:', result.id);
           successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} has been initiated.\n\nTransaction ID: ${result.id}\n\nThe funds will be transferred to your bank account within 1-3 business days.`;
         } else {
+          console.log('[FIAT-WITHDRAW] No transaction ID found, using generic success message');
           successMessage = `Your ${fiatWithdrawCurrency} withdrawal of ${getCurrencySymbol(fiatWithdrawCurrency)}${formatCurrency(amount.toString(), fiatWithdrawCurrency)} has been initiated.\n\nThe funds will be transferred to your bank account within 1-3 business days.`;
         }
+        console.log('[FIAT-WITHDRAW] Success message prepared:', successMessage);
+      } else {
+        console.log('[FIAT-WITHDRAW] ❌ Response indicates failure');
+        console.log('[FIAT-WITHDRAW] result.error is NOT null, value:', result?.error);
       }
 
+      console.log('[FIAT-WITHDRAW] isSuccess:', isSuccess);
+      
       if (isSuccess) {
+        console.log('[FIAT-WITHDRAW] Step 6: Showing success alert...');
         Alert.alert(
           'Withdrawal Initiated',
           successMessage,
@@ -841,29 +950,48 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
             { 
               text: 'View History', 
               onPress: () => {
+                console.log('[FIAT-WITHDRAW] User chose to view history');
                 setShowFiatWithdrawModal(false);
                 appState.changeState('History');
               }
             },
             { 
               text: 'OK', 
-              onPress: () => setShowFiatWithdrawModal(false) 
+              onPress: () => {
+                console.log('[FIAT-WITHDRAW] User clicked OK');
+                setShowFiatWithdrawModal(false);
+              }
             }
           ]
         );
         
+        console.log('[FIAT-WITHDRAW] Step 7: Refreshing balances...');
         // Refresh balances
         await setup();
+        console.log('[FIAT-WITHDRAW] ✅ Balances refreshed');
       } else {
         let errorMsg = result?.error || 'Unknown error occurred';
-        console.log('🏦 Fiat withdrawal failed with error:', errorMsg);
+        console.log('[FIAT-WITHDRAW] ❌ Withdrawal failed with error:', errorMsg);
+        console.log('[FIAT-WITHDRAW] Showing error alert to user');
         Alert.alert('Withdrawal Failed', errorMsg);
       }
     } catch (error) {
-      console.error('🏦 Fiat withdrawal error:', error);
+      console.log('\n' + '❌'.repeat(60));
+      console.log('[FIAT-WITHDRAW] 🚨 EXCEPTION CAUGHT IN handleFiatWithdrawal!');
+      console.log('[FIAT-WITHDRAW] Error type:', typeof error);
+      console.log('[FIAT-WITHDRAW] Error name:', error?.name);
+      console.log('[FIAT-WITHDRAW] Error message:', error?.message);
+      console.log('[FIAT-WITHDRAW] Error stack:', error?.stack);
+      console.log('[FIAT-WITHDRAW] Full error object:', JSON.stringify(error, null, 2));
+      console.error('[FIAT-WITHDRAW] Original error:', error);
+      console.log('❌'.repeat(60) + '\n');
+      
       Alert.alert('Withdrawal Failed', 'An error occurred while processing your withdrawal');
     } finally {
+      console.log('[FIAT-WITHDRAW] Step 8: Cleanup - setting isFiatWithdrawing to false');
       setIsFiatWithdrawing(false);
+      console.log('[FIAT-WITHDRAW] ✅ Function complete');
+      console.log('💰'.repeat(60) + '\n');
     }
   };
 

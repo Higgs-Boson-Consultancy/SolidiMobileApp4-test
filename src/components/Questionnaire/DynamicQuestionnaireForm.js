@@ -605,11 +605,8 @@ const DynamicQuestionnaireForm = ({
       console.log('� [SUBMIT] Performing background login regardless of response...');
       
       try {
-        // Always perform background login/authentication
-        await appState.authenticateUser();
-        console.log('✅ [SUBMIT] Background authentication successful');
-        
-        // Always reload user status to get latest registration state
+        // Reload user status to get latest categorisation/appropriateness values
+        // DO NOT call authenticateUser() as it will redirect to login/PIN screens!
         if (appState?.loadUserInfo) {
           await appState.loadUserInfo();
         }
@@ -651,18 +648,17 @@ const DynamicQuestionnaireForm = ({
     } catch (error) {
       console.error('❌ [SUBMIT] Submission error:', error);
       
-      // Even on error, try background login and continue
-      console.log('🔄 [SUBMIT] Form submission failed, but attempting background login anyway...');
+      // Even on error, try reloading user data
+      console.log('🔄 [SUBMIT] Form submission failed, but reloading user data anyway...');
       
       try {
-        await appState.authenticateUser();
         if (appState?.loadUserInfo) {
           await appState.loadUserInfo();
         }
         if (appState?.loadUserStatus) {
           await appState.loadUserStatus();
         }
-        console.log('✅ [SUBMIT] Background authentication successful despite submission error');
+        console.log('✅ [SUBMIT] User data reloaded despite submission error');
         
         // CRITICAL: Even on submission error, check registration status for redirect
         console.log('🔍 [SUBMIT] Checking registration status after error...');
@@ -678,7 +674,7 @@ const DynamicQuestionnaireForm = ({
         }
         
       } catch (authError) {
-        console.error('❌ [SUBMIT] Background authentication also failed:', authError);
+        console.error('❌ [SUBMIT] Background data reload also failed:', authError);
       }
       
       // Silent error handling - no user prompts

@@ -556,22 +556,6 @@ let History = () => {
       console.log('[HISTORY] 🔍 No order data - showing empty card');
       return (
         <View>
-          <Card style={{ marginBottom: 16, backgroundColor: '#fff3cd', borderLeftWidth: 4, borderLeftColor: '#ff9800' }}>
-            <Card.Content>
-              <Text variant="titleSmall" style={{ fontWeight: 'bold', marginBottom: 8, color: '#856404' }}>
-                📊 Debug Info
-              </Text>
-              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
-                Orders array: {data ? 'exists but empty' : 'null'}
-              </Text>
-              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
-                Orders count: {data?.length || 0}
-              </Text>
-              <Text variant="bodySmall" style={{ color: '#856404', marginBottom: 4 }}>
-                Check console logs with [HISTORY] prefix for full data
-              </Text>
-            </Card.Content>
-          </Card>
           <Card>
             <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
               <Avatar.Icon icon="shopping-outline" size={64} style={{ marginBottom: 16 }} />
@@ -798,20 +782,6 @@ let History = () => {
 
 
   const materialTheme = useTheme();
-
-  // DEBUG: Check raw data
-  const rawOrders = historyDataModel?.getOrders();
-  const rawTransactions = historyDataModel?.getTransactions();
-  
-  console.log('[HISTORY] 🎬 Main render - selectedHistoryCategory:', selectedHistoryCategory);
-  console.log('[HISTORY] 🎬 Main render - isLoading:', isLoading);
-  console.log('[HISTORY] 🎬 Main render - historyDataModel exists:', !!historyDataModel);
-  console.log('[HISTORY] 🎬 RAW ORDERS:', rawOrders);
-  console.log('[HISTORY] 🎬 RAW ORDERS COUNT:', rawOrders?.length);
-  console.log('[HISTORY] 🎬 RAW TRANSACTIONS:', rawTransactions);
-  console.log('[HISTORY] 🎬 RAW TRANSACTIONS COUNT:', rawTransactions?.length);
-  console.log('[HISTORY] 🎬 Will render Pending Orders tab?', !isLoading && selectedHistoryCategory === 'PendingOrders');
-  console.log('[HISTORY] 🎬 Will render Transactions tab?', !isLoading && selectedHistoryCategory === 'Transactions');
 
   return (
     <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
