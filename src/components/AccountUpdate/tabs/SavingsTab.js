@@ -33,16 +33,28 @@ class SavingsTab extends Component {
   };
 
   handleMultiSelect = (optionValue) => {
+    console.log('🎯 [SavingsTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
+    console.log('🎯 [SavingsTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [SavingsTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
+    console.log('🎯 [SavingsTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
     if (currentValues.includes(optionValue)) {
       newValues = currentValues.filter(value => value !== optionValue);
+      console.log('🎯 [SavingsTab] handleMultiSelect: removing option, newValues =', newValues);
     } else {
       newValues = [...currentValues, optionValue];
+      console.log('🎯 [SavingsTab] handleMultiSelect: adding option, newValues =', newValues);
     }
     
-    this.props.onDataChange({ selectedOptions: newValues });
+    console.log('🎯 [SavingsTab] handleMultiSelect: final newValues =', newValues);
+    console.log('🎯 [SavingsTab] handleMultiSelect: newValues is Array?', Array.isArray(newValues));
+    console.log('🎯 [SavingsTab] handleMultiSelect: newValues.length =', newValues.length);
+    
+    const updateData = { selectedOptions: newValues };
+    console.log('🎯 [SavingsTab] handleMultiSelect: calling onDataChange with:', updateData);
+    this.props.onDataChange(updateData);
     
     // Call validation callback if provided
     if (this.props.onValidationChange) {

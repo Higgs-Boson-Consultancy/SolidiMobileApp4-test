@@ -629,20 +629,37 @@ class AccountUpdate extends Component {
   }
 
   updateFormData = (tabKey, data) => {
-    console.log('🎯 [AccountUpdate] updateFormData:', tabKey, data);
+    console.log('🎯 [AccountUpdate] updateFormData called');
+    console.log('🎯 [AccountUpdate] updateFormData: tabKey =', tabKey);
+    console.log('🎯 [AccountUpdate] updateFormData: data =', JSON.stringify(data, null, 2));
+    console.log('🎯 [AccountUpdate] updateFormData: data.selectedOptions =', data.selectedOptions);
+    console.log('🎯 [AccountUpdate] updateFormData: data.selectedOptions is Array?', Array.isArray(data.selectedOptions));
     
-    this.setState(prevState => ({
-      formData: {
+    this.setState(prevState => {
+      const previousFormData = prevState.formData[tabKey] || {};
+      console.log('🎯 [AccountUpdate] updateFormData: previous formData for', tabKey, '=', previousFormData);
+      console.log('🎯 [AccountUpdate] updateFormData: previous selectedOptions =', previousFormData.selectedOptions);
+      
+      const newFormData = {
         ...prevState.formData,
         [tabKey]: {
-          ...prevState.formData[tabKey],
+          ...previousFormData,
           ...data
         }
-      },
-      hasUnsavedChanges: true
-    }), () => {
+      };
+      
+      console.log('🎯 [AccountUpdate] updateFormData: new formData for', tabKey, '=', newFormData[tabKey]);
+      console.log('🎯 [AccountUpdate] updateFormData: new selectedOptions =', newFormData[tabKey].selectedOptions);
+      console.log('🎯 [AccountUpdate] updateFormData: new selectedOptions is Array?', Array.isArray(newFormData[tabKey].selectedOptions));
+      
+      return {
+        formData: newFormData,
+        hasUnsavedChanges: true
+      };
+    }, () => {
       // Force re-render of navigation buttons after state update
-      console.log('🎯 [AccountUpdate] Form data updated, current selections:', this.state.formData[tabKey]);
+      console.log('🎯 [AccountUpdate] Form data updated, current selections for', tabKey, ':', this.state.formData[tabKey]);
+      console.log('🎯 [AccountUpdate] Form data updated, selectedOptions:', this.state.formData[tabKey]?.selectedOptions);
     });
   }
 

@@ -42,20 +42,25 @@ class AccountUseTab extends Component {
     console.log('🎯 [AccountUseTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
     console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
+    console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
     if (currentValues.includes(optionValue)) {
       newValues = currentValues.filter(value => value !== optionValue);
-      console.log('🎯 [AccountUseTab] handleMultiSelect: removing option');
+      console.log('🎯 [AccountUseTab] handleMultiSelect: removing option, newValues =', newValues);
     } else {
       newValues = [...currentValues, optionValue];
-      console.log('🎯 [AccountUseTab] handleMultiSelect: adding option');
+      console.log('🎯 [AccountUseTab] handleMultiSelect: adding option, newValues =', newValues);
     }
     
-    console.log('🎯 [AccountUseTab] handleMultiSelect: newValues =', newValues);
+    console.log('🎯 [AccountUseTab] handleMultiSelect: final newValues =', newValues);
+    console.log('🎯 [AccountUseTab] handleMultiSelect: newValues is Array?', Array.isArray(newValues));
+    console.log('🎯 [AccountUseTab] handleMultiSelect: newValues.length =', newValues.length);
     
     // Notify parent component of the change
     const updateData = { selectedOptions: newValues };
+    console.log('🎯 [AccountUseTab] handleMultiSelect: calling onDataChange with:', updateData);
     this.props.onDataChange(updateData);
     
     // Also trigger validation update if callback exists

@@ -95,9 +95,13 @@ let Header = (props) => {
         <View style={headerStyles.sideButtonWrapper}>
           {includeBackButton ? backButton : blankBackButton}
         </View>
-        <View style={headerStyles.logoWrapper}>
+        <TouchableOpacity 
+          style={headerStyles.logoWrapper}
+          onPress={() => changeState('Home')}
+          activeOpacity={0.8}
+        >
           <Image source={ImageLookup[logoImageName]} style={headerStyles.logo} />
-        </View>
+        </TouchableOpacity>
         <View style={headerStyles.sideButtonWrapper}>
           {! hideSettingsButton &&
             <ImageButton imageName='user' imageType='icon'

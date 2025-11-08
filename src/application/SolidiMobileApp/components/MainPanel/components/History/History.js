@@ -206,7 +206,7 @@ let History = () => {
                 },
                 {
                   value: 'PendingOrders',
-                  label: 'Pending Orders',
+                  label: 'Orders',
                   icon: 'clock-outline',
                   style: selectedHistoryCategory === 'PendingOrders' ? { backgroundColor: '#ff9800' } : {},
                   labelStyle: selectedHistoryCategory === 'PendingOrders' ? { color: 'white', fontWeight: '600' } : { fontWeight: '500' }
@@ -785,10 +785,6 @@ let History = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
-      
-      <Title>
-        Transaction History
-      </Title>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
 

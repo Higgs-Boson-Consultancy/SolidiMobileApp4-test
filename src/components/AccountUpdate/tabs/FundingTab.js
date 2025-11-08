@@ -33,16 +33,28 @@ class FundingTab extends Component {
   };
 
   handleMultiSelect = (optionValue) => {
+    console.log('🎯 [FundingTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
+    console.log('🎯 [FundingTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [FundingTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
+    console.log('🎯 [FundingTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
     if (currentValues.includes(optionValue)) {
       newValues = currentValues.filter(value => value !== optionValue);
+      console.log('🎯 [FundingTab] handleMultiSelect: removing option, newValues =', newValues);
     } else {
       newValues = [...currentValues, optionValue];
+      console.log('🎯 [FundingTab] handleMultiSelect: adding option, newValues =', newValues);
     }
     
-    this.props.onDataChange({ selectedOptions: newValues });
+    console.log('🎯 [FundingTab] handleMultiSelect: final newValues =', newValues);
+    console.log('🎯 [FundingTab] handleMultiSelect: newValues is Array?', Array.isArray(newValues));
+    console.log('🎯 [FundingTab] handleMultiSelect: newValues.length =', newValues.length);
+    
+    const updateData = { selectedOptions: newValues };
+    console.log('🎯 [FundingTab] handleMultiSelect: calling onDataChange with:', updateData);
+    this.props.onDataChange(updateData);
     
     // Call validation callback if provided
     if (this.props.onValidationChange) {

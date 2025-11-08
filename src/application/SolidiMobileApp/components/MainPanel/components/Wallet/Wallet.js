@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { ScrollView, View, Alert, Platform, TouchableOpacity, Modal, TextInput, Dimensions } from 'react-native';
+import { ScrollView, View, Alert, Platform, TouchableOpacity, Modal, TextInput, Dimensions, Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Apple Pay imports
@@ -181,6 +181,18 @@ let Wallet = () => {
     setup();
   }, []); // Pass empty array so that this only runs once on mount
 
+  // Recalculate portfolio when balance data changes
+  useEffect(() => {
+    const balanceData = getBalanceData();
+    const hasBalance = Object.keys(balanceData).length > 0;
+    
+    if (hasBalance && !isLoading) {
+      console.log('🔄 WALLET EFFECT: Balance data available, recalculating portfolio...');
+      console.log('🔄 WALLET EFFECT: Balance data:', JSON.stringify(balanceData, null, 2));
+      calculateTotalPortfolioValue(balanceData);
+    }
+  }, [appState.apiData?.balance, isLoading]); // Recalculate when balance changes or loading completes
+
   let setup = async () => {
     try {
       console.log('🔄 Wallet: Starting setup...');
@@ -198,7 +210,8 @@ let Wallet = () => {
         
         // Calculate total portfolio value after loading balances
         let balanceData = getBalanceData();
-        await calculateTotalPortfolioValue(balanceData);
+        console.log('📊 WALLET: Calling calculateTotalPortfolioValue with balanceData:', JSON.stringify(balanceData, null, 2));
+        calculateTotalPortfolioValue(balanceData);
       } catch (error) {
         log('Wallet: Error loading balances:', error);
       }
@@ -267,8 +280,20 @@ let Wallet = () => {
     // Transform API balance data to match UI expectations
     let transformedData = {};
     
-    // Get asset info for all available assets
-    let availableAssets = ['GBP', 'BTC', 'ETH', 'EUR', 'USD'];
+    // Get assets that actually have data in the API response (user's actual balances)
+    // Only show assets where the user has a non-zero balance
+    let availableAssets = Object.keys(balanceData).filter(asset => {
+      let balance = parseFloat(balanceData[asset]) || 0;
+      return balance > 0; // Only include assets with positive balance
+    });
+    
+    console.log('🏦 Wallet: Available assets with balance > 0:', availableAssets);
+    
+    // If no assets found, return empty object (no balances to show)
+    if (availableAssets.length === 0) {
+      console.log('🏦 Wallet: No assets with positive balance');
+      return {};
+    }
     
     availableAssets.forEach(asset => {
       let balance = balanceData[asset] || 0;
@@ -351,26 +376,32 @@ let Wallet = () => {
   let [isCalculatingTotal, setIsCalculatingTotal] = useState(false);
   let [tickerData, setTickerData] = useState({});
 
-  let calculateTotalPortfolioValue = async (balanceData) => {
+  let calculateTotalPortfolioValue = (balanceData) => {
     if (isCalculatingTotal) {
-      console.log('⚠️ Portfolio calculation already in progress, skipping...');
+      console.log('⚠️ WALLET: Portfolio calculation already in progress, skipping...');
       return;
     }
+    
+    console.log('📊 WALLET WRAPPER: Starting portfolio calculation...');
+    console.log('📊 WALLET WRAPPER: Balance data received:', JSON.stringify(balanceData, null, 2));
     
     setIsCalculatingTotal(true);
     
     try {
-      // Use pure function from portfolioCalculator utility
-      const result = await calculatePortfolioValue(balanceData, appState);
+      // Use pure function from portfolioCalculator utility (now synchronous!)
+      const result = calculatePortfolioValue(balanceData, appState);
+      
+      console.log('📊 WALLET WRAPPER: Portfolio calculation result:', JSON.stringify(result, null, 2));
       
       if (result.error) {
-        console.log('❌ Portfolio calculation failed:', result.error);
+        console.log('❌ WALLET: Portfolio calculation failed:', result.error);
         setTotalPortfolioValue(0);
       } else {
+        console.log('✅ WALLET WRAPPER: Setting totalPortfolioValue to:', result.total);
         setTotalPortfolioValue(result.total);
       }
     } catch (error) {
-      console.log('📊 Error in portfolio calculation wrapper:', error);
+      console.log('📊 WALLET: Error in portfolio calculation wrapper:', error);
       setTotalPortfolioValue(0);
     } finally {
       setIsCalculatingTotal(false);
@@ -1122,37 +1153,56 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
     }
   };
 
+  // Helper function to determine if an asset is cryptocurrency
+  let isCryptoCurrency = (currency) => {
+    // Fiat currencies
+    const fiatCurrencies = ['GBP', 'EUR', 'USD', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD'];
+    // If it's not fiat, it's crypto
+    return !fiatCurrencies.includes(currency);
+  };
+
   // Calculate GBP value for any currency using pre-calculated values (instant!)
   let calculateGBPValue = (currency, amount) => {
+    console.log(`🔍 WALLET calculateGBPValue: ${currency}, amount = ${amount}`);
+    
     if (currency === 'GBP') {
+      console.log(`🔍 WALLET: ${currency} is GBP, returning amount: ${amount}`);
       return amount; // Already in GBP
     }
     
     // Check if amount is valid
     if (!amount || amount <= 0) {
+      console.log(`🔍 WALLET: ${currency} has zero/invalid amount, returning 0`);
       return 0;
     }
     
     // For crypto: Try to get pre-calculated balance first (fastest!)
-    const cryptoCurrencies = ['BTC', 'ETH', 'LTC', 'XRP', 'BCH'];
-    if (cryptoCurrencies.includes(currency)) {
+    if (isCryptoCurrency(currency)) {
+      console.log(`🔍 WALLET: ${currency} is crypto, checking pre-calculated value...`);
       // If this is the user's actual balance, get pre-calculated value
       const userBalance = parseFloat(appState.getBalance(currency));
+      console.log(`🔍 WALLET: User balance from appState = ${userBalance}`);
+      
       if (Math.abs(amount - userBalance) < 0.00000001) {
         // This is the user's balance - use pre-calculated value!
         const precalculatedValue = appState.getBalanceInGBP(currency);
+        console.log(`🔍 WALLET: Pre-calculated GBP value = ${precalculatedValue}`);
+        
         if (precalculatedValue !== undefined && precalculatedValue !== 0) {
-          console.log(`⚡ Wallet: ${currency} using PRE-CALCULATED balance: £${precalculatedValue.toFixed(2)}`);
+          console.log(`⚡ WALLET: ${currency} using PRE-CALCULATED balance: £${precalculatedValue.toFixed(2)}`);
           return precalculatedValue;
         }
       }
       
       // Otherwise calculate on-the-fly using cached rate
+      console.log(`🔍 WALLET: Calculating on-the-fly using appState.calculateCryptoGBPValue...`);
       const value = appState.calculateCryptoGBPValue(currency, amount);
+      console.log(`🔍 WALLET: On-the-fly calculated value = ${value}`);
       return value || 0;
     }
     
     // Fallback for fiat currencies (EUR, USD) - would need exchange rates
+    console.log(`🔍 WALLET: ${currency} is fiat (not GBP), returning 0 (no exchange rate)`);
     return 0;
   };
 
@@ -1210,10 +1260,12 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
   let renderBalanceListItem = (currency, balanceInfo, tickerData) => {
     let { total } = balanceInfo;
     let icon = getCurrencyIcon(currency);
-    let isCrypto = ['BTC', 'ETH'].includes(currency);
+    let isCrypto = isCryptoCurrency(currency);
     
     // Calculate GBP value instantly using cached prices (no async needed!)
     let gbpValue = calculateGBPValue(currency, total);
+    
+    console.log(`💰 WALLET CARD: ${currency} balance = ${total}, GBP value = £${gbpValue.toFixed(2)}`);
     
     // For display: always show GBP value on the right
     let displayValue = `£${formatCurrency(gbpValue.toString(), 'GBP')}`;
@@ -1269,29 +1321,6 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
           )}
           style={{ paddingVertical: 4 }}
         />
-        
-        {/* Action Buttons for each currency */}
-        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 8 }}>
-          <Button
-            mode="contained-tonal"
-            onPress={() => handleDeposit(currency)}
-            style={{ flex: 1 }}
-            icon="plus"
-            compact
-          >
-            Deposit
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => handleWithdraw(currency)}
-            style={{ flex: 1 }}
-            icon="minus"
-            compact
-            disabled={total <= 0}
-          >
-            Withdraw
-          </Button>
-        </View>
       </View>
     );
   };
@@ -1299,12 +1328,15 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
   // Filter balances by type
   let getFilteredBalances = (balanceData, type) => {
     return Object.entries(balanceData).filter(([currency]) => {
-      let isCrypto = ['BTC', 'ETH'].includes(currency);
+      let isCrypto = isCryptoCurrency(currency);
       return type === 'crypto' ? isCrypto : !isCrypto;
     });
   };
 
   let balanceData = getBalanceData();
+
+  console.log('🎯 WALLET RENDER: Current totalPortfolioValue state:', totalPortfolioValue);
+  console.log('🎯 WALLET RENDER: Current isCalculatingTotal state:', isCalculatingTotal);
 
   if (isLoading) {
     return (
@@ -1317,11 +1349,6 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
 
   return (
     <View style={layout.panelContainer}>
-      <Title 
-        title="Wallet" 
-        showBackButton={true}
-        onBackPress={() => appState.goToPreviousState()}
-      />
       
       <ScrollView 
         style={layout.panelSubContainer}
@@ -1473,28 +1500,6 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
               onPress={() => appState.changeState('BankAccounts')}
               style={{ paddingHorizontal: 0 }}
             />
-            
-            <Divider />
-            
-            <List.Item
-              title="Send Crypto"
-              description="Send Bitcoin or Ethereum to another wallet"
-              left={props => <List.Icon {...props} icon="send" />}
-              right={props => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => appState.changeState('Send')}
-              style={{ paddingHorizontal: 0 }}
-            />
-            
-            <Divider />
-            
-            <List.Item
-              title="Receive Crypto"
-              description="Get your wallet address to receive funds"
-              left={props => <List.Icon {...props} icon="qrcode" />}
-              right={props => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => appState.changeState('Receive')}
-              style={{ paddingHorizontal: 0 }}
-            />
           </Card.Content>
         </Card>
 
@@ -1512,8 +1517,21 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                 Your Funds Are Secure
               </Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: 4 }}>
-                All deposits are protected and withdrawals require authentication. 
-                Your cryptocurrency is stored in secure cold storage wallets.
+                All crypto deposits are stored in secure cold storage. Find out more about our security in our{' '}
+                <Text 
+                  style={{ 
+                    color: theme.colors.primary, 
+                    textDecorationLine: 'underline',
+                    fontWeight: 'bold'
+                  }}
+                  onPress={() => {
+                    Linking.openURL('https://www.solidi.co/blog/industry-leading-security/').catch(err => 
+                      console.error('Error opening URL:', err)
+                    );
+                  }}
+                >
+                  blog article
+                </Text>
               </Text>
             </View>
           </View>

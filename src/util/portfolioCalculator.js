@@ -9,10 +9,10 @@
 /**
  * Calculate total portfolio value in GBP
  * @param {Object} balanceData - Balance data structure { BTC: {total: X}, GBP: {total: Y}, ... }
- * @param {Object} appState - Application state with publicMethod for API calls
- * @returns {Promise<Object>} { total: number, fiatTotal: number, cryptoTotal: number, breakdown: Object }
+ * @param {Object} appState - Application state with calculateCryptoGBPValue method
+ * @returns {Object} { total: number, fiatTotal: number, cryptoTotal: number, breakdown: Object }
  */
-export const calculatePortfolioValue = async (balanceData, appState) => {
+export const calculatePortfolioValue = (balanceData, appState) => {
   console.log('📊 ===== PORTFOLIO CALCULATION START (PURE FUNCTION) =====');
   console.log('📊 Balance data received:', JSON.stringify(balanceData, null, 2));
   
@@ -24,27 +24,43 @@ export const calculatePortfolioValue = async (balanceData, appState) => {
     crypto: {}
   };
   
+  // Helper function to determine if an asset is cryptocurrency
+  const isCryptoCurrency = (currency) => {
+    // Fiat currencies
+    const fiatCurrencies = ['GBP', 'EUR', 'USD', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD'];
+    // If it's not fiat, it's crypto
+    return !fiatCurrencies.includes(currency);
+  };
+  
   try {
-    // STEP 1: Calculate fiat balances (direct addition, no API needed)
+    // Get all currencies from balanceData
+    const allCurrencies = Object.keys(balanceData);
+    console.log('� All currencies in balance:', allCurrencies);
+    
+    // Separate into fiat and crypto currencies
+    const fiatCurrencies = allCurrencies.filter(c => !isCryptoCurrency(c));
+    const cryptoCurrencies = allCurrencies.filter(c => isCryptoCurrency(c));
+    
+    console.log('💷 Fiat currencies found:', fiatCurrencies);
+    console.log('₿ Crypto currencies found:', cryptoCurrencies);
+    
+    // STEP 1: Calculate fiat balances (direct addition for GBP, others need exchange rates)
     console.log('💷 Step 1: Calculating fiat balances...');
-    const fiatCurrencies = ['GBP', 'EUR', 'USD'];
     
     for (let currency of fiatCurrencies) {
-      if (balanceData[currency]) {
-        let balance = parseFloat(balanceData[currency].total) || 0;
-        console.log(`💷 ${currency}: raw balance = ${balance}`);
-        
-        if (balance > 0) {
-          if (currency === 'GBP') {
-            freshFiatTotal += balance;
-            breakdown.fiat[currency] = balance;
-            console.log(`💷 ${currency}: £${balance.toFixed(2)} ADDED to fiat total`);
-            console.log(`💷 Running fiat total: £${freshFiatTotal.toFixed(2)}`);
-          } else {
-            // For other fiat currencies, we'd need exchange rates
-            console.log(`💵 ${currency}: ${balance.toFixed(2)} (exchange rate needed - NOT ADDED)`);
-            breakdown.fiat[currency] = 0; // Not converted yet
-          }
+      let balance = parseFloat(balanceData[currency].total) || 0;
+      console.log(`💷 ${currency}: raw balance = ${balance}`);
+      
+      if (balance > 0) {
+        if (currency === 'GBP') {
+          freshFiatTotal += balance;
+          breakdown.fiat[currency] = balance;
+          console.log(`💷 ${currency}: £${balance.toFixed(2)} ADDED to fiat total`);
+          console.log(`💷 Running fiat total: £${freshFiatTotal.toFixed(2)}`);
+        } else {
+          // For other fiat currencies, we'd need exchange rates
+          console.log(`💵 ${currency}: ${balance.toFixed(2)} (exchange rate needed - NOT ADDED)`);
+          breakdown.fiat[currency] = 0; // Not converted yet
         }
       }
     }
@@ -53,68 +69,40 @@ export const calculatePortfolioValue = async (balanceData, appState) => {
     
     // STEP 2: Calculate crypto values using best_volume_price API (parallel)
     console.log('₿ Step 2: Calculating crypto balances...');
-    const cryptoCurrencies = ['BTC', 'ETH', 'LTC', 'XRP', 'BCH'];
     
-    // Create promises for all crypto prices - fetch in parallel
-    const cryptoPricePromises = cryptoCurrencies.map(async (currency) => {
-      if (!balanceData[currency]) {
-        console.log(`₿ ${currency}: No balance data, skipping`);
-        return { currency, value: 0, balance: 0, price: 0 };
-      }
+    if (cryptoCurrencies.length === 0) {
+      console.log('₿ No crypto currencies found, skipping crypto calculation');
+    } else {
+      // Calculate crypto values using CACHED prices from AppState (same as balance cards!)
+      console.log('₿ Using CACHED crypto prices from AppState for consistency...');
       
-      let balance = parseFloat(balanceData[currency].total) || 0;
-      
-      if (balance <= 0) {
-        console.log(`₿ ${currency}: Zero balance, skipping`);
-        return { currency, value: 0, balance: 0, price: 0 };
-      }
-      
-      try {
-        console.log(`₿ ${currency}: Fetching price (balance: ${balance})...`);
+      cryptoCurrencies.forEach((currency) => {
+        let balance = parseFloat(balanceData[currency].total) || 0;
         
-        // Use the same API as Assets page - get price for 100 GBP
-        const response = await appState.publicMethod({
-          httpMethod: 'GET',
-          apiRoute: `best_volume_price/${currency}/GBP/BUY/quote/100`,
-        });
-        
-        if (response && response.price) {
-          const cryptoAmountReceived = parseFloat(response.price);
-          if (cryptoAmountReceived > 0) {
-            const pricePerUnit = 100 / cryptoAmountReceived;
-            const gbpValue = balance * pricePerUnit;
-            console.log(`₿ ${currency}: ${balance} × £${pricePerUnit.toFixed(2)} = £${gbpValue.toFixed(2)}`);
-            return { currency, value: gbpValue, balance, price: pricePerUnit };
-          } else {
-            console.log(`⚠️ ${currency}: Invalid crypto amount received: ${cryptoAmountReceived}`);
-            return { currency, value: 0, balance, price: 0 };
-          }
-        } else {
-          console.log(`⚠️ ${currency}: No price data in response`);
-          return { currency, value: 0, balance, price: 0 };
+        if (balance <= 0) {
+          console.log(`₿ ${currency}: Zero balance, skipping`);
+          return;
         }
-      } catch (error) {
-        console.log(`❌ ${currency}: Error fetching price:`, error);
-        return { currency, value: 0, balance, price: 0 };
-      }
-    });
-    
-    // Wait for all crypto prices to be fetched
-    const cryptoValues = await Promise.all(cryptoPricePromises);
-    
-    // Sum up crypto values - start fresh, no accumulation
-    cryptoValues.forEach(({ currency, value, balance, price }) => {
-      if (value > 0) {
-        console.log(`₿ Adding ${currency}: £${value.toFixed(2)} to crypto total`);
-        freshCryptoTotal += value;
-        breakdown.crypto[currency] = {
-          balance,
-          pricePerUnit: price,
-          gbpValue: value
-        };
-        console.log(`₿ Running crypto total: £${freshCryptoTotal.toFixed(2)}`);
-      }
-    });
+        
+        // Use the same cached calculation method as balance cards
+        const gbpValue = appState.calculateCryptoGBPValue(currency, balance);
+        
+        if (gbpValue > 0) {
+          const pricePerUnit = gbpValue / balance;
+          console.log(`₿ ${currency}: ${balance} ${currency} = £${gbpValue.toFixed(2)} (cached sell price: £${pricePerUnit.toFixed(2)} per ${currency})`);
+          console.log(`₿ Adding ${currency}: £${gbpValue.toFixed(2)} to crypto total`);
+          freshCryptoTotal += gbpValue;
+          breakdown.crypto[currency] = {
+            balance,
+            pricePerUnit: pricePerUnit,
+            gbpValue: gbpValue
+          };
+          console.log(`₿ Running crypto total: £${freshCryptoTotal.toFixed(2)}`);
+        } else {
+          console.log(`⚠️ ${currency}: Could not calculate GBP value (cached price not available)`);
+        }
+      });
+    }
     
     console.log(`₿ ===== CRYPTO TOTAL: £${freshCryptoTotal.toFixed(2)} =====`);
     

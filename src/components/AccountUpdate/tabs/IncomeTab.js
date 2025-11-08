@@ -33,16 +33,28 @@ class IncomeTab extends Component {
   };
 
   handleMultiSelect = (optionValue) => {
+    console.log('🎯 [IncomeTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
+    console.log('🎯 [IncomeTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [IncomeTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
+    console.log('🎯 [IncomeTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
     if (currentValues.includes(optionValue)) {
       newValues = currentValues.filter(value => value !== optionValue);
+      console.log('🎯 [IncomeTab] handleMultiSelect: removing option, newValues =', newValues);
     } else {
       newValues = [...currentValues, optionValue];
+      console.log('🎯 [IncomeTab] handleMultiSelect: adding option, newValues =', newValues);
     }
     
-    this.props.onDataChange({ selectedOptions: newValues });
+    console.log('🎯 [IncomeTab] handleMultiSelect: final newValues =', newValues);
+    console.log('🎯 [IncomeTab] handleMultiSelect: newValues is Array?', Array.isArray(newValues));
+    console.log('🎯 [IncomeTab] handleMultiSelect: newValues.length =', newValues.length);
+    
+    const updateData = { selectedOptions: newValues };
+    console.log('🎯 [IncomeTab] handleMultiSelect: calling onDataChange with:', updateData);
+    this.props.onDataChange(updateData);
     
     // Call validation callback if provided
     if (this.props.onValidationChange) {

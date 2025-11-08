@@ -76,7 +76,9 @@ let Transfer = () => {
   let stateChangeID = appState?.stateChangeID || 0;
 
   // Transfer type state - 'send' or 'receive'
-  const [transferType, setTransferType] = useState('send');
+  // Check if pageName is 'receive' to set initial tab
+  const initialTransferType = appState?.pageName === 'receive' ? 'receive' : 'send';
+  const [transferType, setTransferType] = useState(initialTransferType);
 
   // Asset selection state with safe defaults
   let [selectedAsset, setSelectedAsset] = useState('BTC');

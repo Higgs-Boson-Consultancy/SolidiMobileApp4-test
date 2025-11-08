@@ -309,6 +309,8 @@ const Home = () => {
               // Calculate portfolio value = GBP + (BTC balance × BTC price)
               const portfolioValueOnDay = gbpBalanceForGraph + (btcBalance * btcPriceOnDay);
               
+              console.log(`[GRAPH] 🔍 Day ${daysAgo}: BTC price = £${btcPriceOnDay.toFixed(2)}, BTC value = £${(btcBalance * btcPriceOnDay).toFixed(2)}, GBP = £${gbpBalanceForGraph.toFixed(2)}, Total = £${portfolioValueOnDay.toFixed(2)}`);
+              
               graphPoints.push({
                 timestamp: Number(timestamp),
                 value: Number(portfolioValueOnDay)
@@ -472,63 +474,31 @@ const Home = () => {
                 const market = `${asset.asset}/GBP`;
                 const currentPrice = priceData[market] ? parseFloat(priceData[market].price) : 0;
                 portfolioValueNow += balance * currentPrice;
+                
+                console.log(`[PORTFOLIO] 💰 ${asset.asset}: ${balance} × £${currentPrice.toFixed(2)} = £${(balance * currentPrice).toFixed(2)}`);
               }
             }
           }
         }
         
-        // STEP 7: Load BTC historical prices and calculate price change
-        console.log('[HIST_PRICE] 📊 STEP 7: Calculating BTC price change over 30 days');
+        // STEP 7: Calculate portfolio change using ALL assets (not just BTC)
+        console.log('[HIST_PRICE] 📊 STEP 7: Calculating portfolio change over 30 days (all assets)');
+        console.log('[HIST_PRICE] 📈 Portfolio 30 days ago: £', portfolioValue30DaysAgo.toFixed(2));
+        console.log('[HIST_PRICE] 📈 Portfolio now: £', portfolioValueNow.toFixed(2));
         
-        const btcMarket = 'BTC/GBP';
-        
-        // Ensure BTC historical prices are loaded
-        try {
-          await appState.loadHistoricPrices({ market: btcMarket, period: '1M' });
-          console.log('[HIST_PRICE] ✅ BTC historical prices loaded');
-        } catch (error) {
-          console.log('[HIST_PRICE] ❌ Error loading BTC historical prices:', error);
-        }
-        
-        // Get BTC price from 30 days ago (first price in array)
-        const btcHistoricPrices = appState.apiData?.historic_prices?.[btcMarket]?.['1M'];
-        const btcPrice30DaysAgo = btcHistoricPrices?.[0] || 0;
-        
-        // Get current BTC price - use ask price (or calculate mid-price from bid/ask)
-        console.log('[HIST_PRICE] 🔍 priceData:', JSON.stringify(priceData, null, 2));
-        console.log('[HIST_PRICE] 🔍 priceData[BTC/GBP]:', priceData[btcMarket]);
-        
-        let btcPriceNow = 0;
-        if (priceData[btcMarket]) {
-          // Calculate mid-price from bid and ask
-          const ask = parseFloat(priceData[btcMarket].ask);
-          const bid = parseFloat(priceData[btcMarket].bid);
-          btcPriceNow = (ask + bid) / 2;
-          console.log('[HIST_PRICE] 🔍 Ask:', ask, 'Bid:', bid, 'Mid-price:', btcPriceNow);
-        }
-        
-        console.log('[HIST_PRICE] 📊 Historical prices available:', btcHistoricPrices?.length || 0, 'data points');
-        console.log('[HIST_PRICE] 📊 BTC Price 30 days ago: £', btcPrice30DaysAgo);
-        console.log('[HIST_PRICE] 📊 BTC Price now: £', btcPriceNow);
-        
-        console.log('[HIST_PRICE] 📊 Historical prices available:', btcHistoricPrices?.length || 0, 'data points');
-        console.log('[HIST_PRICE] 📊 BTC Price 30 days ago: £', btcPrice30DaysAgo);
-        console.log('[HIST_PRICE] 📊 BTC Price now: £', btcPriceNow);
-        
-        // Calculate BTC price change (difference between now and 30 days ago)
-        if (btcPrice30DaysAgo > 0 && btcPriceNow > 0) {
-          const priceChange = btcPriceNow - btcPrice30DaysAgo;
-          const priceChangePercent = (priceChange / btcPrice30DaysAgo) * 100;
+        if (portfolioValue30DaysAgo > 0 && portfolioValueNow > 0) {
+          const portfolioChange = portfolioValueNow - portfolioValue30DaysAgo;
+          const portfolioChangePercent = (portfolioChange / portfolioValue30DaysAgo) * 100;
           
-          console.log('[HIST_PRICE] � BTC Price change: £', priceChange.toFixed(2));
-          console.log('[HIST_PRICE] � BTC Price change %:', priceChangePercent.toFixed(2), '%');
-          console.log('[HIST_PRICE] 💰 Setting monthlyChange =', priceChange);
-          console.log('[HIST_PRICE] 💰 Setting monthlyChangePercent =', priceChangePercent);
+          console.log('[HIST_PRICE] 💰 Portfolio value change: £', portfolioChange.toFixed(2));
+          console.log('[HIST_PRICE] 📊 Portfolio change %:', portfolioChangePercent.toFixed(2), '%');
+          console.log('[HIST_PRICE] ✅ Setting monthlyChange =', portfolioChange);
+          console.log('[HIST_PRICE] ✅ Setting monthlyChangePercent =', portfolioChangePercent);
           
-          setMonthlyChange(priceChange);
-          setMonthlyChangePercent(priceChangePercent);
+          setMonthlyChange(portfolioChange);
+          setMonthlyChangePercent(portfolioChangePercent);
         } else {
-          console.log('[HIST_PRICE] ⚠️ Invalid BTC prices - 30 days ago:', btcPrice30DaysAgo, 'now:', btcPriceNow);
+          console.log('[HIST_PRICE] ⚠️ Invalid portfolio values - 30 days ago:', portfolioValue30DaysAgo, 'now:', portfolioValueNow);
           setMonthlyChange(0);
           setMonthlyChangePercent(0);
         }
@@ -1249,109 +1219,136 @@ const Home = () => {
     }
   };
 
-  // Render asset item for crypto assets list - using real data like Assets component
-  const renderAssetItem = (asset, index) => {
-    try {
-      console.log(`🎨 Home: Rendering asset ${index}:`, asset);
-      
-      // Validate asset object
-      if (!asset || typeof asset !== 'object') {
-        console.log(`❌ Home: Invalid asset object at index ${index}:`, asset);
-        return null;
-      }
+  // Helper function to determine if an asset is cryptocurrency (same as Wallet)
+  const isCryptoCurrency = (currency) => {
+    const fiatCurrencies = ['GBP', 'EUR', 'USD', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD'];
+    return !fiatCurrencies.includes(currency);
+  };
 
-      // Validate asset symbol
-      if (!asset.asset || typeof asset.asset !== 'string') {
-        console.log(`❌ Home: Invalid asset symbol at index ${index}:`, asset);
-        return null;
-      }
-
-      // Get asset info with fallback
-      let assetInfo;
-      try {
-        assetInfo = getAssetInfo(asset.asset);
-      } catch (error) {
-        console.log(`❌ Home: Error getting asset info for ${asset.asset}:`, error);
-        assetInfo = { name: asset.asset, symbol: asset.asset };
-      }
-
-      // Get real price using the same logic as Assets component
-      let price = null;
-      let priceDisplay = 'Loading...';
-      let changeDisplay = '';
-      
-      try {
-        price = getAssetPrice(asset.asset);
-        if (price !== null && !isNaN(price)) {
-          priceDisplay = `£${formatTo9Digits(price)}`;
-          
-          // Calculate a demo change percentage (in real app this would come from API)
-          const demoChanges = {
-            'BTC': 2.45,
-            'ETH': 1.23, 
-            'LTC': -0.87,
-            'XRP': 5.12,
-            'BCH': -1.45
-          };
-          const changePercent = demoChanges[asset.asset] || 0;
-          changeDisplay = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-        } else {
-          priceDisplay = 'Price unavailable';
-          changeDisplay = '';
-        }
-      } catch (error) {
-        console.log(`❌ Home: Error getting price for ${asset.asset}:`, error);
-        priceDisplay = 'Error loading price';
-        changeDisplay = '';
-      }
-      
-      console.log(`✅ Home: Successfully processed ${asset.asset}: price=${price}, display="${priceDisplay}"`);
-      
-      return (
-        <TouchableOpacity 
-          key={`${asset.asset}-${index}`} 
-          style={styles.homeAssetItem}
-          onPress={() => {
-            console.log(`Home: Tapped on ${asset.asset}`);
-            // Could navigate to CryptoContent modal or full Assets page
-          }}
-          activeOpacity={0.7}
-        >
-          <View style={styles.homeAssetIconSection}>
-            <Icon 
-              name={getCryptoIcon(asset.asset)} 
-              size={24} 
-              color={getAssetColor(asset.asset)} 
-            />
-          </View>
-          
-          <View style={styles.homeAssetMainContent}>
-            <Text style={styles.homeAssetName}>{assetInfo.name}</Text>
-            <Text style={styles.homeAssetSymbol}>{asset.asset}</Text>
-          </View>
-          
-          <View style={styles.homeAssetPriceSection}>
-            <Text style={[
-              styles.homeAssetPrice,
-              price === null && styles.homeAssetPriceUnavailable
-            ]}>
-              {priceDisplay}
-            </Text>
-            {changeDisplay && (
-              <Text style={[
-                styles.homeAssetChange,
-                { color: changeDisplay.startsWith('+') ? '#10B981' : changeDisplay.startsWith('-') ? '#EF4444' : '#6B7280' }
-              ]}>
-                {changeDisplay}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-      );
-    } catch (renderError) {
-      console.log(`❌ Home: Error rendering asset ${index}:`, renderError);
-      return null;
+  // Calculate GBP value for any currency (same as Wallet)
+  const calculateGBPValue = (currency, amount) => {
+    if (currency === 'GBP') {
+      return amount;
     }
+    
+    if (!amount || amount <= 0) {
+      return 0;
+    }
+    
+    if (isCryptoCurrency(currency)) {
+      const userBalance = parseFloat(appState.getBalance(currency));
+      
+      if (Math.abs(amount - userBalance) < 0.00000001) {
+        const precalculatedValue = appState.getBalanceInGBP(currency);
+        if (precalculatedValue !== undefined && precalculatedValue !== 0) {
+          return precalculatedValue;
+        }
+      }
+      
+      const value = appState.calculateCryptoGBPValue(currency, amount);
+      return value || 0;
+    } else {
+      const rate = appState.getFXRate(currency, 'GBP');
+      return rate ? amount * rate : 0;
+    }
+  };
+
+  // Get currency icon (same as Wallet)
+  const getCurrencyIcon = (currency) => {
+    const iconMap = {
+      'BTC': 'bitcoin',
+      'ETH': 'ethereum',
+      'LTC': 'litecoin',
+      'XRP': 'currency-usd',
+      'BCH': 'cash',
+      'GBP': 'currency-gbp',
+      'EUR': 'currency-eur',
+      'USD': 'currency-usd'
+    };
+    return iconMap[currency] || 'cash';
+  };
+
+  // Render balance list item (same as Wallet)
+  const renderBalanceListItem = (currency, balanceInfo) => {
+    const { total } = balanceInfo;
+    const icon = getCurrencyIcon(currency);
+    const isCrypto = isCryptoCurrency(currency);
+    
+    const gbpValue = calculateGBPValue(currency, total);
+    const displayValue = `£${formatCurrency(gbpValue.toString(), 'GBP')}`;
+    
+    let description = '';
+    if (currency === 'GBP') {
+      description = 'Base currency';
+    } else {
+      if (isCrypto) {
+        description = `${formatCurrency(total, currency)} ${currency}`;
+      } else {
+        description = `${getCurrencySymbol(currency)}${formatCurrency(total, currency)}`;
+      }
+    }
+    
+    const getAssetColor = (assetType) => {
+      switch (assetType) {
+        case 'BTC': return '#f7931a';
+        case 'ETH': return '#627eea';
+        case 'GBP': return '#009639';
+        case 'LTC': return '#345d9d';
+        case 'XRP': return '#23292f';
+        case 'BCH': return '#8dc351';
+        default: return '#999999';
+      }
+    };
+    
+    return (
+      <TouchableOpacity 
+        key={currency} 
+        style={styles.homeAssetItem}
+        onPress={() => {
+          console.log(`Home: Tapped on ${currency}`);
+          openModal('Assets');
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.homeAssetIconSection}>
+          <Icon 
+            name={icon} 
+            size={24} 
+            color={getAssetColor(currency)} 
+          />
+        </View>
+        
+        <View style={styles.homeAssetMainContent}>
+          <Text style={styles.homeAssetName}>{currency}</Text>
+          <Text style={styles.homeAssetSymbol}>{description}</Text>
+        </View>
+        
+        <View style={styles.homeAssetPriceSection}>
+          <Text style={styles.homeAssetPrice}>
+            {displayValue}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Get balance data (same as Wallet)
+  const getBalanceData = () => {
+    const balances = {};
+    const allBalances = appState.apiData?.balance || {};
+    
+    Object.entries(allBalances).forEach(([currency, balance]) => {
+      const balanceNum = parseFloat(balance);
+      if (balanceNum > 0) {
+        balances[currency] = {
+          total: balanceNum,
+          available: balanceNum,
+          reserved: 0
+        };
+      }
+    });
+    
+    return balances;
   };
 
   // Render transaction item - using same logic as History component but compact
@@ -1494,12 +1491,18 @@ const Home = () => {
   // Handle graph point selection
   const handleGraphPointSelected = (pointData) => {
     if (!pointData) {
-      // Reset to current values
+      // Reset to current values (when user stops dragging)
       console.log('[GRAPH_TOUCH] 📊 Reset to current values');
-      if (originalPortfolioValue > 0) {
+      if (selectedGraphPoint !== null) {
+        // Only reset if we were showing a selected point
         setPortfolioValue(originalPortfolioValue);
         setMonthlyChange(originalMonthlyChange);
         setMonthlyChangePercent(originalMonthlyChangePercent);
+        console.log('[GRAPH_TOUCH] ✅ Restored values:', {
+          portfolioValue: originalPortfolioValue,
+          monthlyChange: originalMonthlyChange,
+          monthlyChangePercent: originalMonthlyChangePercent
+        });
       }
       setSelectedGraphPoint(null);
       return;
@@ -1510,6 +1513,11 @@ const Home = () => {
       setOriginalPortfolioValue(portfolioValue);
       setOriginalMonthlyChange(monthlyChange);
       setOriginalMonthlyChangePercent(monthlyChangePercent);
+      console.log('[GRAPH_TOUCH] 💾 Stored original values:', {
+        portfolioValue,
+        monthlyChange,
+        monthlyChangePercent
+      });
     }
 
     console.log(`[GRAPH_TOUCH] 📊 Selected day ${pointData.daysAgo}: £${pointData.value.toFixed(2)}`);
@@ -1529,7 +1537,7 @@ const Home = () => {
       setMonthlyChangePercent(changePercent);
       
       const daysAgoText = pointData.daysAgo === 0 ? 'today' : `${pointData.daysAgo} days ago`;
-      console.log(`[GRAPH_TOUCH] 💰 BTC Price ${daysAgoText}: £${selectedPrice.toFixed(2)}`);
+      console.log(`[GRAPH_TOUCH] 💰 Portfolio Value ${daysAgoText}: £${selectedPrice.toFixed(2)}`);
       console.log(`[GRAPH_TOUCH] 💰 Change from 30 days ago: £${change.toFixed(2)} (${changePercent.toFixed(2)}%)`);
     }
   };
@@ -1603,15 +1611,17 @@ const Home = () => {
   };
 
   const navigateToReceive = () => {
-    openModal('Receive');
+    // Navigate to Transfer page with receive tab selected
+    appState.changeState('Transfer', 'receive');
   };
 
   const navigateToSend = () => {
-    openModal('Send');
+    // Navigate to Transfer page with send tab selected
+    appState.changeState('Transfer', 'send');
   };
 
-  const navigateToMore = () => {
-    openModal('Assets');
+  const navigateToWallet = () => {
+    appState.changeState('Wallet');
   };
 
   // Action buttons data
@@ -1623,22 +1633,22 @@ const Home = () => {
       onPress: navigateToTrade,
     },
     {
-      id: 'receive',
-      title: 'Receive',
-      icon: 'arrow-down-circle',
-      onPress: navigateToReceive,
-    },
-    {
       id: 'send',
       title: 'Send',
       icon: 'arrow-up-circle',
       onPress: navigateToSend,
     },
     {
-      id: 'more',
-      title: 'More',
-      icon: 'dots-horizontal-circle',
-      onPress: navigateToMore,
+      id: 'receive',
+      title: 'Receive',
+      icon: 'arrow-down-circle',
+      onPress: navigateToReceive,
+    },
+    {
+      id: 'wallet',
+      title: 'Wallet',
+      icon: 'wallet',
+      onPress: navigateToWallet,
     }
   ];
 
@@ -1732,8 +1742,19 @@ const Home = () => {
           </View>
           
           <View style={styles.homeAssetsList}>
-            {console.log('🎨 Home: Rendering asset list, assetData length:', assetData.length, assetData)}
-            {assetData.map((asset, index) => renderAssetItem(asset, index))}
+            {Object.entries(getBalanceData())
+              .filter(([currency]) => isCryptoCurrency(currency))
+              .slice(0, 5)
+              .map(([currency, balanceInfo]) => 
+                renderBalanceListItem(currency, balanceInfo)
+              )}
+            {Object.entries(getBalanceData()).filter(([currency]) => isCryptoCurrency(currency)).length === 0 && (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#6B7280', textAlign: 'center' }}>
+                  No crypto assets to display
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
