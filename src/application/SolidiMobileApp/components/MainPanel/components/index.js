@@ -1,4 +1,4 @@
-export {default as Test} from './Test/Test';
+// export {default as Test} from './Test/Test'; // Removed - moved to backup (unused test component)
 export {default as Trade} from './Trade/Trade';
 export {default as Send} from './Send/Send';
 export {default as Receive} from './Receive/Receive';
@@ -18,7 +18,7 @@ export {default as PIN} from './PIN/PIN';
 export {default as ChooseHowToPay} from './ChooseHowToPay/ChooseHowToPay';
 export {default as MakePayment} from './MakePayment/MakePayment';
 export {default as WaitingForPayment} from './WaitingForPayment/WaitingForPayment';
-export {default as BlankExampleComponent} from './BlankExampleComponent/BlankExampleComponent';
+// export {default as BlankExampleComponent} from './BlankExampleComponent/BlankExampleComponent'; // Removed - moved to backup (unused example)
 export {default as PaymentNotMade} from './PaymentNotMade/PaymentNotMade';
 export {default as PurchaseSuccessful} from './PurchaseSuccessful/PurchaseSuccessful';
 export {default as InsufficientBalance} from './InsufficientBalance/InsufficientBalance';
@@ -53,7 +53,7 @@ export {default as RegisterConfirm} from './RegisterConfirm/RegisterConfirm';
 export {default as RegisterConfirm2} from './RegisterConfirm2/RegisterConfirm2';
 export {default as AccountUpdate} from './AccountUpdate/AccountUpdate';
 export {default as AccountRestricted} from './AccountRestricted/AccountRestricted';
-export {default as NavigationDebug} from './NavigationDebug/NavigationDebug';
+// export {default as NavigationDebug} from './NavigationDebug/NavigationDebug'; // Removed - moved to backup (debug component)
 export {default as Questionnaire} from './Questionnaire/Questionnaire';
 export {default as AccountReview} from './Questionnaires/AccountReview';
 export {default as SelfCategorisation} from './Questionnaires/SelfCategorisation';

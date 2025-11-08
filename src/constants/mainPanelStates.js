@@ -16,7 +16,7 @@ export const mainPanelStates = [
   'Receive',
   'Notifications',
   'Settings',
-  'Test',
+  // 'Test', // Removed - moved to backup (unused test component)
   'Login',
   'PIN',
   'ChooseHowToPay',
@@ -56,7 +56,7 @@ export const mainPanelStates = [
   'RegisterConfirm2',
   'AccountUpdate',
   'AccountRestricted',
-  'NavigationDebug',
+  // 'NavigationDebug', // Removed - moved to backup (debug component)
   'AccountReview',
   'SelfCategorisation',
   'Questionnaire',
