@@ -7,11 +7,12 @@ const DEBUG_MODE = false; // Set to true to enable debug logging
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // MASSIVE DEBUG LOG TO VERIFY APP LOADING
 console.log('🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀');
@@ -66,6 +67,10 @@ const AppContent = () => {
       flex: 1,
       backgroundColor: colors.background,
     },
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
   });
 
   const initialFunction = () => {
@@ -92,15 +97,22 @@ const AppContent = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PaperProvider theme={theme}>
-        <SecureApp>
-          {/* SecureApp just gates access, AppState handles authentication */}
-          <AppStateProvider>
-            {/* AppStateProvider renders the full app and handles auto-login */}
-          </AppStateProvider>
-        </SecureApp>
-      </PaperProvider>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <StatusBar 
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
+      <View style={styles.container}>
+        <PaperProvider theme={theme}>
+          <SecureApp>
+            {/* SecureApp just gates access, AppState handles authentication */}
+            <AppStateProvider>
+              {/* AppStateProvider renders the full app and handles auto-login */}
+            </AppStateProvider>
+          </SecureApp>
+        </PaperProvider>
+      </View>
     </SafeAreaView>
   );
 };
@@ -109,9 +121,11 @@ let App = () => {
   log('========== start: helloWorld ==========');
 
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 };
 

@@ -4230,8 +4230,17 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log(`🏦 [BANK ACCOUNT LOAD] Loading account for asset: ${asset}`);
       
       if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
+      
+      // Support both crypto assets and fiat currencies
       let assets = this.state.getAssets();
-      if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
+      let fiatCurrencies = ['GBP', 'USD', 'EUR']; // Common fiat currencies
+      let validAssets = [...assets, ...fiatCurrencies];
+      
+      if (! validAssets.includes(asset)) { 
+        console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); 
+        return; 
+      }
+      
       let data = await this.state.privateMethod({
         functionName: 'loadDefaultAccountForAsset',
         apiRoute: `default_account/${asset}`,
@@ -4265,8 +4274,13 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     this.getDefaultAccountForAsset = (asset) => {
       let funcName = 'getDefaultAccountForAsset';
       if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
+      
+      // Support both crypto assets and fiat currencies
       let assets = this.state.getAssets();
-      if (! assets.includes(asset)) { return '[loading]'; }
+      let fiatCurrencies = ['GBP', 'USD', 'EUR']; // Common fiat currencies
+      let validAssets = [...assets, ...fiatCurrencies];
+      
+      if (! validAssets.includes(asset)) { return '[loading]'; }
       if (_.isUndefined(this.state.user.info.defaultAccount)) return '[loading]';
       if (_.isUndefined(this.state.user.info.defaultAccount[asset])) return '[loading]';
       let account = this.state.user.info.defaultAccount[asset];
@@ -4280,8 +4294,17 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log(`🏦 [BANK ACCOUNT PARAMS]`, params);
       
       if (_.isNil(asset)) { console.error(`${funcName}: Asset required`); return; }
+      
+      // Support both crypto assets and fiat currencies
       let assets = this.state.getAssets();
-      if (! assets.includes(asset)) { console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); return; }
+      let fiatCurrencies = ['GBP', 'USD', 'EUR']; // Common fiat currencies
+      let validAssets = [...assets, ...fiatCurrencies];
+      
+      if (! validAssets.includes(asset)) { 
+        console.log(`${funcName}: ERROR: Unrecognised asset: ${asset}`); 
+        return; 
+      }
+      
       let data = await this.state.privateMethod({
         apiRoute: `default_account/${asset}/update`,
         params,

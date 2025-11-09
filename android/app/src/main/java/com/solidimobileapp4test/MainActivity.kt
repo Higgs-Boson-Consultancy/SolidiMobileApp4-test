@@ -1,6 +1,10 @@
 package com.solidimobileapp4test;
 
+import android.os.Build
 import android.os.Bundle;
+import android.view.View
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -8,6 +12,24 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 import org.devio.rn.splashscreen.SplashScreen;
 
 class MainActivity : ReactActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    
+    // Fix status bar overlap issue
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    
+    // Make status bar transparent
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      window.setDecorFitsSystemWindows(false)
+    } else {
+      @Suppress("DEPRECATION")
+      window.decorView.systemUiVisibility = (
+        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+      )
+    }
+  }
 
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule

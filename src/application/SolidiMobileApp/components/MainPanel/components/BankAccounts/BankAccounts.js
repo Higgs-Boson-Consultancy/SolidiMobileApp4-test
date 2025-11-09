@@ -106,16 +106,26 @@ let BankAccounts = () => {
     console.log(`🏦 [UI] Form values:`, params);
     
     setUpdateMessage('');
+    setErrorMessage('');
+    
     let output = await appState.updateDefaultAccountForAsset('GBP', params);
     
     console.log(`🏦 [UI] Received response from API:`, output);
     
     if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+    
+    // Handle undefined response (validation failed)
+    if (_.isUndefined(output) || _.isNil(output)) {
+      console.log(`❌ [UI] No response from API - validation may have failed`);
+      setErrorMessage('Failed to update bank account. Please try again.');
+      return;
+    }
+    
     // Future: The error should be an object with 'code' and 'message' properties.
     if (_.has(output, 'error')) {
       console.log(`❌ [UI] Error in bank account update:`, output.error);
       setErrorMessage(misc.itemToString(output.error));
-    } else if (output.result == 'success') {
+    } else if (output && output.result == 'success') {
       console.log(`✅ [UI] Bank account update successful`);
       await misc.sleep(0.1);
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;

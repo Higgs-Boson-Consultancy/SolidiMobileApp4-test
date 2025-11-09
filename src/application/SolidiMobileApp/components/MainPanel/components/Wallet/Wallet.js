@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
-import { ScrollView, View, Alert, Platform, TouchableOpacity, Modal, TextInput, Dimensions, Linking } from 'react-native';
+import { ScrollView, View, Alert, Platform, TouchableOpacity, Modal, TextInput, Dimensions, Linking, KeyboardAvoidingView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Apple Pay imports
@@ -18,6 +18,8 @@ import {
   useTheme,
   Surface,
   ProgressBar,
+  Dialog,
+  Portal,
 } from 'react-native-paper';
 
 // Other imports
@@ -152,6 +154,9 @@ let Wallet = () => {
   let [depositAmount, setDepositAmount] = useState('');
   let [withdrawAmount, setWithdrawAmount] = useState('');
   let [selectedBalanceTab, setSelectedBalanceTab] = useState('crypto'); // 'crypto' or 'fiat'
+  
+  // Currency selection dialog state
+  let [showCurrencyDialog, setShowCurrencyDialog] = useState(false);
   
   // Withdraw modal state
   let [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -1397,20 +1402,7 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
               </Button>
               <Button
                 mode="outlined"
-                onPress={() => {
-                  Alert.alert(
-                    'Select Currency',
-                    'Choose which currency to withdraw:',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'GBP', onPress: () => handleWithdraw('GBP') },
-                      { text: 'EUR', onPress: () => handleWithdraw('EUR') },
-                      { text: 'USD', onPress: () => handleWithdraw('USD') },
-                      { text: 'BTC', onPress: () => handleWithdraw('BTC') },
-                      { text: 'ETH', onPress: () => handleWithdraw('ETH') }
-                    ]
-                  );
-                }}
+                onPress={() => setShowCurrencyDialog(true)}
                 style={{ flex: 1 }}
                 icon="minus"
               >
@@ -1545,27 +1537,36 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
         animationType="slide"
         onRequestClose={() => setShowWithdrawModal(false)}
       >
-        <View style={{
-          flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 20
-        }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={{
-            backgroundColor: 'white',
-            borderRadius: 12,
-            padding: 20,
-            width: '100%',
-            maxWidth: 400,
-            maxHeight: '80%'
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20
           }}>
-            <Text variant="titleLarge" style={{ fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
-              Withdraw {withdrawCurrency}
-            </Text>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: 12,
+              width: '100%',
+              maxWidth: 400,
+              maxHeight: '80%',
+              overflow: 'hidden'
+            }}>
+              <ScrollView
+                contentContainerStyle={{ padding: 20 }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <Text variant="titleLarge" style={{ fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
+                  Withdraw {withdrawCurrency}
+                </Text>
 
-            {/* Address Selection */}
-            <View style={{ marginBottom: 20 }}>
+                {/* Address Selection */}
+                <View style={{ marginBottom: 20 }}>
               <Text variant="titleMedium" style={{ marginBottom: 10 }}>
                 Select Destination Address
               </Text>
@@ -1600,9 +1601,12 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                   borderColor: theme.colors.outline,
                   borderRadius: 8,
                   padding: 12,
-                  fontSize: 16
+                  fontSize: 16,
+                  color: '#000000',
+                  backgroundColor: '#FFFFFF'
                 }}
                 placeholder={`Enter ${withdrawCurrency} amount`}
+                placeholderTextColor="#999999"
                 value={withdrawAmountInput}
                 onChangeText={setWithdrawAmountInput}
                 keyboardType="numeric"
@@ -1610,46 +1614,48 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
               />
             </View>
 
-            {/* Action Buttons */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: theme.colors.surfaceVariant,
-                  marginRight: 10
-                }}
-                onPress={() => setShowWithdrawModal(false)}
-                disabled={isWithdrawing}
-              >
-                <Text style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+                {/* Action Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: theme.colors.surfaceVariant,
+                      marginRight: 10
+                    }}
+                    onPress={() => setShowWithdrawModal(false)}
+                    disabled={isWithdrawing}
+                  >
+                    <Text style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: isWithdrawing ? theme.colors.surfaceVariant : theme.colors.primary,
-                  marginLeft: 10
-                }}
-                onPress={handleCryptoWithdraw}
-                disabled={isWithdrawing || !withdrawToAddress || !withdrawAmountInput}
-              >
-                <Text style={{ 
-                  textAlign: 'center', 
-                  color: isWithdrawing ? theme.colors.onSurfaceVariant : theme.colors.onPrimary,
-                  fontWeight: 'bold'
-                }}>
-                  {isWithdrawing ? 'Processing...' : 'Withdraw'}
-                </Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: isWithdrawing ? theme.colors.surfaceVariant : theme.colors.primary,
+                      marginLeft: 10
+                    }}
+                    onPress={handleCryptoWithdraw}
+                    disabled={isWithdrawing || !withdrawToAddress || !withdrawAmountInput}
+                  >
+                    <Text style={{ 
+                      textAlign: 'center', 
+                      color: isWithdrawing ? theme.colors.onSurfaceVariant : theme.colors.onPrimary,
+                      fontWeight: 'bold'
+                    }}>
+                      {isWithdrawing ? 'Processing...' : 'Withdraw'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Fiat Withdraw Modal */}
@@ -1659,27 +1665,36 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
         animationType="slide"
         onRequestClose={() => setShowFiatWithdrawModal(false)}
       >
-        <View style={{
-          flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 20
-        }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={{
-            backgroundColor: 'white',
-            borderRadius: 12,
-            padding: 20,
-            width: '100%',
-            maxWidth: 400,
-            maxHeight: '80%'
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20
           }}>
-            <Text variant="titleLarge" style={{ fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
-              Withdraw {fiatWithdrawCurrency}
-            </Text>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: 12,
+              width: '100%',
+              maxWidth: 400,
+              maxHeight: '80%',
+              overflow: 'hidden'
+            }}>
+              <ScrollView
+                contentContainerStyle={{ padding: 20 }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <Text variant="titleLarge" style={{ fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
+                  Withdraw {fiatWithdrawCurrency}
+                </Text>
 
-            {/* Amount Input */}
-            <View style={{ marginBottom: 20 }}>
+                {/* Amount Input */}
+                <View style={{ marginBottom: 20 }}>
               <Text variant="titleMedium" style={{ marginBottom: 10 }}>
                 Amount to Withdraw
               </Text>
@@ -1694,9 +1709,12 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                     borderColor: theme.colors.outline,
                     borderRadius: 8,
                     padding: 12,
-                    fontSize: 16
+                    fontSize: 16,
+                    color: '#000000',
+                    backgroundColor: '#FFFFFF'
                   }}
                   placeholder={`Enter amount`}
+                  placeholderTextColor="#999999"
                   value={fiatWithdrawAmount}
                   onChangeText={setFiatWithdrawAmount}
                   keyboardType="decimal-pad"
@@ -1708,85 +1726,6 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                   Available: {getCurrencySymbol(fiatWithdrawCurrency)}{formatCurrency(balanceData[fiatWithdrawCurrency].available.toString(), fiatWithdrawCurrency)}
                 </Text>
               ) : null}
-            </View>
-
-            {/* Bank Account Display */}
-            <View style={{ marginBottom: 20 }}>
-              <Text variant="titleMedium" style={{ marginBottom: 10 }}>
-                Withdrawal Destination
-              </Text>
-              {isLoadingBankAccount ? (
-                <View style={{
-                  borderWidth: 1,
-                  borderColor: theme.colors.outline,
-                  borderRadius: 8,
-                  padding: 12,
-                  backgroundColor: theme.colors.surfaceVariant
-                }}>
-                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                    Loading bank account...
-                  </Text>
-                </View>
-              ) : userBankAccount && userBankAccount !== '[loading]' ? (
-                <View style={{
-                  borderWidth: 1,
-                  borderColor: theme.colors.primary,
-                  borderRadius: 8,
-                  padding: 12,
-                  backgroundColor: theme.colors.surfaceVariant
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <Icon name="bank" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
-                    <Text variant="titleSmall" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
-                      {userBankAccount.accountName || 'Bank Account'}
-                    </Text>
-                  </View>
-                  {userBankAccount.sortCode && (
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      Sort Code: {userBankAccount.sortCode}
-                    </Text>
-                  )}
-                  {userBankAccount.accountNumber && (
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      Account: ****{userBankAccount.accountNumber.slice(-4)}
-                    </Text>
-                  )}
-                </View>
-              ) : (
-                <View style={{
-                  borderWidth: 1,
-                  borderColor: theme.colors.error,
-                  borderRadius: 8,
-                  padding: 12,
-                  backgroundColor: theme.colors.errorContainer
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <Icon name="alert-circle" size={20} color={theme.colors.error} style={{ marginRight: 8 }} />
-                    <Text variant="titleSmall" style={{ fontWeight: 'bold', color: theme.colors.error }}>
-                      No Bank Account
-                    </Text>
-                  </View>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer, marginBottom: 8 }}>
-                    Please set up your bank account details to withdraw funds.
-                  </Text>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      setShowFiatWithdrawModal(false);
-                      appState.changeState('BankAccounts');
-                    }}
-                    style={{
-                      backgroundColor: theme.colors.error,
-                      padding: 8,
-                      borderRadius: 6,
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                      Add Bank Account
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
 
             {/* Processing Time Notice */}
@@ -1806,47 +1745,172 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
               </View>
             </View>
 
-            {/* Action Buttons */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                {/* Action Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: theme.colors.surfaceVariant,
+                      marginRight: 10
+                    }}
+                    onPress={() => setShowFiatWithdrawModal(false)}
+                    disabled={isFiatWithdrawing}
+                  >
+                    <Text style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: isFiatWithdrawing ? theme.colors.surfaceVariant : theme.colors.primary,
+                      marginLeft: 10
+                    }}
+                    onPress={handleFiatWithdrawal}
+                    disabled={isFiatWithdrawing || !fiatWithdrawAmount}
+                  >
+                    <Text style={{ 
+                      textAlign: 'center', 
+                      color: isFiatWithdrawing ? theme.colors.onSurfaceVariant : theme.colors.onPrimary,
+                      fontWeight: 'bold'
+                    }}>
+                      {isFiatWithdrawing ? 'Processing...' : 'Withdraw'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Currency Selection Dialog - Dropdown Style */}
+      <Portal>
+        <Dialog
+          visible={showCurrencyDialog}
+          onDismiss={() => setShowCurrencyDialog(false)}
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 12,
+          }}
+        >
+          <Dialog.Title style={{ color: '#000000', fontSize: 18, fontWeight: 'bold' }}>
+            Select Currency to Withdraw
+          </Dialog.Title>
+          <Dialog.Content>
+            {/* Currency Options as List Items */}
+            <View style={{ 
+              borderWidth: 1, 
+              borderColor: '#E0E0E0', 
+              borderRadius: 8,
+              backgroundColor: '#FFFFFF',
+              marginTop: 8
+            }}>
               <TouchableOpacity
                 style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: theme.colors.surfaceVariant,
-                  marginRight: 10
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0E0E0',
                 }}
-                onPress={() => setShowFiatWithdrawModal(false)}
-                disabled={isFiatWithdrawing}
+                onPress={() => {
+                  setShowCurrencyDialog(false);
+                  handleWithdraw('GBP');
+                }}
               >
-                <Text style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
-                  Cancel
-                </Text>
+                <Text style={{ color: '#000000', fontSize: 16 }}>GBP</Text>
+                <Text style={{ color: '#666666', fontSize: 14 }}>British Pound (£)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: isFiatWithdrawing ? theme.colors.surfaceVariant : theme.colors.primary,
-                  marginLeft: 10
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0E0E0',
                 }}
-                onPress={handleFiatWithdrawal}
-                disabled={isFiatWithdrawing || !fiatWithdrawAmount}
+                onPress={() => {
+                  setShowCurrencyDialog(false);
+                  handleWithdraw('EUR');
+                }}
               >
-                <Text style={{ 
-                  textAlign: 'center', 
-                  color: isFiatWithdrawing ? theme.colors.onSurfaceVariant : theme.colors.onPrimary,
-                  fontWeight: 'bold'
-                }}>
-                  {isFiatWithdrawing ? 'Processing...' : 'Withdraw'}
-                </Text>
+                <Text style={{ color: '#000000', fontSize: 16 }}>EUR</Text>
+                <Text style={{ color: '#666666', fontSize: 14 }}>Euro (€)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0E0E0',
+                }}
+                onPress={() => {
+                  setShowCurrencyDialog(false);
+                  handleWithdraw('USD');
+                }}
+              >
+                <Text style={{ color: '#000000', fontSize: 16 }}>USD</Text>
+                <Text style={{ color: '#666666', fontSize: 14 }}>US Dollar ($)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#E0E0E0',
+                }}
+                onPress={() => {
+                  setShowCurrencyDialog(false);
+                  handleWithdraw('BTC');
+                }}
+              >
+                <Text style={{ color: '#000000', fontSize: 16 }}>BTC</Text>
+                <Text style={{ color: '#666666', fontSize: 14 }}>Bitcoin</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                }}
+                onPress={() => {
+                  setShowCurrencyDialog(false);
+                  handleWithdraw('ETH');
+                }}
+              >
+                <Text style={{ color: '#000000', fontSize: 16 }}>ETH</Text>
+                <Text style={{ color: '#666666', fontSize: 14 }}>Ethereum</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => setShowCurrencyDialog(false)}
+              textColor="#000000"
+              style={{ marginRight: 8 }}
+            >
+              Cancel
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
