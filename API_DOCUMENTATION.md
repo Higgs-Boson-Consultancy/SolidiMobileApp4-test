@@ -688,15 +688,118 @@ After registration, users typically need to complete verification steps:
 }
 ```
 
-### 7. Get Address Book
+### 7. Get Address Book (List All Addresses)
 
-**Endpoint:** `POST /api2/v1/addressBook/{asset}`
+**Endpoint:** `POST /api2/v1/addressBook/{asset}` or `GET /api2/v1/addressBook/{asset}`
 
 **Type:** Private
 
-**Request:**
+**Request (POST):**
 ```javascript
 {
+  "nonce": 1699900000000
+}
+```
+
+**Request (GET):**
+- No body required, only URL parameter
+
+**Response:**
+```javascript
+{
+  "data": [
+    {
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "My Hardware Wallet",
+      "assetType": "BTC",
+      "type": "myself", // or "thirdparty"
+      "address": "{\"address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"firstname\":\"John\",\"lastname\":\"Doe\"}", // JSON string
+      "created_at": "2023-10-01T12:00:00Z"
+    },
+    {
+      "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "Business Account",
+      "assetType": "BTC",
+      "type": "thirdparty",
+      "address": "{\"address\":\"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\",\"business\":\"ABC Company Ltd\"}",
+      "created_at": "2023-10-15T14:30:00Z"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `uuid` - **IMPORTANT:** Use this UUID for withdrawal API calls, not the wallet address
+- `name` - Friendly name for the address
+- `assetType` - Asset/cryptocurrency type (BTC, ETH, GBP, etc.)
+- `type` - Address type: "myself" or "thirdparty"
+- `address` - JSON string containing address details (parse to get actual wallet address)
+- `created_at` - Timestamp when address was added
+
+**Note:** The `address` field is a JSON string that needs to be parsed. For crypto, it contains the wallet address. For fiat (GBP), it contains bank account details (accountName, sortCode, accountNumber).
+```
+
+### 8. Add Address to Address Book
+
+**Endpoint:** `POST /api2/v1/addressBook/{asset}/{addressType}`
+
+**Type:** Private
+
+**Address Types:**
+- `CRYPTO_UNHOSTED` - Personal/hardware wallets (self-custody)
+- `CRYPTO_HOSTED` - Exchange/custodial wallets
+- `BANK` - Bank accounts (for fiat like GBP)
+
+**Request (Crypto - Unhosted Wallet):**
+```javascript
+{
+  "name": "John Doe",
+  "asset": "BTC",
+  "network": "BTC", // Asset/network (uppercase)
+  "address": {
+    "firstname": "John",
+    "lastname": "Doe",
+    "business": null, // Set if recipient is a business
+    "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+    "dtag": null, // Only for Ripple/XRP
+    "vasp": null // Virtual Asset Service Provider info
+  },
+  "thirdparty": true, // true if sending to someone else, false if your own wallet
+  "nonce": 1699900000000
+}
+```
+
+**Request (Crypto - Exchange Wallet):**
+```javascript
+{
+  "name": "My Binance Account",
+  "asset": "BTC",
+  "network": "BTC",
+  "address": {
+    "firstname": null,
+    "lastname": null,
+    "business": "Binance", // Exchange name
+    "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+    "dtag": null,
+    "vasp": null
+  },
+  "thirdparty": false,
+  "nonce": 1699900000000
+}
+```
+
+**Request (Fiat - Bank Account):**
+```javascript
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "network": "GBP", // Fiat currency (uppercase)
+  "address": {
+    "accountName": "John Doe",
+    "sortCode": "12-34-56",
+    "accountNumber": "12345678"
+  },
+  "thirdparty": true, // true for thirdparty, false for myself
   "nonce": 1699900000000
 }
 ```
@@ -704,17 +807,28 @@ After registration, users typically need to complete verification steps:
 **Response:**
 ```javascript
 {
-  "addresses": [
-    {
-      "id": "addr123",
-      "asset": "BTC",
-      "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-      "label": "My Hardware Wallet",
-      "created_at": "2023-10-01T12:00:00Z"
-    }
-  ]
+  "success": true,
+  "data": {
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", // Use this UUID for withdrawals
+    "name": "John Doe",
+    "address": "...",
+    "type": "thirdparty",
+    "assetType": "BTC"
+  },
+  "message": "Address added successfully"
 }
 ```
+
+**Important Notes:**
+- The response includes a `uuid` field - **save this UUID** as it's required for withdrawal API calls
+- The `address` parameter in withdrawal requests must be this `uuid`, not the actual wallet address
+- After adding an address, reload the address book to get fresh data with proper UUIDs
+- **"Invalid UNUSED address" error** means:
+  - The wallet address already exists in your address book, OR
+  - The address format is invalid for the specified network, OR
+  - You must use the `uuid` from the address book API response, not the wallet address string
+- Each wallet address can only be added once per account
+- To use an address for withdrawals, you MUST first add it to the address book and use the returned `uuid`
 
 ---
 
@@ -846,12 +960,14 @@ timestamp,open,high,low,close,volume
 
 **Type:** Private
 
+**IMPORTANT:** The `address` parameter must be a **UUID** from your address book, not the actual wallet address. First add the address to your address book using the `addressBook/{asset}/{addressType}` endpoint, then use the returned `uuid` for withdrawals.
+
 **Request:**
 ```javascript
 {
   "volume": "0.1",
-  "address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-  "priority": "MEDIUM", // SLOW, MEDIUM, FAST
+  "address": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", // UUID from address book, NOT the wallet address
+  "priority": "MEDIUM", // SLOW, MEDIUM, FAST (lowercase: slow, medium, fast)
   "nonce": 1699900000000
 }
 ```
@@ -1507,12 +1623,14 @@ All cryptocurrencies can be traded against all fiat currencies.
 16. `POST /api2/v1/default_account/{asset}` - Get default account
 17. `POST /api2/v1/default_account/{asset}/update` - Update default account
 18. `POST /api2/v1/addressBook/{asset}` - Get saved addresses
-19. `POST /api2/v1/identity_verification_details` - Get KYC status
-20. `POST /api2/v1/user/extra_information/check` - Check required info
-21. `POST /api2/v1/user/extra_information/submit` - Submit extra info
-22. `POST /api2/v1/security_check` - Run security checks
-23. `POST /api2/v1/private_upload/document/{documentType}` - Upload documents
-24. `POST /api2/v1/request_account_deletion` - Delete account
+19. `POST /api2/v1/addressBook/{asset}/{addressType}` - Add address to address book
+20. `POST /api2/v1/identity_verification_details` - Get KYC status
+21. `POST /api2/v1/user/extra_information/check` - Check required info
+22. `POST /api2/v1/user/extra_information/submit` - Submit extra info
+23. `POST /api2/v1/security_check` - Run security checks
+24. `POST /api2/v1/private_upload/document/{documentType}` - Upload documents
+25. `POST /api2/v1/request_account_deletion` - Delete account
+26. `POST /api2/v1/logout` - Logout user
 
 ---
 
@@ -1529,9 +1647,9 @@ All cryptocurrencies can be traded against all fiat currencies.
 
 ---
 
-**Last Updated:** November 7, 2025  
+**Last Updated:** November 11, 2025  
 **Generated from:** Comprehensive codebase scan of SolidiMobileApp4  
-**Total Endpoints Documented:** 36+ unique API routes  
+**Total Endpoints Documented:** 38 unique API routes  
 **Missing from Previous Documentation:**
 - Registration endpoint (`register_new_user/{email}`)
 - Extra information check and submit

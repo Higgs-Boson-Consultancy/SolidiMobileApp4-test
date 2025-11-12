@@ -925,6 +925,8 @@ let Transfer = () => {
   let handleAddressSelection = (address, addressDetails) => {
     log('🏠 handleAddressSelection: Address selected from book:', address);
     log('🏠 handleAddressSelection: Address details:', addressDetails);
+    console.log('🏠 CONSOLE: Address selected:', address);
+    console.log('🏠 CONSOLE: Address details full object:', JSON.stringify(addressDetails, null, 2));
     
     // Set the display address (wallet address)
     setRecipientAddress(address);
@@ -932,12 +934,22 @@ let Transfer = () => {
     // Extract and set the UUID for API calls
     let addressUUID = addressDetails?.id || addressDetails?.rawData?.uuid;
     log('🏠 handleAddressSelection: Extracted UUID:', addressUUID);
+    console.log('🏠 CONSOLE: Extracted UUID:', addressUUID);
+    console.log('🏠 CONSOLE: addressDetails.id:', addressDetails?.id);
+    console.log('🏠 CONSOLE: addressDetails.rawData?.uuid:', addressDetails?.rawData?.uuid);
+    
+    if (!addressUUID) {
+      console.error('❌ CONSOLE: WARNING - No UUID found in address details!');
+      log('❌ WARNING: No UUID extracted from address selection');
+    }
+    
     setRecipientAddressUUID(addressUUID || '');
     
     setErrorMessage(''); // Clear any existing error messages
     
     if (addressDetails) {
-      log(`📝 Address selected: ${addressDetails.label} - ${address} (UUID: ${addressUUID})`);
+      log(`📝 Address selected: ${addressDetails.label || addressDetails.name} - ${address} (UUID: ${addressUUID})`);
+      console.log(`📝 CONSOLE: Address selected: ${addressDetails.label || addressDetails.name} - ${address} (UUID: ${addressUUID})`);
     }
   };
 

@@ -27,6 +27,8 @@ let MakePaymentOpenBanking = () => {
   let stateChangeID = appState.stateChangeID;
 
   let [url, setURL] = useState('');
+  let [error, setError] = useState(null);
+  let [isLoading, setIsLoading] = useState(true);
 
   // Testing
   if (appState.appTier == 'dev' && appState.panels.buy.volumeQA == '0') {
@@ -116,17 +118,54 @@ let MakePaymentOpenBanking = () => {
 
   let setup = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+      
       await appState.generalSetup();
       await checkIfPaymentReceived();
+      
       let urlOpenBanking = await appState.getOpenBankingPaymentURLFromSettlement({settlementID});
+      
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      
+      // Check if the response is an error
+      if (!urlOpenBanking) {
+        throw new Error('No payment URL received from server');
+      }
+      
+      // Check if response is an error object
+      if (typeof urlOpenBanking === 'object' && urlOpenBanking.error) {
+        throw new Error(urlOpenBanking.error);
+      }
+      
+      // Check if the URL is valid
+      if (typeof urlOpenBanking !== 'string' || !urlOpenBanking.startsWith('http')) {
+        console.log('❌ Invalid URL received:', urlOpenBanking);
+        throw new Error('Invalid payment URL received from server');
+      }
+      
+      console.log('✅ Valid Tink URL received:', urlOpenBanking);
       setURL(urlOpenBanking);
+      setIsLoading(false);
+      
       // Set the initial timer.
       let timerID = setInterval(incrementTimeElapsed, intervalSeconds * 1000);
       appState.panels.makePaymentOpenBanking.timerID = timerID;
     } catch(err) {
       let msg = `MakePaymentOpenBanking.setup: Error = ${err}`;
       console.log(msg);
+      console.error('❌ [OPEN BANKING ERROR]', err);
+      
+      // Determine user-friendly error message
+      let userMessage = 'Unable to load payment page';
+      if (err.message && err.message.includes('Unable to get token')) {
+        userMessage = 'Open Banking service is temporarily unavailable. Please try a different payment method.';
+      } else if (err.message) {
+        userMessage = err.message;
+      }
+      
+      setError(userMessage);
+      setIsLoading(false);
     }
   }
 
@@ -145,6 +184,16 @@ let MakePaymentOpenBanking = () => {
   }
 
 
+  let goBack = () => {
+    // Clear timer if it exists
+    if (appState.panels.makePaymentOpenBanking.timerID) {
+      clearInterval(appState.panels.makePaymentOpenBanking.timerID);
+      appState.panels.makePaymentOpenBanking.timerID = null;
+    }
+    // Go back to payment selection
+    appState.changeState('ChooseHowToPay');
+  };
+
   return (
     <View style={styles.panelContainer}>
     <View style={styles.panelSubContainer}>
@@ -155,10 +204,33 @@ let MakePaymentOpenBanking = () => {
 
       <View style={styles.webviewSection}>
 
-        { _.isEmpty(url) && <Spinner/> }
+        { isLoading && !error && <Spinner/> }
 
-        { ! _.isEmpty(url) &&
+        { error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorIcon}>⚠️</Text>
+            <Text style={styles.errorTitle}>Payment Setup Failed</Text>
+            <Text style={styles.errorMessage}>{error}</Text>
+            <View style={styles.errorButtonsContainer}>
+              <StandardButton
+                title="Try Again"
+                onPress={() => {
+                  setError(null);
+                  setup();
+                }}
+                style={styles.retryButton}
+              />
+              <StandardButton
+                title="Choose Different Payment"
+                mode="outlined"
+                onPress={goBack}
+                style={styles.backButton}
+              />
+            </View>
+          </View>
+        )}
 
+        { !isLoading && !error && !_.isEmpty(url) && (
           <WebView
             source={{ uri: url }}
             startInLoadingState={true}
@@ -172,8 +244,7 @@ let MakePaymentOpenBanking = () => {
               log(`Have received event from embedded webview, containing data = '${data}'`);
             }}
           />
-
-        }
+        )}
 
       </View>
 
@@ -225,6 +296,45 @@ let styles = StyleSheet.create({
   },
   loadingView: {
     height: '100%',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scaledWidth(20),
+    backgroundColor: colors.white,
+  },
+  errorIcon: {
+    fontSize: normaliseFont(60),
+    marginBottom: scaledHeight(20),
+  },
+  errorTitle: {
+    fontSize: normaliseFont(22),
+    fontWeight: 'bold',
+    color: colors.red,
+    marginBottom: scaledHeight(15),
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: normaliseFont(16),
+    color: colors.darkGrey,
+    marginBottom: scaledHeight(30),
+    textAlign: 'center',
+    lineHeight: normaliseFont(24),
+    paddingHorizontal: scaledWidth(10),
+  },
+  errorButtonsContainer: {
+    width: '100%',
+    paddingHorizontal: scaledWidth(20),
+  },
+  retryButton: {
+    marginBottom: scaledHeight(15),
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  backButton: {
+    width: '100%',
+    alignSelf: 'stretch',
   },
 });
 

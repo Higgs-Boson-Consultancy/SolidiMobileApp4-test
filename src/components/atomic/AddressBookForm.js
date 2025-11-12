@@ -1,0 +1,1439 @@
+// React imports
+import React, { useState, useContext, useEffect } from 'react';
+import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { RadioButton, IconButton } from 'react-native-paper';
+
+// Internal imports
+import { StandardButton, QRScanner } from 'src/components/atomic';
+import ContactPickerModal from 'src/components/atomic/ContactPickerModal';
+import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
+import { colors } from 'src/constants';
+import AppStateContext from 'src/application/data';
+
+// Logger
+import logger from 'src/util/logger';
+let logger2 = logger.extend('AddressBookForm');
+let {deb, dj, log, lj} = logger.getShortcuts(logger2);
+
+/**
+ * AddressBookForm - Shared component for adding addresses to the address book
+ * Used by both AddressBook page and AddressBookModal popup
+ * 
+ * @param {Object} props
+ * @param {string} props.selectedAsset - Pre-selected asset (optional)
+ * @param {Function} props.onSuccess - Callback when address is added successfully
+ * @param {Function} props.onCancel - Callback when user cancels (optional)
+ * @param {boolean} props.showHeader - Whether to show the title/header (default: true)
+ * @param {boolean} props.standalone - Whether this is standalone page or modal (default: false)
+ */
+let AddressBookForm = ({ 
+  selectedAsset = '', 
+  onSuccess, 
+  onCancel,
+  showHeader = true,
+  standalone = false 
+}) => {
+  // Get app state for API access
+  let appState = useContext(AppStateContext);
+  
+  // Navigation state
+  let [currentStep, setCurrentStep] = useState(1);
+  let [formData, setFormData] = useState({
+    recipient: '',
+    firstName: '',
+    lastName: '',
+    asset: selectedAsset || '',
+    withdrawAddress: '',
+    destinationType: '',
+    exchangeName: '',
+    // GBP-specific fields
+    accountName: '',
+    sortCode: '',
+    accountNumber: ''
+  });
+  let [errorMessage, setErrorMessage] = useState('');
+  let [showAssetDropdown, setShowAssetDropdown] = useState(false);
+  let [showQRScanner, setShowQRScanner] = useState(false);
+  let [manualInput, setManualInput] = useState(false); // For "another_person" option
+  let [showContactPicker, setShowContactPicker] = useState(false); // Contact picker modal
+  
+  // API submission state
+  let [isSubmitting, setIsSubmitting] = useState(false);
+  let [submitError, setSubmitError] = useState('');
+  let [submitStatus, setSubmitStatus] = useState('');
+
+  // Update asset when selectedAsset prop changes
+  useEffect(() => {
+    if (selectedAsset && selectedAsset !== formData.asset) {
+      handleInputChange('asset', selectedAsset);
+    }
+  }, [selectedAsset]);
+
+  // Ensure API client is initialized
+  useEffect(() => {
+    const initializeApiClient = async () => {
+      console.log('🔧 AddressBookForm: Checking API client...');
+      console.log('🔧 AddressBookForm: appState exists?', !!appState);
+      console.log('🔧 AddressBookForm: apiClient exists?', !!appState?.apiClient);
+      console.log('🔧 AddressBookForm: apiClient.post exists?', !!appState?.apiClient?.post);
+      
+      // If apiClient is not initialized, call generalSetup
+      if (!appState?.apiClient?.post) {
+        console.log('⚠️ AddressBookForm: API client not ready, calling generalSetup...');
+        try {
+          await appState.generalSetup({caller: 'AddressBookForm'});
+          console.log('✅ AddressBookForm: generalSetup completed');
+        } catch (err) {
+          console.error('❌ AddressBookForm: generalSetup failed:', err);
+        }
+      } else {
+        console.log('✅ AddressBookForm: API client already initialized');
+      }
+    };
+    
+    initializeApiClient();
+  }, []); // Run once on mount
+
+  // Step configuration
+  const steps = [
+    { id: 1, title: 'Recipient', subtitle: 'Who will receive this withdraw?' },
+    { id: 2, title: 'Details', subtitle: 'Recipient information' },
+    { id: 3, title: 'Asset', subtitle: 'What are you withdrawing?' },
+    { id: 4, title: 'Destination', subtitle: 'What is the destination address?' },
+    { id: 5, title: 'Wallet', subtitle: 'Exchange information' },
+    { id: 6, title: 'Summary', subtitle: 'Review and confirm' }
+  ];
+
+  // Asset options for dropdown
+  const assetOptions = [
+    { id: 'btc', label: 'Bitcoin (BTC)' },
+    { id: 'eth', label: 'Ethereum (ETH)' },
+    { id: 'usdt', label: 'Tether (USDT)' },
+    { id: 'usdc', label:'USD Coin (USDC)' },
+    { id: 'bnb', label: 'Binance Coin (BNB)' },
+    { id: 'gbp', label: 'British Pound (GBP)' }
+  ];
+
+  // Contact picker handlers
+  const openContactPicker = () => {
+    setShowContactPicker(true);
+  };
+
+  const handleContactSelect = (contact) => {
+    console.log('📱 Contact selected:', contact);
+    setFormData(prev => ({
+      ...prev,
+      firstName: contact.firstName,
+      lastName: contact.lastName
+    }));
+    setShowContactPicker(false);
+    setManualInput(true); // Show the filled form
+  };
+
+  const handleContactPickerCancel = () => {
+    setShowContactPicker(false);
+  };
+
+  // Handle input changes
+  let handleInputChange = (field, value) => {
+    // Special handling for recipient selection
+    if (field === 'recipient') {
+      if (value === 'myself') {
+        // Auto-fill with user's own name from appState
+        // Try multiple possible paths
+        console.log('👤 DEBUG: Full appState.state.user structure:', appState?.state?.user);
+        
+        const userData1 = appState?.state?.user?.info?.user;
+        const userData2 = appState?.state?.user;
+        const userData3 = appState?.user?.info?.user;
+        
+        // Use whichever path has the data
+        const userData = userData1 || userData2 || userData3 || {};
+        const userFirstName = userData?.firstName || '';
+        const userLastName = userData?.lastName || '';
+        
+        console.log('👤 Trying multiple paths:', {
+          path1_user_info_user: userData1,
+          path2_user: userData2,
+          path3_alt: userData3,
+          selectedUserData: userData,
+          userFirstName,
+          userLastName
+        });
+        
+        setFormData(prev => ({
+          ...prev,
+          recipient: value,
+          firstName: userFirstName,
+          lastName: userLastName
+        }));
+        setManualInput(false);
+      } else if (value === 'another_person') {
+        // Reset names and show manual input option
+        setFormData(prev => ({
+          ...prev,
+          recipient: value,
+          firstName: '',
+          lastName: ''
+        }));
+        setManualInput(false); // Will show choice between contacts/manual
+      } else {
+        // another_business - set lastName to "-"
+        setFormData(prev => ({
+          ...prev,
+          recipient: value,
+          firstName: '',
+          lastName: '-'
+        }));
+        setManualInput(false);
+      }
+    } else {
+      // Normal field update
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    
+    setErrorMessage(''); // Clear error on input
+    setSubmitError(''); // Clear submit error on input
+  };
+
+  // Navigation functions
+  let goToNextStep = () => {
+    if (validateCurrentStep()) {
+      let nextStep = currentStep + 1;
+      
+      // Skip step 5 (wallet info) for GBP since it's not needed
+      if (nextStep === 5 && formData.asset.toLowerCase() === 'gbp') {
+        nextStep = 6;
+      }
+      
+      setCurrentStep(Math.min(nextStep, steps.length));
+    } else {
+      setTimeout(() => setErrorMessage(''), 3000);
+    }
+  };
+
+  let goToPreviousStep = () => {
+    let prevStep = currentStep - 1;
+    
+    // Skip step 5 (wallet info) for GBP when going backwards
+    if (prevStep === 5 && formData.asset.toLowerCase() === 'gbp') {
+      prevStep = 4;
+    }
+    
+    // Reset manual input mode when going back to step 1
+    if (prevStep === 1) {
+      setManualInput(false);
+    }
+    
+    setCurrentStep(Math.max(prevStep, 1));
+    setErrorMessage('');
+  };
+
+  let isLastStep = () => currentStep === 6;
+
+  // Validation function
+  let validateCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        if (!formData.recipient) {
+          setErrorMessage('Please select a recipient option');
+          return false;
+        }
+        break;
+
+      case 2:
+        if (!formData.firstName.trim()) {
+          setErrorMessage(formData.recipient === 'another_business' ? 'Company name is required' : 'First name is required');
+          return false;
+        }
+        // For businesses, lastName is automatically set to "-"
+        if (formData.recipient !== 'another_business' && !formData.lastName.trim()) {
+          setErrorMessage('Last name is required');
+          return false;
+        }
+        // Basic name validation (allow spaces, hyphens, apostrophes, and more for company names)
+        if (!/^[a-zA-Z\s-']+$/.test(formData.firstName)) {
+          setErrorMessage(formData.recipient === 'another_business' ? 'Company name contains invalid characters' : 'First name contains invalid characters');
+          return false;
+        }
+        // Only validate lastName format if not a business
+        if (formData.recipient !== 'another_business' && !/^[a-zA-Z\s-']+$/.test(formData.lastName)) {
+          setErrorMessage('Last name contains invalid characters');
+          return false;
+        }
+        break;
+
+      case 3:
+        if (!formData.asset) {
+          setErrorMessage('Please select an asset');
+          return false;
+        }
+        break;
+
+      case 4:
+        // Different validation for GBP vs crypto
+        if (formData.asset.toLowerCase() === 'gbp') {
+          if (!formData.accountName.trim()) {
+            setErrorMessage('Account name is required');
+            return false;
+          }
+          if (!formData.sortCode.trim()) {
+            setErrorMessage('Sort code is required');
+            return false;
+          }
+          if (!formData.accountNumber.trim()) {
+            setErrorMessage('Account number is required');
+            return false;
+          }
+          // UK sort code format: XX-XX-XX
+          if (!/^\d{2}-\d{2}-\d{2}$/.test(formData.sortCode)) {
+            setErrorMessage('Sort code must be in format: XX-XX-XX (e.g., 12-34-56)');
+            return false;
+          }
+          // UK account number: 8 digits
+          if (!/^\d{8}$/.test(formData.accountNumber)) {
+            setErrorMessage('Account number must be 8 digits');
+            return false;
+          }
+        } else {
+          // Crypto address validation
+          if (!formData.withdrawAddress.trim()) {
+            setErrorMessage('Withdrawal address is required');
+            return false;
+          }
+          // Basic crypto address validation (at least 26 characters)
+          if (formData.withdrawAddress.length < 26) {
+            setErrorMessage('Invalid cryptocurrency address (too short)');
+            return false;
+          }
+        }
+        break;
+
+      case 5:
+        if (!formData.destinationType) {
+          setErrorMessage('Please select destination type');
+          return false;
+        }
+        if (formData.destinationType === 'exchange') {
+          if (!formData.exchangeName.trim()) {
+            setErrorMessage('Exchange name is required');
+            return false;
+          }
+        }
+        break;
+
+      case 6:
+        // Final validation before submission
+        return true;
+    }
+    return true;
+  };
+
+  // Handle QR code scan
+  let handleQRCodeScanned = (data) => {
+    log('QR Code scanned:', data);
+    handleInputChange('withdrawAddress', data);
+    setShowQRScanner(false);
+  };
+
+  // Submit address book entry to API
+  let submitAddress = async () => {
+    if (!validateCurrentStep()) {
+      setTimeout(() => setErrorMessage(''), 3000);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitStatus('');
+
+    try {
+      log('📤 Submitting address to API:', formData);
+      console.log('📤 CONSOLE: ===== SUBMITTING ADDRESS TO API =====');
+      console.log('📤 CONSOLE: Form data:', JSON.stringify(formData, null, 2));
+      
+      // Check if API client exists and initialize if needed
+      console.log('🔍 Checking API client before submission...');
+      console.log('🔍 appState exists?', !!appState);
+      console.log('🔍 apiClient exists?', !!appState?.apiClient);
+      console.log('🔍 apiClient.privateMethod exists?', !!appState?.apiClient?.privateMethod);
+      
+      if (!appState || !appState.apiClient || typeof appState.apiClient.privateMethod !== 'function') {
+        console.log('⚠️ API client not ready, calling generalSetup now...');
+        await appState.generalSetup({caller: 'AddressBookForm-Submit'});
+        console.log('✅ generalSetup completed, checking again...');
+        console.log('✅ apiClient.privateMethod exists now?', !!appState?.apiClient?.privateMethod);
+        
+        if (!appState.apiClient || typeof appState.apiClient.privateMethod !== 'function') {
+          throw new Error('API client could not be initialized');
+        }
+      }
+
+      // Determine address type based on asset and destination type
+      let addressType;
+      
+      if (formData.asset.toLowerCase() === 'gbp') {
+        // GBP always uses BANK address type
+        addressType = 'BANK';
+      } else {
+        // For crypto assets, determine based on destination type
+        if (formData.destinationType === 'exchange') {
+          addressType = 'CRYPTO_HOSTED'; // Exchange wallets are hosted
+        } else if (formData.destinationType === 'personal') {
+          addressType = 'CRYPTO_UNHOSTED'; // Personal wallets are unhosted
+        } else {
+          addressType = 'CRYPTO_UNHOSTED'; // Default to unhosted
+        }
+      }
+
+      console.log('📋 Address type determined:', addressType);
+
+      // Prepare the API payload
+      let apiPayload;
+      
+      if (formData.asset.toLowerCase() === 'gbp') {
+        // For GBP, use bank account format
+        apiPayload = {
+          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.recipient,
+          asset: 'GBP',
+          network: 'GBP',
+          accountName: formData.accountName,
+          sortCode: formData.sortCode.replace(/-/g, ''), // Remove dashes
+          accountNumber: formData.accountNumber,
+          thirdparty: formData.destinationType === 'thirdParty'
+        };
+      } else {
+        // For crypto assets, use nested address object structure
+        let addressObject = {
+          firstname: (formData.firstName && formData.firstName.trim()) ? formData.firstName.trim() : null,
+          lastname: (formData.lastName && formData.lastName.trim()) ? formData.lastName.trim() : null,
+          business: (formData.exchangeName && formData.exchangeName.trim()) ? formData.exchangeName.trim() : null,
+          address: formData.withdrawAddress,
+          dtag: null,
+          vasp: null
+        };
+        
+        apiPayload = {
+          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.recipient,
+          asset: formData.asset.toUpperCase(),
+          network: formData.asset.toUpperCase(),
+          address: addressObject,
+          thirdparty: formData.destinationType === 'thirdParty'
+        };
+      }
+
+      console.log('📤 CONSOLE: API payload prepared:', JSON.stringify(apiPayload, null, 2));
+      console.log('📤 CONSOLE: API Route:', `addressBook/${formData.asset.toUpperCase()}/${addressType}`);
+
+      // Create abort controller for this request
+      const abortController = appState.createAbortController({tag: 'addAddress'});
+
+      // Call the API using privateMethod
+      const result = await appState.apiClient.privateMethod({
+        httpMethod: 'POST',
+        apiRoute: `addressBook/${formData.asset.toUpperCase()}/${addressType}`,
+        params: apiPayload,
+        abortController
+      });
+      
+      console.log('📨 CONSOLE: ===== API RESPONSE =====');
+      console.log('📨 CONSOLE: Result:', JSON.stringify(result, null, 2));
+      console.log('📨 CONSOLE: ===== END API RESPONSE =====');
+
+      // Check for errors first
+      if (result && result.error) {
+        throw new Error(result.error);
+      }
+
+      // Check for success - API should return success:true OR no error property
+      const isSuccess = result && (result.success === true || (!result.error && !result.message));
+      const hasError = result && (result.error || result.message);
+
+      if (isSuccess && !hasError) {
+        log('✅ Address added successfully:', result);
+        console.log('📨 CONSOLE: Address added result:', JSON.stringify(result, null, 2));
+        setSubmitStatus('✅ Address saved successfully!');
+        
+        // Clear address book cache for this asset to force fresh data load
+        if (appState.clearAddressBookCache && typeof appState.clearAddressBookCache === 'function') {
+          console.log('🧹 CONSOLE: Clearing address book cache for', formData.asset);
+          appState.clearAddressBookCache(formData.asset);
+        }
+        
+        // Reload address book to get fresh data with the new UUID
+        if (appState.loadAddressBook && typeof appState.loadAddressBook === 'function') {
+          console.log('🔄 CONSOLE: Reloading address book for', formData.asset);
+          try {
+            await appState.loadAddressBook(formData.asset);
+            console.log('✅ CONSOLE: Address book reloaded successfully');
+          } catch (reloadError) {
+            console.error('❌ CONSOLE: Failed to reload address book:', reloadError);
+          }
+        }
+        
+        // Create appropriate success message based on asset type
+        let successMessage;
+        if (formData.asset.toLowerCase() === 'gbp') {
+          successMessage = `${formData.firstName} ${formData.lastName}'s ${formData.asset.toUpperCase()} bank account has been successfully added to your address book.\n\nAccount: ${formData.accountName}\nSort Code: ${formData.sortCode}\nAccount Number: ${formData.accountNumber}`;
+        } else {
+          successMessage = `${formData.firstName} ${formData.lastName}'s ${formData.asset.toUpperCase()} address has been successfully added to your address book.\n\nAddress: ${formData.withdrawAddress.substring(0, 20)}...`;
+        }
+        
+        // Call success callback or show alert
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess(result.data || result);
+          }, 1000);
+        } else {
+          // Show success alert if no callback
+          setTimeout(() => {
+            Alert.alert(
+              'Address Added Successfully! ✅',
+              successMessage,
+              [{ 
+                text: 'OK',
+                onPress: () => {
+                  // Reset form
+                  resetForm();
+                }
+              }]
+            );
+          }, 1000);
+        }
+      } else {
+        throw new Error(result?.message || result?.error || 'Invalid API response');
+      }
+
+    } catch (error) {
+      log('❌ Error submitting address:', error);
+      console.error('❌ CONSOLE: Error submitting address:', error);
+      
+      let errorMsg = 'Failed to add address. Please try again.';
+      if (error.message) {
+        errorMsg = error.message;
+      } else if (error.error) {
+        errorMsg = error.error;
+      }
+      
+      setSubmitError(errorMsg);
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Reset form to initial state
+  let resetForm = () => {
+    setCurrentStep(1);
+    setFormData({
+      recipient: '',
+      firstName: '',
+      lastName: '',
+      asset: selectedAsset || '',
+      withdrawAddress: '',
+      destinationType: '',
+      exchangeName: '',
+      accountName: '',
+      sortCode: '',
+      accountNumber: ''
+    });
+    setErrorMessage('');
+    setSubmitError('');
+    setSubmitStatus('');
+  };
+
+  // Render different steps
+  let renderStep = () => {
+    switch (currentStep) {
+      case 1: // Recipient
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepQuestion}>Please tell us who will receive this withdraw. It has 3 options:</Text>
+            
+            <RadioButton.Group
+              onValueChange={(value) => handleInputChange('recipient', value)}
+              value={formData.recipient}
+            >
+              {[
+                { id: 'myself', text: 'Myself' },
+                { id: 'another_person', text: 'Another Person' },
+                { id: 'another_business', text: 'Another Business' }
+              ].map((option) => (
+                <TouchableOpacity 
+                  key={option.id} 
+                  style={[
+                    styles.radioOption,
+                    formData.recipient === option.id && styles.selectedRadioOption
+                  ]}
+                  onPress={() => handleInputChange('recipient', option.id)}
+                >
+                  <RadioButton value={option.id} />
+                  <Text style={[
+                    styles.radioText,
+                    formData.recipient === option.id && styles.selectedRadioText
+                  ]}>
+                    {option.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </RadioButton.Group>
+          </View>
+        );
+
+      case 2: // Details
+        return (
+          <View style={styles.stepContainer}>
+            {formData.recipient === 'myself' ? (
+              // Auto-filled for myself (but editable)
+              <>
+                <Text style={styles.stepQuestion}>
+                  Your information has been auto-filled from your profile:
+                </Text>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>First Name</Text>
+                  <TextInput
+                    style={[styles.input, styles.autoFilledInput]}
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChangeText={(value) => handleInputChange('firstName', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Last Name</Text>
+                  <TextInput
+                    style={[styles.input, styles.autoFilledInput]}
+                    placeholder="Enter last name"
+                    value={formData.lastName}
+                    onChangeText={(value) => handleInputChange('lastName', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
+                
+                <Text style={styles.helperText}>
+                  ℹ️ Auto-filled from your account. You can edit if needed.
+                </Text>
+              </>
+            ) : formData.recipient === 'another_person' && !manualInput ? (
+              // Choice for another person: contacts or manual
+              <>
+                <Text style={styles.stepQuestion}>
+                  How would you like to add the recipient's details?
+                </Text>
+                
+                <TouchableOpacity
+                  style={styles.contactOptionButton}
+                  onPress={() => setManualInput(true)}
+                >
+                  <Text style={styles.contactOptionIcon}>✏️</Text>
+                  <View style={styles.contactOptionTextContainer}>
+                    <Text style={styles.contactOptionTitle}>Enter Manually</Text>
+                    <Text style={styles.contactOptionSubtitle}>Type the recipient's name</Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <Text style={styles.orDivider}>OR</Text>
+                
+                <TouchableOpacity
+                  style={styles.contactOptionButton}
+                  onPress={openContactPicker}
+                >
+                  <Text style={styles.contactOptionIcon}>📱</Text>
+                  <View style={styles.contactOptionTextContainer}>
+                    <Text style={styles.contactOptionTitle}>Select from Contacts</Text>
+                    <Text style={styles.contactOptionSubtitle}>Choose from your phone contacts</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Manual input for another_person or another_business
+              <>
+                <Text style={styles.stepQuestion}>
+                  {formData.recipient === 'another_business' 
+                    ? 'Please supply the company name of the recipient. This must match exactly.'
+                    : 'Please supply the firstname & lastname of the recipient. These must match exactly.'}
+                </Text>
+                
+                {formData.recipient === 'another_person' && (
+                  <TouchableOpacity
+                    style={styles.backToChoiceButton}
+                    onPress={() => setManualInput(false)}
+                  >
+                    <Text style={styles.backToChoiceText}>← Back to selection</Text>
+                  </TouchableOpacity>
+                )}
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>
+                    {formData.recipient === 'another_business' ? 'Company Name' : 'First Name'}
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={formData.recipient === 'another_business' ? 'Enter company name' : 'Enter first name'}
+                    value={formData.firstName}
+                    onChangeText={(value) => handleInputChange('firstName', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                {formData.recipient !== 'another_business' && (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Last Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter last name"
+                      value={formData.lastName}
+                      onChangeText={(value) => handleInputChange('lastName', value)}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        );
+
+      case 3: // Asset
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepQuestion}>What asset are you withdrawing?</Text>
+            
+            <View style={styles.assetGrid}>
+              {assetOptions.map((asset) => (
+                <TouchableOpacity
+                  key={asset.id}
+                  style={[
+                    styles.assetOption,
+                    formData.asset === asset.id && styles.selectedAssetOption
+                  ]}
+                  onPress={() => handleInputChange('asset', asset.id)}
+                >
+                  <Text style={[
+                    styles.assetText,
+                    formData.asset === asset.id && styles.selectedAssetText
+                  ]}>
+                    {asset.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+
+      case 4: // Destination
+        if (formData.asset.toLowerCase() === 'gbp') {
+          // GBP bank account form
+          return (
+            <View style={styles.stepContainer}>
+              <Text style={styles.stepQuestion}>Please provide the UK bank account details:</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Account Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="John Smith"
+                  value={formData.accountName}
+                  onChangeText={(value) => handleInputChange('accountName', value)}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Sort Code</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="12-34-56"
+                  value={formData.sortCode}
+                  onChangeText={(value) => {
+                    // Auto-format sort code
+                    let formatted = value.replace(/\D/g, '').substring(0, 6);
+                    if (formatted.length >= 2) {
+                      formatted = formatted.substring(0, 2) + '-' + formatted.substring(2);
+                    }
+                    if (formatted.length >= 5) {
+                      formatted = formatted.substring(0, 5) + '-' + formatted.substring(5);
+                    }
+                    handleInputChange('sortCode', formatted);
+                  }}
+                  keyboardType="numeric"
+                  maxLength={8}
+                />
+                <Text style={styles.inputHint}>Format: XX-XX-XX</Text>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Account Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="12345678"
+                  value={formData.accountNumber}
+                  onChangeText={(value) => handleInputChange('accountNumber', value.replace(/\D/g, '').substring(0, 8))}
+                  keyboardType="numeric"
+                  maxLength={8}
+                />
+                <Text style={styles.inputHint}>8 digits</Text>
+              </View>
+            </View>
+          );
+        } else {
+          // Crypto address form
+          return (
+            <View style={styles.stepContainer}>
+              <Text style={styles.stepQuestion}>What is the destination address for {formData.asset.toUpperCase()}?</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Withdrawal Address</Text>
+                <TextInput
+                  style={[styles.input, styles.addressInput]}
+                  placeholder={`Enter ${formData.asset.toUpperCase()} address`}
+                  value={formData.withdrawAddress}
+                  onChangeText={(value) => handleInputChange('withdrawAddress', value)}
+                  multiline
+                  numberOfLines={3}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                
+                <TouchableOpacity
+                  style={styles.qrButton}
+                  onPress={() => setShowQRScanner(true)}
+                >
+                  <Text style={styles.qrButtonText}>📷 Scan QR Code</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }
+
+      case 5: // Wallet
+        // This step is skipped for GBP (handled in goToNextStep)
+        if (formData.asset.toLowerCase() === 'gbp') {
+          return null;
+        }
+        
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepQuestion}>Where is this address from?</Text>
+            
+            <RadioButton.Group
+              onValueChange={(value) => handleInputChange('destinationType', value)}
+              value={formData.destinationType}
+            >
+              {[
+                { id: 'personal', text: 'My Personal Wallet' },
+                { id: 'exchange', text: 'An Exchange' }
+              ].map((option) => (
+                <TouchableOpacity 
+                  key={option.id} 
+                  style={[
+                    styles.radioOption,
+                    formData.destinationType === option.id && styles.selectedRadioOption
+                  ]}
+                  onPress={() => handleInputChange('destinationType', option.id)}
+                >
+                  <RadioButton value={option.id} />
+                  <Text style={[
+                    styles.radioText,
+                    formData.destinationType === option.id && styles.selectedRadioText
+                  ]}>
+                    {option.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </RadioButton.Group>
+
+            {formData.destinationType === 'exchange' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Exchange Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Binance, Coinbase"
+                  value={formData.exchangeName}
+                  onChangeText={(value) => handleInputChange('exchangeName', value)}
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
+          </View>
+        );
+
+      case 6: // Summary
+        return (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepQuestion}>Please review your information:</Text>
+            
+            <View style={styles.summaryContainer}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Recipient:</Text>
+                <Text style={styles.summaryValue}>{formData.recipient}</Text>
+              </View>
+              
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Name:</Text>
+                <Text style={styles.summaryValue}>{formData.firstName} {formData.lastName}</Text>
+              </View>
+              
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Asset:</Text>
+                <Text style={styles.summaryValue}>{formData.asset.toUpperCase()}</Text>
+              </View>
+              
+              {formData.asset.toLowerCase() === 'gbp' ? (
+                <>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Account Name:</Text>
+                    <Text style={styles.summaryValue}>{formData.accountName}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Sort Code:</Text>
+                    <Text style={styles.summaryValue}>{formData.sortCode}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Account Number:</Text>
+                    <Text style={styles.summaryValue}>{formData.accountNumber}</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Address:</Text>
+                    <Text style={[styles.summaryValue, styles.addressText]}>
+                      {formData.withdrawAddress}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Type:</Text>
+                    <Text style={styles.summaryValue}>{formData.destinationType}</Text>
+                  </View>
+                  {formData.destinationType === 'exchange' && (
+                    <View style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Exchange:</Text>
+                      <Text style={styles.summaryValue}>{formData.exchangeName}</Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+
+            <View style={styles.warningCard}>
+              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
+              <Text style={styles.warningText}>
+                Please verify {formData.asset.toLowerCase() === 'gbp' ? 'the bank account details are' : 'the wallet address is'} correct. 
+                {formData.asset.toLowerCase() !== 'gbp' && ' Sending to an incorrect address may result in permanent loss of funds.'}
+              </Text>
+            </View>
+
+            <Text style={styles.confirmationText}>
+              By adding this {formData.asset.toLowerCase() === 'gbp' ? 'bank account' : 'address'}, you confirm that all information above is accurate.
+            </Text>
+
+            {submitStatus && (
+              <View style={styles.successCard}>
+                <Text style={styles.successText}>✅ {submitStatus}</Text>
+              </View>
+            )}
+
+            {submitError && (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorText}>❌ {submitError}</Text>
+              </View>
+            )}
+
+            <View style={styles.submitButtonWrapper}>
+              <StandardButton
+                title={isSubmitting ? "Adding..." : "Add to Address Book"}
+                onPress={submitAddress}
+                style={styles.submitButton}
+                textStyle={styles.submitButtonText}
+                disabled={isSubmitting}
+              />
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      {showHeader && (
+        <>
+          <Text style={styles.title}>Address Book</Text>
+          <Text style={styles.subtitle}>Add a new withdrawal address</Text>
+        </>
+      )}
+
+      {/* Progress Indicator */}
+      <View style={styles.progressWrapper}>
+        <Text style={styles.progressText}>
+          Step {currentStep} of {steps.length}
+        </Text>
+        <View style={styles.progressBar}>
+          {steps.map((step) => (
+            <View
+              key={step.id}
+              style={[
+                styles.progressSegment,
+                step.id <= currentStep && styles.progressSegmentActive
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Step Title */}
+      <View style={styles.stepHeader}>
+        <Text style={styles.stepTitle}>{steps[currentStep - 1].title}</Text>
+        <Text style={styles.stepSubtitle}>{steps[currentStep - 1].subtitle}</Text>
+      </View>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <View style={styles.errorWrapper}>
+          <Text style={styles.errorMessageText}>{errorMessage}</Text>
+        </View>
+      )}
+
+      {/* Step Content */}
+      <ScrollView style={styles.stepContent}>
+        {renderStep()}
+      </ScrollView>
+
+      {/* Navigation Buttons */}
+      <View style={styles.navigationWrapper}>
+        {currentStep > 1 && (
+          <TouchableOpacity
+            style={[styles.navButton, styles.backButton]}
+            onPress={goToPreviousStep}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+        )}
+        
+        {currentStep === 1 && onCancel && (
+          <TouchableOpacity
+            style={[styles.navButton, styles.backButton]}
+            onPress={onCancel}
+          >
+            <Text style={styles.backButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={{ flex: 1 }} />
+
+        {!isLastStep() && (
+          <TouchableOpacity
+            style={[styles.navButton, styles.nextButton]}
+            onPress={goToNextStep}
+          >
+            <Text style={styles.nextButtonText}>Next →</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScanner
+          visible={showQRScanner}
+          onClose={() => setShowQRScanner(false)}
+          onScanSuccess={handleQRCodeScanned}
+        />
+      )}
+
+      {/* Contact Picker Modal */}
+      <ContactPickerModal
+        visible={showContactPicker}
+        onSelect={handleContactSelect}
+        onCancel={handleContactPickerCancel}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+  title: {
+    fontSize: normaliseFont(24),
+    fontWeight: 'bold',
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: scaledHeight(20),
+    marginBottom: scaledHeight(8),
+  },
+  subtitle: {
+    fontSize: normaliseFont(16),
+    color: colors.mediumGray,
+    textAlign: 'center',
+    marginBottom: scaledHeight(20),
+  },
+  progressWrapper: {
+    paddingHorizontal: scaledWidth(20),
+    marginBottom: scaledHeight(20),
+  },
+  progressText: {
+    fontSize: normaliseFont(14),
+    color: colors.mediumGray,
+    textAlign: 'center',
+    marginBottom: scaledHeight(8),
+  },
+  progressBar: {
+    flexDirection: 'row',
+    height: scaledHeight(4),
+    backgroundColor: colors.lightGray,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressSegment: {
+    flex: 1,
+    backgroundColor: colors.lightGray,
+    marginRight: scaledWidth(4),
+  },
+  progressSegmentActive: {
+    backgroundColor: colors.primary,
+  },
+  stepHeader: {
+    paddingHorizontal: scaledWidth(20),
+    marginBottom: scaledHeight(16),
+  },
+  stepTitle: {
+    fontSize: normaliseFont(20),
+    fontWeight: '600',
+    color: colors.darkGray,
+    marginBottom: scaledHeight(4),
+  },
+  stepSubtitle: {
+    fontSize: normaliseFont(14),
+    color: colors.mediumGray,
+  },
+  errorWrapper: {
+    backgroundColor: '#fee',
+    padding: scaledWidth(12),
+    marginHorizontal: scaledWidth(20),
+    marginBottom: scaledHeight(16),
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.danger,
+  },
+  errorMessageText: {
+    color: '#c33',
+    fontSize: normaliseFont(14),
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepContainer: {
+    paddingHorizontal: scaledWidth(20),
+    paddingBottom: scaledHeight(20),
+  },
+  stepQuestion: {
+    fontSize: normaliseFont(16),
+    color: colors.darkGray,
+    marginBottom: scaledHeight(20),
+    lineHeight: scaledHeight(24),
+  },
+  
+  // Radio buttons
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: scaledWidth(12),
+    marginBottom: scaledHeight(8),
+    backgroundColor: colors.lightBackground,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedRadioOption: {
+    borderColor: colors.primary,
+    backgroundColor: '#e8f4fd',
+  },
+  radioText: {
+    fontSize: normaliseFont(16),
+    color: colors.darkGray,
+    marginLeft: scaledWidth(8),
+  },
+  selectedRadioText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  // Input fields
+  inputGroup: {
+    marginBottom: scaledHeight(16),
+  },
+  inputLabel: {
+    fontSize: normaliseFont(14),
+    fontWeight: '600',
+    color: colors.darkGray,
+    marginBottom: scaledHeight(8),
+  },
+  input: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 8,
+    padding: scaledWidth(12),
+    fontSize: normaliseFont(16),
+    color: colors.darkGray,
+  },
+  inputHint: {
+    fontSize: normaliseFont(12),
+    color: colors.mediumGray,
+    marginTop: scaledHeight(4),
+  },
+  addressInput: {
+    minHeight: scaledHeight(80),
+    textAlignVertical: 'top',
+    fontFamily: 'monospace',
+  },
+
+  // Asset grid
+  assetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  assetOption: {
+    width: '48%',
+    padding: scaledWidth(16),
+    marginBottom: scaledHeight(12),
+    backgroundColor: colors.lightBackground,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  selectedAssetOption: {
+    borderColor: colors.primary,
+    backgroundColor: '#e8f4fd',
+  },
+  assetText: {
+    fontSize: normaliseFont(14),
+    color: colors.darkGray,
+    textAlign: 'center',
+  },
+  selectedAssetText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  // QR Button
+  qrButton: {
+    backgroundColor: colors.primary,
+    padding: scaledWidth(12),
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: scaledHeight(12),
+  },
+  qrButtonText: {
+    color: colors.white,
+    fontSize: normaliseFont(16),
+    fontWeight: '600',
+  },
+
+  // Summary
+  summaryContainer: {
+    backgroundColor: colors.lightBackground,
+    borderRadius: 8,
+    padding: scaledWidth(16),
+    marginBottom: scaledHeight(16),
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: scaledHeight(12),
+    paddingBottom: scaledHeight(12),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
+  },
+  summaryLabel: {
+    fontSize: normaliseFont(14),
+    color: colors.darkGray,
+    flex: 2,
+  },
+  summaryValue: {
+    fontSize: normaliseFont(14),
+    color: colors.darkGray,
+    fontWeight: '600',
+    flex: 3,
+    textAlign: 'right',
+  },
+  addressText: {
+    fontFamily: 'monospace',
+    fontSize: normaliseFont(12),
+    flexWrap: 'wrap',
+  },
+
+  // Warning card
+  warningCard: {
+    backgroundColor: '#fff3cd',
+    padding: scaledWidth(15),
+    borderRadius: 8,
+    marginVertical: scaledHeight(10),
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  warningTitle: {
+    fontSize: normaliseFont(16),
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: scaledHeight(5),
+  },
+  warningText: {
+    fontSize: normaliseFont(14),
+    color: '#856404',
+    lineHeight: scaledHeight(20),
+  },
+  
+  confirmationText: {
+    fontSize: normaliseFont(14),
+    color: colors.mediumGray,
+    textAlign: 'center',
+    marginVertical: scaledHeight(10),
+    fontStyle: 'italic',
+  },
+
+  // Success/Error cards
+  successCard: {
+    backgroundColor: '#d4edda',
+    padding: scaledWidth(12),
+    borderRadius: 8,
+    marginBottom: scaledHeight(12),
+    borderLeftWidth: 4,
+    borderLeftColor: '#28a745',
+  },
+  successText: {
+    color: '#155724',
+    fontSize: normaliseFont(14),
+    textAlign: 'center',
+  },
+  errorCard: {
+    backgroundColor: '#f8d7da',
+    padding: scaledWidth(12),
+    borderRadius: 8,
+    marginBottom: scaledHeight(12),
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc3545',
+  },
+  errorText: {
+    color: '#721c24',
+    fontSize: normaliseFont(14),
+    textAlign: 'center',
+  },
+
+  // Submit button
+  submitButtonWrapper: {
+    marginTop: scaledHeight(10),
+  },
+  submitButton: {
+    backgroundColor: colors.success,
+  },
+  submitButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+  },
+
+  // Navigation
+  navigationWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: scaledWidth(20),
+    paddingVertical: scaledHeight(16),
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray,
+  },
+  navButton: {
+    paddingHorizontal: scaledWidth(24),
+    paddingVertical: scaledHeight(12),
+    borderRadius: 8,
+    minWidth: scaledWidth(100),
+    alignItems: 'center',
+  },
+  backButton: {
+    backgroundColor: colors.lightGray,
+  },
+  backButtonText: {
+    color: colors.darkGray,
+    fontSize: normaliseFont(16),
+    fontWeight: '600',
+  },
+  nextButton: {
+    backgroundColor: colors.primary,
+  },
+  nextButtonText: {
+    color: colors.white,
+    fontSize: normaliseFont(16),
+    fontWeight: '600',
+  },
+
+  // Contact selection styles
+  autoFilledInput: {
+    backgroundColor: '#f0f8ff',
+    borderColor: colors.primary,
+    borderWidth: 1,
+  },
+  helperText: {
+    fontSize: normaliseFont(12),
+    color: colors.mediumGray,
+    marginTop: scaledHeight(8),
+    fontStyle: 'italic',
+  },
+  contactOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: scaledWidth(16),
+    marginBottom: scaledHeight(12),
+    backgroundColor: colors.lightBackground,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.lightGray,
+  },
+  contactOptionIcon: {
+    fontSize: normaliseFont(32),
+    marginRight: scaledWidth(16),
+  },
+  contactOptionTextContainer: {
+    flex: 1,
+  },
+  contactOptionTitle: {
+    fontSize: normaliseFont(16),
+    fontWeight: '600',
+    color: colors.darkGray,
+    marginBottom: scaledHeight(4),
+  },
+  contactOptionSubtitle: {
+    fontSize: normaliseFont(13),
+    color: colors.mediumGray,
+  },
+  orDivider: {
+    fontSize: normaliseFont(14),
+    color: colors.mediumGray,
+    textAlign: 'center',
+    marginVertical: scaledHeight(8),
+    fontWeight: '600',
+  },
+  backToChoiceButton: {
+    marginBottom: scaledHeight(16),
+    padding: scaledWidth(8),
+  },
+  backToChoiceText: {
+    fontSize: normaliseFont(14),
+    color: colors.primary,
+    fontWeight: '600',
+  },
+});
+
+export default AddressBookForm;

@@ -1,6 +1,6 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
+import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView, Platform } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -353,7 +353,7 @@ let styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     borderColor: colors.greyedOutIcon,
-    fontSize: normaliseFont(14),
+    fontSize: Platform.OS === 'android' ? normaliseFont(12) : normaliseFont(14),
   },
   emailCodeBox: {
     marginTop: scaledHeight(30),

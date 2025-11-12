@@ -221,7 +221,15 @@ let AddressBookPicker = ({
       if (selectedValue && onAddressSelect) {
         // Find the full address details
         let selectedAddress = addressesForAsset.find(addr => addr.address === selectedValue);
-        onAddressSelect(selectedValue, selectedAddress);
+        if (selectedAddress) {
+          // Pass the actual wallet address and the full address object with UUID
+          onAddressSelect(selectedValue, {
+            ...selectedAddress,
+            // Ensure UUID is available for API calls
+            id: selectedAddress.id || selectedAddress.rawData?.uuid,
+            rawData: selectedAddress.rawData
+          });
+        }
       }
     } catch (error) {
       // Handle error silently

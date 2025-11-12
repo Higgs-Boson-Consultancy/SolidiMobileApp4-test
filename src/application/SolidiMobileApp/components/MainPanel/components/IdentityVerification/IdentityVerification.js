@@ -18,6 +18,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import SecureAppBridge from 'src/util/SecureAppBridge';
 
 // Other imports
 import _ from 'lodash';
@@ -306,6 +307,10 @@ let IdentityVerification = () => {
       log('Taking photo for document category:', documentCategory);
       console.log('🎥 Take Photo button pressed for:', documentCategory);
       
+      // Notify SecureAppBridge that camera is about to open
+      console.log('📸 [CAMERA] Notifying SecureAppBridge that camera is opening');
+      SecureAppBridge.setCameraActive(true);
+      
       // Check camera permission first
       log('Checking camera permission...');
       const hasPermission = await checkCameraPermission();
@@ -314,6 +319,8 @@ let IdentityVerification = () => {
       if (!hasPermission) {
         let message = 'Camera permission is required to take photos. Please enable it in settings.';
         log('Permission denied, setting message:', message);
+        // Notify SecureAppBridge that camera is closed
+        SecureAppBridge.setCameraActive(false);
         if (documentCategory === 'identity') {
           setUploadPhoto1Message(message);
         } else if (documentCategory === 'address') {
@@ -410,9 +417,15 @@ let IdentityVerification = () => {
       
       triggerRender(renderCount + 1); // Ensure re-render
       
+      // Notify SecureAppBridge that camera is closed
+      console.log('📸 [CAMERA] Notifying SecureAppBridge that camera is closed');
+      SecureAppBridge.setCameraActive(false);
+      
     } catch (error) {
       console.error('Camera function error:', error);
       let message = 'Camera unavailable. Please try uploading a photo instead.';
+      // Notify SecureAppBridge that camera is closed
+      SecureAppBridge.setCameraActive(false);
       if (documentCategory === 'identity') {
         setUploadPhoto1Message(message);
       } else if (documentCategory === 'address') {
@@ -455,6 +468,10 @@ let IdentityVerification = () => {
       log('Selecting photo from iPhone photo gallery...');
       console.log('📱 [PHOTO GALLERY] Opening photo gallery for:', documentCategory);
       
+      // Notify SecureAppBridge that photo picker is about to open
+      console.log('📸 [GALLERY] Notifying SecureAppBridge that photo gallery is opening');
+      SecureAppBridge.setCameraActive(true);
+      
       // Show loading message to indicate button press was detected
       if (documentCategory === 'identity') {
         setUploadPhoto1Message('Opening photo gallery...');
@@ -475,6 +492,8 @@ let IdentityVerification = () => {
       // Check if user is still logged in
       if (!appState.user.isAuthenticated) {
         console.log('[WARNING] User logged out during photo gallery operation');
+        // Notify SecureAppBridge that photo gallery is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -489,6 +508,8 @@ let IdentityVerification = () => {
         } else if (documentCategory === 'address') {
           setUploadPhoto2Message('');
         }
+        // Notify SecureAppBridge that photo gallery is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -501,6 +522,8 @@ let IdentityVerification = () => {
         } else if (documentCategory === 'address') {
           setUploadPhoto2Message(errorMsg);
         }
+        // Notify SecureAppBridge that photo gallery is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -528,6 +551,11 @@ let IdentityVerification = () => {
       }
       
       triggerRender(renderCount + 1); // Ensure re-render
+      
+      // Notify SecureAppBridge that photo gallery is closed
+      console.log('📸 [GALLERY] Notifying SecureAppBridge that photo gallery is closed');
+      SecureAppBridge.setCameraActive(false);
+      
     } catch (err) {
       console.error('Photo gallery error:', err);
       let message = 'Error selecting photo from gallery. Please try again.';
@@ -536,12 +564,19 @@ let IdentityVerification = () => {
       } else if (documentCategory == 'address') {
         setUploadPhoto2Message(message);
       }
+      
+      // Notify SecureAppBridge that photo gallery is closed
+      SecureAppBridge.setCameraActive(false);
     }
   }
 
 
   let uploadPhoto = async (documentCategory) => {
     console.log('[DEBUG] uploadPhoto called with documentCategory:', documentCategory);
+    
+    // Notify SecureAppBridge that photo picker/upload is about to start
+    console.log('📸 [UPLOAD] Notifying SecureAppBridge that photo picker is opening');
+    SecureAppBridge.setCameraActive(true);
     
     try {
       let documentType;
@@ -564,6 +599,8 @@ let IdentityVerification = () => {
           let msg2 = `Error: This document (${description}) has already been uploaded as the address document. Please choose a different identity document.`;
           setUploadPhoto1Message('');
           setErrorMessage(msg2);
+          // Notify SecureAppBridge that picker is closed
+          SecureAppBridge.setCameraActive(false);
           return;
         }
         
@@ -587,6 +624,8 @@ let IdentityVerification = () => {
           let msg2 = `Error: This document (${description}) has already been uploaded as the identity document. Please choose a different address document.`;
           setUploadPhoto2Message('');
           setErrorMessage(msg2);
+          // Notify SecureAppBridge that picker is closed
+          SecureAppBridge.setCameraActive(false);
           return;
         }
         
@@ -597,6 +636,8 @@ let IdentityVerification = () => {
       } else {
         let msg = `Unrecognised document type: ${documentCategory}`;
         console.error('[ERROR]', msg);
+        // Notify SecureAppBridge that picker is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -611,6 +652,8 @@ let IdentityVerification = () => {
         } else if (documentCategory == 'address') {
           setUploadPhoto2Message(msg);
         }
+        // Notify SecureAppBridge that picker is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -622,6 +665,8 @@ let IdentityVerification = () => {
         } else if (documentCategory == 'address') {
           setUploadPhoto2Message(msg);
         }
+        // Notify SecureAppBridge that picker is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -633,6 +678,8 @@ let IdentityVerification = () => {
         } else if (documentCategory == 'address') {
           setUploadPhoto2Message(msg);
         }
+        // Notify SecureAppBridge that picker is closed
+        SecureAppBridge.setCameraActive(false);
         return;
       }
       
@@ -727,6 +774,10 @@ let IdentityVerification = () => {
       
       console.log('🔄 [RENDER] Render triggered - auth status:', !!appState.user.isAuthenticated);
       
+      // Notify SecureAppBridge that picker is closed
+      console.log('📸 [UPLOAD] Notifying SecureAppBridge that photo picker is closed');
+      SecureAppBridge.setCameraActive(false);
+      
 
       
     } catch (error) {
@@ -746,7 +797,8 @@ let IdentityVerification = () => {
         setAddressUploadCompleted(false); // Reset completion state
       }
       
-
+      // Notify SecureAppBridge that picker is closed
+      SecureAppBridge.setCameraActive(false);
     }
   }
 

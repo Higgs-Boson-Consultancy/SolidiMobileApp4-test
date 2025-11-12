@@ -269,7 +269,7 @@ let bypassAuthentication = false; // Enable proper authentication flow for persi
 import appTier from 'src/application/appTier'; // dev / stag / prod.
 
 // States that are always accessible without authentication
-const publicAccessStates = ['Register', 'RegistrationCompletion', 'Login', 'Explore', 'EmailVerification', 'PhoneVerification', 'AccountReview'];
+const publicAccessStates = ['Register', 'RegistrationCompletion', 'Login', 'Explore', 'EmailVerification', 'PhoneVerification', 'AccountReview', 'RiskSummary'];
 
 // Settings: Initial page
 // Dynamic initial state based on authentication - will be determined at runtime
@@ -5137,9 +5137,13 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         console.log('📋 CONSOLE: Final API parameters:', JSON.stringify(params, null, 2));
         console.log('🔧 CONSOLE: Asset type:', asset);
         console.log('🔧 CONSOLE: Volume:', volume);
-        console.log('🔧 CONSOLE: Address:', address);
+        console.log('🔧 CONSOLE: Address (should be UUID):', address);
+        console.log('🔧 CONSOLE: Address type:', typeof address);
+        console.log('🔧 CONSOLE: Address length:', address ? address.length : 'null/undefined');
+        console.log('🔧 CONSOLE: Is UUID format (has dashes)?:', address ? address.includes('-') : false);
         console.log('🔧 CONSOLE: Priority:', priority);
         console.log('🔧 CONSOLE: Function name:', functionName);
+        console.log('⚠️ CONSOLE: IMPORTANT - Address must be UUID from address book, not wallet address!');
         console.log('🌐 CONSOLE: ===== END API ENDPOINT DEBUG =====');
         
         let data = await this.state.privateMethod({

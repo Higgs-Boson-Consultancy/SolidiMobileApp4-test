@@ -237,16 +237,20 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
       name: address.name,
       address: actualAddress,
       assetType: address.assetType,
-      type: address.type
+      type: address.type,
+      uuid: address.uuid,
+      id: address.id
     });
     
     // Call the selection callback
     if (onSelectAddress) {
       onSelectAddress(actualAddress, {
+        id: address.uuid || address.id, // UUID is required for API calls
         name: address.name,
         assetType: address.assetType,
         type: address.type,
-        fullData: addressData
+        fullData: addressData,
+        rawData: address // Include the full address object with uuid
       });
     }
     

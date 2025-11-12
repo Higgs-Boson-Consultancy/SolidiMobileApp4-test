@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Alert, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Text, Button, TextInput, Card, useTheme, Checkbox } from 'react-native-paper';
+import { View, Alert, TouchableOpacity, StyleSheet, Platform, Modal, ScrollView, Pressable } from 'react-native';
+import { Text, Button, TextInput, Card, useTheme, Checkbox, RadioButton, Portal, Divider } from 'react-native-paper';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import AppStateContext from 'src/application/data';
 import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
@@ -42,6 +42,12 @@ const Register = () => {
   const [citizenship, setCitizenship] = useState('');
   const [countryCode, setCountryCode] = useState('+44');
   
+  // Modal states for pickers
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [showCitizenshipModal, setShowCitizenshipModal] = useState(false);
+  const [showCountryCodeModal, setShowCountryCodeModal] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
+  
   // Date picker state
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateOfBirthDate, setDateOfBirthDate] = useState(new Date(1990, 0, 1)); // Default: Jan 1, 1990
@@ -50,6 +56,7 @@ const Register = () => {
   const [addressList, setAddressList] = useState([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [showManualAddress, setShowManualAddress] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   // Options lists
   const genderOptions = [
@@ -124,115 +131,26 @@ const Register = () => {
   // Dropdown handlers
   const showGenderPicker = () => {
     console.log('🔍 showGenderPicker called');
-    const buttons = genderOptions.map(option => ({
-      text: option.label,
-      onPress: () => {
-        console.log('🔍 Gender selected:', option.value);
-        setGender(option.value);
-        setUserData({ ...userData, gender: option.value });
-      }
-    }));
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    Alert.alert('Select Gender', 'Choose your gender:', buttons);
+    setShowGenderModal(true);
+  };
+  
+  const selectGender = (option) => {
+    console.log('🔍 Gender selected:', option.value);
+    setGender(option.value);
+    setUserData({ ...userData, gender: option.value });
+    setShowGenderModal(false);
   };
 
   const showCitizenshipPicker = () => {
     console.log('🔍 showCitizenshipPicker called');
-    console.log('🔍 citizenshipOptions length:', citizenshipOptions.length);
-    
-    // Test with just 3 countries first to make sure Alert.alert works
-    const testCountries = [
-      { label: 'United Kingdom', value: 'GB' },
-      { label: 'United States', value: 'US' },
-      { label: 'Canada', value: 'CA' }
-    ];
-    
-    const buttons = testCountries.map(option => ({
-      text: option.label,
-      onPress: () => {
-        console.log('🔍 Citizenship selected:', option.value, option.label);
-        setCitizenship(option.value);
-        setUserData({ ...userData, citizenship: option.value });
-      }
-    }));
-    
-    // Add a "More Countries" option
-    buttons.push({ 
-      text: 'More Countries...', 
-      onPress: () => showMoreCitizenshipOptions()
-    });
-    
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    console.log('🔍 About to show alert with buttons:', buttons.map(b => b.text));
-    Alert.alert('Select Country', 'Choose your country of citizenship:', buttons);
+    setShowCitizenshipModal(true);
   };
-
-  const showMoreCitizenshipOptions = () => {
-    console.log('🔍 showMoreCitizenshipOptions called');
-    
-    // Show a selection of the remaining countries from our full list
-    const moreCountries = [
-      { label: 'Australia', value: 'AU' },
-      { label: 'Germany', value: 'DE' },
-      { label: 'France', value: 'FR' },
-      { label: 'Spain', value: 'ES' },
-      { label: 'Italy', value: 'IT' },
-      { label: 'Netherlands', value: 'NL' }
-    ];
-    
-    const buttons = moreCountries.map(option => ({
-      text: option.label,
-      onPress: () => {
-        console.log('🔍 Citizenship selected:', option.value, option.label);
-        setCitizenship(option.value);
-        setUserData({ ...userData, citizenship: option.value });
-      }
-    }));
-    
-    buttons.push({ 
-      text: 'Even More...', 
-      onPress: () => showEvenMoreCitizenshipOptions()
-    });
-    buttons.push({ 
-      text: '← Back to Main Countries', 
-      onPress: () => showCitizenshipPicker()
-    });
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    Alert.alert('More Countries', 'Choose your country of citizenship:', buttons);
-  };
-
-  const showEvenMoreCitizenshipOptions = () => {
-    console.log('🔍 showEvenMoreCitizenshipOptions called');
-    
-    // Show the rest of the countries
-    const evenMoreCountries = [
-      { label: 'Japan', value: 'JP' },
-      { label: 'South Korea', value: 'KR' },
-      { label: 'Singapore', value: 'SG' },
-      { label: 'Hong Kong', value: 'HK' },
-      { label: 'Switzerland', value: 'CH' },
-      { label: 'Austria', value: 'AT' }
-    ];
-    
-    const buttons = evenMoreCountries.map(option => ({
-      text: option.label,
-      onPress: () => {
-        console.log('🔍 Citizenship selected:', option.value, option.label);
-        setCitizenship(option.value);
-        setUserData({ ...userData, citizenship: option.value });
-      }
-    }));
-    
-    buttons.push({ 
-      text: '← Back to More Countries', 
-      onPress: () => showMoreCitizenshipOptions()
-    });
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    Alert.alert('Even More Countries', 'Choose your country of citizenship:', buttons);
+  
+  const selectCitizenship = (option) => {
+    console.log('🔍 Citizenship selected:', option.value, option.label);
+    setCitizenship(option.value);
+    setUserData({ ...userData, citizenship: option.value });
+    setShowCitizenshipModal(false);
   };
 
   // Date picker handler
@@ -253,7 +171,21 @@ const Register = () => {
   };
 
   const showDatePickerModal = () => {
-    setShowDatePicker(true);
+    console.log('📅 showDatePickerModal called');
+    setShowDateModal(true);
+  };
+
+  const onDateConfirm = (selectedDate) => {
+    setShowDateModal(false);
+    setDateOfBirthDate(selectedDate);
+    
+    // Format date as DD/MM/YYYY
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+    
+    setUserData({ ...userData, dateOfBirth: formattedDate });
   };
 
   // Postcode lookup using completely free API
@@ -418,18 +350,8 @@ const Register = () => {
   
   // Show dialog with list of addresses to choose from
   const showAddressSelectionDialog = (addresses) => {
-    const buttons = addresses.map((address, index) => ({
-      text: `${address.line1}${address.line2 ? ', ' + address.line2 : ''}`,
-      onPress: () => selectAddress(address)
-    }));
-    
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    Alert.alert(
-      'Select Your Address',
-      `Found ${addresses.length} addresses for this postcode:`,
-      buttons
-    );
+    setAddressList(addresses);
+    setShowAddressModal(true);
   };
   
   // Fill in the address fields when user selects an address
@@ -452,22 +374,14 @@ const Register = () => {
 
   const showCountryCodePicker = () => {
     console.log('🔍 showCountryCodePicker called');
-    console.log('🔍 countryCodeOptions:', countryCodeOptions);
-    
-    // Show all country codes (there are only 10, so should fit)
-    const buttons = countryCodeOptions.map(option => ({
-      text: option.label,
-      onPress: () => {
-        console.log('🔍 Country code selected:', option.value, option.label);
-        setCountryCode(option.value);
-        setUserData({ ...userData, countryCode: option.value });
-      }
-    }));
-    
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    
-    console.log('🔍 About to show country code alert with buttons:', buttons.map(b => b.text));
-    Alert.alert('Select Country Code', 'Choose your country code:', buttons);
+    setShowCountryCodeModal(true);
+  };
+  
+  const selectCountryCode = (option) => {
+    console.log('🔍 Country code selected:', option.value, option.label);
+    setCountryCode(option.value);
+    setUserData({ ...userData, countryCode: option.value });
+    setShowCountryCodeModal(false);
   };
 
   const submitRegisterRequest = async () => {
@@ -577,6 +491,7 @@ const Register = () => {
   }
 
   return (
+    <>
     <KeyboardAwareScrollView style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
       <Title>Create Account</Title>
       
@@ -673,17 +588,6 @@ const Register = () => {
                 right={<TextInput.Icon icon="chevron-down" />}
               />
             </TouchableOpacity>
-            
-            {showDatePicker && (
-              <DateTimePicker
-                value={dateOfBirthDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onDateChange}
-                maximumDate={new Date()} // Can't be born in the future
-                minimumDate={new Date(1900, 0, 1)} // Reasonable minimum date
-              />
-            )}
 
             {/* Citizenship Selector */}
             <TouchableOpacity onPress={showCitizenshipPicker} activeOpacity={0.7}>
@@ -919,6 +823,124 @@ const Register = () => {
 
       </View>
     </KeyboardAwareScrollView>
+    
+    {/* Gender Selection Modal */}
+      <Portal>
+        <Modal visible={showGenderModal} onDismiss={() => setShowGenderModal(false)} contentContainerStyle={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Gender</Text>
+            <Divider style={{ marginVertical: 10 }} />
+            <ScrollView style={{ maxHeight: 400 }}>
+              {genderOptions.map((option, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => selectGender(option)}
+                  style={styles.modalOption}
+                >
+                  <Text style={styles.modalOptionText}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Divider style={{ marginVertical: 10 }} />
+            <Button mode="outlined" onPress={() => setShowGenderModal(false)}>Cancel</Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      {/* Citizenship Selection Modal */}
+      <Portal>
+        <Modal visible={showCitizenshipModal} onDismiss={() => setShowCitizenshipModal(false)} contentContainerStyle={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Country of Citizenship</Text>
+            <Divider style={{ marginVertical: 10 }} />
+            <ScrollView style={{ maxHeight: 400 }}>
+              {citizenshipOptions.map((option, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => selectCitizenship(option)}
+                  style={styles.modalOption}
+                >
+                  <Text style={styles.modalOptionText}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Divider style={{ marginVertical: 10 }} />
+            <Button mode="outlined" onPress={() => setShowCitizenshipModal(false)}>Cancel</Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      {/* Country Code Selection Modal */}
+      <Portal>
+        <Modal visible={showCountryCodeModal} onDismiss={() => setShowCountryCodeModal(false)} contentContainerStyle={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Country Code</Text>
+            <Divider style={{ marginVertical: 10 }} />
+            <ScrollView style={{ maxHeight: 400 }}>
+              {countryCodeOptions.map((option, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => selectCountryCode(option)}
+                  style={styles.modalOption}
+                >
+                  <Text style={styles.modalOptionText}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Divider style={{ marginVertical: 10 }} />
+            <Button mode="outlined" onPress={() => setShowCountryCodeModal(false)}>Cancel</Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      {/* Address Selection Modal */}
+      <Portal>
+        <Modal visible={showAddressModal} onDismiss={() => setShowAddressModal(false)} contentContainerStyle={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Your Address</Text>
+            <Text style={styles.modalSubtitle}>Found {addressList.length} addresses for this postcode:</Text>
+            <Divider style={{ marginVertical: 10 }} />
+            <ScrollView style={{ maxHeight: 450 }}>
+              {addressList.map((address, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => {
+                    selectAddress(address);
+                    setShowAddressModal(false);
+                  }}
+                  style={styles.addressOption}
+                >
+                  <Text style={styles.addressOptionText}>
+                    {address.line1}
+                    {address.line2 ? `, ${address.line2}` : ''}
+                  </Text>
+                  <Text style={styles.addressOptionSubtext}>
+                    {[address.line3, address.city, address.postcode]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Divider style={{ marginVertical: 10 }} />
+            <Button mode="outlined" onPress={() => setShowAddressModal(false)}>Cancel</Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      {/* Date Picker Modal */}
+      <DatePicker
+        modal
+        open={showDateModal}
+        date={dateOfBirthDate}
+        mode="date"
+        maximumDate={new Date()}
+        minimumDate={new Date(1900, 0, 1)}
+        onConfirm={onDateConfirm}
+        onCancel={() => setShowDateModal(false)}
+        title="Select Date of Birth"
+      />
+    </>
   );
 };
 
@@ -934,6 +956,108 @@ const styles = StyleSheet.create({
   errorDisplayText: {
     color: '#c62828',
     fontSize: 14,
+  },
+  modalContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+    margin: 20,
+    borderRadius: 8,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalOption: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#000000',
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  addressOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  addressOptionText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  addressOptionSubtext: {
+    fontSize: 13,
+    color: '#555555',
+  },
+  navButton: {
+    padding: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  navButtonText: {
+    fontSize: 24,
+    color: '#1976D2',
+    fontWeight: 'bold',
+  },
+  calendarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 10,
+  },
+  calendarRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 5,
+  },
+  calendarDayHeader: {
+    width: 40,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarDayHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  calendarDay: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  calendarDaySelected: {
+    backgroundColor: '#1976D2',
+  },
+  calendarDayText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  calendarDayTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
 

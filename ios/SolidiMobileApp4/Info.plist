@@ -41,6 +41,8 @@
 	<string>You may want to browse your photo library and upload an existing photo of an identity verification document.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to authenticate and secure your app access.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to help you quickly select recipients for sending cryptocurrency.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FontAwesome.ttf</string>
@@ -57,10 +59,17 @@
 		<string>armv7</string>
 	</array>
 	<key>UIRequiresFullScreen</key>
-	<true/>
+	<false/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>

@@ -34,18 +34,30 @@ class IncomeTab extends Component {
 
   handleMultiSelect = (optionValue) => {
     console.log('🎯 [IncomeTab] handleMultiSelect: optionValue =', optionValue);
+    console.log('🎯 [IncomeTab] FULL props.data =', JSON.stringify(this.props.data, null, 2));
     const currentValues = this.props.data.selectedOptions || [];
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
+    
     console.log('🎯 [IncomeTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [IncomeTab] handleMultiSelect: multipleChoice =', multipleChoice);
+    console.log('🎯 [IncomeTab] handleMultiSelect: this.props.data.multiple_choice RAW VALUE =', this.props.data.multiple_choice);
     console.log('🎯 [IncomeTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
     console.log('🎯 [IncomeTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
-    if (currentValues.includes(optionValue)) {
-      newValues = currentValues.filter(value => value !== optionValue);
-      console.log('🎯 [IncomeTab] handleMultiSelect: removing option, newValues =', newValues);
+    if (multipleChoice) {
+      // Multi-select behavior (checkbox)
+      if (currentValues.includes(optionValue)) {
+        newValues = currentValues.filter(value => value !== optionValue);
+        console.log('🎯 [IncomeTab] handleMultiSelect: removing option, newValues =', newValues);
+      } else {
+        newValues = [...currentValues, optionValue];
+        console.log('🎯 [IncomeTab] handleMultiSelect: adding option, newValues =', newValues);
+      }
     } else {
-      newValues = [...currentValues, optionValue];
-      console.log('🎯 [IncomeTab] handleMultiSelect: adding option, newValues =', newValues);
+      // Single-select behavior (radio button)
+      newValues = [optionValue];
+      console.log('🎯 [IncomeTab] handleMultiSelect: single-select, newValues =', newValues);
     }
     
     console.log('🎯 [IncomeTab] handleMultiSelect: final newValues =', newValues);
@@ -65,11 +77,18 @@ class IncomeTab extends Component {
   renderOptions = () => {
     const selectedValues = this.props.data.selectedOptions || [];
     const optionsToDisplay = this.getOptionsToDisplay();
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
+    const defaultSubtitle = multipleChoice ? 'Select all that apply' : 'Select one option';
+    const sectionSubtitle = this.props.data.prompt || defaultSubtitle;
+    
+    console.log('🎯 [IncomeTab] renderOptions - multiple_choice =', this.props.data.multiple_choice);
+    console.log('🎯 [IncomeTab] renderOptions - multipleChoice (computed) =', multipleChoice);
+    console.log('🎯 [IncomeTab] renderOptions - sectionSubtitle =', sectionSubtitle);
     
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Income</Text>
-        <Text style={styles.sectionSubtitle}>Select all that apply</Text>
+        <Text style={styles.sectionTitle}>{this.props.data.description || 'Income'}</Text>
+        <Text style={styles.sectionSubtitle}>{sectionSubtitle}</Text>
         {optionsToDisplay.map((option) => {
           const isSelected = selectedValues.includes(option.option_name || option.id);
           return (

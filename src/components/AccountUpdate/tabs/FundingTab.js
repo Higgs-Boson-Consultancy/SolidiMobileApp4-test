@@ -35,17 +35,27 @@ class FundingTab extends Component {
   handleMultiSelect = (optionValue) => {
     console.log('🎯 [FundingTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
+    
     console.log('🎯 [FundingTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [FundingTab] handleMultiSelect: multipleChoice =', multipleChoice);
     console.log('🎯 [FundingTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
     console.log('🎯 [FundingTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
-    if (currentValues.includes(optionValue)) {
-      newValues = currentValues.filter(value => value !== optionValue);
-      console.log('🎯 [FundingTab] handleMultiSelect: removing option, newValues =', newValues);
+    if (multipleChoice) {
+      // Multi-select behavior (checkbox)
+      if (currentValues.includes(optionValue)) {
+        newValues = currentValues.filter(value => value !== optionValue);
+        console.log('🎯 [FundingTab] handleMultiSelect: removing option, newValues =', newValues);
+      } else {
+        newValues = [...currentValues, optionValue];
+        console.log('🎯 [FundingTab] handleMultiSelect: adding option, newValues =', newValues);
+      }
     } else {
-      newValues = [...currentValues, optionValue];
-      console.log('🎯 [FundingTab] handleMultiSelect: adding option, newValues =', newValues);
+      // Single-select behavior (radio button)
+      newValues = [optionValue];
+      console.log('🎯 [FundingTab] handleMultiSelect: single-select, newValues =', newValues);
     }
     
     console.log('🎯 [FundingTab] handleMultiSelect: final newValues =', newValues);
@@ -65,11 +75,14 @@ class FundingTab extends Component {
   renderOptions = () => {
     const selectedValues = this.props.data.selectedOptions || [];
     const optionsToDisplay = this.getOptionsToDisplay();
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
+    const defaultSubtitle = multipleChoice ? 'Select all that apply' : 'Select one option';
+    const sectionSubtitle = this.props.data.prompt || defaultSubtitle;
     
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Funding</Text>
-        <Text style={styles.sectionSubtitle}>Select all that apply</Text>
+        <Text style={styles.sectionTitle}>{this.props.data.description || 'Funding'}</Text>
+        <Text style={styles.sectionSubtitle}>{sectionSubtitle}</Text>
         {optionsToDisplay.map((option) => {
           const isSelected = selectedValues.includes(option.option_name || option.id);
           return (

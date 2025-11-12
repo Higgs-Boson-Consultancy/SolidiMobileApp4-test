@@ -278,6 +278,15 @@ class SecureApp extends Component {
         this.setState({ isAuthenticated: true, authError: null });
         // Start idle monitoring after successful authentication
         this.startIdleMonitoring();
+        
+        // Navigate back to previous page if available
+        if (this.context && this.context.stateHistoryList && this.context.stateHistoryList.length > 1) {
+          console.log('🔙 [SecureApp] Navigating back to previous page after authentication');
+          // Use a small delay to ensure state is updated
+          setTimeout(() => {
+            this.context.decrementStateHistory();
+          }, 100);
+        }
       } else if (result.cancelled) {
         console.log('🔐 [SecureApp] Biometric authentication cancelled');
         this.setState({ authError: 'Authentication was cancelled' });
@@ -300,12 +309,19 @@ class SecureApp extends Component {
     if (biometricInfo.available) {
       await this.performBiometricAuth();
     } else {
-      // Fallback for devices without biometrics
+      // Fallback for devices without biometrics (credential/PIN authentication)
       try {
         console.log('🔐 [SecureApp] Fallback authentication - allowing access');
         this.setState({ isAuthenticated: true });
         // Reset idle timer after successful authentication
         this.resetIdleTimer();
+        
+        // Navigate back to previous page if available
+        if (this.context && this.context.stateHistoryList && this.context.stateHistoryList.length > 1) {
+          setTimeout(() => {
+            this.context.decrementStateHistory();
+          }, 100);
+        }
       } catch (error) {
         console.log('❌ [SecureApp] Fallback authentication error:', error);
         this.setState({ authError: error.message || 'Authentication failed' });
@@ -483,66 +499,33 @@ class SecureApp extends Component {
       );
     }
 
-    // Show biometric authentication screen
-    console.log('🎨 [SecureApp] Rendering authentication screen');
+    // Show biometric authentication screen (invisible/transparent)
+    console.log('🎨 [SecureApp] Rendering authentication screen (invisible mode)');
     
     const authType = biometricAuth.getBiometricTypeDisplayName(biometricInfo.biometryType);
     const hasError = authError && !isAuthenticating;
     
+    // Render invisible authentication screen - biometric prompt happens in system UI
     return (
-      <View style={styles.container} onTouchStart={this.handleUserActivity}>
-        <View style={styles.authContainer}>
-          <Text style={styles.authTitle}>
-            {biometricInfo.available ? `🔐 ${authType} Required` : '🔐 Authentication Required'}
-          </Text>
-          
-          {biometricInfo.available ? (
-            <Text style={styles.authMessage}>
-              Use {authType} to securely access your Solidi account
-            </Text>
-          ) : (
-            <Text style={styles.authMessage}>
-              Tap to authenticate and continue to the app
-            </Text>
-          )}
-          
-          {hasError && (
-            <View style={styles.errorContainer}>
+      <View style={[styles.container, styles.invisibleAuthContainer]} onTouchStart={this.handleUserActivity}>
+        {/* Show underlying app content (children) while authentication is in progress */}
+        {children}
+        
+        {/* Only show error overlay if there's an error */}
+        {hasError && (
+          <View style={styles.errorOverlay}>
+            <View style={styles.errorCard}>
+              <Text style={styles.errorTitle}>⚠️ Authentication Failed</Text>
               <Text style={styles.errorText}>{authError}</Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={this.attemptSystemAuthentication}
+              >
+                <Text style={styles.retryButtonText}>Try Again</Text>
+              </TouchableOpacity>
             </View>
-          )}
-          
-          <TouchableOpacity 
-            style={[
-              styles.authButton,
-              isAuthenticating && styles.authButtonDisabled
-            ]}
-            onPress={this.attemptSystemAuthentication}
-            disabled={isAuthenticating}
-          >
-            <Text style={styles.authButtonText}>
-              {isAuthenticating ? 'Authenticating...' : 
-               biometricInfo.available ? `Use ${authType}` : 'Continue to App'}
-            </Text>
-          </TouchableOpacity>
-          
-          {biometricInfo.available && !isAuthenticating && (
-            <Text style={styles.helpText}>
-              {biometricInfo.biometryType === 'FaceID' ? 
-                'Position your face in front of the camera' :
-                biometricInfo.biometryType === 'TouchID' ?
-                'Place your finger on the Touch ID sensor' :
-                'Follow the biometric authentication prompt'
-              }
-            </Text>
-          )}
-          
-          {authError && authError.includes('inactivity') && (
-            <Text style={styles.idleTimeoutText}>
-              🕐 Auto-lock after 5 minutes of inactivity for your security
-            </Text>
-          )}
-        </View>
+          </View>
+        )}
       </View>
     );
   }
@@ -561,6 +544,61 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     marginTop: 20,
+  },
+  invisibleAuthContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  errorOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 30,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#cc0000',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 24,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 10,
+    width: '100%',
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   authContainer: {
     flex: 1,
@@ -590,12 +628,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ffcccc',
-  },
-  errorText: {
-    color: '#cc0000',
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '500',
   },
   authButton: {
     backgroundColor: '#007AFF',

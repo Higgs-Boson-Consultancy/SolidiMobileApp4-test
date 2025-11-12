@@ -41,17 +41,27 @@ class AccountUseTab extends Component {
   handleMultiSelect = (optionValue) => {
     console.log('🎯 [AccountUseTab] handleMultiSelect: optionValue =', optionValue);
     const currentValues = this.props.data.selectedOptions || [];
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
+    
     console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues =', currentValues);
+    console.log('🎯 [AccountUseTab] handleMultiSelect: multipleChoice =', multipleChoice);
     console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues is Array?', Array.isArray(currentValues));
     console.log('🎯 [AccountUseTab] handleMultiSelect: currentValues.length =', currentValues.length);
     let newValues;
     
-    if (currentValues.includes(optionValue)) {
-      newValues = currentValues.filter(value => value !== optionValue);
-      console.log('🎯 [AccountUseTab] handleMultiSelect: removing option, newValues =', newValues);
+    if (multipleChoice) {
+      // Multi-select behavior (checkbox)
+      if (currentValues.includes(optionValue)) {
+        newValues = currentValues.filter(value => value !== optionValue);
+        console.log('🎯 [AccountUseTab] handleMultiSelect: removing option, newValues =', newValues);
+      } else {
+        newValues = [...currentValues, optionValue];
+        console.log('🎯 [AccountUseTab] handleMultiSelect: adding option, newValues =', newValues);
+      }
     } else {
-      newValues = [...currentValues, optionValue];
-      console.log('🎯 [AccountUseTab] handleMultiSelect: adding option, newValues =', newValues);
+      // Single-select behavior (radio button)
+      newValues = [optionValue];
+      console.log('🎯 [AccountUseTab] handleMultiSelect: single-select, newValues =', newValues);
     }
     
     console.log('🎯 [AccountUseTab] handleMultiSelect: final newValues =', newValues);
@@ -72,11 +82,14 @@ class AccountUseTab extends Component {
   renderOptions = () => {
     const selectedValues = this.props.data.selectedOptions || [];
     const optionsToDisplay = this.getOptionsToDisplay();
+    const multipleChoice = this.props.data.multiple_choice !== false; // Default to true if not specified
     const sectionTitle = this.props.data.description || 'Account Use';
-    const sectionSubtitle = this.props.data.prompt || 'Select all that apply';
+    const defaultSubtitle = multipleChoice ? 'Select all that apply' : 'Select one option';
+    const sectionSubtitle = this.props.data.prompt || defaultSubtitle;
     
     console.log('🎯 [AccountUseTab] renderOptions: selectedValues =', selectedValues);
     console.log('🎯 [AccountUseTab] renderOptions: optionsToDisplay =', optionsToDisplay);
+    console.log('🎯 [AccountUseTab] renderOptions: multipleChoice =', multipleChoice);
     console.log('🎯 [AccountUseTab] renderOptions: sectionTitle =', sectionTitle);
     console.log('🎯 [AccountUseTab] renderOptions: sectionSubtitle =', sectionSubtitle);
     
