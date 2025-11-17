@@ -212,8 +212,9 @@ export default class SolidiRestAPIClientLibrary {
     // Use relative URLs on web to enable proxy, absolute URLs on mobile
     let uri;
     if (Platform.OS === 'web') {
-      uri = path; // Use relative URL for web proxy
-      console.log('🌐 WEB: Using relative URL for proxy:', uri);
+      // Web: use relative URL which will be proxied to the API server
+      uri = path;
+      console.log('🌐 WEB: Using relative URL (will be proxied):', uri);
     } else {
       uri = 'https://' + this.domain + path; // Use absolute URL for mobile
       console.log('📱 MOBILE: Using absolute URL:', uri);
