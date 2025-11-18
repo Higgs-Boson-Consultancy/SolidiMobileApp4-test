@@ -62,6 +62,18 @@ let Profile = () => {
     try {
       await appState.generalSetup({caller: 'Profile'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
+      
+      // Reload user profile data when Profile page loads (cache refresh trigger)
+      console.log('👤 [Profile] Reloading user profile data...');
+      try {
+        await appState.loadUserInfo();
+        console.log('✅ [Profile] User info reloaded');
+        await appState.loadUserStatus();
+        console.log('✅ [Profile] User status reloaded');
+      } catch (error) {
+        console.error('❌ [Profile] Failed to reload user data:', error);
+      }
+      
       triggerRender(renderCount+1);
     } catch(err) {
       let msg = `Profile.setup: Error = ${err}`;

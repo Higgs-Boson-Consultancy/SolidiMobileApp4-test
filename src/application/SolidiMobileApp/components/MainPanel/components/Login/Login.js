@@ -78,13 +78,12 @@ let Login = () => {
     setup();
   }, []); // Pass empty array so that this only runs once on mount.
 
-  // Auto-login check - runs after setup is complete
+    // AUTO-LOGIN DISABLED - Biometric authentication handles credential validation
+  // Auto-login effect - only trigger if we have credentials and user is not authenticated
   useEffect(() => {
-    // Only attempt auto-login if:
-    // 1. We have cached credentials
-    // 2. User is not authenticated
-    // 3. No manual login is in progress (button not disabled)
-    // 4. No manual email/password entered yet
+    // DISABLED: Auto-login now handled by biometric authentication in SecureApp
+    console.log('ℹ️ [LOGIN] Auto-login disabled - biometric auth handles authentication');
+    /*
     if (appState.user.apiCredentialsFound && 
         !appState.user.isAuthenticated && 
         !disableLoginButton &&
@@ -106,6 +105,7 @@ let Login = () => {
         }
       }, 100); // 100ms delay
     }
+    */
   }, [appState.user.apiCredentialsFound, disableLoginButton, email, password]);  // Run when credentials are found
 
 

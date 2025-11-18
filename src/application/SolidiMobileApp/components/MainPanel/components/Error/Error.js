@@ -2,6 +2,19 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ScrollView } from 'react-native';
 
+// Material Design imports
+import {
+  Card,
+  Button,
+  Title,
+  Paragraph,
+  useTheme,
+  Surface,
+  Icon,
+  Divider,
+  Chip,
+} from 'react-native-paper';
+
 // Other imports
 import _ from 'lodash';
 import Big from 'big.js';
@@ -10,7 +23,6 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, ImageButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 // Logger
@@ -56,122 +68,190 @@ let Error = () => {
     }
   }
 
+  const materialTheme = useTheme();
 
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title style={localStyles.pageTitle}>
+        Error
+      </Title>
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Error</Text>
-      </View>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
+      >
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+        {/* Error Alert Card */}
+        <Card style={[localStyles.card, { backgroundColor: '#FFEBEE', borderLeftWidth: 4, borderLeftColor: materialTheme.colors.error }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Icon 
+                source="alert-circle" 
+                size={32} 
+                color={materialTheme.colors.error}
+                style={{ marginRight: 12, marginTop: 2 }}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={localStyles.errorTitle}>Unfortunately, an error has occurred</Text>
+                <Text style={localStyles.errorSubtitle}>
+                  We apologize for the inconvenience. Please review the details below.
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
 
-      <Text style={[styles.bold, styles.basicText]}>{'\n'}Unfortunately, an error has occurred.</Text>
-
-      <View style={styles.infoSection}>
-
-        <View style={styles.infoItem}>
-          <Text style={[styles.basicText, styles.bold]}>{`\u2022  `} Domain: {appState.domain}</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={[styles.bold, styles.basicText]}>{`\u2022  `} Error details:</Text>
-          <Text style={styles.basicText}>{appState.error.message}</Text>
-        </View>
-
-      </View>
-
-      <View style={styles.infoSection}>
-          <Text style={styles.basicText}>Please take a screenshot of this page in order to record the error message, and then:{'\n'}</Text>
-          
-          <View style={styles.buttonContainer}>
-            <Button title="Return to Login"
-              onPress={ async () => { 
-                await appState.recoverFromErrorState();
-              } }
-              styles={styleRecoverButton}
-            />
+        {/* Error Details Card */}
+        <Card style={[localStyles.card, { marginTop: 16 }]}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text style={localStyles.sectionTitle}>Error Details</Text>
             
-            <Button title="Contact Us"
-              onPress={ () => { appState.changeState('ContactUs') } }
-              styles={styleContactUsButton}
-            />
-          </View>
-      </View>
+            <View style={localStyles.detailRow}>
+              <Icon source="server-network" size={20} color={materialTheme.colors.primary} />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={localStyles.detailLabel}>Domain</Text>
+                <Text style={localStyles.detailValue}>{appState.domain}</Text>
+              </View>
+            </View>
+
+            <Divider style={{ marginVertical: 12 }} />
+
+            <View style={localStyles.detailRow}>
+              <Icon source="information" size={20} color={materialTheme.colors.primary} />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={localStyles.detailLabel}>Error Message</Text>
+                <Text style={localStyles.detailValue}>{appState.error.message}</Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Instructions Card */}
+        <Card style={[localStyles.card, { marginTop: 16, backgroundColor: '#FFF3E0' }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Icon 
+                source="camera" 
+                size={24} 
+                color="#E65100"
+                style={{ marginRight: 12, marginTop: 2 }}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={localStyles.instructionTitle}>Please take a screenshot</Text>
+                <Text style={localStyles.instructionText}>
+                  Capture this page to record the error message for our support team.
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Action Buttons */}
+        <View style={{ marginTop: 24 }}>
+          <Button
+            mode="contained"
+            icon="login"
+            onPress={async () => { 
+              await appState.recoverFromErrorState();
+            }}
+            style={{ marginBottom: 12 }}
+            contentStyle={{ paddingVertical: 12 }}
+            labelStyle={{ fontSize: normaliseFont(16), fontWeight: 'bold' }}
+          >
+            Return to Login
+          </Button>
+
+          <Button
+            mode="outlined"
+            icon="headset"
+            onPress={() => { appState.changeState('ContactUs') }}
+            style={{ borderColor: materialTheme.colors.primary }}
+            contentStyle={{ paddingVertical: 12 }}
+            labelStyle={{ fontSize: normaliseFont(16) }}
+          >
+            Contact Support
+          </Button>
+        </View>
+
+        {/* Support Info */}
+        <Card style={[localStyles.card, { marginTop: 16, backgroundColor: '#E3F2FD' }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <Text style={localStyles.supportText}>
+              💡 If this error persists, please contact our support team with the error details above.
+            </Text>
+          </Card.Content>
+        </Card>
 
       </ScrollView>
 
-    </View>
     </View>
   )
 
 }
 
 
-let styles = StyleSheet.create({
-  panelContainer: {
-    paddingHorizontal: scaledWidth(15),
-    paddingVertical: scaledHeight(5),
-    width: '100%',
-    height: '100%',
-  },
-  panelSubContainer: {
-    paddingTop: scaledHeight(10),
-    paddingHorizontal: scaledWidth(30),
-    height: '100%',
-    //borderWidth: 1, // testing
-  },
-  heading: {
-    alignItems: 'center',
-  },
-  heading1: {
-    marginTop: scaledHeight(10),
-  },
-  headingText: {
-    fontSize: normaliseFont(20),
+const localStyles = StyleSheet.create({
+  pageTitle: {
+    fontSize: normaliseFont(24),
     fontWeight: 'bold',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    color: colors.error || '#D32F2F',
   },
-  basicText: {
+  card: {
+    elevation: 2,
+    borderRadius: 8,
+  },
+  errorTitle: {
+    fontSize: normaliseFont(18),
+    fontWeight: 'bold',
+    color: '#C62828',
+    marginBottom: 6,
+  },
+  errorSubtitle: {
     fontSize: normaliseFont(14),
+    color: '#D32F2F',
+    lineHeight: 20,
   },
-  bold: {
+  sectionTitle: {
+    fontSize: normaliseFont(16),
     fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
   },
-  infoSection: {
-    paddingTop: scaledHeight(20),
+  detailRow: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  infoItem: {
-    marginBottom: scaledHeight(5),
+  detailLabel: {
+    fontSize: normaliseFont(12),
+    color: '#666',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  buttonContainer: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    width: '100%',
-    marginTop: scaledHeight(10),
+  detailValue: {
+    fontSize: normaliseFont(14),
+    color: '#333',
+    lineHeight: 20,
   },
-});
-
-
-let styleRecoverButton = StyleSheet.create({
-  container: {
-    backgroundColor: colors.primary,
-    marginBottom: scaledHeight(10),
-    paddingVertical: scaledHeight(12),
-  },
-  text: {
-    color: colors.white,
+  instructionTitle: {
+    fontSize: normaliseFont(15),
     fontWeight: 'bold',
-    fontSize: normaliseFont(16),
-    textAlign: 'center',
+    color: '#E65100',
+    marginBottom: 6,
   },
-});
-
-let styleContactUsButton = StyleSheet.create({
-  text: {
-    margin: 0,
-    padding: 0,
+  instructionText: {
+    fontSize: normaliseFont(14),
+    color: '#E65100',
+    lineHeight: 20,
+  },
+  supportText: {
+    fontSize: normaliseFont(14),
+    color: '#1565C0',
+    lineHeight: 20,
   },
 });
 

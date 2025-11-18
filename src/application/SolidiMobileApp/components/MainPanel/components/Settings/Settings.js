@@ -66,6 +66,17 @@ let Settings = () => {
       await appState.generalSetup({caller: 'Settings'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       
+      // Reload user profile data when Settings page loads (cache refresh trigger)
+      console.log('⚙️ [Settings] Reloading user profile data...');
+      try {
+        await appState.loadUserInfo();
+        console.log('✅ [Settings] User info reloaded');
+        await appState.loadUserStatus();
+        console.log('✅ [Settings] User status reloaded');
+      } catch (error) {
+        console.error('❌ [Settings] Failed to reload user data:', error);
+      }
+      
       // 🔍 LOG ALL USER RECORDS AFTER LOGIN
       console.log('👤 ========== USER RECORDS IN SETTINGS PAGE ==========');
       console.log('🌐 AppState Available:', !!appState);

@@ -1,7 +1,16 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity, Platform } from 'react-native';
+
+// Material Design imports
+import {
+  Card,
+  Title,
+  Paragraph,
+  useTheme,
+  Surface,
+  Divider,
+} from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -11,12 +20,11 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, FixedWidthButton, ImageButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 // Logger
 import logger from 'src/util/logger';
-let logger2 = logger.extend('SolidiAccount');
+let logger2 = logger.extend('Terms');
 let {deb, dj, log, lj} = logger.getShortcuts(logger2);
 
 
@@ -57,102 +65,69 @@ let Terms = () => {
     }
   }
 
+  const materialTheme = useTheme();
   const fontFamily = Platform.OS === 'ios' ? 'Courier' : 'monospace';
-  var multilinetext = String.raw`
-  Multi line
-  text string
-  that respects
-  newlines.
-`;
 
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title style={localStyles.pageTitle}>
+        Terms & Conditions
+      </Title>
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Terms & Conditions</Text>
-      </View>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
+      >
 
-      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+        <Card style={localStyles.card}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text style={[localStyles.termsText, { fontFamily }]}>
+              {terms}
+            </Text>
+          </Card.Content>
+        </Card>
 
-      <View >
-        <Text style={{fontFamily}}>{terms}</Text>
-      </View>
+        <Card style={[localStyles.card, { marginTop: 16, backgroundColor: '#FFF3E0' }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <Text style={localStyles.infoText}>
+              💡 <Text style={localStyles.boldText}>Note:</Text> By using Solidi services, you agree to these terms and conditions.
+            </Text>
+          </Card.Content>
+        </Card>
 
       </ScrollView>
 
-    </View>
     </View>
   )
 }
 
 
-let styles = StyleSheet.create({
-  panelContainer: {
-    paddingHorizontal: scaledWidth(15),
-    paddingVertical: scaledHeight(5),
-    width: '100%',
-    height: '100%',
-  },
-  panelSubContainer: {
-    paddingTop: scaledHeight(10),
-    //paddingHorizontal: scaledWidth(30),
-    height: '100%',
-    //borderWidth: 1, // testing
-  },
-  heading: {
-    alignItems: 'center',
-  },
-  heading1: {
-    marginBottom: scaledHeight(40),
-  },
-  heading2: {
-    marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
-  },
-  headingText: {
-    fontSize: normaliseFont(20),
+const localStyles = StyleSheet.create({
+  pageTitle: {
+    fontSize: normaliseFont(24),
     fontWeight: 'bold',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    color: colors.primary,
   },
-  bold: {
+  card: {
+    elevation: 2,
+    borderRadius: 8,
+  },
+  termsText: {
+    fontSize: normaliseFont(13),
+    lineHeight: 20,
+    color: '#333',
+  },
+  infoText: {
+    fontSize: normaliseFont(14),
+    color: '#E65100',
+    lineHeight: 20,
+  },
+  boldText: {
     fontWeight: 'bold',
-  },
-  horizontalRule: {
-    borderWidth: 1,
-    borderBottomColor: 'black',
-    borderBottomWidth: 1,
-    marginTop: scaledWidth(20),
-    marginHorizontal: scaledWidth(20),
-  },
-
-  welcomeMessageText: {
-    fontSize: normaliseFont(16),
-  },
-  buttonWrapper: {
-    marginVertical: scaledHeight(10),
-    width: '100%',
-    alignItems: 'center',
-
-  },
-
-    parent: {
-        width: '100%',
-        height: 500,
-        margin: 10,
-    alignItems: 'center',
-
-    },
-   view: {
-    width: '70%',
-    maginLeft: '15%',
-
-  },
-});
-
-let styleButton = StyleSheet.create({
-  view: {
-    width: '70%',
-
   },
 });
 

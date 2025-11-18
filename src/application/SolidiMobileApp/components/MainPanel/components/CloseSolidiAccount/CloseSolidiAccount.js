@@ -1,8 +1,21 @@
 // React imports
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Linking, Image, Text, TextInput, StyleSheet, View, ScrollView, Alert } from 'react-native';
+
+// Material Design imports
+import {
+  Card,
+  Button,
+  Title,
+  Paragraph,
+  useTheme,
+  Surface,
+  Icon,
+  Divider,
+  HelperText,
+  Dialog,
+  Portal,
+} from 'react-native-paper';
 
 // Other imports
 import _ from 'lodash';
@@ -12,7 +25,6 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Button, StandardButton, FixedWidthButton,  ImageButton, Spinner } from 'src/components/atomic';
 import misc from 'src/util/misc';
 
 // Logger
@@ -42,6 +54,7 @@ let CloseSolidiAccount = () => {
 
   // More state
   let [errorMessage, setErrorMessage] = useState('');
+  let [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
 
   // Initial setup.
@@ -60,133 +73,232 @@ let CloseSolidiAccount = () => {
       console.log(msg);
     }
   }
+  
+  const materialTheme = useTheme();
   let supportURL = "https://www.solidi.co/contactus";
   let blogURL = "https://blog.solidi.co/2021/02/20/closing-your-account/";
 
+  // Handle delete account with confirmation
+  const handleDeleteAccount = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    setShowConfirmDialog(false);
+    await appState.closeSolidiAccount();
+  };
+
+  const cancelDeleteAccount = () => {
+    setShowConfirmDialog(false);
+  };
+
   return (
-    <View style={styles.panelContainer}>
-    <View style={styles.panelSubContainer}>
+    <View style={{ flex: 1, backgroundColor: materialTheme.colors.background }}>
+      
+      <Title style={localStyles.pageTitle}>
+        Delete Solidi Account
+      </Title>
 
-      <View style={[styles.heading, styles.heading1]}>
-        <Text style={styles.headingText}>Delete Solidi Account</Text>
-      </View>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16 }}
+      >
 
-      {!! errorMessage &&
-        <View style={styles.errorWrapper}>
-          <Text style={styles.errorMessageText}>{errorMessage}</Text>
-        </View>
-      }
+        {!! errorMessage &&
+          <HelperText type="error" visible={true} style={{ fontSize: normaliseFont(14), marginBottom: 16 }}>
+            {errorMessage}
+          </HelperText>
+        }
 
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }} >
+        {/* Warning Card */}
+        <Card style={[localStyles.card, { backgroundColor: '#FFEBEE', borderLeftWidth: 4, borderLeftColor: materialTheme.colors.error }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Icon 
+                source="alert-circle" 
+                size={24} 
+                color={materialTheme.colors.error}
+                style={{ marginRight: 12, marginTop: 2 }}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={localStyles.warningTitle}>We're sorry you wish to delete your account</Text>
+                <Text style={localStyles.warningText}>
+                  If there is a problem, please contact the support team before proceeding.
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
 
-      <View style={styles.question}>
-      <Text style={[styles.basicText, styles.bold]}>We're sorry you wish to delete your account. If there is a problem, please contact the support team.</Text>
-      <Text style={[styles.basicText, styles.bold]}></Text>
-      <View style={styles.buttonWrapper}>
-        <FixedWidthButton title="Contact Support"
-          onPress={ () => { Linking.openURL(supportURL) } }
-          styles={styleNormalButton}
-        />
-      </View>
-      <Text style={[styles.basicText, styles.bold]}></Text>
-      <Text style={[styles.basicText, styles.bold]}>Please note:</Text>
-      <Text style={[styles.basicText, styles.bold]}>{'  \u2022' + " "}We cannot restore deleted accounts.</Text>
-      <Text style={[styles.basicText, styles.bold]}>{'  \u2022' + " "}You cannot create a new account for 30 days.</Text>
-      <Text style={[styles.basicText, styles.bold]}>{'  \u2022' + " "}Regulations may prevent us deleting your data.</Text>
-      <Text style={[styles.basicText, styles.bold]}></Text>
-      <Text style={[styles.basicText, styles.bold]}>To find out more about account deletion, please read our blog post: </Text>
-      <Text style={[styles.basicText, styles.bold]}></Text>
-      <View style={styles.buttonWrapper}>
-        <FixedWidthButton title="Read the blog post"
-          onPress={ () => { Linking.openURL(blogURL) } }
-          styles={styleNormalButton}
-        />
-      </View>
-      <Text style={[styles.basicText, styles.bold]}></Text>
-      <Text style={[styles.basicText, styles.bold]}>If you still wish to delete your account, please click on the button below.</Text>
-      <Text style={[styles.basicText, styles.bold]}></Text>
+        {/* Support Button */}
+        <Button
+          mode="outlined"
+          icon="headset"
+          onPress={() => { Linking.openURL(supportURL) }}
+          style={{ marginTop: 16, marginBottom: 16, borderColor: materialTheme.colors.primary }}
+          contentStyle={{ paddingVertical: 8 }}
+          labelStyle={{ fontSize: normaliseFont(15) }}
+        >
+          Contact Support
+        </Button>
 
-      </View>
+        {/* Important Information Card */}
+        <Card style={[localStyles.card, { marginBottom: 16 }]}>
+          <Card.Content style={{ padding: 20 }}>
+            <Text style={localStyles.sectionTitle}>⚠️ Please note:</Text>
+            <View style={localStyles.bulletPoint}>
+              <Icon source="close-circle" size={20} color={materialTheme.colors.error} />
+              <Text style={localStyles.bulletText}>We cannot restore deleted accounts</Text>
+            </View>
+            <View style={localStyles.bulletPoint}>
+              <Icon source="close-circle" size={20} color={materialTheme.colors.error} />
+              <Text style={localStyles.bulletText}>You cannot create a new account for 30 days</Text>
+            </View>
+            <View style={localStyles.bulletPoint}>
+              <Icon source="close-circle" size={20} color={materialTheme.colors.error} />
+              <Text style={localStyles.bulletText}>Regulations may prevent us deleting your data</Text>
+            </View>
+          </Card.Content>
+        </Card>
 
+        {/* Blog Post Info */}
+        <Card style={[localStyles.card, { marginBottom: 16, backgroundColor: '#E8F5E9' }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <Text style={localStyles.infoText}>
+              📖 To find out more about account deletion, please read our blog post.
+            </Text>
+          </Card.Content>
+        </Card>
 
-      <View style={styles.buttonWrapper}>
-        <FixedWidthButton title='Delete my Solidi account'
-          onPress={ () => { appState.closeSolidiAccount() } }
-          styles={styleCloseAccountButton}
-        />
-      </View>
+        <Button
+          mode="outlined"
+          icon="book-open-variant"
+          onPress={() => { Linking.openURL(blogURL) }}
+          style={{ marginBottom: 24, borderColor: '#4CAF50' }}
+          textColor="#2E7D32"
+          contentStyle={{ paddingVertical: 8 }}
+          labelStyle={{ fontSize: normaliseFont(15) }}
+        >
+          Read the blog post
+        </Button>
 
-      </KeyboardAwareScrollView>
+        {/* Final Warning */}
+        <Card style={[localStyles.card, { marginBottom: 16, backgroundColor: '#FFF3E0' }]}>
+          <Card.Content style={{ padding: 16 }}>
+            <Text style={localStyles.finalWarning}>
+              If you still wish to delete your account, please click the button below. This action cannot be undone.
+            </Text>
+          </Card.Content>
+        </Card>
 
-    </View>
+        {/* Delete Button */}
+        <Button
+          mode="contained"
+          icon="delete-forever"
+          buttonColor={materialTheme.colors.error}
+          textColor="white"
+          onPress={handleDeleteAccount}
+          style={{ marginTop: 8, marginBottom: 32 }}
+          contentStyle={{ paddingVertical: 12 }}
+          labelStyle={{ fontSize: normaliseFont(16), fontWeight: 'bold' }}
+        >
+          Delete my Solidi account
+        </Button>
+
+      </ScrollView>
+
+      {/* Confirmation Dialog */}
+      <Portal>
+        <Dialog visible={showConfirmDialog} onDismiss={cancelDeleteAccount}>
+          <Dialog.Icon icon="alert-circle-outline" size={48} color={materialTheme.colors.error} />
+          <Dialog.Title style={{ textAlign: 'center', fontWeight: 'bold' }}>
+            Confirm Account Deletion
+          </Dialog.Title>
+          <Dialog.Content>
+            <Paragraph style={{ textAlign: 'center', fontSize: normaliseFont(15), lineHeight: 22 }}>
+              Are you absolutely sure you want to delete your Solidi account?
+            </Paragraph>
+            <Paragraph style={{ textAlign: 'center', fontSize: normaliseFont(14), marginTop: 12, color: materialTheme.colors.error }}>
+              ⚠️ This action cannot be undone and you will not be able to create a new account for 30 days.
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+            <Button 
+              onPress={cancelDeleteAccount}
+              mode="outlined"
+              style={{ flex: 1, marginRight: 8 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onPress={confirmDeleteAccount}
+              mode="contained"
+              buttonColor={materialTheme.colors.error}
+              style={{ flex: 1 }}
+            >
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
     </View>
   )
 
 }
 
 
-let styles = StyleSheet.create({
-  panelContainer: {
-    paddingHorizontal: scaledWidth(15),
-    paddingVertical: scaledHeight(5),
-    width: '100%',
-    height: '100%',
-    textAlign: 'center',
-  },
-  panelSubContainer: {
-    paddingTop: scaledHeight(10),
-    //paddingHorizontal: scaledWidth(30),
-    height: '100%',
-    //borderWidth: 1, // testing
-  },
-  heading: {
-    alignItems: 'center',
-  },
-  heading1: {
-    marginTop: scaledHeight(10),
-    marginBottom: scaledHeight(40),
-  },
-  headingText: {
-    fontSize: normaliseFont(20),
+const localStyles = StyleSheet.create({
+  pageTitle: {
+    fontSize: normaliseFont(24),
     fontWeight: 'bold',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    color: colors.error || '#D32F2F',
   },
-  question: {
-    marginBottom: scaledHeight(40),
+  card: {
+    elevation: 2,
+    borderRadius: 8,
   },
-  basicText: {
-    fontSize: normaliseFont(14),
-  },
-  mediumText: {
+  warningTitle: {
     fontSize: normaliseFont(16),
-  },
-  bold: {
     fontWeight: 'bold',
+    color: '#C62828',
+    marginBottom: 8,
   },
-  errorWrapper: {
-    //marginTop: scaledHeight(20),
-    marginBottom: scaledHeight(20),
-  },
-  errorMessageText: {
+  warningText: {
     fontSize: normaliseFont(14),
-    color: 'red',
+    color: '#D32F2F',
+    lineHeight: 20,
   },
-  buttonWrapper: {
-    width: '100%',
+  sectionTitle: {
+    fontSize: normaliseFont(16),
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  bulletPoint: {
+    flexDirection: 'row',
     alignItems: 'center',
-   },
-});
-
-
-let styleNormalButton = StyleSheet.create({
-  view: {
-    width: '70%',
+    marginBottom: 12,
   },
-});
-
-let styleCloseAccountButton = StyleSheet.create({
-  view: {
-    backgroundColor: 'red',
-    width: '70%',
+  bulletText: {
+    fontSize: normaliseFont(14),
+    color: '#333',
+    marginLeft: 12,
+    flex: 1,
+  },
+  infoText: {
+    fontSize: normaliseFont(14),
+    color: '#2E7D32',
+    lineHeight: 20,
+  },
+  finalWarning: {
+    fontSize: normaliseFont(14),
+    color: '#E65100',
+    lineHeight: 20,
+    fontWeight: '500',
   },
 });
 
