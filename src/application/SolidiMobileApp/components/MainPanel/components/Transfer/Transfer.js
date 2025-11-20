@@ -107,6 +107,9 @@ let Transfer = () => {
   let [isInitializing, setIsInitializing] = useState(true);
   let [initializationError, setInitializationError] = useState(null);
   let [addressBookLoaded, setAddressBookLoaded] = useState(false);
+  let [addressBookError, setAddressBookError] = useState(null);
+  let [addressBookEmpty, setAddressBookEmpty] = useState(false);
+  let [depositDetailsLoaded, setDepositDetailsLoaded] = useState(false);
 
   // Address book modal state
   let [showAddressBookModal, setShowAddressBookModal] = useState(false);
@@ -201,10 +204,58 @@ let Transfer = () => {
           console.log('📨 CONSOLE: Response type:', typeof addressBookResult);
           console.log('📨 CONSOLE: Response JSON:', JSON.stringify(addressBookResult, null, 2));
           console.log('📨 CONSOLE: ===== END ADDRESS BOOK API RESPONSE =====');
-          
-          setAddressBookLoaded(true);
-          log('✅ Address book loaded successfully');
-          console.log('✅ CONSOLE: Address book loaded successfully');
+
+          // Distinguish between error, empty list, or successful listing
+          try {
+            // If the API returns an object with error property
+            if (addressBookResult && typeof addressBookResult === 'object' && addressBookResult.error) {
+              setAddressBookError(String(addressBookResult.error || 'Unknown address book error'));
+              setAddressBookEmpty(false);
+              setAddressBookLoaded(true);
+              log('❌ Address book API returned error:', addressBookResult.error);
+              console.error('❌ CONSOLE: Address book API error:', addressBookResult.error);
+            } else if (Array.isArray(addressBookResult)) {
+              if (addressBookResult.length === 0) {
+                setAddressBookEmpty(true);
+                setAddressBookError(null);
+                setAddressBookLoaded(true);
+                log('⚠️ Address book returned empty list for asset:', selectedAsset);
+                console.log('⚠️ CONSOLE: Address book empty for asset:', selectedAsset);
+              } else {
+                setAddressBookEmpty(false);
+                setAddressBookError(null);
+                setAddressBookLoaded(true);
+                log('✅ Address book loaded successfully');
+                console.log('✅ CONSOLE: Address book loaded successfully');
+              }
+            } else if (addressBookResult && addressBookResult.data && Array.isArray(addressBookResult.data)) {
+              if (addressBookResult.data.length === 0) {
+                setAddressBookEmpty(true);
+                setAddressBookError(null);
+              } else {
+                setAddressBookEmpty(false);
+                setAddressBookError(null);
+              }
+              setAddressBookLoaded(true);
+            } else if (!addressBookResult) {
+              // Null or undefined result -> treat as empty
+              setAddressBookEmpty(true);
+              setAddressBookError(null);
+              setAddressBookLoaded(true);
+              log('⚠️ Address book result was empty or undefined');
+            } else {
+              // Unexpected format - treat as loaded but warn
+              setAddressBookEmpty(false);
+              setAddressBookError(null);
+              setAddressBookLoaded(true);
+              log('⚠️ Address book returned unexpected format:', addressBookResult);
+            }
+          } catch (abErr) {
+            setAddressBookError(abErr.message || 'Error processing address book response');
+            setAddressBookEmpty(false);
+            setAddressBookLoaded(true);
+            console.error('❌ CONSOLE: Error processing address book response:', abErr);
+          }
         } else {
           log('⚠️ loadAddressBook method not available, continuing without address book');
           console.log('⚠️ CONSOLE: loadAddressBook method not available, continuing without address book');
@@ -227,9 +278,11 @@ let Transfer = () => {
             
             log('✅ Deposit details loaded successfully');
             console.log('✅ CONSOLE: Deposit details loaded successfully');
+            setDepositDetailsLoaded(true);
           } catch (error) {
             log('❌ Error loading deposit details:', error);
             console.error('❌ CONSOLE: Error loading deposit details:', error);
+            setDepositDetailsLoaded(false);
           }
         } else {
           log('⏭️  Skipping deposit details loading (not in receive mode or method unavailable)');
@@ -618,12 +671,15 @@ let Transfer = () => {
       if (transferType === 'receive' && selectedAsset && appState?.loadDepositDetailsForAsset) {
         try {
           console.log('🔄 [SETUP] Loading deposit details for asset:', selectedAsset);
+          setDepositDetailsLoaded(false);
           await appState.loadDepositDetailsForAsset(selectedAsset);
           console.log('✅ [SETUP] Deposit details loaded for:', selectedAsset);
           const details = appState.getDepositDetailsForAsset(selectedAsset);
           console.log('📍 [SETUP] Retrieved deposit details:', details);
+          setDepositDetailsLoaded(true);
         } catch (error) {
           console.error('❌ [SETUP] Error loading deposit details:', error);
+          setDepositDetailsLoaded(false);
         }
       }
       
@@ -662,6 +718,11 @@ let Transfer = () => {
   useEffect(() => {
     log('Transfer type changed to:', transferType);
     
+    // Reset deposit details loaded state when switching away from receive
+    if (transferType !== 'receive') {
+      setDepositDetailsLoaded(false);
+    }
+    
     // Use timeout to debounce rapid changes
     const timer = setTimeout(() => {
       try {
@@ -682,10 +743,13 @@ let Transfer = () => {
       if (transferType === 'receive' && selectedAsset && appState?.loadDepositDetailsForAsset) {
         try {
           console.log('🔄 Loading deposit details for asset:', selectedAsset);
+          setDepositDetailsLoaded(false);
           await appState.loadDepositDetailsForAsset(selectedAsset);
           console.log('✅ Deposit details loaded for:', selectedAsset);
           
-          // Trigger a re-render to update the QR code
+          // Set state to trigger re-render - more reliable than triggerRender on Android
+          setDepositDetailsLoaded(true);
+          // Also trigger render count for backward compatibility
           triggerRender(renderCount + 1);
         } catch (error) {
           console.error('❌ Error loading deposit details:', error);
@@ -1311,6 +1375,38 @@ let Transfer = () => {
                   );
                 })}
               </View>
+              {/* Address Book status: show error or empty message */}
+              {(addressBookError || addressBookEmpty) && (
+                <View style={{ marginBottom: 12 }}>
+                  {addressBookError ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ color: '#cc0000' }}>Address book error: {addressBookError}</Text>
+                      <Button
+                        mode="text"
+                        onPress={async () => {
+                          try {
+                            console.log('🔄 Retrying loadAddressBook for asset:', selectedAsset);
+                            setAddressBookError(null);
+                            setAddressBookEmpty(false);
+                            if (appState && appState.loadAddressBook) {
+                              await appState.loadAddressBook(selectedAsset);
+                              // Trigger a refresh
+                              triggerRender(renderCount + 1);
+                            }
+                          } catch (retryErr) {
+                            console.error('❌ Retry loadAddressBook failed:', retryErr);
+                            setAddressBookError(retryErr.message || 'Retry failed');
+                          }
+                        }}
+                      >
+                        Retry
+                      </Button>
+                    </View>
+                  ) : (
+                    <Text style={{ color: '#666666' }}>No saved addresses for {selectedAsset}. Use the + button to add one.</Text>
+                  )}
+                </View>
+              )}
               
               {/* Address Book Section */}
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 8 }}>
@@ -1435,8 +1531,33 @@ let Transfer = () => {
                   elevation: 1 
                 }}>
                   {(() => {
+                    // Show loading state if deposit details haven't been loaded yet
+                    if (!depositDetailsLoaded) {
+                      console.log('🔄 CONSOLE: QRCode - Deposit details not loaded yet, showing loading state');
+                      return (
+                        <View style={{
+                          width: scaledWidth(160),
+                          height: scaledWidth(160),
+                          backgroundColor: '#f0f0f0',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: '#ddd',
+                        }}>
+                          <Text variant="bodySmall" style={{ color: '#666', textAlign: 'center', marginBottom: 8 }}>
+                            QR Code
+                          </Text>
+                          <Text variant="bodySmall" style={{ color: '#666', textAlign: 'center' }}>
+                            Loading Address...
+                          </Text>
+                        </View>
+                      );
+                    }
+                    
                     try {
                       const address = getReceiveAddress();
+                      console.log('🎨 CONSOLE: QRCode - Rendering with address:', address);
                       
                       // Validate address before generating QR code
                       if (!address || address === 'undefined' || address === 'null' || address.length < 5) {
@@ -1455,6 +1576,7 @@ let Transfer = () => {
                       );
                     } catch (error) {
                       log('QR Code generation error:', error);
+                      console.error('❌ CONSOLE: QRCode generation error:', error);
                       return (
                         <View style={{
                           width: scaledWidth(160),

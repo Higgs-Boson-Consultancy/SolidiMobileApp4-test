@@ -1,11 +1,12 @@
 // React imports
-import React, { useState, useContext, useEffect } from 'react';
-import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useContext, useEffect, useRef } from 'react';
+import { Text, TextInput, StyleSheet, View, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { RadioButton, IconButton } from 'react-native-paper';
 
 // Internal imports
 import { StandardButton, QRScanner } from 'src/components/atomic';
 import ContactPickerModal from 'src/components/atomic/ContactPickerModal';
+import VaspSearchModal from 'src/components/atomic/VaspSearchModal';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 import { colors } from 'src/constants';
 import AppStateContext from 'src/application/data';
@@ -50,22 +51,28 @@ let AddressBookForm = ({
     accountName: '',
     sortCode: '',
     accountNumber: ''
+    ,
+    vasp: null // selected VASP object or id when exchange is selected
   });
   let [errorMessage, setErrorMessage] = useState('');
   let [showAssetDropdown, setShowAssetDropdown] = useState(false);
   let [showQRScanner, setShowQRScanner] = useState(false);
   let [manualInput, setManualInput] = useState(false); // For "another_person" option
   let [showContactPicker, setShowContactPicker] = useState(false); // Contact picker modal
+  let [showVaspSearch, setShowVaspSearch] = useState(false); // VASP search modal
   
   // API submission state
   let [isSubmitting, setIsSubmitting] = useState(false);
   let [submitError, setSubmitError] = useState('');
   let [submitStatus, setSubmitStatus] = useState('');
+  
+  const lastSelectedAssetRef = useRef(selectedAsset);
 
   // Update asset when selectedAsset prop changes
   useEffect(() => {
-    if (selectedAsset && selectedAsset !== formData.asset) {
-      handleInputChange('asset', selectedAsset);
+    if (selectedAsset && selectedAsset !== lastSelectedAssetRef.current) {
+      lastSelectedAssetRef.current = selectedAsset;
+      setFormData(prev => ({ ...prev, asset: selectedAsset }));
     }
   }, [selectedAsset]);
 
@@ -141,25 +148,15 @@ let AddressBookForm = ({
       if (value === 'myself') {
         // Auto-fill with user's own name from appState
         // Try multiple possible paths
-        console.log('👤 DEBUG: Full appState.state.user structure:', appState?.state?.user);
-        
         const userData1 = appState?.state?.user?.info?.user;
         const userData2 = appState?.state?.user;
         const userData3 = appState?.user?.info?.user;
+        const userData4 = appState?.state?.user?.firstName ? appState?.state?.user : null;
         
         // Use whichever path has the data
-        const userData = userData1 || userData2 || userData3 || {};
+        const userData = userData1 || userData2 || userData3 || userData4 || {};
         const userFirstName = userData?.firstName || '';
         const userLastName = userData?.lastName || '';
-        
-        console.log('👤 Trying multiple paths:', {
-          path1_user_info_user: userData1,
-          path2_user: userData2,
-          path3_alt: userData3,
-          selectedUserData: userData,
-          userFirstName,
-          userLastName
-        });
         
         setFormData(prev => ({
           ...prev,
@@ -197,6 +194,7 @@ let AddressBookForm = ({
     
     setErrorMessage(''); // Clear error on input
     setSubmitError(''); // Clear submit error on input
+
   };
 
   // Navigation functions
@@ -339,6 +337,21 @@ let AddressBookForm = ({
     setShowQRScanner(false);
   };
 
+  // Handle VASP selection from modal
+  const handleVaspSelect = (vasp) => {
+    console.log('✅ VASP selected:', vasp);
+    setFormData(prev => ({ 
+      ...prev, 
+      exchangeName: vasp.name || vasp.label || prev.exchangeName, 
+      vasp: vasp 
+    }));
+    setShowVaspSearch(false);
+  };
+
+  const handleVaspCancel = () => {
+    setShowVaspSearch(false);
+  };
+
   // Submit address book entry to API
   let submitAddress = async () => {
     if (!validateCurrentStep()) {
@@ -410,7 +423,7 @@ let AddressBookForm = ({
             accountnumber: formData.accountNumber,
             reference: '',  // NEW: Payment reference field (optional, default empty)
             dtag: null,
-            vasp: null
+            vasp: formData.vasp ? (formData.vasp.id || formData.vasp) : null
           },
           thirdparty: formData.destinationType === 'thirdParty' || false
         };
@@ -422,7 +435,7 @@ let AddressBookForm = ({
           business: (formData.exchangeName && formData.exchangeName.trim()) ? formData.exchangeName.trim() : null,
           address: formData.withdrawAddress,
           dtag: null,
-          vasp: null
+          vasp: formData.vasp ? (formData.vasp.id || formData.vasp) : null
         };
         
         apiPayload = {
@@ -859,19 +872,32 @@ let AddressBookForm = ({
             {formData.destinationType === 'exchange' && (
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Exchange Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Binance, Coinbase"
-                  value={formData.exchangeName}
-                  onChangeText={(value) => handleInputChange('exchangeName', value)}
-                  autoCapitalize="words"
-                />
+                <TouchableOpacity 
+                  style={[styles.input, formData.vasp ? styles.inputSelected : null]}
+                  onPress={() => setShowVaspSearch(true)}
+                >
+                  <Text style={formData.exchangeName ? styles.inputValueText : styles.inputPlaceholderText}>
+                    {formData.exchangeName || 'Tap to search for exchange'}
+                  </Text>
+                </TouchableOpacity>
+                
+                {/* Show selected VASP indicator */}
+                {formData.vasp && (
+                  <Text style={styles.vaspSelectedHint}>✓ Exchange selected from database</Text>
+                )}
+                
+                <Text style={styles.inputHint}>
+                  Tap to search and select from our exchange database
+                </Text>
               </View>
             )}
           </View>
         );
 
-      case 6: // Summary
+      case 6: { // Summary
+        const isGBP = formData.asset.toLowerCase() === 'gbp';
+        const assetUpper = formData.asset.toUpperCase();
+        
         return (
           <View style={styles.stepContainer}>
             <Text style={styles.stepQuestion}>Please review your information:</Text>
@@ -889,10 +915,10 @@ let AddressBookForm = ({
               
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Asset:</Text>
-                <Text style={styles.summaryValue}>{formData.asset.toUpperCase()}</Text>
+                <Text style={styles.summaryValue}>{assetUpper}</Text>
               </View>
               
-              {formData.asset.toLowerCase() === 'gbp' ? (
+              {isGBP ? (
                 <>
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Account Name:</Text>
@@ -932,38 +958,32 @@ let AddressBookForm = ({
             <View style={styles.warningCard}>
               <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
               <Text style={styles.warningText}>
-                Please verify {formData.asset.toLowerCase() === 'gbp' ? 'the bank account details are' : 'the wallet address is'} correct. 
-                {formData.asset.toLowerCase() !== 'gbp' && ' Sending to an incorrect address may result in permanent loss of funds.'}
+                Please verify {isGBP ? 'the bank account details are' : 'the wallet address is'} correct. 
+                {!isGBP && ' Sending to an incorrect address may result in permanent loss of funds.'}
               </Text>
             </View>
 
             <Text style={styles.confirmationText}>
-              By adding this {formData.asset.toLowerCase() === 'gbp' ? 'bank account' : 'address'}, you confirm that all information above is accurate.
+              By adding this {isGBP ? 'bank account' : 'address'}, you confirm that all information above is accurate.
             </Text>
 
-            {submitStatus && (
+            {submitStatus ? (
               <View style={styles.successCard}>
                 <Text style={styles.successText}>✅ {submitStatus}</Text>
               </View>
-            )}
+            ) : null}
 
-            {submitError && (
+            {submitError ? (
               <View style={styles.errorCard}>
                 <Text style={styles.errorText}>❌ {submitError}</Text>
               </View>
-            )}
+            ) : null}
 
-            <View style={styles.submitButtonWrapper}>
-              <StandardButton
-                title={isSubmitting ? "Adding..." : "Add to Address Book"}
-                onPress={submitAddress}
-                style={styles.submitButton}
-                textStyle={styles.submitButtonText}
-                disabled={isSubmitting}
-              />
-            </View>
+            {/* Submit button moved to the navigation bar so the Next button
+                becomes the Submit button on the final step. */}
           </View>
         );
+      }
 
       default:
         return null;
@@ -971,7 +991,11 @@ let AddressBookForm = ({
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={scaledHeight(100)}
+    >
       {/* Header */}
       {showHeader && (
         <>
@@ -1012,7 +1036,14 @@ let AddressBookForm = ({
       )}
 
       {/* Step Content */}
-      <ScrollView style={styles.stepContent}>
+      <ScrollView
+        style={styles.stepContent}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
         {renderStep()}
       </ScrollView>
 
@@ -1039,12 +1070,21 @@ let AddressBookForm = ({
 
         <View style={{ flex: 1 }} />
 
-        {!isLastStep() && (
+        {!isLastStep() ? (
           <TouchableOpacity
             style={[styles.navButton, styles.nextButton]}
             onPress={goToNextStep}
+            disabled={isSubmitting}
           >
             <Text style={styles.nextButtonText}>Next →</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.navButton, styles.submitButton]}
+            onPress={submitAddress}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.submitButtonText}>{isSubmitting ? 'Adding...' : 'Submit'}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -1064,7 +1104,15 @@ let AddressBookForm = ({
         onSelect={handleContactSelect}
         onCancel={handleContactPickerCancel}
       />
-    </View>
+
+      {/* VASP Search Modal */}
+      <VaspSearchModal
+        visible={showVaspSearch}
+        onSelect={handleVaspSelect}
+        onCancel={handleVaspCancel}
+        initialQuery={formData.exchangeName || ''}
+      />
+    </KeyboardAvoidingView>
   );
 };
 
@@ -1142,6 +1190,10 @@ const styles = StyleSheet.create({
   stepContent: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: scaledHeight(50),
+  },
   stepContainer: {
     paddingHorizontal: scaledWidth(20),
     paddingBottom: scaledHeight(20),
@@ -1196,6 +1248,31 @@ const styles = StyleSheet.create({
     padding: scaledWidth(12),
     fontSize: normaliseFont(16),
     color: colors.darkGray,
+  },
+  inputValueText: {
+    flex: 1,
+    fontSize: normaliseFont(16),
+    color: '#212121',
+  },
+  inputPlaceholderText: {
+    flex: 1,
+    fontSize: normaliseFont(16),
+    color: '#9E9E9E',
+  },
+  inputSearchIcon: {
+    fontSize: normaliseFont(18),
+    marginLeft: scaledWidth(8),
+  },
+  inputSelected: {
+    borderColor: colors.success,
+    borderWidth: 2,
+    backgroundColor: '#f0fff4',
+  },
+  vaspSelectedHint: {
+    fontSize: normaliseFont(12),
+    color: colors.success,
+    marginTop: scaledHeight(4),
+    fontWeight: '600',
   },
   inputHint: {
     fontSize: normaliseFont(12),

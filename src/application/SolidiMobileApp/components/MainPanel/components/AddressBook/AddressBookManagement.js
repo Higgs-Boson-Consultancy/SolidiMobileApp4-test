@@ -310,7 +310,8 @@ const AddressBookManagement = () => {
       setAddresses(allAddresses);
       
       if (allAddresses.length === 0) {
-        setError('No addresses found. You can add new addresses using the Add tab.');
+        // Don't treat an empty address list as an error — show the empty state instead
+        setError('');
       } else {
         setError('');
       }
