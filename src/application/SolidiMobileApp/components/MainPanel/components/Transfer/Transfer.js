@@ -211,7 +211,31 @@ let Transfer = () => {
           setAddressBookLoaded(true); // Allow page to load even without address book
         }
 
-        // Step 5: Page ready
+        // Step 5: Pre-load deposit details for receive mode
+        if (transferType === 'receive' && selectedAsset && appState.loadDepositDetailsForAsset) {
+          log('📍 Pre-loading deposit details for asset:', selectedAsset);
+          console.log('🔄 CONSOLE: ===== LOADING DEPOSIT DETAILS API CALL =====');
+          console.log('📤 CONSOLE: About to call appState.loadDepositDetailsForAsset with asset:', selectedAsset);
+          try {
+            await appState.loadDepositDetailsForAsset(selectedAsset);
+            const depositDetails = appState.getDepositDetailsForAsset(selectedAsset);
+            console.log('📨 CONSOLE: ===== DEPOSIT DETAILS API RESPONSE =====');
+            console.log('📨 CONSOLE: Raw deposit details response:', depositDetails);
+            console.log('📨 CONSOLE: Response type:', typeof depositDetails);
+            console.log('📨 CONSOLE: Response JSON:', JSON.stringify(depositDetails, null, 2));
+            console.log('📨 CONSOLE: ===== END DEPOSIT DETAILS API RESPONSE =====');
+            
+            log('✅ Deposit details loaded successfully');
+            console.log('✅ CONSOLE: Deposit details loaded successfully');
+          } catch (error) {
+            log('❌ Error loading deposit details:', error);
+            console.error('❌ CONSOLE: Error loading deposit details:', error);
+          }
+        } else {
+          log('⏭️  Skipping deposit details loading (not in receive mode or method unavailable)');
+        }
+
+        // Step 6: Page ready
         log('🎉 Transfer page initialization complete');
         setIsInitializing(false);
 
@@ -521,7 +545,7 @@ let Transfer = () => {
   let setupRetryCount = 0;
   const MAX_SETUP_RETRIES = 5;
   
-  let setup = () => {
+  let setup = async () => {
     try {
       log('Setting up Transfer component, transferType:', transferType);
       
@@ -590,6 +614,19 @@ let Transfer = () => {
       // Update items first
       setItems(newItems);
       
+      // Load deposit details for receive mode BEFORE rendering
+      if (transferType === 'receive' && selectedAsset && appState?.loadDepositDetailsForAsset) {
+        try {
+          console.log('🔄 [SETUP] Loading deposit details for asset:', selectedAsset);
+          await appState.loadDepositDetailsForAsset(selectedAsset);
+          console.log('✅ [SETUP] Deposit details loaded for:', selectedAsset);
+          const details = appState.getDepositDetailsForAsset(selectedAsset);
+          console.log('📍 [SETUP] Retrieved deposit details:', details);
+        } catch (error) {
+          console.error('❌ [SETUP] Error loading deposit details:', error);
+        }
+      }
+      
       // Then validate and update selected asset
       setTimeout(() => {
         try {
@@ -638,6 +675,26 @@ let Transfer = () => {
       clearTimeout(timer);
     };
   }, [transferType]);
+
+  // Load deposit details from API when in receive mode and asset changes
+  useEffect(() => {
+    const loadDepositDetails = async () => {
+      if (transferType === 'receive' && selectedAsset && appState?.loadDepositDetailsForAsset) {
+        try {
+          console.log('🔄 Loading deposit details for asset:', selectedAsset);
+          await appState.loadDepositDetailsForAsset(selectedAsset);
+          console.log('✅ Deposit details loaded for:', selectedAsset);
+          
+          // Trigger a re-render to update the QR code
+          triggerRender(renderCount + 1);
+        } catch (error) {
+          console.error('❌ Error loading deposit details:', error);
+        }
+      }
+    };
+    
+    loadDepositDetails();
+  }, [transferType, selectedAsset]);
 
   // Enhanced send transaction handler with validation
   let handleSend = async () => {
@@ -869,27 +926,47 @@ let Transfer = () => {
     try {
       log('Getting receive address for asset:', selectedAsset);
       
-      // Try to get the actual deposit address from appState
-      if (appState?.getDepositAddress) {
+      // Try to get deposit details from appState
+      if (appState?.getDepositDetailsForAsset) {
         try {
-          const address = appState.getDepositAddress(selectedAsset);
-          if (address && address !== 'undefined' && address !== 'null') {
-            log('Got deposit address from appState:', address);
-            return address;
+          const depositDetails = appState.getDepositDetailsForAsset(selectedAsset);
+          console.log('📍 Deposit details from API:', depositDetails);
+          
+          if (depositDetails && depositDetails !== '[loading]' && typeof depositDetails === 'object') {
+            // Check for error
+            if (depositDetails.error) {
+              console.error('❌ API returned error:', depositDetails.error);
+              return null;
+            }
+            
+            // For crypto, use address field
+            if (depositDetails.address) {
+              console.log('✅ Got address from API:', depositDetails.address);
+              return depositDetails.address;
+            }
+            
+            // For fiat (GBP), you might want to format account details differently
+            if (depositDetails.accountNumber) {
+              console.log('✅ Got bank account from API:', depositDetails.accountNumber);
+              return `Account: ${depositDetails.accountNumber}`;
+            }
+          } else {
+            console.warn('⚠️ Deposit details not loaded yet:', depositDetails);
           }
         } catch (error) {
-          log('Error getting deposit address from appState:', error);
+          console.error('❌ Error getting deposit details from appState:', error);
         }
+      } else {
+        console.error('❌ appState.getDepositDetailsForAsset not available');
       }
       
-      // Fallback to data model
-      const fallbackAddress = TransferUtils.getDepositAddress(selectedAsset);
-      log('Using fallback address:', fallbackAddress);
-      return fallbackAddress;
+      // No fallback - return null to show that address must be loaded from API
+      console.warn('⚠️ No deposit address available - API needs to be called');
+      return null;
       
     } catch (error) {
-      log('Error getting receive address:', error);
-      return `demo-${(selectedAsset || 'btc').toLowerCase()}-address-12345`;
+      console.error('Error getting receive address:', error);
+      return null;
     }
   }
 

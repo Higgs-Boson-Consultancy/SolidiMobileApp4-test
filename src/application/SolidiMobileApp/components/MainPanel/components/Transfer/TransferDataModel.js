@@ -88,21 +88,6 @@ export const TRANSFER_CAPABILITIES = {
 };
 
 /**
- * Default deposit addresses for demo/fallback purposes
- * In production, these would be generated dynamically
- */
-export const DEFAULT_DEPOSIT_ADDRESSES = {
-  'BTC': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-  'ETH': '0x742d35Cc6634C0532925a3b8D2623CC78F4Ca5A0',
-  'LTC': 'ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kyq2w5l',
-  'XRP': 'rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH',
-  'ADA': 'addr1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlhvv5g8zt2v5a2g',
-  'GBP': 'UK-BANK-ACCOUNT-12345678',
-  'USD': 'US-BANK-ACCOUNT-87654321',
-  'EUR': 'EU-BANK-ACCOUNT-11223344',
-};
-
-/**
  * Asset display information for transfer dropdowns
  */
 export const TRANSFER_ASSET_DISPLAY = {
@@ -127,7 +112,7 @@ export class TransferDataModel {
   constructor() {
     this.assets = Object.keys(TRANSFER_CAPABILITIES);
     this.capabilities = TRANSFER_CAPABILITIES;
-    this.addresses = DEFAULT_DEPOSIT_ADDRESSES;
+    this.addresses = {}; // Empty - must be loaded from API
     this.displayInfo = TRANSFER_ASSET_DISPLAY;
   }
 
@@ -164,18 +149,18 @@ export class TransferDataModel {
   /**
    * Get deposit address for an asset
    * @param {string} asset - Asset symbol
-   * @returns {string} Deposit address or fallback
+   * @returns {string} Deposit address or null if not loaded
    */
   getDepositAddress(asset) {
     try {
       if (!asset || typeof asset !== 'string') {
-        return 'demo-address-12345';
+        return null;
       }
       
-      return this.addresses[asset.toUpperCase()] || `demo-${asset.toLowerCase()}-address-12345`;
+      return this.addresses[asset.toUpperCase()] || null;
     } catch (error) {
       console.warn('Error getting deposit address:', error);
-      return 'demo-address-12345';
+      return null;
     }
   }
 

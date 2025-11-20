@@ -22,6 +22,7 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 
 let Footer = (props) => {
+  let {style: styleArg} = props;
 
   let appState = useContext(AppStateContext);
   //const insets = useSafeAreaInsets();
@@ -43,8 +44,8 @@ let Footer = (props) => {
   // Create footer buttons using map instead of FlatList for better control
 
   return (
-//    <View style={[styleArg, styles.footer, { paddingBottom: Math.max(insets.bottom, scaledHeight(8)) }]}>  
-    <View style={styles.footer}>
+//    <View style={[styleArg, styles.footer, { paddingBottom: Math.max(insets.bottom, scaledHeight(8)) }]}>
+    <View style={[styleArg, styles.footer]}>
       {footerButtonList.map((item, index) => {
         let buttonName = item;
         let imageName = footerIcons[buttonName];
@@ -80,7 +81,7 @@ let styles = StyleSheet.create({
     paddingHorizontal: scaledWidth(10),
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    height: scaledHeight(70), // Fixed height instead of minHeight
+    height: scaledHeight(70), // Fixed height
   },
   buttonWrapper: {
     flex: 1,
