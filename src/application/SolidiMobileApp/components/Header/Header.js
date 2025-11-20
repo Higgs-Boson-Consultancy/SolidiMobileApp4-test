@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext } from 'react';
-import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Internal imports
 import { AppStateContext } from 'src/application/data';
@@ -16,6 +17,7 @@ import { sharedStyles as styles, layoutStyles as layout, buttonStyles as buttons
 let Header = (props) => {
 
   let {style: styleArg} = props;
+  const insets = useSafeAreaInsets();
 
   let appState = useContext(AppStateContext);
 
@@ -127,7 +129,7 @@ const headerStyles = StyleSheet.create({
   container: {
     width: '100%',
     backgroundColor: 'white',
-    paddingBottom: scaledHeight(5)
+    paddingBottom: scaledHeight(10)
   },
   riskBanner: {
     width: '100%',

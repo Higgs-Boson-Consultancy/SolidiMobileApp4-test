@@ -99,7 +99,7 @@ const AppContent = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar 
-        translucent
+        translucent={true}
         backgroundColor="transparent"
         barStyle="dark-content"
       />

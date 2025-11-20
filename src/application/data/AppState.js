@@ -6917,10 +6917,16 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     return (
       <AppStateContext.Provider value={this.state}>
 
-      <SafeAreaView style={styles.container}>
-        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Header style={styles.header} />   : null }
-        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <MainPanel style={styles.mainPanel} /> : null }
-        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Footer style={styles.footer} /> : null }
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  <Header />   : null }
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ? 
+          <View style={styles.mainPanelContainer}>
+            <MainPanel /> 
+          </View>
+        : null }
+        {!this.state.maintenanceMode && !this.state.appUpdateRequired ?  
+          <Footer /> 
+        : null }
 
         { this.state.maintenanceMode                                 ? <Maintenance /> : null }
         { this.state.appUpdateRequired                               ? <UpdateApp /> : null }
@@ -6937,17 +6943,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.defaultBackground,
   },
-  header: {
-    // Let header size itself naturally
-  },
-  mainPanel: {
-    flex: 1, // Take up remaining space
-  },
-  footer: {
-    // Minimal padding for very thin footer
-    paddingTop: 0,
-    paddingBottom: 0,
-    height: scaledHeight(62), // Fixed height to prevent expansion
+  mainPanelContainer: {
+    flex: 1,
+    overflow: 'hidden',
   },
   // Emergency mode styles
   emergencyContainer: {

@@ -7,7 +7,7 @@ import {
   View,
   Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+//import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Other imports
 import _ from 'lodash';
@@ -23,10 +23,8 @@ import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
 
 let Footer = (props) => {
 
-  let {style: styleArg} = props;
-
   let appState = useContext(AppStateContext);
-  const insets = useSafeAreaInsets();
+  //const insets = useSafeAreaInsets();
 
   let statesWhereFooterIsHidden = [
     'PIN',
@@ -38,14 +36,15 @@ let Footer = (props) => {
   // Check whether to hide the footer completely.
   if (hideFooter) {
     return (
-      <View style={[styleArg, styleEmptyFooter]}></View>
+      <View style={styleEmptyFooter}></View>
     );
   }
 
   // Create footer buttons using map instead of FlatList for better control
 
   return (
-    <View style={[styleArg, styles.footer, { paddingBottom: Math.max(insets.bottom, scaledHeight(8)) }]}>
+//    <View style={[styleArg, styles.footer, { paddingBottom: Math.max(insets.bottom, scaledHeight(8)) }]}>  
+    <View style={styles.footer}>
       {footerButtonList.map((item, index) => {
         let buttonName = item;
         let imageName = footerIcons[buttonName];
@@ -76,11 +75,12 @@ let styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'white',
-    paddingTop: scaledHeight(12),
+    paddingTop: Platform.OS === 'ios' ? scaledHeight(8) : scaledHeight(15),
+    paddingBottom: scaledHeight(8),
     paddingHorizontal: scaledWidth(10),
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    minHeight: scaledHeight(70),
+    height: scaledHeight(70), // Fixed height instead of minHeight
   },
   buttonWrapper: {
     flex: 1,
