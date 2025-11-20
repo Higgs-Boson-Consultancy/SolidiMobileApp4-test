@@ -215,11 +215,27 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
     if (typeof addressData === 'string') {
       try {
         const parsed = JSON.parse(addressData);
+        // For GBP bank accounts (NEW FORMAT)
+        if (parsed.sortcode && parsed.accountnumber) {
+          const sortCode = parsed.sortcode;
+          const formattedSortCode = sortCode.length === 6 
+            ? `${sortCode.slice(0, 2)}-${sortCode.slice(2, 4)}-${sortCode.slice(4, 6)}`
+            : sortCode;
+          return `Sort Code: ${formattedSortCode}, Account: ${parsed.accountnumber}`;
+        }
         return parsed.address || parsed.withdrawAddress || addressData;
       } catch (error) {
         return addressData;
       }
     } else if (typeof addressData === 'object' && addressData !== null) {
+      // For GBP bank accounts (NEW FORMAT)
+      if (addressData.sortcode && addressData.accountnumber) {
+        const sortCode = addressData.sortcode;
+        const formattedSortCode = sortCode.length === 6 
+          ? `${sortCode.slice(0, 2)}-${sortCode.slice(2, 4)}-${sortCode.slice(4, 6)}`
+          : sortCode;
+        return `Sort Code: ${formattedSortCode}, Account: ${addressData.accountnumber}`;
+      }
       return addressData.address || addressData.withdrawAddress || JSON.stringify(addressData);
     }
     return addressData || '';
@@ -292,10 +308,19 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
             {displayAddress}
           </Text>
           
+          {/* For GBP bank accounts, show account holder name */}
+          {addressData.accountname && (
+            <Text style={styles.addressOwner}>
+              Account Holder: {addressData.accountname}
+            </Text>
+          )}
+          
+          {/* For businesses */}
           {addressData.business && (
             <Text style={styles.addressBusiness}>{addressData.business}</Text>
           )}
           
+          {/* For individuals (crypto addresses) */}
           {addressData.firstname && addressData.lastname && (
             <Text style={styles.addressOwner}>
               {addressData.firstname} {addressData.lastname}

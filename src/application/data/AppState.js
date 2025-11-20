@@ -2889,6 +2889,17 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         user_status: {}
       };
       
+      // Clear address book refresh interval
+      if (this.addressBookRefreshInterval) {
+        console.log('🔄 Clearing address book refresh interval on logout');
+        clearInterval(this.addressBookRefreshInterval);
+        this.addressBookRefreshInterval = null;
+      }
+      
+      // Clear address book cache
+      console.log('🗑️ Clearing address book cache on logout');
+      this.state.apiData.address_book = {};
+      
       // Initialize cache timestamps for data refresh management
       this.state.cache = {
         timestamps: {
@@ -3945,6 +3956,23 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       this.state.startCryptoPriceUpdates();
       console.log('[REG-CHECK] ✅ Crypto price updates started');
       
+      console.log('[REG-CHECK] Step 9: Preloading address books for all assets...');
+      // Load all address books to cache after authentication
+      await this.loadAllAddressBooks();
+      console.log('[REG-CHECK] ✅ Address books preloaded');
+      
+      console.log('[REG-CHECK] Step 9b: Setting up periodic address book refresh...');
+      // Clear any existing refresh interval
+      if (this.addressBookRefreshInterval) {
+        clearInterval(this.addressBookRefreshInterval);
+      }
+      // Refresh address book cache periodically to catch any changes
+      this.addressBookRefreshInterval = setInterval(async () => {
+        console.log('🔄 Periodic address book cache refresh triggered');
+        await this.loadAllAddressBooks();
+      }, 5 * 60 * 1000); // Refresh every 5 minutes
+      console.log('[REG-CHECK] ✅ Address book auto-refresh configured (every 5 minutes)');
+      
       console.log('\n' + '✅'.repeat(60));
       console.log('[REG-CHECK] ===== loadInitialStuffAboutUser COMPLETED =====');
       console.log('✅'.repeat(60) + '\n');
@@ -4261,9 +4289,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         this.state.user.info.user = data;
       }
       
-      // Update cache timestamp
-      this.state.cache.timestamps.userInfo = Date.now();
-      console.log('[CACHE] User info cached at:', new Date(this.state.cache.timestamps.userInfo).toISOString());
+      // Update cache timestamp (check if cache exists first)
+      if (this.state.cache && this.state.cache.timestamps) {
+        this.state.cache.timestamps.userInfo = Date.now();
+        console.log('[CACHE] User info cached at:', new Date(this.state.cache.timestamps.userInfo).toISOString());
+      }
       
       // ===== DETAILED USER OBJECT LOGGING =====
       console.log('👤 ===== COMPLETE USER OBJECT AFTER LOGIN =====');
@@ -4327,9 +4357,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         this.state.user.info.user_status = data;
       }
       
-      // Update cache timestamp
-      this.state.cache.timestamps.userStatus = Date.now();
-      console.log('[CACHE] User status cached at:', new Date(this.state.cache.timestamps.userStatus).toISOString());
+      // Update cache timestamp (check if cache exists first)
+      if (this.state.cache && this.state.cache.timestamps) {
+        this.state.cache.timestamps.userStatus = Date.now();
+        console.log('[CACHE] User status cached at:', new Date(this.state.cache.timestamps.userStatus).toISOString());
+      }
       return true;
     }
 
@@ -4507,7 +4539,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.loadBalances = async () => {
-      let data = await this.state.privateMethod({apiRoute: 'balance'});
+      let data = await this.state.privateMethod({httpMethod: 'POST', apiRoute: 'balance'});
       if (data == 'DisplayedError') return;
       let msg = "User balances loaded from server.";
       if (jd(data) === jd(this.state.apiData.balance)) {
@@ -5101,7 +5133,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
     this.confirmPaymentOfBuyOrder = async (params) => {
       let {orderID} = params;
-      let data = await this.state.privateMethod({apiRoute: `order/${orderID}/user_has_paid`});
+      let data = await this.state.privateMethod({httpMethod: 'POST', apiRoute: `order/${orderID}/user_has_paid`});
       /* Example response:
 {"result":"success"}
       */
@@ -5222,7 +5254,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log('🔄 loadFees: Starting fee loading...');
       console.log('🔍 loadFees: Calling privateMethod with apiRoute: fee');
       
-      let response = await this.state.privateMethod({apiRoute:'fee'});
+      let response = await this.state.privateMethod({httpMethod: 'POST', apiRoute:'fee'});
       console.log('📨 loadFees: Raw response:', response);
       
       if (response == 'DisplayedError') {
@@ -5336,24 +5368,28 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.sendWithdraw = async ({asset, volume, address, priority, functionName}) => {
-      log(`🔄 sendWithdraw: Starting withdrawal - ${volume} ${asset} to ${address} with priority ${priority}`);
-      console.log(`🔄 CONSOLE: sendWithdraw starting - ${volume} ${asset} to ${address} with priority ${priority}`);
+      // address parameter must be UUID from address book, not actual wallet address
+      // Priority must be one of: SLOW, MEDIUM, FAST
+      
+      log(`🔄 sendWithdraw: Starting withdrawal - ${volume} ${asset} to address UUID: ${address} with priority ${priority}`);
+      console.log(`🔄 CONSOLE: sendWithdraw starting - ${volume} ${asset} to UUID: ${address} with priority ${priority}`);
       
       try {
+        // Validate UUID format (basic check)
+        if (!address || typeof address !== 'string') {
+          throw new Error('Address UUID is required and must be a string');
+        }
+        
         // Prepare parameters according to API documentation
+        // Both crypto and fiat withdrawals use the same format:
+        // - address: UUID from address book
+        // - volume: amount to withdraw
+        // - priority: SLOW, MEDIUM, or FAST
         const params = {
           volume: volume,
-          address: address,
-          priority: priority
+          address: address, // UUID from address book
+          priority: priority || 'MEDIUM' // Default to MEDIUM if not specified
         };
-
-        // Asset-specific parameter handling for GBP
-        if (asset === 'GBP') {
-          // For GBP withdrawals, use account_id instead of address
-          params.account_id = address;
-          delete params.address;
-          delete params.priority; // GBP doesn't use priority
-        }
         
         log('🔍 sendWithdraw: Calling privateMethod with params:', {
           httpMethod: 'POST',
@@ -5369,13 +5405,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         console.log('📋 CONSOLE: Final API parameters:', JSON.stringify(params, null, 2));
         console.log('🔧 CONSOLE: Asset type:', asset);
         console.log('🔧 CONSOLE: Volume:', volume);
-        console.log('🔧 CONSOLE: Address (should be UUID):', address);
+        console.log('🔧 CONSOLE: Address UUID:', address);
         console.log('🔧 CONSOLE: Address type:', typeof address);
         console.log('🔧 CONSOLE: Address length:', address ? address.length : 'null/undefined');
         console.log('🔧 CONSOLE: Is UUID format (has dashes)?:', address ? address.includes('-') : false);
         console.log('🔧 CONSOLE: Priority:', priority);
         console.log('🔧 CONSOLE: Function name:', functionName);
         console.log('⚠️ CONSOLE: IMPORTANT - Address must be UUID from address book, not wallet address!');
+        console.log('⚠️ CONSOLE: To add address to address book, use: POST /addressBook/{asset}/{network}');
         console.log('🌐 CONSOLE: ===== END API ENDPOINT DEBUG =====');
         
         let data = await this.state.privateMethod({
@@ -5492,7 +5529,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.loadOrders = async () => {
-      let data = await this.state.privateMethod({apiRoute: 'order'});
+      let data = await this.state.privateMethod({httpMethod: 'POST', apiRoute: 'order'});
       if (data == 'DisplayedError') return;
       /* Example data:
       [
@@ -5532,7 +5569,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.loadTransactions = async () => {
-      let data = await this.state.privateMethod({apiRoute: 'transaction'});
+      let data = await this.state.privateMethod({httpMethod: 'POST', apiRoute: 'transaction'});
       if (data == 'DisplayedError') return;
       /* Example data:
       [
@@ -5576,16 +5613,20 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           abortController: this.createAbortController({tag: `addressBook-${asset}`})
         });
         
-        console.log(`� ${fName}: Raw API response:`, data);
+        console.log(`📦 ${fName}: Raw API response:`, data);
         
         // Handle API response
         if (data === 'DisplayedError') {
           console.log(`❌ ${fName}: API returned DisplayedError`);
+          // Store empty array in cache
+          this.state.apiData.address_book[asset.toUpperCase()] = [];
           return [];
         }
         
         if (!data) {
           console.log(`⚠️ ${fName}: API returned no data`);
+          // Store empty array in cache
+          this.state.apiData.address_book[asset.toUpperCase()] = [];
           return [];
         }
         
@@ -5602,15 +5643,54 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           addressList = [];
         }
         
+        // ✨ CACHE THE RESULT in address_book object
+        console.log(`💾 ${fName}: Caching ${addressList.length} addresses for ${asset}`);
+        this.state.apiData.address_book[asset.toUpperCase()] = addressList;
         
-        console.log(`✅ ${fName}: Successfully loaded ${addressList.length} addresses for ${asset}`);
+        console.log(`✅ ${fName}: Successfully loaded and cached ${addressList.length} addresses for ${asset}`);
         return addressList;
         
       } catch (error) {
         console.log(`❌ ${fName}: Exception caught:`, error);
         console.log(`❌ ${fName}: Error message:`, error.message);
         
+        // Store empty array in cache on error
+        this.state.apiData.address_book[asset.toUpperCase()] = [];
         return [];
+      }
+    }
+
+    // Load all address books in parallel after authentication
+    this.loadAllAddressBooks = async () => {
+      const fName = 'loadAllAddressBooks';
+      console.log(`\n📚 ${fName}: ===== STARTING PARALLEL ADDRESS BOOK LOADING =====`);
+      
+      // List of all supported assets (crypto + fiat)
+      const assetsToLoad = ['BTC', 'ETH', 'LTC', 'XRP', 'BCH', 'GBP', 'EUR', 'USD'];
+      
+      console.log(`📚 ${fName}: Loading address books for ${assetsToLoad.length} assets:`, assetsToLoad);
+      
+      try {
+        // Load all address books in parallel using Promise.all
+        const loadPromises = assetsToLoad.map(asset => 
+          this.loadAddressBook(asset).catch(error => {
+            console.log(`⚠️ ${fName}: Failed to load ${asset} address book:`, error);
+            return []; // Return empty array on error to prevent Promise.all from failing
+          })
+        );
+        
+        const results = await Promise.all(loadPromises);
+        
+        // Count total addresses loaded
+        const totalAddresses = results.reduce((sum, list) => sum + list.length, 0);
+        
+        console.log(`✅ ${fName}: Parallel loading complete!`);
+        console.log(`📊 ${fName}: Loaded ${totalAddresses} total addresses across ${assetsToLoad.length} assets`);
+        console.log(`📦 ${fName}: Cache status:`, Object.keys(this.state.apiData.address_book));
+        console.log(`📚 ${fName}: ===== PARALLEL ADDRESS BOOK LOADING COMPLETE =====\n`);
+        
+      } catch (error) {
+        console.error(`❌ ${fName}: Parallel loading failed:`, error);
       }
     }
 
@@ -5623,12 +5703,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         return [];
       }
       
-      const cacheKey = `addressBook_${asset.toUpperCase()}`;
-      const cacheData = this.state.apiData[cacheKey];
+      const cacheData = this.state.apiData.address_book[asset.toUpperCase()];
       
-      if (cacheData && cacheData.data) {
-        console.log(`✅ getAddressBook: Found cached data for ${asset} (${cacheData.data.length} addresses)`);
-        return cacheData.data;
+      if (cacheData && Array.isArray(cacheData)) {
+        console.log(`✅ getAddressBook: Found cached data for ${asset} (${cacheData.length} addresses)`);
+        return cacheData;
       }
       
       console.log(`⚠️ getAddressBook: No cached data for ${asset}`);
@@ -5640,12 +5719,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Get list of assets that have cached address book data
       console.log('📍 getCachedAddressBookAssets: Called');
       
-      const assets = [];
-      Object.keys(this.state.apiData).forEach(key => {
-        if (key.startsWith('addressBook_') && this.state.apiData[key].data) {
-          const asset = key.replace('addressBook_', '');
-          assets.push(asset);
-        }
+      const assets = Object.keys(this.state.apiData.address_book).filter(asset => {
+        return Array.isArray(this.state.apiData.address_book[asset]) && 
+               this.state.apiData.address_book[asset].length > 0;
       });
       
       console.log(`✅ getCachedAddressBookAssets: Found cached data for assets:`, assets);
@@ -5658,16 +5734,11 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       console.log('📍 clearAddressBookCache: Called for asset:', asset);
       
       if (asset) {
-        const cacheKey = `addressBook_${asset.toUpperCase()}`;
-        delete this.state.apiData[cacheKey];
+        delete this.state.apiData.address_book[asset.toUpperCase()];
         console.log(`✅ clearAddressBookCache: Cleared cache for ${asset}`);
       } else {
         // Clear all address book caches
-        Object.keys(this.state.apiData).forEach(key => {
-          if (key.startsWith('addressBook_')) {
-            delete this.state.apiData[key];
-          }
-        });
+        this.state.apiData.address_book = {};
         console.log(`✅ clearAddressBookCache: Cleared all address book caches`);
       }
     }
@@ -6029,6 +6100,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       loadTransactions: this.loadTransactions,
       getTransactions: this.getTransactions,
       loadAddressBook: this.loadAddressBook,
+      loadAllAddressBooks: this.loadAllAddressBooks,
       getAddressBook: this.getAddressBook,
       getCachedAddressBookAssets: this.getCachedAddressBookAssets,
       clearAddressBookCache: this.clearAddressBookCache,

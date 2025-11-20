@@ -261,6 +261,7 @@ const Home = () => {
         console.log('📊 STEP 5: Loading recent transactions...');
         try {
           const transactionResponse = await appState.privateMethod({
+            httpMethod: 'POST',
             apiRoute: 'transaction',
             functionName: 'Home.setup.transactions'
           });

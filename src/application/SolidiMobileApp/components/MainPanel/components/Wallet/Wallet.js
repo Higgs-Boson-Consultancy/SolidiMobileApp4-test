@@ -173,6 +173,7 @@ let Wallet = () => {
   let [fiatWithdrawCurrency, setFiatWithdrawCurrency] = useState('');
   let [fiatWithdrawAmount, setFiatWithdrawAmount] = useState('');
   let [isFiatWithdrawing, setIsFiatWithdrawing] = useState(false);
+  let [selectedFiatAddress, setSelectedFiatAddress] = useState(''); // Selected bank account UUID
   
   // Bank account data
   let [userBankAccount, setUserBankAccount] = useState(null);
@@ -778,6 +779,8 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
     }
   };
 
+
+
   // Handle withdrawal
   let handleWithdraw = (currency) => {
     console.log('\n' + '🏦'.repeat(60));
@@ -800,9 +803,24 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
     console.log('[WALLET] Opening fiat withdrawal modal for', currency);
     console.log('[WALLET] Current userBankAccount:', JSON.stringify(userBankAccount, null, 2));
     
-    // For fiat currencies, open fiat withdrawal modal
+    // Use cached address book from AppState
+    const addresses = appState.getAddressBook(currency);
+    console.log('[WALLET] Using cached address book from AppState for', currency, ':', addresses.length, 'address(es)');
+    
+    // Reset state
     setFiatWithdrawCurrency(currency);
     setFiatWithdrawAmount('');
+    
+    // Auto-select first address if available
+    if (addresses.length > 0) {
+      setSelectedFiatAddress(addresses[0].uuid);
+      console.log('[WALLET] Auto-selected first bank account:', addresses[0].uuid);
+    } else {
+      setSelectedFiatAddress('');
+      console.log('[WALLET] No addresses available for', currency);
+    }
+    
+    // Open modal
     setShowFiatWithdrawModal(true);
     console.log('[WALLET] Fiat withdrawal modal opened');
     console.log('🏦'.repeat(60) + '\n');
@@ -887,35 +905,45 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
       accountNumber: userBankAccount.accountNumber
     });
 
+    // Check if address is selected
+    if (!selectedFiatAddress) {
+      console.log('[FIAT-WITHDRAW] ❌ ERROR: No bank account selected');
+      Alert.alert(
+        'Bank Account Required',
+        'Please select a bank account from the address book.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     try {
       setIsFiatWithdrawing(true);
       console.log('[FIAT-WITHDRAW] Step 4: Preparing API call...');
       console.log('[FIAT-WITHDRAW] Set isWithdrawing to true');
       console.log('[FIAT-WITHDRAW] Currency:', fiatWithdrawCurrency);
       console.log('[FIAT-WITHDRAW] Amount:', amount);
-      console.log('[FIAT-WITHDRAW] Bank Account UUID:', userBankAccount.uuid || 'N/A');
-
-      console.log('[FIAT-WITHDRAW] Bank Account UUID:', userBankAccount.uuid || 'N/A');
+      console.log('[FIAT-WITHDRAW] Bank Account UUID:', selectedFiatAddress);
 
       console.log('\n' + '📤'.repeat(60));
       console.log('[FIAT-WITHDRAW] ===== MAKING API CALL =====');
-      console.log('[FIAT-WITHDRAW] API Route: POST /withdraw');
-      console.log('[FIAT-WITHDRAW] API Parameters:', {
-        asset: fiatWithdrawCurrency,
+      console.log('[FIAT-WITHDRAW] API Route: POST /withdraw/' + fiatWithdrawCurrency);
+      
+      // Build withdrawal parameters - ALL withdrawals require priority
+      const withdrawParams = {
         volume: amount.toString(),
-        priority: 'normal'
-      });
+        address: selectedFiatAddress, // UUID from address book
+        priority: 'MEDIUM' // SLOW, MEDIUM, FAST - required for ALL withdrawals
+      };
+      
+      console.log('[FIAT-WITHDRAW] Parameters:', withdrawParams);
       console.log('📤'.repeat(60) + '\n');
 
-      // Call withdraw API for fiat - uses user's default bank account
+      // Call withdraw API - uses UUID from address book
       let result = await appState.apiClient.privateMethod({
         httpMethod: 'POST',
-        apiRoute: 'withdraw',
-        params: {
-          asset: fiatWithdrawCurrency,
-          volume: amount.toString(),
-          priority: 'normal'
-        }
+        apiRoute: `withdraw/${fiatWithdrawCurrency}`,
+        params: withdrawParams,
+        abortController: new AbortController() // Required parameter
       });
 
       console.log('\n' + '📨'.repeat(60));
@@ -1043,26 +1071,25 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
       console.log('🏦 Amount:', withdrawAmountInput);
 
       console.log('🔄 CONSOLE: ===== CRYPTO WITHDRAW API CALL =====');
-      console.log('📤 CONSOLE: About to call appState.apiClient.privateMethod for withdraw...');
+      console.log('📤 CONSOLE: About to call withdraw API...');
+      console.log('📤 CONSOLE: API Route: POST /withdraw/' + withdrawCurrency);
       console.log('📤 CONSOLE: API parameters:', {
-        httpMethod: 'POST',
-        apiRoute: 'withdraw',
-        params: {
-          address: withdrawToAddress, // This is the UUID from address book
-          volume: withdrawAmountInput,
-          priority: 'normal'
-        }
+        volume: withdrawAmountInput,
+        address: withdrawToAddress, // This is the UUID from address book
+        priority: 'MEDIUM'
       });
 
       // Call withdraw API using address book UUID
+      // Both crypto and fiat use same API format: volume, address (UUID), priority
       let result = await appState.apiClient.privateMethod({
         httpMethod: 'POST',
-        apiRoute: 'withdraw',
+        apiRoute: `withdraw/${withdrawCurrency}`,
         params: {
-          address: withdrawToAddress, // This is the UUID from address book
           volume: withdrawAmountInput,
-          priority: 'normal' // Can be 'low', 'normal', or 'high'
-        }
+          address: withdrawToAddress, // UUID from address book
+          priority: 'MEDIUM' // SLOW, MEDIUM, FAST
+        },
+        abortController: new AbortController() // Required parameter
       });
 
       console.log('📨 CONSOLE: ===== CRYPTO WITHDRAW API RESPONSE =====');
@@ -1609,6 +1636,111 @@ Transaction ID: ${paymentToken.transactionIdentifier || 'SANDBOX_' + Date.now()}
                   Available: {getCurrencySymbol(fiatWithdrawCurrency)}{formatCurrency(balanceData[fiatWithdrawCurrency].available.toString(), fiatWithdrawCurrency)}
                 </Text>
               ) : null}
+            </View>
+
+            {/* Bank Account Selection */}
+            <View style={{ marginBottom: 20 }}>
+              <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+                Bank Account
+              </Text>
+              {appState.getAddressBook(fiatWithdrawCurrency).length === 0 ? (
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.outline,
+                  borderRadius: 8,
+                  padding: 16,
+                  backgroundColor: theme.colors.surfaceVariant
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <Icon name="information" size={20} color={theme.colors.primary} style={{ marginRight: 8, marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4, fontWeight: 'bold' }}>
+                        No bank accounts in address book
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        To withdraw {fiatWithdrawCurrency}, you need to add your bank account to the address book first.
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: theme.colors.primary,
+                      padding: 12,
+                      borderRadius: 8,
+                      alignItems: 'center'
+                    }}
+                    onPress={() => {
+                      setShowFiatWithdrawModal(false);
+                      appState.changeState('AddressBookManagement');
+                    }}
+                  >
+                    <Text style={{ color: theme.colors.onPrimary, fontWeight: 'bold' }}>
+                      Add Bank Account to Address Book
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.outline,
+                  borderRadius: 8,
+                  overflow: 'hidden'
+                }}>
+                  {appState.getAddressBook(fiatWithdrawCurrency).map((account, index) => {
+                    // Parse address details
+                    console.log('[ADDRESS-DISPLAY] Raw account data:', account);
+                    console.log('[ADDRESS-DISPLAY] account.address value:', account.address);
+                    console.log('[ADDRESS-DISPLAY] account.address type:', typeof account.address);
+                    
+                    let addressDetails = {};
+                    try {
+                      addressDetails = JSON.parse(account.address);
+                      console.log('[ADDRESS-DISPLAY] Parsed addressDetails:', addressDetails);
+                    } catch (e) {
+                      console.log('[ADDRESS-DISPLAY] Error parsing address:', e);
+                      console.log('[ADDRESS-DISPLAY] Failed to parse:', account.address);
+                    }
+                    
+                    const isSelected = selectedFiatAddress === account.uuid;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={account.uuid}
+                        style={{
+                          padding: 16,
+                          backgroundColor: isSelected ? theme.colors.primaryContainer : 'white',
+                          borderBottomWidth: index < appState.getAddressBook(fiatWithdrawCurrency).length - 1 ? 1 : 0,
+                          borderBottomColor: theme.colors.outline
+                        }}
+                        onPress={() => {
+                          setSelectedFiatAddress(account.uuid);
+                          console.log('[FIAT-WITHDRAW] Selected bank account:', account.uuid);
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flex: 1 }}>
+                            <Text variant="bodyLarge" style={{ 
+                              fontWeight: isSelected ? 'bold' : 'normal',
+                              color: isSelected ? theme.colors.onPrimaryContainer : '#000',
+                              marginBottom: 4
+                            }}>
+                              {account.name || addressDetails.accountname || addressDetails.accountName || 'Bank Account'}
+                            </Text>
+                            <Text variant="bodySmall" style={{ 
+                              color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant
+                            }}>
+                              Sort Code: {addressDetails.sortcode || addressDetails.sortCode || 'N/A'} • Account: {addressDetails.accountnumber || addressDetails.accountNumber || 'N/A'}
+                            </Text>
+                          </View>
+                          {isSelected && (
+                            <Icon name="check-circle" size={24} color={theme.colors.primary} />
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
             {/* Processing Time Notice */}

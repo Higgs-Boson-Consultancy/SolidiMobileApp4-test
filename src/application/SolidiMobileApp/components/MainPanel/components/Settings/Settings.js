@@ -1,6 +1,7 @@
 // React imports
 import React, { useContext, useEffect, useState } from 'react';
 import { Text, StyleSheet, View, ScrollView, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Material Design imports
 import {
@@ -13,6 +14,7 @@ import {
   useTheme,
   Icon,
   Chip,
+  Switch,
 } from 'react-native-paper';
 
 // Other imports
@@ -38,6 +40,7 @@ let Settings = () => {
 
   let appState = useContext(AppStateContext);
   let [renderCount, triggerRender] = useState(0);
+  let [biometricsEnabled, setBiometricsEnabled] = useState(false);
   let firstRender = misc.useFirstRender();
   let stateChangeID = appState.stateChangeID;
 
@@ -58,6 +61,7 @@ let Settings = () => {
     console.log('   User name (direct):', `${appState?.userInfo?.firstName || ''} ${appState?.userInfo?.lastName || ''}`);
     
     setup();
+    loadBiometricPreference();
   }, []); // Pass empty array so that this only runs once on mount.
 
 
@@ -66,16 +70,21 @@ let Settings = () => {
       await appState.generalSetup({caller: 'Settings'});
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       
-      // Reload user profile data when Settings page loads (cache refresh trigger)
-      console.log('⚙️ [Settings] Reloading user profile data...');
-      try {
-        await appState.loadUserInfo();
-        console.log('✅ [Settings] User info reloaded');
-        await appState.loadUserStatus();
-        console.log('✅ [Settings] User status reloaded');
-      } catch (error) {
-        console.error('❌ [Settings] Failed to reload user data:', error);
-      }
+      // Load user profile data in background (non-blocking)
+      console.log('⚙️ [Settings] Loading user profile data in background...');
+      // Don't await - let it load in background so cached data shows immediately
+      appState.loadUserInfo().then(() => {
+        console.log('✅ [Settings] User info reloaded in background');
+        triggerRender(prev => prev + 1); // Force re-render with fresh data
+      }).catch(error => {
+        console.error('❌ [Settings] Background user info reload failed:', error);
+      });
+      
+      appState.loadUserStatus().then(() => {
+        console.log('✅ [Settings] User status reloaded in background');
+      }).catch(error => {
+        console.error('❌ [Settings] Failed to reload user status:', error);
+      });
       
       // 🔍 LOG ALL USER RECORDS AFTER LOGIN
       console.log('👤 ========== USER RECORDS IN SETTINGS PAGE ==========');
@@ -135,14 +144,20 @@ let Settings = () => {
   }
 
 
-  let generateWelcomeMessage = () => {
+  let getUserName = () => {
+    // Debug: Log the entire user.info.user object with safe access
+    console.log('🔍 [Settings getUserName] Full user.info.user object:', appState.state?.user?.info?.user);
+    console.log('🔍 [Settings getUserName] Keys in user.info.user:', Object.keys(appState.state?.user?.info?.user || {}));
+    
     let firstName = appState.getUserInfo('firstName');
     let lastName = appState.getUserInfo('lastName');
-    let loading = firstName === '[loading]' || lastName === '[loading]';
     
-    if (loading) {
-      // Use dummy data instead of showing "Loading..."
-      return "John Doe";
+    console.log('🔍 [Settings getUserName] firstName result:', firstName);
+    console.log('🔍 [Settings getUserName] lastName result:', lastName);
+    
+    if (firstName === '[loading]' || lastName === '[loading]') {
+      // Show loading while fetching fresh data
+      return 'Loading...';
     } else {
       return `${firstName} ${lastName}`;
     }
@@ -150,12 +165,41 @@ let Settings = () => {
 
   let getUserEmail = () => {
     let email = appState.getUserInfo('email');
+    console.log('🔍 [Settings getUserEmail] email result:', email);
+    
     if (email === '[loading]') {
-      // Use dummy data instead of showing "Loading..."
-      return 'john.doe@example.com';
+      // Show loading while fetching fresh data
+      return 'Loading...';
     }
     return email;
   }
+
+  const loadBiometricPreference = async () => {
+    try {
+      const enabled = await AsyncStorage.getItem('biometricsEnabled');
+      setBiometricsEnabled(enabled === 'true');
+      console.log('📱 [Settings] Loaded biometric preference:', enabled);
+    } catch (error) {
+      console.error('❌ [Settings] Error loading biometric preference:', error);
+    }
+  };
+
+  const toggleBiometrics = async (value) => {
+    try {
+      await AsyncStorage.setItem('biometricsEnabled', value.toString());
+      setBiometricsEnabled(value);
+      console.log('📱 [Settings] Biometric preference saved:', value);
+      
+      // Show feedback to user
+      if (value) {
+        console.log('✅ Biometric authentication enabled');
+      } else {
+        console.log('❌ Biometric authentication disabled');
+      }
+    } catch (error) {
+      console.error('❌ [Settings] Error saving biometric preference:', error);
+    }
+  };
 
   const materialTheme = useTheme();
 
@@ -186,7 +230,7 @@ let Settings = () => {
                   marginBottom: 4
                 }}
               >
-                {generateWelcomeMessage()}
+                {getUserName()}
               </Text>
               <Text 
                 variant="bodyMedium" 
@@ -253,6 +297,22 @@ let Settings = () => {
                 left={props => <List.Icon {...props} icon="account-edit" />}
                 right={props => <List.Icon {...props} icon="chevron-right" />}
                 onPress={() => { appState.changeState('PersonalDetails'); }}
+                style={{ paddingVertical: 4 }}
+              />
+              
+              <Divider />
+              
+              <List.Item
+                title="Biometric Authentication"
+                description={biometricsEnabled ? "Enabled" : "Disabled"}
+                left={props => <List.Icon {...props} icon="fingerprint" />}
+                right={() => (
+                  <Switch
+                    value={biometricsEnabled}
+                    onValueChange={toggleBiometrics}
+                    color={materialTheme.colors.primary}
+                  />
+                )}
                 style={{ paddingVertical: 4 }}
               />
               

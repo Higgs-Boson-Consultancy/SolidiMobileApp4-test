@@ -954,7 +954,7 @@ timestamp,open,high,low,close,volume
 
 ## Deposits & Withdrawals
 
-### 1. Withdraw Crypto
+### 1. Withdraw Crypto (BTC, ETH, LTC, XRP, BCH)
 
 **Endpoint:** `POST /api2/v1/withdraw/{asset}`
 
@@ -967,7 +967,7 @@ timestamp,open,high,low,close,volume
 {
   "volume": "0.1",
   "address": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", // UUID from address book, NOT the wallet address
-  "priority": "MEDIUM", // SLOW, MEDIUM, FAST (lowercase: slow, medium, fast)
+  "priority": "MEDIUM", // SLOW, MEDIUM, FAST - REQUIRED for crypto withdrawals
   "nonce": 1699900000000
 }
 ```
@@ -984,19 +984,21 @@ timestamp,open,high,low,close,volume
 }
 ```
 
-### 2. Withdraw Fiat (GBP)
+### 2. Withdraw Fiat (GBP, EUR, USD)
 
-**Endpoint:** `POST /api2/v1/withdraw/GBP`
+**Endpoint:** `POST /api2/v1/withdraw/{asset}` (e.g., `/api2/v1/withdraw/GBP`)
 
 **Type:** Private
+
+**IMPORTANT:** Fiat withdrawals use **UUID** from your address book. First add your bank account to the address book using `addressBook/{asset}/BANK` endpoint, then use the returned `uuid` for withdrawals.
 
 **Request:**
 ```javascript
 {
   "volume": "500.00",
-  "account_id": "bank_account_123", // NOT 'address' for fiat
+  "address": "b2c3d4e5-f6a7-8901-bcde-f12345678901", // UUID from address book for bank account
+  "priority": "MEDIUM", // SLOW, MEDIUM, FAST - REQUIRED for all withdrawals including fiat
   "nonce": 1699900000000
-  // NOTE: No 'priority' field for fiat withdrawals
 }
 ```
 
@@ -1640,8 +1642,8 @@ All cryptocurrencies can be traded against all fiat currencies.
 2. **All volumes and prices** are strings to avoid floating-point precision issues
 3. **Asset codes** are case-sensitive (BTC, not btc)
 4. **Market format** is always `BASE/QUOTE` (e.g., BTC/GBP)
-5. **Crypto withdrawals** require `address` and `priority`
-6. **Fiat withdrawals** require `account_id` (NOT `address`) and NO `priority`
+5. **All withdrawals (both crypto and fiat)** require `address` (UUID from address book) and `priority` (SLOW, MEDIUM, FAST)
+6. **Deprecated:** Old API used `account_id` for fiat - now unified to use `address` UUID for all asset types
 7. **Document uploads** require base64 encoded fileData
 8. **Form submissions** are uploaded as PDF documents via document upload endpoint
 

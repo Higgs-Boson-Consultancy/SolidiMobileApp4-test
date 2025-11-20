@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { biometricAuth } from '../../util/BiometricAuthUtils';
 import AppStateContext from '../../application/data';
 import SecureAppBridge from '../../util/SecureAppBridge';
+import { SolidiLoadingScreen } from '../shared';
 
 /**
  * SecureApp - Wrapper component that enforces authentication before app access
@@ -16,7 +17,7 @@ class SecureApp extends Component {
     super(props);
     this.state = {
       isAuthenticated: false,
-      authRequired: true, // Enable biometric authentication
+      authRequired: false, // TEMPORARILY DISABLED - Enable biometric authentication
       skipAuth: false, // Enable biometric authentication when app goes to background/idle
       showSetup: false, // Show setup screen for first-time users
       isLoading: true, // Add loading state to prevent premature rendering
@@ -101,22 +102,27 @@ class SecureApp extends Component {
       const info = await biometricAuth.isBiometricAvailable();
       console.log('🔍 [SecureApp] Biometric info:', info);
       
-      // Check isLogout flag to determine if biometrics should be shown
+            // Check biometricsEnabled preference from Settings
+      const biometricsEnabledFlag = await AsyncStorage.getItem('biometricsEnabled');
+      const biometricsEnabled = biometricsEnabledFlag === 'true';
+      
+      // Check isLogout flag to determine if user is logged in
       const isLogoutFlag = await AsyncStorage.getItem('isLogout');
       const isLogout = isLogoutFlag === 'true' || isLogoutFlag === null; // true if logged out or never logged in
       
-      console.log('==========================================');
-      console.log('🔍🔍🔍 [SecureApp] ISLOGOUT FLAG CHECK');
+      console.log('==========================================' );
+      console.log('🔍🔍🔍 [SecureApp] BIOMETRIC PREFERENCE CHECK');
+      console.log('🔍 [SecureApp] biometricsEnabled from Settings:', biometricsEnabled);
       console.log('🔍 [SecureApp] Raw isLogout flag value from AsyncStorage:', JSON.stringify(isLogoutFlag));
       console.log('🔍 [SecureApp] isLogoutFlag === "true":', isLogoutFlag === 'true');
       console.log('🔍 [SecureApp] isLogoutFlag === null:', isLogoutFlag === null);
       console.log('🔍 [SecureApp] Computed isLogout:', isLogout);
-      console.log('🔍 [SecureApp] Decision: Will', isLogout ? 'SKIP' : 'SHOW', 'biometrics');
-      console.log('==========================================');
+      console.log('🔍 [SecureApp] Decision: Will', (isLogout || !biometricsEnabled) ? 'SKIP' : 'SHOW', 'biometrics');
+      console.log('==========================================' );
       
-      if (isLogout) {
-        // User logged out or never logged in - skip biometrics
-        console.log('❌❌❌ [SecureApp] SKIPPING BIOMETRICS - User logged out or never logged in');
+      if (isLogout || !biometricsEnabled) {
+        // User logged out, never logged in, or biometrics disabled - skip biometrics
+        console.log('❌❌❌ [SecureApp] SKIPPING BIOMETRICS - User logged out, never logged in, or biometrics disabled in Settings');
         this.setState({ 
           biometricInfo: info,
           showSetup: false,
@@ -126,8 +132,8 @@ class SecureApp extends Component {
           needsBiometrics: false
         });
       } else {
-        // User was logged in before - require biometrics
-        console.log('✅✅✅ [SecureApp] SHOWING BIOMETRICS - User was logged in before');
+        // User was logged in before and biometrics enabled - require biometrics
+        console.log('✅✅✅ [SecureApp] SHOWING BIOMETRICS - User was logged in before and biometrics enabled');
         console.log('🔐🔐🔐 [SecureApp] Setting needsBiometrics = true, biometricVerified = false');
         this.setState({ 
           biometricInfo: info,
@@ -203,9 +209,15 @@ class SecureApp extends Component {
       console.log('🔐 [SecureApp] Background detected - current needsBiometrics:', this.state.needsBiometrics);
       console.log('🔐 [SecureApp] Background detected - current biometricVerified:', this.state.biometricVerified);
       
-      // Require biometrics if user is logged in (isLogout=false)
-      if (!isLogout) {
-        console.log('🔐🔐🔐 [SecureApp] BACKGROUND - User is logged in - Setting needsBiometrics = true');
+      // Check if biometrics are enabled in Settings
+      const biometricsEnabledFlag = await AsyncStorage.getItem('biometricsEnabled');
+      const biometricsEnabled = biometricsEnabledFlag === 'true';
+      
+      console.log('🔐 [SecureApp] BACKGROUND - biometricsEnabled from Settings:', biometricsEnabled);
+      
+      // Require biometrics if user is logged in (isLogout=false) AND biometrics enabled
+      if (!isLogout && biometricsEnabled) {
+        console.log('🔐🔐🔐 [SecureApp] BACKGROUND - User is logged in and biometrics enabled - Setting needsBiometrics = true');
         this.setState({ 
           appState: nextAppState,
           needsBiometrics: true,
@@ -214,7 +226,7 @@ class SecureApp extends Component {
           console.log('🎯 [SecureApp] BACKGROUND - State updated - needsBiometrics:', this.state.needsBiometrics, 'biometricVerified:', this.state.biometricVerified);
         });
       } else {
-        console.log('🔐 [SecureApp] ❌ User not logged in - skipping biometric requirement');
+        console.log('🔐 [SecureApp] ❌ User not logged in or biometrics disabled - skipping biometric requirement');
         this.setState({ 
           appState: nextAppState
         });
@@ -693,15 +705,21 @@ class SecureApp extends Component {
     if (isLoading) {
       console.log('🎨 [SecureApp] Rendering loading screen');
       return (
-        <View style={[styles.container, styles.loadingContainer]}>
-          <Text style={styles.loadingText}>🔐 Initializing security...</Text>
+        <View style={styles.container}>
+          <SolidiLoadingScreen 
+            fullScreen={true}
+            message="Initializing..."
+            size="medium"
+          />
           {this.state.showManualAuth && (
-            <TouchableOpacity 
-              style={styles.authButton}
-              onPress={() => this.performBiometricAuth()}
-            >
-              <Text style={styles.authButtonText}>Tap to Authenticate</Text>
-            </TouchableOpacity>
+            <View style={styles.manualAuthOverlay}>
+              <TouchableOpacity 
+                style={styles.authButton}
+                onPress={() => this.performBiometricAuth()}
+              >
+                <Text style={styles.authButtonText}>Tap to Authenticate</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       );
@@ -723,36 +741,20 @@ class SecureApp extends Component {
     }
 
     // Show biometric authentication screen - needs verification
-    console.log('🎨 [SecureApp] Rendering BIOMETRIC VERIFICATION SCREEN (transparent mode)');
+    console.log('🎨 [SecureApp] Rendering BIOMETRIC VERIFICATION SCREEN');
     console.log('🎨 [SecureApp] needsBiometrics:', needsBiometrics, 'biometricVerified:', biometricVerified);
     console.log('🎨 [SecureApp] isAuthenticating:', isAuthenticating);
     
     const authType = biometricAuth.getBiometricTypeDisplayName(biometricInfo.biometryType);
     const hasError = authError && !isAuthenticating;
     
-    // Render invisible authentication screen - biometric prompt happens in system UI
-    // Show a semi-transparent overlay to indicate authentication is required
+    // Show completely black screen with biometric overlay
     return (
       <View style={styles.container} onTouchStart={this.handleUserActivity}>
-        {/* Show underlying app content with slight dim */}
-        <View style={isAuthenticating ? styles.dimmedContent : styles.container}>
-          {children}
-        </View>
-        
-        {/* Show minimal authentication indicator */}
-        {!hasError && isAuthenticating && (
-          <View style={styles.authIndicator}>
-            <View style={styles.authIndicatorCard}>
-              <Text style={styles.authIndicatorText}>
-                🔐 Authenticating...
-              </Text>
-            </View>
-          </View>
-        )}
-        
-        {/* Show error overlay if authentication failed */}
-        {hasError && (
-          <View style={styles.authOverlay}>
+        {/* Always show black overlay when biometrics are required */}
+        <View style={styles.authOverlay}>
+          {/* Show error card if authentication failed */}
+          {hasError ? (
             <View style={styles.authCard}>
               <Text style={styles.errorTitle}>⚠️ Authentication Failed</Text>
               <Text style={styles.errorText}>{authError}</Text>
@@ -763,8 +765,22 @@ class SecureApp extends Component {
                 <Text style={styles.retryButtonText}>Try Again</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
+          ) : isAuthenticating ? (
+            /* Show authenticating indicator */
+            <View style={styles.authIndicatorCard}>
+              <Text style={styles.authIndicatorText}>
+                🔐 Authenticating...
+              </Text>
+            </View>
+          ) : (
+            /* Show waiting for authentication message */
+            <View style={styles.authIndicatorCard}>
+              <Text style={styles.authIndicatorText}>
+                🔐 Authentication Required
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     );
   }
@@ -794,7 +810,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -868,6 +884,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ffcccc',
   },
+  manualAuthOverlay: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
   authButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 40,
@@ -906,7 +929,7 @@ const styles = StyleSheet.create({
   },
   dimmedContent: {
     flex: 1,
-    opacity: 0.3,
+    opacity: 1,
   },
   authOverlay: {
     position: 'absolute',
@@ -914,7 +937,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

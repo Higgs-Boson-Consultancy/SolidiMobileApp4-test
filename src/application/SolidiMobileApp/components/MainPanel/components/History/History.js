@@ -119,6 +119,7 @@ let History = () => {
       });
       
       let transactionResponse = await appState.privateMethod({
+        httpMethod: 'POST',
         apiRoute: 'transaction',
         functionName: 'History.setup.transactions'
       });
@@ -157,6 +158,7 @@ let History = () => {
       });
       
       let orderResponse = await appState.privateMethod({
+        httpMethod: 'POST',
         apiRoute: 'open_orders',
         functionName: 'History.setup.orders'
       });

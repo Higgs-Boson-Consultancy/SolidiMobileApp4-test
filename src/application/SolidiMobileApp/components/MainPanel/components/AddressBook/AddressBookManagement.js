@@ -72,6 +72,7 @@ const AddressBookManagement = () => {
       'CRYPTO_UNHOSTED': 'wallet',
       'CRYPTO_HOSTED': 'bank',
       'FIAT': 'credit-card-outline',
+      'BANK': 'bank',
       'EXCHANGE': 'swap-horizontal'
     };
     return typeIconMap[type] || 'wallet-outline';
@@ -82,11 +83,29 @@ const AddressBookManagement = () => {
     try {
       // If it's already an object, extract the address property
       if (typeof addressData === 'object' && addressData !== null) {
+        // For GBP bank accounts (NEW FORMAT with nested bank details)
+        if (addressData.sortcode && addressData.accountnumber) {
+          // Format: "Sort Code: XX-XX-XX, Account: XXXXXXXX"
+          const sortCode = addressData.sortcode;
+          const formattedSortCode = sortCode.length === 6 
+            ? `${sortCode.slice(0, 2)}-${sortCode.slice(2, 4)}-${sortCode.slice(4, 6)}`
+            : sortCode;
+          return `Sort Code: ${formattedSortCode}, Account: ${addressData.accountnumber}`;
+        }
+        // For crypto addresses
         return addressData.address || 'No address found';
       }
       // If it's a string, try to parse it
       if (typeof addressData === 'string') {
         const parsed = JSON.parse(addressData);
+        // Check if it's a GBP bank account after parsing
+        if (parsed.sortcode && parsed.accountnumber) {
+          const sortCode = parsed.sortcode;
+          const formattedSortCode = sortCode.length === 6 
+            ? `${sortCode.slice(0, 2)}-${sortCode.slice(2, 4)}-${sortCode.slice(4, 6)}`
+            : sortCode;
+          return `Sort Code: ${formattedSortCode}, Account: ${parsed.accountnumber}`;
+        }
         return parsed.address || addressData;
       }
       return addressData || 'Invalid address';
@@ -193,9 +212,9 @@ const AddressBookManagement = () => {
   };
 
   // Get available address types - hardcoded for reliability
-  const getAvailableTypes = () => {
-    const types = ['CRYPTO_HOSTED', 'CRYPTO_UNHOSTED', 'FIAT'];
-    return types;
+  const getAddressTypes = () => {
+    const types = ['CRYPTO_HOSTED', 'CRYPTO_UNHOSTED', 'FIAT', 'BANK'];
+    return types.sort();
   };
 
   // Helper functions for multi-select management
@@ -343,24 +362,26 @@ const AddressBookManagement = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('🗑️ [AddressBook] Deleting address:', address.uuid);
               
-              // Create abort controller for this request
-              const abortController = appState.createAbortController({tag: 'deleteAddress'});
-              
-              const result = await appState.apiClient.privateMethod({
-                httpMethod: 'POST',
-                apiRoute: `addressBook/delete/${address.uuid}`,
-                params: { 
-                  name: address.name,
-                  address: address.address,
-                  network: address.asset || address.network,
-                  thirdparty: address.thirdparty || false
-                },
-                abortController
+              // Delete address using dedicated DELETE method
+              const result = await appState.apiClient.privateDeleteMethod({
+                apiRoute: `addressBook/delete/${address.uuid}`
               });
+              
+              console.log('🗑️ [AddressBook] Delete response:', result);
+              console.log('🗑️ [AddressBook] Delete response type:', typeof result);
+              console.log('🗑️ [AddressBook] Delete response JSON:', JSON.stringify(result, null, 2));
+              console.log('🗑️ [AddressBook] result.error:', result?.error);
+              console.log('🗑️ [AddressBook] result.data:', result?.data);
 
-
-              if (result && result.error === null) {
+              // Check for success: either string "success" or {error: null, data: "success"}
+              const isSuccess = result === 'success' || 
+                               (result && result.error === null && result.data === 'success') ||
+                               (result && result.error === null);
+              
+              if (isSuccess) {
+                console.log('✅ [AddressBook] Delete successful - clearing cache and updating UI');
                 
                 // Clear address book cache for this asset to force refresh
                 if (appState.clearAddressBookCache && typeof appState.clearAddressBookCache === 'function') {
@@ -378,10 +399,14 @@ const AddressBookManagement = () => {
                 }, 500);
               } else {
                 const errorMsg = result?.error || 'Failed to delete address.';
+                console.error('❌ [AddressBook] Delete failed with error:', errorMsg);
                 Alert.alert('Error', errorMsg);
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete address. Please try again.');
+              console.error('❌ [AddressBook] Delete exception:', error);
+              console.error('❌ [AddressBook] Exception message:', error.message);
+              console.error('❌ [AddressBook] Exception stack:', error.stack);
+              Alert.alert('Error', `Failed to delete address: ${error.message}`);
             }
           },
         },
@@ -442,10 +467,19 @@ const AddressBookManagement = () => {
             {displayAddress}
           </Text>
           
+          {/* For GBP bank accounts, show account holder name */}
+          {addressData.accountname && (
+            <Text style={styles.addressOwner}>
+              Account Holder: {addressData.accountname}
+            </Text>
+          )}
+          
+          {/* For businesses */}
           {addressData.business && (
             <Text style={styles.addressBusiness}>{addressData.business}</Text>
           )}
           
+          {/* For individuals (crypto addresses) */}
           {addressData.firstname && addressData.lastname && (
             <Text style={styles.addressOwner}>
               {addressData.firstname} {addressData.lastname}
@@ -614,9 +648,9 @@ const AddressBookManagement = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <>
-      {/* Tab Header */}
-      <View style={styles.tabContainer}>
+        <>
+          {/* Tab Header */}
+          <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'list' && styles.activeTab]}
           onPress={() => setActiveTab('list')}
@@ -646,15 +680,15 @@ const AddressBookManagement = () => {
             Add Address
           </Text>
         </TouchableOpacity>
-      </View>
+          </View>
 
-      {/* Tab Content */}
-      {activeTab === 'add' ? (
-        <View style={{flex: 1}}>
-          <OriginalAddressBook onAddressAdded={handleAddressAdded} />
-        </View>
-      ) : (
-        <View style={styles.listContainer}>
+          {/* Tab Content */}
+          {activeTab === 'add' ? (
+            <View style={{flex: 1}}>
+              <OriginalAddressBook onAddressAdded={handleAddressAdded} />
+            </View>
+          ) : (
+            <View style={styles.listContainer}>
           {/* List Header with Asset Filter */}
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Address Book</Text>
@@ -917,10 +951,10 @@ const AddressBookManagement = () => {
             </ScrollView>
           )}
           </View>
-        </View>
+          </View>
+          )}
+        </>
       )}
-      </>
-        )}
     </View>
   );
 };

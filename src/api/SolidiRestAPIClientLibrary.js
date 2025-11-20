@@ -29,6 +29,8 @@ let result = await apiClient.privateMethod({httpMethod: "POST", apiRoute: "priva
 
 let result = await apiClient.privateMethod({httpMethod: "POST", apiRoute: "transaction", params: {}})
 
+let result = await apiClient.privateDeleteMethod({apiRoute: "addressBook/delete/uuid123", params: {}})
+
 let data = await appState.apiClient.privateMethod({
   httpMethod: 'POST',
   apiRoute: 'transaction',
@@ -166,6 +168,18 @@ export default class SolidiRestAPIClientLibrary {
     return this.queueAPICall(args);
   }
 
+  async privateDeleteMethod(args, ...args2) {
+    this._checkArgs2(args2, 'privateDeleteMethod');
+    let expected = 'apiRoute'.split(', ');
+    this._checkExpectedArgs(args, expected, 'privateDeleteMethod');
+    if (_.isUndefined(args.params)) { args.params = {}; }
+    if (_.isUndefined(args.apiVersion)) { args.apiVersion = 'v1'; }
+    if (_.isUndefined(args.abortController)) { args.abortController = new AbortController(); }
+    args.httpMethod = 'DELETE';
+    args.privateAPICall = true;
+    return this.queueAPICall(args);
+  }
+
   async queueAPICall(args, ...args2) {
     /*
     Problem:
@@ -221,13 +235,13 @@ export default class SolidiRestAPIClientLibrary {
     }
     if (params == null) params = {};
     if (_.keys(params).length > 0) {
-      if ('GET HEAD'.split().includes(httpMethod)) {
+      if ('GET HEAD'.split(' ').includes(httpMethod)) {
         let msg = `For HTTP method '${httpMethod}', parameters cannot be supplied. Supplied params: ${params}`;
         throw new Error(msg);
       }
     }
     let postData = null;
-    if ('POST'.split().includes(httpMethod)) {
+    if ('POST DELETE'.split(' ').includes(httpMethod)) {
       let params2 = _.assign({}, params);
       let nonce = Date.now() * 1000;
       if (nonce <= this.prevNonce) nonce = this.prevNonce + 1;
@@ -237,7 +251,7 @@ export default class SolidiRestAPIClientLibrary {
       postData = JSON.stringify(params2);
     } else {
       if (privateAPICall) {
-        var msg = `To make a private API call, need to use POST HTTP method. This means that we can include POST body data, for example the nonce.`;
+        var msg = `To make a private API call, need to use POST or DELETE HTTP method. This means that we can include body data, for example the nonce.`;
         throw Error(msg);
       }
     }
@@ -302,6 +316,18 @@ export default class SolidiRestAPIClientLibrary {
         console.log('🚨 LOGIN API CALL DETECTED! 🚨');
         console.log(`📍 ENDPOINT: ${httpMethod} ${uri}`);
         console.log('🔐'.repeat(40));
+      }
+      
+      // ===== ADDRESS BOOK DELETE LOGGING =====
+      if (apiRoute.includes('addressBook/delete')) {
+        console.log('\n' + '🗑️'.repeat(40));
+        console.log('🚨 ADDRESS BOOK DELETE API CALL! 🚨');
+        console.log(`📍 HTTP METHOD: ${httpMethod}`);
+        console.log(`📍 URI: ${uri}`);
+        console.log(`📍 API ROUTE: ${apiRoute}`);
+        console.log(`📦 POST DATA: ${postData}`);
+        console.log(`🎯 OPTIONS:`, JSON.stringify(options, null, 2));
+        console.log('🗑️'.repeat(40) + '\n');
       }
       
       // ===== REGISTRATION API SPECIFIC LOGGING =====

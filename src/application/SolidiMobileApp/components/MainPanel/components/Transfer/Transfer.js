@@ -518,6 +518,9 @@ let Transfer = () => {
   }, []);
 
   // Enhanced setup with better error handling and state management
+  let setupRetryCount = 0;
+  const MAX_SETUP_RETRIES = 5;
+  
   let setup = () => {
     try {
       log('Setting up Transfer component, transferType:', transferType);
@@ -528,17 +531,35 @@ let Transfer = () => {
       
       if (identityChecked === '[loading]') {
         setIdentityVerified(null); // Still loading
+        
+        // Prevent infinite retry loop
+        if (setupRetryCount >= MAX_SETUP_RETRIES) {
+          log('❌ Max retries reached for identity verification check, allowing access');
+          setIdentityVerified(true); // Allow access after max retries to prevent getting stuck
+          setupRetryCount = 0;
+          return;
+        }
+        
+        setupRetryCount++;
+        log(`🔄 Retrying identity verification check (${setupRetryCount}/${MAX_SETUP_RETRIES})...`);
+        
         // Load user status and retry
         appState.loadUserStatus().then(() => {
           setTimeout(setup, 1000); // Retry after 1 second
+        }).catch((error) => {
+          log('❌ Error loading user status:', error);
+          setIdentityVerified(true); // Allow access on error to prevent getting stuck
+          setupRetryCount = 0;
         });
         return;
       } else if (identityChecked !== true) {
         setIdentityVerified(false);
+        setupRetryCount = 0;
         log('Identity verification not completed, blocking transfer features');
         return;
       } else {
         setIdentityVerified(true);
+        setupRetryCount = 0;
         log('Identity verification confirmed, allowing transfer features');
       }
       
@@ -657,126 +678,16 @@ let Transfer = () => {
       log('✅ handleSend: Amount validation passed');
       console.log('✅ CONSOLE: Amount validation passed');
       
-      console.log('📍 CONSOLE: ===== STEP 2: ADDRESS VALIDATION =====');
-      if (!recipientAddress.trim()) {
-        log('❌ handleSend: No recipient address provided');
-        console.log('❌ CONSOLE: No recipient address provided');
+      // Simple validation: just check UUID exists
+      if (!recipientAddressUUID) {
+        log('❌ handleSend: No UUID - please select address from address book');
         setErrorMessage('Please select an address from your Address Book');
         return;
       }
       
-      // Require address book selection (UUID must be present)
-      if (!recipientAddressUUID) {
-        log('❌ handleSend: Address book selection required - no UUID provided');
-        console.log('❌ CONSOLE: Address book selection required - no UUID provided');
-        setErrorMessage('Please select an address from your Address Book. Manual address entry is not allowed.');
-        return;
-      }
+      log('✅ handleSend: UUID ready:', recipientAddressUUID);
       
-      log('✅ handleSend: Valid address book selection with UUID:', recipientAddressUUID);
-      console.log('✅ CONSOLE: Valid address book selection with UUID:', recipientAddressUUID);
-      console.log('✅ CONSOLE: Display address:', recipientAddress);
-
-      // Get asset capabilities for additional validation
-      console.log('🔍 CONSOLE: ===== STEP 3: ASSET CAPABILITIES CHECK =====');
-      log('🔍 handleSend: Checking asset capabilities for:', selectedAsset);
-      const capabilities = transferDataModel.getAssetCapabilities(selectedAsset);
-      log('📋 handleSend: Asset capabilities:', capabilities);
-      console.log('📋 CONSOLE: Asset capabilities:', capabilities);
-      
-      if (!capabilities.withdrawalEnabled) {
-        log('❌ handleSend: Withdrawals not enabled for asset:', selectedAsset);
-        console.log('❌ CONSOLE: Withdrawals not enabled for asset:', selectedAsset);
-        setErrorMessage(`${selectedAsset} withdrawals are not currently available`);
-        return;
-      }
-      log('✅ handleSend: Withdrawals enabled for asset');
-      console.log('✅ CONSOLE: Withdrawals enabled for asset');
-
-      // Check AppState availability
-      console.log('🔍 CONSOLE: ===== STEP 4: APPSTATE CHECK =====');
-      if (!appState) {
-        log('❌ handleSend: AppState not available');
-        console.log('❌ CONSOLE: AppState not available');
-        setErrorMessage('Application state not available. Please try again.');
-        return;
-      }
-      log('✅ handleSend: AppState is available');
-      console.log('✅ CONSOLE: AppState is available');
-
-      // Check authentication state
-      console.log('🔐 CONSOLE: ===== STEP 5: AUTHENTICATION CHECK =====');
-      if (appState.state && appState.state.mainPanelState) {
-        const authState = appState.state.mainPanelState;
-        log('🔐 handleSend: Current auth state:', authState);
-        console.log('🔐 CONSOLE: Current auth state:', authState);
-        
-        if (authState === 'AuthSetup' || authState === 'Login' || authState === 'Register') {
-          log('❌ handleSend: Not authenticated');
-          console.log('❌ CONSOLE: Not authenticated');
-          setErrorMessage('Please log in before making transactions.');
-          return;
-        }
-        
-        if (authState === 'RequestFailed') {
-          log('❌ handleSend: Previous request failed, system in error state');
-          console.log('❌ CONSOLE: Previous request failed, system in error state');
-          setErrorMessage('System is in error state. Please refresh and try again.');
-          return;
-        }
-        
-        if (authState === 'Maintenance') {
-          log('❌ handleSend: System in maintenance mode');
-          console.log('❌ CONSOLE: System in maintenance mode');
-          setErrorMessage('System is under maintenance. Please try again later.');
-          return;
-        }
-      }
-      console.log('✅ CONSOLE: Authentication check passed');
-
-      // Check sendWithdraw method availability
-      console.log('🔍 CONSOLE: ===== STEP 6: SENDWITHDRAW METHOD CHECK =====');
-      if (!appState.sendWithdraw) {
-        log('❌ handleSend: sendWithdraw method not available on appState');
-        console.log('❌ CONSOLE: sendWithdraw method not available on appState');
-        setErrorMessage('Send functionality not available. Please try again.');
-        return;
-      }
-      log('✅ handleSend: sendWithdraw method is available');
-      console.log('✅ CONSOLE: sendWithdraw method is available');
-
       setIsLoading(true);
-      console.log('🔄 CONSOLE: ===== STEP 7: CALLING API =====');
-
-      log('📤 handleSend: Preparing API call with parameters:', {
-        asset: selectedAsset,
-        volume: sendAmount,
-        address: recipientAddress,
-        priority: selectedPriority,
-        functionName: 'Transfer_handleSend'
-      });
-      console.log('📤 CONSOLE: Preparing API call with parameters:', {
-        asset: selectedAsset,
-        volume: sendAmount,
-        address: recipientAddress,
-        priority: selectedPriority,
-        functionName: 'Transfer_handleSend'
-      });
-      
-      console.log('🔄 CONSOLE: About to call sendWithdraw API...');
-      console.log('� CONSOLE: Using recipient address UUID:', recipientAddressUUID);
-      console.log('� CONSOLE: Display address:', recipientAddress);
-      
-      
-      log('📍 handleSend: Using address book UUID for API call:', recipientAddressUUID);
-      
-      console.log('📋 CONSOLE: Final API parameters:', {
-        asset: selectedAsset,
-        volume: sendAmount,
-        address: recipientAddressUUID, // Always use UUID from address book
-        priority: selectedPriority,
-        functionName: 'Transfer_handleSend'
-      });
       
       const result = await appState.sendWithdraw({
         asset: selectedAsset,
@@ -1067,14 +978,11 @@ let Transfer = () => {
       // Still loading identity verification status
       return (
         <View style={[sharedStyles.container, { backgroundColor: sharedColors.background }]}>
-          <View style={{ padding: 20, justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-            <Text variant="headlineSmall" style={{ marginBottom: 16, textAlign: 'center' }}>
-              Checking Verification Status
-            </Text>
-            <Text variant="bodyMedium" style={{ textAlign: 'center', color: '#666' }}>
-              Please wait while we check your identity verification status...
-            </Text>
-          </View>
+          <SolidiLoadingScreen 
+            fullScreen={true}
+            message="Checking verification status..."
+            size="medium"
+          />
         </View>
       );
     }

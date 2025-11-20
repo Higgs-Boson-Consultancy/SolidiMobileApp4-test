@@ -24,7 +24,7 @@ import Big from 'big.js';
 import AppStateContext from 'src/application/data';
 import { colors, sharedStyles, sharedColors } from 'src/constants';
 import { scaledWidth, scaledHeight, normaliseFont } from 'src/util/dimensions';
-import { Spinner } from 'src/components/atomic';
+import { Spinner, AddressBookPicker } from 'src/components/atomic';
 import { Title } from 'src/components/shared';
 import misc from 'src/util/misc';
 
@@ -132,14 +132,11 @@ let Send = () => {
   let [assetSA, setAssetSA] = useState(selectedAssetSA);
   let [itemsSA, setItemsSA] = useState(generateStoredAssetItems());
 
-  // Address Properties state:
-  let [address, setAddress] = useState('');
-  let [destinationTag, setDestinationTag] = useState('');
-  let [accountName, setAccountName] = useState('');
-  let [sortCode, setSortCode] = useState('');
-  let [accountNumber, setAccountNumber] = useState('');
-  let [BIC, setBIC] = useState('');
-  let [IBAN, setIBAN] = useState('');
+  // Address Book state - using UUID from address book for withdrawals
+  let [recipientAddress, setRecipientAddress] = useState(''); // Display address/name
+  let [recipientAddressUUID, setRecipientAddressUUID] = useState(''); // UUID for API
+  let [recipientAddressName, setRecipientAddressName] = useState(''); // Saved address name
+  let [addressBookLoaded, setAddressBookLoaded] = useState(false);
 
   // Misc state:
   let [destinationText, setDestinationText] = useState(' this address');
@@ -172,7 +169,10 @@ let Send = () => {
   let selectLowestAvailablePriority = (asset) => {
     let available = generatePriorityItemsForAsset(asset);
     if (_.isEmpty(available)) return 'none';
-    // Assume that the lowest priority is the first item in the list.
+    // Default to medium priority (API requirement)
+    let mediumPriority = available.find(item => item.value === 'medium');
+    if (mediumPriority) return 'medium';
+    // Fallback to first available if medium not found
     let lowest = available[0].value;
     return lowest;
   }
@@ -194,7 +194,7 @@ let Send = () => {
   let [priority, setPriority] = useState(selectLowestAvailablePriority(assetSA));
   let [openPriority, setOpenPriority] = useState(false);
   let [itemsPriority, setItemsPriority] = useState(generatePriorityItemsForAsset(assetSA));
-  let [transferFee, setTransferFee] = useState(selectFee({priority: 'low', asset: assetSA}));
+  let [transferFee, setTransferFee] = useState(selectFee({priority: 'medium', asset: assetSA}));
 
 
   // Initial setup.
@@ -208,6 +208,15 @@ let Send = () => {
       await appState.generalSetup({caller: 'Send'});
       await appState.loadBalances();
       await appState.loadFees();
+      
+      // Load address book for the selected asset
+      if (appState.loadAddressBook) {
+        console.log('📤 CONSOLE: Loading address book for asset:', assetSA);
+        await appState.loadAddressBook(assetSA);
+        setAddressBookLoaded(true);
+        console.log('✅ CONSOLE: Address book loaded successfully');
+      }
+      
       if (appState.stateChangeIDHasChanged(stateChangeID)) return;
       setDisableSendButton(false);
       setBalanceSA(appState.getBalance(assetSA));
@@ -238,7 +247,23 @@ let Send = () => {
   useEffect(() => {
     if (! firstRender) {
       log(`Set assetSA to: ${assetSA}`);
-      //log({addressProperties: appState.getAssetInfo(assetSA).addressProperties});
+      
+      // Reset selected address when asset changes
+      setRecipientAddress('');
+      setRecipientAddressUUID('');
+      setRecipientAddressName('');
+      
+      // Reload address book for new asset
+      const loadAddressBookForAsset = async () => {
+        if (appState.loadAddressBook) {
+          console.log('📤 CONSOLE: Reloading address book for new asset:', assetSA);
+          await appState.loadAddressBook(assetSA);
+          setAddressBookLoaded(true);
+          console.log('✅ CONSOLE: Address book reloaded successfully');
+        }
+      };
+      loadAddressBookForAsset();
+      
       // If the volume is zero, change its number of decimal places appropriately.
       let volumeIsZero = false;
       if (misc.isNumericString(volumeSA)) {
@@ -416,17 +441,66 @@ let Send = () => {
   }
 
 
+  // Handle address selection from address book
+  const handleAddressSelection = (address, selectedAddressData) => {
+    console.log('📍 CONSOLE: Address selected from address book:', address);
+    console.log('📍 CONSOLE: Selected address data:', selectedAddressData);
+    
+    if (selectedAddressData) {
+      // Extract UUID from the address data (matches Wallet.js pattern)
+      let addressUUID = selectedAddressData?.id || selectedAddressData?.rawData?.uuid;
+      console.log('📍 CONSOLE: Extracted UUID:', addressUUID);
+      
+      if (addressUUID) {
+        setRecipientAddressUUID(addressUUID);
+        setRecipientAddressName(selectedAddressData.name || selectedAddressData.rawData?.name || 'Saved Address');
+        
+        // Set display address based on asset type
+        if (selectedAddressData.address || selectedAddressData.rawData?.address) {
+          setRecipientAddress(selectedAddressData.address || selectedAddressData.rawData?.address);
+        } else if (selectedAddressData.accountNumber || selectedAddressData.rawData?.accountNumber) {
+          // For bank accounts (GBP, etc.)
+          let accountName = selectedAddressData.accountName || selectedAddressData.rawData?.accountName || '';
+          let sortCode = selectedAddressData.sortCode || selectedAddressData.rawData?.sortCode || '';
+          let accountNumber = selectedAddressData.accountNumber || selectedAddressData.rawData?.accountNumber || '';
+          setRecipientAddress(`${accountName} - ${sortCode} ${accountNumber}`);
+        }
+        
+        console.log('✅ CONSOLE: Address UUID set to:', addressUUID);
+        console.log('📝 CONSOLE: Display name set to:', selectedAddressData.name);
+      }
+    }
+  };
+
   let renderAddressProperties = () => {
-    let ap = appState.getAssetInfo(assetSA).addressProperties;
     return (
       <View style={styles.addressProperties}>
-        {ap.includes('address') && renderAddressInput()}
-        {ap.includes('destinationTag') && renderDestinationTagInput()}
-        {ap.includes('accountName') && renderAccountNameInput()}
-        {ap.includes('sortCode') && renderSortCodeInput()}
-        {ap.includes('accountNumber') && renderAccountNumberInput()}
-        {ap.includes('BIC') && renderBICInput()}
-        {ap.includes('IBAN') && renderIBANInput()}
+        <Text variant="titleMedium" style={[styles.sectionTitle, {marginBottom: 12}]}>Recipient Address</Text>
+        
+        <AddressBookPicker
+          selectedAsset={assetSA}
+          onAddressSelect={handleAddressSelection}
+          label="Choose from Address Book"
+          placeholder="Select a saved address..."
+        />
+        
+        {recipientAddressUUID && (
+          <Card style={{marginTop: 12, backgroundColor: sharedColors.successBackground}}>
+            <Card.Content>
+              <Text variant="bodySmall" style={{color: sharedColors.successText, fontWeight: 'bold'}}>
+                Selected Address
+              </Text>
+              <Text variant="bodyMedium" style={{marginTop: 4, color: sharedColors.text}}>
+                {recipientAddressName}
+              </Text>
+              {recipientAddress && (
+                <Text variant="bodySmall" style={{marginTop: 2, color: sharedColors.secondaryText}}>
+                  {recipientAddress}
+                </Text>
+              )}
+            </Card.Content>
+          </Card>
+        )}
       </View>
     )
   }
@@ -560,38 +634,24 @@ let Send = () => {
       let msg = `Cannot send this amount - it's too high. Please choose a lower amount.`;
       return setErrorMessage(msg);
     }
-    // Collect user-specified address properties.
-    let addressProperties = {
-      address,
-      destinationTag,
-      accountName,
-      sortCode,
-      accountNumber,
-      BIC,
-      IBAN,
-    }
-    // Remove any blank values.
-    addressProperties = _.pickBy(addressProperties, (value, key) => {
-      return (value !== '');
-    });
-    // Look up required address properties for this asset.
-    let ap = appState.getAssetInfo(assetSA).addressProperties;
-    // Check if the user has supplied all the required properties.
-    let missing = ap.filter(x => { return ! _.keys(addressProperties).includes(x); });
-    if (missing.length > 0) {
-      let missingList = missing.map(x => misc.camelCaseToCapitalisedWords(x));
-      let msg = `Please supply: ${missingList.join(', ')}`;
+    // Simple validation: just check UUID exists
+    if (!recipientAddressUUID || recipientAddressUUID.trim() === '') {
+      let msg = `Please select a recipient address from your address book.`;
       return setErrorMessage(msg);
     }
+    
     // Store the withdraw details in the global appState.
     // These will be loaded later by the SendSuccessful page.
-    _.assign(appState.panels.send, {asset:assetSA, volume:total, addressProperties, priority});
+    _.assign(appState.panels.send, {asset:assetSA, volume:total, address: recipientAddressUUID, addressName: recipientAddressName, priority});
     
     // Send the withdraw request to the server.
     console.log('🔄 CONSOLE: ===== SEND WITHDRAW API CALL (Send.js) =====');
     console.log('📤 CONSOLE: About to call appState.sendWithdraw from Send component...');
-    console.log('📤 CONSOLE: API parameters:', {asset:assetSA, volume:total, addressInfo:addressProperties, priority, functionName:'startSendRequest'});
-    let result = await appState.sendWithdraw({asset:assetSA, volume:total, addressInfo:addressProperties, priority, functionName:'startSendRequest'});
+    console.log('📤 CONSOLE: API parameters:', {asset:assetSA, volume:total, address: recipientAddressUUID, priority, functionName:'startSendRequest'});
+    console.log('⚠️ CONSOLE: Address UUID from address book:', recipientAddressUUID);
+    console.log('📝 CONSOLE: Address display name:', recipientAddressName);
+    console.log('🏠 CONSOLE: Address display value:', recipientAddress);
+    let result = await appState.sendWithdraw({asset:assetSA, volume:total, address: recipientAddressUUID, priority, functionName:'startSendRequest'});
     console.log('📨 CONSOLE: ===== SEND WITHDRAW API RESPONSE (Send.js) =====');
     console.log('📨 CONSOLE: Raw sendWithdraw response:', result);
     console.log('📨 CONSOLE: Response type:', typeof result);

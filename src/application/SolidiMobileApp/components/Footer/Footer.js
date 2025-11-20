@@ -5,7 +5,9 @@ import {
   StyleSheet,
   Text,
   View,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Other imports
 import _ from 'lodash';
@@ -24,6 +26,7 @@ let Footer = (props) => {
   let {style: styleArg} = props;
 
   let appState = useContext(AppStateContext);
+  const insets = useSafeAreaInsets();
 
   let statesWhereFooterIsHidden = [
     'PIN',
@@ -42,7 +45,7 @@ let Footer = (props) => {
   // Create footer buttons using map instead of FlatList for better control
 
   return (
-    <View style={[styleArg, styles.footer]}>
+    <View style={[styleArg, styles.footer, { paddingBottom: Math.max(insets.bottom, scaledHeight(8)) }]}>
       {footerButtonList.map((item, index) => {
         let buttonName = item;
         let imageName = footerIcons[buttonName];
@@ -73,18 +76,18 @@ let styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'white',
-    height: scaledHeight(70),
-    paddingVertical: scaledHeight(8),
+    paddingTop: scaledHeight(12),
     paddingHorizontal: scaledWidth(10),
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    minHeight: scaledHeight(70),
   },
   buttonWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    minHeight: scaledHeight(50),
+    paddingVertical: scaledHeight(4),
     marginHorizontal: scaledWidth(2),
   },
   unavailableRightButton: {

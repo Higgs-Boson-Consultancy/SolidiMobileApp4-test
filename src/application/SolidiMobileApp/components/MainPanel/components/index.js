@@ -1,4 +1,5 @@
 // export {default as Test} from './Test/Test'; // Removed - moved to backup (unused test component)
+export {default as Loading} from './Loading/Loading';
 export {default as Trade} from './Trade/Trade';
 export {default as Send} from './Send/Send';
 export {default as Receive} from './Receive/Receive';

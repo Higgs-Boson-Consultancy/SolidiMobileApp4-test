@@ -395,15 +395,24 @@ let AddressBookForm = ({
       let apiPayload;
       
       if (formData.asset.toLowerCase() === 'gbp') {
-        // For GBP, use bank account format
+        // For GBP, use bank account format with nested address structure (NEW API FORMAT)
         apiPayload = {
           name: `${formData.firstName} ${formData.lastName}`.trim() || formData.recipient,
+          type: 'BANK',  // Required for GBP addresses
           asset: 'GBP',
-          network: 'GBP',
-          accountName: formData.accountName,
-          sortCode: formData.sortCode.replace(/-/g, ''), // Remove dashes
-          accountNumber: formData.accountNumber,
-          thirdparty: formData.destinationType === 'thirdParty'
+          network: 'GBPFPS',  // NEW: Required network field for GBP
+          address: {
+            firstname: (formData.firstName && formData.firstName.trim()) ? formData.firstName.trim() : null,
+            lastname: (formData.lastName && formData.lastName.trim()) ? formData.lastName.trim() : null,
+            business: formData.recipient === 'another_business' ? formData.firstName : null,  // NEW: Business name field
+            accountname: formData.accountName,
+            sortcode: formData.sortCode.replace(/-/g, ''),  // Remove dashes for API
+            accountnumber: formData.accountNumber,
+            reference: '',  // NEW: Payment reference field (optional, default empty)
+            dtag: null,
+            vasp: null
+          },
+          thirdparty: formData.destinationType === 'thirdParty' || false
         };
       } else {
         // For crypto assets, use nested address object structure
