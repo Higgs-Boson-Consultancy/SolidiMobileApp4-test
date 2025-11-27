@@ -1,6 +1,10 @@
-const AWS = require('aws-sdk');
-const sns = new AWS.SNS();
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+const { SNSClient, CreatePlatformEndpointCommand, SetEndpointAttributesCommand } = require('@aws-sdk/client-sns');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+
+const snsClient = new SNSClient({});
+const dynamoClient = new DynamoDBClient({});
+const dynamodb = DynamoDBDocumentClient.from(dynamoClient);
 
 /**
  * Lambda function to register device tokens for push notifications
@@ -72,47 +76,47 @@ exports.handler = async (event) => {
 
         // Check if endpoint already exists for this device
         let endpointArn;
-        const existingDevice = await dynamodb.get({
+        const existingDevice = await dynamodb.send(new GetCommand({
             TableName: process.env.DEVICE_TOKENS_TABLE || 'device-tokens',
             Key: { userId, deviceId }
-        }).promise();
+        }));
 
         if (existingDevice.Item && existingDevice.Item.endpointArn) {
             // Update existing endpoint
             try {
-                await sns.setEndpointAttributes({
+                await snsClient.send(new SetEndpointAttributesCommand({
                     EndpointArn: existingDevice.Item.endpointArn,
                     Attributes: {
                         Token: token,
                         Enabled: 'true'
                     }
-                }).promise();
+                }));
                 endpointArn = existingDevice.Item.endpointArn;
                 console.log('Updated existing endpoint:', endpointArn);
             } catch (error) {
                 console.log('Failed to update endpoint, creating new one:', error.message);
                 // If update fails, create new endpoint
-                const endpoint = await sns.createPlatformEndpoint({
+                const endpoint = await snsClient.send(new CreatePlatformEndpointCommand({
                     PlatformApplicationArn: platformArn,
                     Token: token,
                     CustomUserData: userId
-                }).promise();
+                }));
                 endpointArn = endpoint.EndpointArn;
             }
         } else {
             // Create new SNS Platform Endpoint
-            const endpoint = await sns.createPlatformEndpoint({
+            const endpoint = await snsClient.send(new CreatePlatformEndpointCommand({
                 PlatformApplicationArn: platformArn,
                 Token: token,
                 CustomUserData: userId
-            }).promise();
+            }));
             endpointArn = endpoint.EndpointArn;
             console.log('Created new endpoint:', endpointArn);
         }
 
         // Store/update in DynamoDB
         const timestamp = Date.now();
-        await dynamodb.put({
+        await dynamodb.send(new PutCommand({
             TableName: process.env.DEVICE_TOKENS_TABLE || 'device-tokens',
             Item: {
                 userId,
@@ -124,7 +128,7 @@ exports.handler = async (event) => {
                 updatedAt: timestamp,
                 active: true
             }
-        }).promise();
+        }));
 
         console.log('Device registered successfully');
 

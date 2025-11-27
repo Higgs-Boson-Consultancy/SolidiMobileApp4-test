@@ -1,6 +1,10 @@
-const AWS = require('aws-sdk');
-const sns = new AWS.SNS();
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+
+const snsClient = new SNSClient({});
+const dynamoClient = new DynamoDBClient({});
+const dynamodb = DynamoDBDocumentClient.from(dynamoClient);
 
 /**
  * Lambda function to send push notifications to users
@@ -57,7 +61,7 @@ exports.handler = async (event) => {
         for (const userId of userIds) {
             try {
                 // Get user's devices from DynamoDB
-                const devicesResult = await dynamodb.query({
+                const devicesResult = await dynamodb.send(new QueryCommand({
                     TableName: tableName,
                     KeyConditionExpression: 'userId = :userId',
                     FilterExpression: 'active = :active',
@@ -65,7 +69,7 @@ exports.handler = async (event) => {
                         ':userId': userId,
                         ':active': true
                     }
-                }).promise();
+                }));
 
                 if (!devicesResult.Items || devicesResult.Items.length === 0) {
                     console.log(`No active devices found for user ${userId}`);
@@ -85,11 +89,11 @@ exports.handler = async (event) => {
                         const message = createPlatformMessage(title, messageBody, data, device.platform);
 
                         // Publish to SNS
-                        await sns.publish({
+                        await snsClient.send(new PublishCommand({
                             TargetArn: device.endpointArn,
                             Message: JSON.stringify(message),
                             MessageStructure: 'json'
-                        }).promise();
+                        }));
 
                         console.log(`Notification sent to device ${device.deviceId}`);
                         deviceResults.push({

@@ -8,8 +8,10 @@ import {
     Modal,
     SafeAreaView,
     Alert,
+    Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import PushNotificationIOS from '@react-native-community/push-notification-ios';
 import NotificationStorageService from '../../storage/NotificationStorageService';
 
 const NotificationInbox = ({ visible, onClose }) => {
@@ -24,7 +26,9 @@ const NotificationInbox = ({ visible, onClose }) => {
 
     const loadNotifications = async () => {
         try {
+            console.log('📬 [NotificationInbox] Loading notifications from storage...');
             const data = await NotificationStorageService.getNotifications();
+
             // Ensure data is always an array
             if (Array.isArray(data)) {
                 setNotifications(data);

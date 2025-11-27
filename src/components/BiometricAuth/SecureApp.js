@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, AppState } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { biometricAuth } from '../../util/BiometricAuthUtils';
 import AppStateContext from '../../application/data';
 import SecureAppBridge from '../../util/SecureAppBridge';
 import { SolidiLoadingScreen } from '../shared';
+import PushNotificationService from '../../services/PushNotificationService';
 
 /**
  * SecureApp - Wrapper component that enforces authentication before app access
@@ -29,6 +30,8 @@ class SecureApp extends Component {
       isCameraActive: false, // Track if camera/modal is open to prevent auth during camera usage
       needsBiometrics: false, // Flag to indicate if biometric check is needed
       biometricVerified: false, // Flag to track if biometric verification passed
+      shouldInitializePushNotifications: false, // Flag to initialize push notifications when context available
+      pushNotificationsInitialized: false, // Track if push notifications have been initialized
     };
 
     // Idle timeout settings
@@ -78,6 +81,57 @@ class SecureApp extends Component {
 
     // Start idle timeout monitoring
     this.startIdleMonitoring();
+  }
+
+  async componentDidUpdate(prevProps, prevState) {
+    console.log('🔄 [SecureApp] componentDidUpdate called');
+    console.log('🔄 [SecureApp] shouldInitializePushNotifications:', this.state.shouldInitializePushNotifications);
+    console.log('🔄 [SecureApp] pushNotificationsInitialized:', this.state.pushNotificationsInitialized);
+
+    // Initialize push notifications after biometric auth (context not available in SecureApp, use AsyncStorage)
+    if (
+      this.state.shouldInitializePushNotifications &&
+      !this.state.pushNotificationsInitialized
+    ) {
+      console.log('📱 [SecureApp] ============================================');
+      console.log('📱 [SecureApp] Initializing push notifications after biometric auth');
+      console.log('📱 [SecureApp] ============================================');
+
+      try {
+        // Get user identifier from AsyncStorage since context is not available
+        const storedEmail = await AsyncStorage.getItem('email');
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const userId = storedUserId || storedEmail || 'user-' + Date.now();
+
+        console.log('📱 [SecureApp] STARTING PUSH NOTIFICATION INITIALIZATION');
+        console.log('📱 [SecureApp] User ID:', userId);
+        console.log('📱 [SecureApp] Platform:', Platform.OS);
+        console.log('📱 [SecureApp] ============================================');
+
+        const pushResult = await PushNotificationService.initialize(userId);
+
+        console.log('📱 [SecureApp] ============================================');
+        console.log('📱 [SecureApp] Push notification initialization result:', pushResult);
+        console.log('📱 [SecureApp] ============================================');
+
+        this.setState({
+          pushNotificationsInitialized: true,
+          shouldInitializePushNotifications: false
+        });
+      } catch (error) {
+        console.error('❌ [SecureApp] ============================================');
+        console.error('❌ [SecureApp] Failed to initialize push notifications:', error);
+        console.error('❌ [SecureApp] Error message:', error.message);
+        console.error('❌ [SecureApp] Error stack:', error.stack);
+        console.error('❌ [SecureApp] ============================================');
+
+        // Mark as initialized even on error to prevent retry loops
+        this.setState({
+          pushNotificationsInitialized: true,
+          shouldInitializePushNotifications: false
+        });
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -460,11 +514,13 @@ class SecureApp extends Component {
           clearTimeout(this.authFallbackTimer);
           this.authFallbackTimer = null;
         }
+
         this.setState({
           isAuthenticated: true,
           authError: null,
           biometricVerified: true,
-          needsBiometrics: false
+          needsBiometrics: false,
+          shouldInitializePushNotifications: true  // Trigger push notification initialization
         });
 
         // Biometric verification successful - credentials still exist, user can continue

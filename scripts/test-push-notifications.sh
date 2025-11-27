@@ -9,7 +9,8 @@ API_ENDPOINT=${1:-""}
 USER_ID=${2:-"test-user-123"}
 DEVICE_ID="test-device-$(date +%s)"
 PLATFORM="ios"
-FCM_TOKEN="test-token-placeholder"
+# Valid iOS device token format (64 hex characters)
+FCM_TOKEN="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 if [ -z "$API_ENDPOINT" ]; then
   echo "Error: API endpoint required"

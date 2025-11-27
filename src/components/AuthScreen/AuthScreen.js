@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Button, Card, ActivityIndicator } from 'react-native-paper';
 import BiometricAuth, { BiometricAuthUtils } from '../BiometricAuth/BiometricAuth';
+import PushNotificationService from '../../services/PushNotificationService';
 
 /**
  * AuthScreen - Main authentication screen with biometric/PIN support
@@ -93,11 +94,28 @@ class AuthScreen extends Component {
   };
 
   // Handle successful authentication
-  handleAuthSuccess = (authInfo) => {
-    console.log('✅ [AuthScreen] Authentication successful:', authInfo);
+  handleAuthSuccess = async (authInfo) => {
+    console.log('✅ [AuthScreen] ========================================');
+    console.log('✅ [AuthScreen] handleAuthSuccess called with:', authInfo);
+    console.log('✅ [AuthScreen] this.props.onAuthSuccess exists:', !!this.props.onAuthSuccess);
+    console.log('✅ [AuthScreen] ========================================');
+
     this.setState({
       isAuthenticating: false
     });
+
+    // Initialize push notifications
+    try {
+      // Get user ID from props or storage
+      const userId = this.props.userId || 'user-' + Date.now(); // Fallback to timestamp-based ID
+    } catch (error) {
+      console.error('❌ [AuthScreen] ============================================');
+      console.error('❌ [AuthScreen] Failed to initialize push notifications:', error);
+      console.error('❌ [AuthScreen] Error message:', error.message);
+      console.error('❌ [AuthScreen] Error stack:', error.stack);
+      console.error('❌ [AuthScreen] ============================================');
+      // Don't block login if push notifications fail
+    }
 
     // Call parent success handler
     if (this.props.onAuthSuccess) {

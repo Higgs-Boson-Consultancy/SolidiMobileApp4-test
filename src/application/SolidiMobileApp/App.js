@@ -87,6 +87,22 @@ const AppContent = () => {
   useEffect(() => {
     if (DEBUG_MODE) console.log('🎯 App useEffect triggered');
     initialFunction();
+
+    // Phase 1: Initialize push notifications (request permissions and get device token)
+    // This happens on app install, before user logs in
+    const initPushNotifications = async () => {
+      try {
+        console.log('📱 [App] Initializing push notifications (Phase 1)...');
+        const PushNotificationService = require('../../services/PushNotificationService').default;
+        await PushNotificationService.initializeDevice();
+        console.log('✅ [App] Push notification device initialized');
+      } catch (error) {
+        console.error('❌ [App] Failed to initialize push notifications:', error);
+      }
+    };
+
+    initPushNotifications();
+
     // Hide splash screen immediately for debugging
     try {
       SplashScreen.hide();

@@ -45,6 +45,7 @@
 		609C86A71E0767B8399F6895 /* libPods-SolidiMobileApp4.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SolidiMobileApp4.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SolidiMobileApp4/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8DE0891446B4E86077451366 /* libPods-SolidiMobileApp4-SolidiMobileApp4Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SolidiMobileApp4-SolidiMobileApp4Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA54BE372ED6696C008B1F92 /* SolidiMobileApp4.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = SolidiMobileApp4.entitlements; path = SolidiMobileApp4/SolidiMobileApp4.entitlements; sourceTree = "<group>"; };
 		CE03275427A9639F001BDF07 /* MaterialIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = MaterialIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialIcons.ttf"; sourceTree = "<group>"; };
 		CE03275827A9639F001BDF07 /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = FontAwesome5_Solid.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Solid.ttf"; sourceTree = "<group>"; };
 		CE03275E27A965A9001BDF07 /* FontAwesome5_Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = FontAwesome5_Regular.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Regular.ttf"; sourceTree = "<group>"; };
@@ -94,6 +95,7 @@
 		13B07FAE1A68108700A75B9A /* SolidiMobileApp4 */ = {
 			isa = PBXGroup;
 			children = (
+				BA54BE372ED6696C008B1F92 /* SolidiMobileApp4.entitlements */,
 				CE03274D27A96359001BDF07 /* Fonts */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
@@ -520,6 +522,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SolidiMobileApp4/SolidiMobileApp4.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 45;
@@ -556,6 +559,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SolidiMobileApp4/SolidiMobileApp4.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 45;

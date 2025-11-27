@@ -1,25 +1,45 @@
 #!/bin/bash
 
-# Solidi Mobile App - iOS Device Deployment Script
+# Build and deploy to connected iOS device
+# This script builds the app and installs it on a connected iPhone
 
-set -e  # Exit on error
+set -e
 
-echo "📱 Deploying to iOS Device..."
+echo "🔨 Building Solidi Mobile App for iOS device..."
+echo ""
 
-# Check if a device is connected
-DEVICES=$(xcrun xctrace list devices 2>&1 | grep -v "Simulator")
+# Navigate to iOS directory
+cd "$(dirname "$0")/ios"
 
-if [ -z "$DEVICES" ]; then
-    echo "❌ No physical iOS devices found."
-    echo "Please connect your iPhone via USB and ensure it is trusted."
-    exit 1
+# Install pods if needed
+if [ ! -d "Pods" ]; then
+    echo "📦 Installing CocoaPods dependencies..."
+    pod install
 fi
 
-echo "✅ Found connected devices:"
-echo "$DEVICES"
+# Build and deploy to device
+echo "📱 Building and deploying to connected iPhone..."
+echo ""
 
-# Install and launch on device
-echo "🚀 Building and installing app..."
-npx react-native run-ios --device "Henry's iPhone"
+xcodebuild \
+    -workspace SolidiMobileApp4.xcworkspace \
+    -scheme SolidiMobileApp4 \
+    -configuration Debug \
+    -destination 'generic/platform=iOS' \
+    -allowProvisioningUpdates \
+    CODE_SIGN_IDENTITY="iPhone Developer" \
+    CODE_SIGN_STYLE=Automatic \
+    DEVELOPMENT_TEAM="" \
+    build
 
-echo "✅ Deployment complete!"
+echo ""
+echo "✅ Build complete!"
+echo ""
+echo "To install on your device:"
+echo "1. Open Xcode"
+echo "2. Go to Window > Devices and Simulators"
+echo "3. Select your iPhone"
+echo "4. Drag the .app file from the build folder to install"
+echo ""
+echo "Or use Xcode to run directly:"
+echo "  open ios/SolidiMobileApp4.xcworkspace"

@@ -180,7 +180,7 @@ Resources:
 
   # API Gateway REST API
   PushNotificationAPI:
-    Type: AWS::ApiGateway::RestAPI
+    Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Sub '${Environment}-push-notification-api'
       Description: API for push notification management

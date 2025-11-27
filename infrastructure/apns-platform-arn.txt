@@ -1,0 +1,1 @@
+arn:aws:sns:us-east-1:358157044493:app/APNS_SANDBOX/solidi-mobile-apns-dev

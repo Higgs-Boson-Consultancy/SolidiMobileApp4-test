@@ -4,6 +4,8 @@
     "description": "Lambda function to send push notifications to users",
     "main": "index.js",
     "dependencies": {
-        "aws-sdk": "^2.1000.0"
+        "@aws-sdk/client-sns": "^3.0.0",
+        "@aws-sdk/client-dynamodb": "^3.0.0",
+        "@aws-sdk/lib-dynamodb": "^3.0.0"
     }
 }

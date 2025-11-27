@@ -1246,8 +1246,10 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
         // Decision tree
         if (mainPanelState === 'Login') {
-          // Removed PIN creation check to bypass custom PIN
-          if (extraInfoRequired) {
+          if (!appState.user.pin) {
+            nextStateName = 'PIN';
+            nextPageName = 'choose';
+          } else if (extraInfoRequired) {
             nextStateName = 'Trade'; // Redirect to index page instead of AccountUpdate
           } else if (appState.panels.buy.activeOrder) {
             nextStateName = 'ChooseHowToPay';
@@ -1874,6 +1876,23 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         console.log('🔍 ===== CHECKING POST-LOGIN NAVIGATION REQUIREMENTS =====');
         await this.checkPostLoginNavigation();
         console.log('🔍 ===== END POST-LOGIN NAVIGATION CHECK =====');
+
+        // ===== PUSH NOTIFICATION INITIALIZATION (Phase 2) =====
+        console.log('📱 ===== MAPPING DEVICE TO USER (Phase 2) =====');
+        try {
+          const PushNotificationService = require('../../services/PushNotificationService').default;
+          const userId = this.state.user.email || this.state.user.info?.user?.uuid || 'user-' + Date.now();
+          console.log('📱 [Phase 2] Mapping device token to user:', userId);
+          // DEBUG: Show login success alert
+          const { Alert } = require('react-native');
+          Alert.alert('Login Success', `Starting Push Init for ${userId}`);
+          const pushResult = await PushNotificationService.updateUserMapping(userId);
+          console.log('📱 [Phase 2] User mapping result:', pushResult);
+        } catch (pushError) {
+          console.error('❌ Failed to map device to user:', pushError);
+          // Don't block login if push notifications fail
+        }
+        console.log('📱 ===== END PUSH NOTIFICATION USER MAPPING =====');
       }
       return "SUCCESS";
     }
@@ -2110,7 +2129,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (data == 'DisplayedError') return;
       //lj({data});
       // Sample data:
-      // "data":{"active":1,"apiKey":"Jh7L3AAcKwiqNdXGJ64kM6OIUcpQ9UEssowapmWCEhvCXCQmN6XuZAqH","apiSecret":"PXPUdrmU3XKnxZCDMuluYOXwcUSNoZpIxbQGayorbWEgOjhMF3Cgm3H0sjGsd081PLvssLKTBFjVuDM9wnxNNdpc","name":"default"}
+      // "data":{"active":1,"apiKey":"Jh7L3AAcKwiqNdXGJ64kM6OIUcpQ9UEssowapmWCEhvCXCQmN6XuZAqH","apiSecret":"PXPUdrmU3XKnxZCDMuluYOXwcUSNoZpIxbQGayorbWEgOjhMF3Cgm3H0sjGsd081PLvssLKTBFhVuDM9wnxNNdpc","name":"default"}
       ({ apiKey, apiSecret } = data);
       //lj({apiKey, apiSecret})
       log(`loginAsDifferentUser: Step 3: Use new user's credentials to log in as that user.`);
@@ -2341,7 +2360,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Log API request details
       console.log(`🚀 [API REQUEST] ${httpMethod} ${apiRoute}`);
       console.log(`📤 [API REQUEST PARAMS]`, params);
-      console.log(` [REQUEST JSON]`, JSON.stringify({
+      console.log(`� [REQUEST JSON]`, JSON.stringify({
         method: httpMethod,
         route: apiRoute,
         params: {
@@ -2350,7 +2369,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         },
         functionName
       }, null, 2));
-      console.log(`🔧 [API FUNCTION]`, functionName);
+      console.log(`�🔧 [API FUNCTION]`, functionName);
 
       // Safety check for apiClient
       if (!this.state.apiClient) {
@@ -2472,47 +2491,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           return this.state.changeState('Authenticate');
         }
       }
-
-      // MODIFIED: Bypass PIN entry and load credentials directly
-      // If the Keychain contains API credentials, load them and proceed.
-      if (this.state.user.apiCredentialsFound) {
-        log("authenticateUser (2) -> Loading credentials directly (Bypassing PIN)");
-
-        try {
-          // Load API credentials from Keychain
-          let apiCredentials = await Keychain.getInternetCredentials(this.state.apiCredentialsStorageKey);
-
-          if (!apiCredentials) {
-            log("authenticateUser: Credentials not found in Keychain -> Login");
-            return this.state.changeState('Login');
-          }
-
-          let { username: apiKey, password: apiSecret } = apiCredentials;
-
-          // Build a new API client
-          let { userAgent, domain } = this.state;
-          let apiClient = new SolidiRestAPIClientLibrary({ userAgent, apiKey, apiSecret, domain });
-
-          // Store these access values in the global state
-          _.assign(apiClient, { apiKey, apiSecret });
-          this.state.apiClient = apiClient;
-          this.state.user.isAuthenticated = true;
-
-          // Load user stuff
-          await this.state.loadInitialStuffAboutUser();
-
-          // Unlock app
-          this.state.appLocked = false;
-
-          // Move to next state
-          return this.moveToNextState();
-
-        } catch (error) {
-          console.error("authenticateUser: Error loading credentials:", error);
-          return this.state.changeState('Login');
-        }
+      // If the Keychain contains both the PIN and the API credentials, go to PIN entry.
+      // After the user enters the PIN, the app will load the API credentials automatically.
+      // Note: The PIN is kept in storage even if the user logs out.
+      // Note 2: A logOut action will delete the API credentials, so in this case a new logIn action will be required, in which the user enters their username and password.
+      if (this.state.user.apiCredentialsFound && this.state.user.pin) {
+        log("authenticateUser (2) -> PIN");
+        return this.state.changeState('PIN');
       }
-
       // Otherwise, go to Login.
       log("authenticateUser (3) -> Login");
       return this.state.changeState('Login');
@@ -3613,6 +3599,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.loadTicker = async () => {
+      // Use private API if authenticated, otherwise fall back to public API
+      if (this.state.user?.isAuthenticated) {
+        log('Using private ticker API (authenticated user)');
+        return await this.loadPrivateTicker();
+      }
+
+      // Fall back to public API for unauthenticated users
+      log('Using public ticker API (unauthenticated)');
       let data = await this.state.publicMethod({
         httpMethod: 'GET',
         apiRoute: 'ticker',
@@ -3667,6 +3661,49 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       }
       return data;
     }
+
+    // Load ticker data using private API (user-specific markets)
+    this.loadPrivateTicker = async (market = null) => {
+      try {
+        const apiRoute = market ? `ticker/${market}` : 'ticker';
+
+        log(`Loading private ticker: ${apiRoute}`);
+        const data = await this.privateMethod({
+          httpMethod: 'POST',
+          apiRoute: apiRoute,
+          params: {},
+          functionName: 'loadPrivateTicker'
+        });
+
+        if (data === 'DisplayedError') return null;
+
+        // Handle the response - it should be in format { data: {...} }
+        const tickerData = data?.data || data;
+
+        // Update cache
+        if (market) {
+          // Update specific market
+          log(`Private ticker data for ${market}:`, jd(tickerData));
+          this.state.apiData.ticker = {
+            ...this.state.apiData.ticker,
+            [market]: tickerData
+          };
+        } else {
+          // Update all markets
+          log(`Private ticker loaded for ${Object.keys(tickerData).length} markets`);
+          this.state.prevAPIData.ticker = this.state.apiData.ticker;
+          if (_.isEmpty(this.state.apiData.ticker)) {
+            this.state.prevAPIData.ticker = tickerData;
+          }
+          this.state.apiData.ticker = tickerData;
+        }
+
+        return tickerData;
+      } catch (error) {
+        log(`Error loading private ticker: ${error.message}`);
+        return null;
+      }
+    };
 
     // Load live crypto prices from CoinGecko API
     this.loadCoinGeckoPrices = async () => {
