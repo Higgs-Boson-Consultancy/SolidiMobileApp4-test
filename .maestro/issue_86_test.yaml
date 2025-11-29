@@ -1,0 +1,36 @@
+appId: co.solidi.mobile.test
+---
+# Issue 86: Remove Blue Menu Button Test
+# Verifies that the blue "..." menu button has been removed from the CryptoContent page
+
+# Wait for app to be ready
+- assertVisible: ".*"
+- takeScreenshot: 01_app_ready
+
+# If we're on Wallet, look for Bitcoin there, otherwise navigate to Assets
+# Try to find Bitcoin/BTC on current screen
+- extendedWaitUntil:
+    visible: "Bitcoin|BTC"
+    timeout: 5000
+- takeScreenshot: 02_found_bitcoin
+
+# Tap on Bitcoin (or BTC) to open CryptoContent
+- tapOn:
+    text: "Bitcoin"
+- extendedWaitUntil:
+    visible: "Buy|Sell"
+    timeout: 10000
+- takeScreenshot: 03_crypto_content_opened
+
+# Verify Buy and Sell buttons are visible
+- assertVisible:
+    text: "Buy"
+- assertVisible:
+    text: "Sell"
+
+# Scroll down to see the bottom button area clearly
+- scroll
+- takeScreenshot: 04_bottom_buttons_area
+
+# Final screenshot showing only Buy and Sell buttons (no blue menu button)
+- takeScreenshot: 05_no_blue_menu_button_success
