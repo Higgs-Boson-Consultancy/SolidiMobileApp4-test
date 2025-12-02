@@ -348,10 +348,17 @@ let AddressBookForm = ({
         break;
 
       case 3:
+        console.log('🔍 [VALIDATION] Step 3 - Asset selection');
+        console.log('🔍 [VALIDATION] formData.asset:', formData.asset);
+        console.log('🔍 [VALIDATION] formData.asset type:', typeof formData.asset);
+        console.log('🔍 [VALIDATION] formData.asset.trim():', formData.asset ? formData.asset.trim() : 'N/A');
+
         if (!formData.asset || formData.asset.trim() === '') {
+          console.log('❌ [VALIDATION] Asset validation FAILED - no asset selected');
           setErrorMessage('Please select an asset');
           return false;
         }
+        console.log('✅ [VALIDATION] Asset validation PASSED');
         break;
 
       case 4:
@@ -380,12 +387,9 @@ let AddressBookForm = ({
             return false;
           }
         } else {
-          // Crypto address validation
-          if (!formData.withdrawAddress.trim()) {
-            setErrorMessage('Withdrawal address is required');
-            return false;
-          }
-          // No length validation - different cryptocurrencies have different address formats and lengths
+          // Crypto address - NO VALIDATION
+          // Per Issue #80: No validation API available, different cryptocurrencies have different address formats
+          // Validation will be handled server-side during actual withdrawal
         }
         break;
 
@@ -407,6 +411,32 @@ let AddressBookForm = ({
         return true;
     }
     return true;
+  };
+
+  // Helper to check if Next button should be disabled
+  const isNextButtonDisabled = () => {
+    switch (currentStep) {
+      case 1: // Recipient
+        return !formData.recipient;
+      case 2: // Name
+        if (!formData.firstName.trim()) return true;
+        if (formData.recipient !== 'another_business' && !formData.lastName.trim()) return true;
+        return false;
+      case 3: // Asset
+        return !formData.asset || formData.asset.trim() === '';
+      case 4: // Destination
+        if (formData.asset.toLowerCase() === 'gbp') {
+          return !formData.accountName.trim() || !formData.sortCode.trim() || !formData.accountNumber.trim();
+        } else {
+          return !formData.withdrawAddress || formData.withdrawAddress.trim() === '';
+        }
+      case 5: // Wallet Type
+        if (!formData.destinationType) return true;
+        if (formData.destinationType === 'exchange' && !formData.exchangeName.trim()) return true;
+        return false;
+      default:
+        return false;
+    }
   };
 
   // Handle QR code scan
@@ -1201,12 +1231,21 @@ let AddressBookForm = ({
 
         {!isLastStep() ? (
           <TouchableOpacity
-            style={[styles.navButton, styles.nextButton]}
+            style={[
+              styles.navButton,
+              styles.nextButton,
+              isNextButtonDisabled() && styles.disabledButton
+            ]}
             onPress={goToNextStep}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isNextButtonDisabled()}
             testID="button-next"
           >
-            <Text style={styles.nextButtonText}>Next →</Text>
+            <Text style={[
+              styles.nextButtonText,
+              isNextButtonDisabled() && styles.disabledButtonText
+            ]}>
+              Next →
+            </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -1613,6 +1652,13 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: normaliseFont(16),
     fontWeight: '600',
+  },
+  disabledButton: {
+    backgroundColor: colors.lightGray,
+    opacity: 0.6,
+  },
+  disabledButtonText: {
+    color: colors.mediumGray,
   },
 
   // Contact selection styles

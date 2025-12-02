@@ -205,10 +205,20 @@ const AddressBookManagement = () => {
     }
   }, [addresses.length]);
 
-  // Get available asset types - hardcoded for reliability
+  // Get available asset types - dynamic from API
   const getAvailableAssets = () => {
-    const assets = ['BTC', 'ETH', 'GBP'];
-    return assets;
+    if (appState && appState.getAvailableAssets) {
+      const assets = appState.getAvailableAssets();
+      if (assets && assets.length > 0) {
+        // Ensure GBP is always included if not present (it's a base currency)
+        if (!assets.includes('GBP')) {
+          return [...assets, 'GBP'];
+        }
+        return assets;
+      }
+    }
+    // Fallback if API not ready
+    return ['BTC', 'ETH', 'GBP'];
   };
 
   // Get available address types - hardcoded for reliability
@@ -282,7 +292,7 @@ const AddressBookManagement = () => {
       }
 
       // Load addresses for each supported asset using live API calls
-      const assets = ['BTC', 'ETH', 'GBP'];
+      const assets = getAvailableAssets();
       const allAddresses = [];
 
       for (const asset of assets) {

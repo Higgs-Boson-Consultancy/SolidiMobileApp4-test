@@ -87,7 +87,7 @@ let Header = (props) => {
         activeOpacity={0.8}
       >
         <Text style={headerStyles.riskBannerText}>
-          ⚠️ Don't invest unless you're prepared to lose all the money you invest. This is a high-risk investment and you should not expect to be protected if something goes wrong. Take 2 mins to{' '}
+          Don't invest unless you're prepared to lose all the money you invest. This is a high-risk investment and you should not expect to be protected if something goes wrong. Take 2 mins to{' '}
           <Text style={headerStyles.learnMoreText}>learn more</Text>.
         </Text>
       </TouchableOpacity>
@@ -135,7 +135,7 @@ const headerStyles = StyleSheet.create({
   riskBanner: {
     width: '100%',
     paddingHorizontal: scaledWidth(15),
-    paddingVertical: scaledHeight(8),
+    paddingVertical: scaledHeight(4),
     backgroundColor: colors.warning
   },
   riskBannerText: {

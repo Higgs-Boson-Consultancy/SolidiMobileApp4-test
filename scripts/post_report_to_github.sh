@@ -32,23 +32,110 @@ if ! command -v gh &> /dev/null; then
     exit 1
 fi
 
+# Get Repo Info
+REPO_URL=$(gh repo view --json url -q .url)
+# Convert https://github.com/OWNER/REPO to raw URL base
+# Raw: https://raw.githubusercontent.com/OWNER/REPO/BRANCH/PATH
+# We need OWNER/REPO
+REPO_PATH=${REPO_URL#*github.com/}
+REPO_PATH=${REPO_PATH%.git}
+
+CURRENT_BRANCH=$(git branch --show-current)
+
+echo "Detected Repo: $REPO_PATH on branch $CURRENT_BRANCH"
+
+# Create a temporary report file
+TEMP_REPORT="temp_report_${ISSUE_NUMBER}.md"
+cp "$REPORT_PATH" "$TEMP_REPORT"
+
+echo "Processing images..."
+
+# Find all image links: ![Alt](Path)
+# We assume standard markdown image syntax
+# We use grep to find lines with images, then extract path
+# This is a simple extraction, might need refinement for multiple images per line
+# But for our reports, usually one per line.
+
+# Extract image paths relative to the report file
+# We need to resolve them relative to repo root for git add
+REPORT_DIR=$(dirname "$REPORT_PATH")
+
+# Read the report line by line to find images
+# We will use a temporary file for the sed replacements to avoid issues
+sed_script=""
+
+while IFS= read -r line; do
+    if [[ "$line" =~ \!\[.*\]\((.*)\) ]]; then
+        IMG_REL_PATH="${BASH_REMATCH[1]}"
+        
+        # Resolve path
+        # If it starts with ./, remove it
+        CLEAN_REL_PATH=${IMG_REL_PATH#./}
+        
+        # Full path from repo root
+        FULL_PATH="$REPORT_DIR/$CLEAN_REL_PATH"
+        
+        # Check if file exists
+        if [ -f "$FULL_PATH" ]; then
+            echo "Found image: $FULL_PATH"
+            
+            # Git add the image
+            git add "$FULL_PATH"
+            
+            # Construct Raw URL
+            # https://raw.githubusercontent.com/OWNER/REPO/BRANCH/PATH
+            RAW_URL="https://raw.githubusercontent.com/$REPO_PATH/$CURRENT_BRANCH/$FULL_PATH"
+            
+            # Escape slashes for sed
+            ESCAPED_IMG_PATH=$(echo "$IMG_REL_PATH" | sed 's/\//\\\//g')
+            ESCAPED_RAW_URL=$(echo "$RAW_URL" | sed 's/\//\\\//g')
+            
+            # Add to sed script
+            sed_script+="s/($ESCAPED_IMG_PATH)/($ESCAPED_RAW_URL)/g;"
+        else
+            echo -e "${RED}Warning: Image not found at $FULL_PATH${NC}"
+        fi
+    fi
+done < "$REPORT_PATH"
+
+# Apply replacements
+if [ ! -z "$sed_script" ]; then
+    sed -i '' "$sed_script" "$TEMP_REPORT"
+    echo "Replaced image paths with GitHub URLs."
+    
+    # Commit images
+    echo "Committing images to repository..."
+    git commit -m "Add test screenshots for Issue #$ISSUE_NUMBER"
+    
+    # Push changes
+    echo "Pushing changes to remote..."
+    git push
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to push images. The links in the report might be broken.${NC}"
+        # We continue anyway? Or exit?
+        # Let's continue but warn.
+    fi
+else
+    echo "No images found to process."
+fi
+
 echo "Posting report to Issue #$ISSUE_NUMBER..."
 
 # Post the report as a comment
-# We wrap it in a details block to keep the issue clean, or just post it directly.
-# Let's post directly but maybe add a header.
-gh issue comment "$ISSUE_NUMBER" --body-file "$REPORT_PATH"
+gh issue comment "$ISSUE_NUMBER" --body-file "$TEMP_REPORT"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}Successfully posted report to Issue #$ISSUE_NUMBER${NC}"
+    rm "$TEMP_REPORT"
 else
     echo -e "${RED}Failed to post report.${NC}"
+    rm "$TEMP_REPORT"
     exit 1
 fi
 
 echo "Tagging Issue #$ISSUE_NUMBER as FIXED..."
 
-# Add FIXED label (ensure it exists or just add it, gh handles it usually if it exists in repo)
+# Add FIXED label
 gh issue edit "$ISSUE_NUMBER" --add-label "FIXED"
 
 if [ $? -eq 0 ]; then
