@@ -53,22 +53,23 @@ const NotificationBellIcon = ({ userId }) => {
         try {
             if (userId) {
                 // Try to get unread count from API
-                const count = await NotificationHistoryService.getUnreadCount(userId);
-                setUnreadCount(count);
-            } else {
-                // Fallback to local storage
-                const count = await NotificationStorageService.getUnreadCount();
-                setUnreadCount(count);
+                try {
+                    const count = await NotificationHistoryService.getUnreadCount(userId);
+                    setUnreadCount(count);
+                    return;
+                } catch (apiError) {
+                    console.log('📡 API unavailable, using local storage for unread count');
+                    // Fallback to local storage silently
+                }
             }
+            
+            // Use local storage (fallback or no userId)
+            const count = await NotificationStorageService.getUnreadCount();
+            setUnreadCount(count);
         } catch (error) {
             console.error('Failed to load unread count:', error);
-            // Fallback to local storage on error
-            try {
-                const count = await NotificationStorageService.getUnreadCount();
-                setUnreadCount(count);
-            } catch (fallbackError) {
-                console.error('Failed to load unread count from local storage:', fallbackError);
-            }
+            // Set to 0 if all attempts fail
+            setUnreadCount(0);
         }
     };
 
@@ -89,7 +90,7 @@ const NotificationBellIcon = ({ userId }) => {
                 onPress={handlePress}
                 testID="notification-bell-icon"
             >
-                <Icon name="bell" size={24} color="#000" />
+                <Icon name="bell" size={28} color="#000" />
                 {unreadCount > 0 && (
                     <View style={styles.badge}>
                         <Text style={styles.badgeText}>
@@ -110,9 +111,9 @@ const NotificationBellIcon = ({ userId }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 0,
-        marginRight: 0,
-        marginLeft: 0,
+        padding: 8,
+        marginRight: 4,
+        marginLeft: 4,
         position: 'relative',
     },
     badge: {

@@ -1,6 +1,6 @@
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, QueryCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const snsClient = new SNSClient({});
 const dynamoClient = new DynamoDBClient({});
@@ -55,14 +55,38 @@ exports.handler = async (event) => {
         }
 
         const results = [];
-        const tableName = process.env.DEVICES_TABLE || 'device-tokens';
+        const devicesTableName = process.env.DEVICES_TABLE || 'device-tokens';
+        const notificationsTableName = process.env.NOTIFICATIONS_TABLE || 'notifications';
 
         // Process each user
         for (const userId of userIds) {
             try {
+                // Generate notification ID and timestamp
+                const timestamp = Date.now(); // Unix timestamp in milliseconds
+                const notificationId = `notif_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+                const createdAt = new Date(timestamp).toISOString(); // ISO string for display
+
+                // Save notification to DynamoDB first
+                await dynamodb.send(new PutCommand({
+                    TableName: notificationsTableName,
+                    Item: {
+                        userId,
+                        notificationId,
+                        timestamp,
+                        createdAt,
+                        title,
+                        body: messageBody,
+                        data: data || {},
+                        read: false,
+                        sent: false,
+                        ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60) // 90 days
+                    }
+                }));
+                console.log(`Notification saved to database: ${notificationId}`);
+
                 // Get user's devices from DynamoDB
                 const devicesResult = await dynamodb.send(new QueryCommand({
-                    TableName: tableName,
+                    TableName: devicesTableName,
                     KeyConditionExpression: 'userId = :userId',
                     FilterExpression: 'active = :active',
                     ExpressionAttributeValues: {
@@ -72,11 +96,14 @@ exports.handler = async (event) => {
                 }));
 
                 if (!devicesResult.Items || devicesResult.Items.length === 0) {
-                    console.log(`No active devices found for user ${userId}`);
+                    console.log(`No active devices found for user ${userId}, but notification was saved`);
                     results.push({
                         userId,
-                        success: false,
-                        error: 'No active devices found'
+                        notificationId,
+                        success: true,
+                        saved: true,
+                        sent: false,
+                        message: 'Notification saved but no active devices to send to'
                     });
                     continue;
                 }
@@ -108,7 +135,7 @@ exports.handler = async (event) => {
                         // If endpoint is disabled, mark device as inactive
                         if (error.code === 'EndpointDisabled' || error.code === 'InvalidParameter') {
                             await dynamodb.update({
-                                TableName: tableName,
+                                TableName: devicesTableName,
                                 Key: { userId, deviceId: device.deviceId },
                                 UpdateExpression: 'SET active = :active',
                                 ExpressionAttributeValues: {
@@ -126,9 +153,35 @@ exports.handler = async (event) => {
                     }
                 }
 
+                const sentSuccessfully = deviceResults.some(r => r.success);
+
+                // Update notification as sent if at least one device received it
+                if (sentSuccessfully) {
+                    await dynamodb.send(new PutCommand({
+                        TableName: notificationsTableName,
+                        Item: {
+                            userId,
+                            notificationId,
+                            timestamp,
+                            createdAt,
+                            title,
+                            body: messageBody,
+                            data: data || {},
+                            read: false,
+                            sent: true,
+                            sentAt: new Date().toISOString(),
+                            ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60)
+                        }
+                    }));
+                    console.log(`Notification ${notificationId} marked as sent`);
+                }
+
                 results.push({
                     userId,
-                    success: deviceResults.some(r => r.success),
+                    notificationId,
+                    success: sentSuccessfully,
+                    saved: true,
+                    sent: sentSuccessfully,
                     devices: deviceResults
                 });
 

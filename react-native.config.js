@@ -3,5 +3,6 @@ module.exports = {
     ios: {
       automaticPodsInstallation: true
     }
-  }
+  },
+  assets: ['./node_modules/react-native-vector-icons/Fonts/']
 }
