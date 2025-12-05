@@ -4838,7 +4838,14 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
         // Handle both array and object formats
         if (Array.isArray(this.state.apiData.currency)) {
-          currencyAssets = this.state.apiData.currency;
+          // Currency API returns array of objects: [{code: "BTC", description: "Bitcoin", ...}, ...]
+          // Extract just the 'code' property from each object
+          currencyAssets = this.state.apiData.currency.map(item => {
+            if (typeof item === 'object' && item.code) {
+              return item.code;
+            }
+            return item; // Fallback if it's already a string
+          });
         } else if (typeof this.state.apiData.currency === 'object') {
           currencyAssets = Object.keys(this.state.apiData.currency);
         } else {
