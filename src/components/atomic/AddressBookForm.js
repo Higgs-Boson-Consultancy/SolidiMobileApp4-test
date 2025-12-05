@@ -1493,6 +1493,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
+    color: colors.darkGray,
   },
   noResultsText: {
     textAlign: 'center',
