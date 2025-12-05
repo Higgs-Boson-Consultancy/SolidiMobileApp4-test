@@ -48,12 +48,19 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
   useEffect(() => {
     if (visible) {
       initializePage();
-      // Set the selected asset filter if provided
+      // Set and LOCK the selected asset filter if provided
       if (selectedAsset) {
         setSelectedAssets([selectedAsset]);
       }
     }
   }, [visible, selectedAsset]);
+
+  // Lock the asset filter when selectedAsset is provided - prevent users from changing it
+  useEffect(() => {
+    if (selectedAsset && !selectedAssets.includes(selectedAsset)) {
+      setSelectedAssets([selectedAsset]);
+    }
+  }, [selectedAssets, selectedAsset]);
 
   // Filter addresses when selection changes
   useEffect(() => {
@@ -119,14 +126,20 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
       // Load addresses for each supported asset using live API calls
       let assets = ['BTC', 'ETH', 'GBP'];
 
-      // Use dynamic assets if available
-      if (appState && appState.getAvailableAssets) {
-        const dynamicAssets = appState.getAvailableAssets();
-        if (dynamicAssets && dynamicAssets.length > 0) {
-          assets = dynamicAssets;
-          // Ensure GBP is included
-          if (!assets.includes('GBP')) {
-            assets = [...assets, 'GBP'];
+      // If selectedAsset is provided, only load that asset (performance optimization)
+      if (selectedAsset) {
+        assets = [selectedAsset];
+        log(`📍 Loading addresses only for selected asset: ${selectedAsset}`);
+      } else {
+        // Use dynamic assets if available (for general address book view)
+        if (appState && appState.getAvailableAssets) {
+          const dynamicAssets = appState.getAvailableAssets();
+          if (dynamicAssets && dynamicAssets.length > 0) {
+            assets = dynamicAssets;
+            // Ensure GBP is included
+            if (!assets.includes('GBP')) {
+              assets = [...assets, 'GBP'];
+            }
           }
         }
       }
@@ -404,18 +417,28 @@ let AddressBookSelectionPage = ({ visible, onClose, onSelectAddress, selectedAss
 
         {/* Filters */}
         <View style={styles.filtersContainer}>
-          {/* Asset Filter */}
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowAssetDropdown(!showAssetDropdown)}
-          >
-            <Text style={styles.filterButtonText}>
-              Assets {selectedAssets.length > 0 ? `(${selectedAssets.length})` : ''}
-            </Text>
-            <Icon name="chevron-down" size={20} color={colors.mediumGray} />
-          </TouchableOpacity>
+          {/* Asset Filter - Only show if no specific asset is selected */}
+          {!selectedAsset && (
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowAssetDropdown(!showAssetDropdown)}
+            >
+              <Text style={styles.filterButtonText}>
+                Assets {selectedAssets.length > 0 ? `(${selectedAssets.length})` : ''}
+              </Text>
+              <Icon name="chevron-down" size={20} color={colors.mediumGray} />
+            </TouchableOpacity>
+          )}
 
-          {/* Type Filter */}
+          {/* Show selected asset badge when locked */}
+          {selectedAsset && (
+            <View style={styles.lockedAssetBadge}>
+              <Icon name={getCryptoIcon(selectedAsset)} size={16} color={getAssetColor(selectedAsset)} />
+              <Text style={styles.lockedAssetText}>{selectedAsset} Addresses Only</Text>
+            </View>
+          )}
+
+          {/* Type Filter - Always available */}
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setShowTypeDropdown(!showTypeDropdown)}
@@ -690,6 +713,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: scaledWidth(8),
+  },
+  lockedAssetBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scaledWidth(12),
+    paddingVertical: scaledHeight(6),
+    backgroundColor: '#e3f2fd',
+    borderRadius: scaledWidth(20),
+    marginRight: scaledWidth(8),
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
+  lockedAssetText: {
+    fontSize: normaliseFont(12),
+    color: '#1565C0',
+    marginLeft: scaledWidth(4),
+    fontWeight: '600',
   },
 });
 
