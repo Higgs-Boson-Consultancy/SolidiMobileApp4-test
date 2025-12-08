@@ -143,18 +143,115 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         #config-section {
             background-color: #e0e7ff;
             border: 1px solid #c7d2fe;
+            display: none;
+            /* Hidden by default as requested */
+        }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .login-header h2 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        /* Code blocks for API docs */
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        .endpoint-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        .method-post {
+            background: #49cc90;
+            color: white;
+        }
+
+        .method-get {
+            background: #61affe;
+            color: white;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <h2>Solidi Dashboard</h2>
+                <p style="color: #6b7280; margin-top: 8px;">Please sign in to continue</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter password" required>
+                </div>
+                <div id="login-error"
+                    style="color: var(--danger); font-size: 14px; margin-bottom: 16px; display: none;">
+                    Invalid credentials
+                </div>
+                <button type="submit" style="width: 100%;">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-content" class="container hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Notification Dashboard</h1>
+            <button onclick="handleLogout()" class="danger" style="padding: 8px 16px; font-size: 14px;">Sign
+                Out</button>
+        </div>
+
         <div class="card" id="config-section">
             <div class="form-group">
                 <label for="api-url">API URL</label>
@@ -177,15 +274,17 @@
             <div class="tab active" onclick="switchTab('send')">Send Notification</div>
             <div class="tab" onclick="switchTab('devices')">Manage Devices</div>
             <div class="tab" onclick="switchTab('history')">History</div>
+            <div class="tab" onclick="switchTab('apidocs')">API Docs</div>
         </div>
 
         <!-- SEND NOTIFICATION TAB -->
         <div id="send-tab" class="tab-content">
             <div class="card">
                 <h2>Send Notification</h2>
-                <div style="padding: 12px; background: #e0e7ff; border-radius: 4px; margin-bottom: 16px;">
-                    <strong>Recipient:</strong> <span id="recipient-display" style="color: #2563eb;">Set email filter
-                        above</span>
+                <div class="form-group">
+                    <label for="send-recipient">Recipient Email</label>
+                    <input type="email" id="send-recipient" placeholder="Start typing email..."
+                        oninput="filterDevicesForSend(this.value)">
                 </div>
                 <div class="form-group">
                     <label for="message-title">Title</label>
@@ -204,9 +303,17 @@
         <!-- DEVICES TAB -->
         <div id="devices-tab" class="tab-content hidden">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h2>Registered Devices</h2>
                     <button onclick="loadDevices()">Refresh List</button>
+                </div>
+                <div class="form-group">
+                    <label for="devices-filter">Filter by User ID</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="devices-filter" placeholder="Enter email..."
+                            oninput="filterDevicesList()">
+                        <button onclick="filterDevicesList()">Filter</button>
+                    </div>
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="devices-table">
@@ -263,61 +370,191 @@
                 </div>
             </div>
         </div>
+
+        <!-- API DOCS TAB -->
+        <div id="apidocs-tab" class="tab-content hidden">
+            <div class="card">
+                <h2>API Integration Documentation</h2>
+                <p>Use the following endpoints to integrate push notifications into your backend services.</p>
+
+                <h3 style="margin-top: 24px;">1. Register Device & Map User</h3>
+                <p>Register a device token and map it to a user ID. This is idempotent - safe to call multiple times.
+                </p>
+
+                <div>
+                    <span class="endpoint-badge method-post">POST</span>
+                    <code id="doc-url-device">/device</code>
+                </div>
+
+                <h4>Request Body</h4>
+                <pre>{
+  "userId": "henry930@gmail.com",
+  "platform": "android",       // "android" or "ios"
+  "token": "fcm_or_apns_token", // Device push token
+  "deviceId": "unique_device_id" // e.g. UUID
+}</pre>
+
+                <h4>Example (cURL)</h4>
+                <pre>curl -X POST <span class="doc-api-url"></span>/device \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "henry930@gmail.com",
+    "platform": "android",
+    "token": "YOUR_FCM_TOKEN",
+    "deviceId": "DEVICE_UUID"
+  }'</pre>
+
+                <details
+                    style="margin-top: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #475569;">Show React Native Client Example
+                    </summary>
+                    <div style="margin-top: 12px; font-size: 14px;">
+                        <p style="margin-bottom: 8px;">Requires <code>@react-native-firebase/messaging</code> and
+                            <code>react-native-device-info</code>.</p>
+                        <pre
+                            style="background: #1e293b; color: #fff; padding: 12px; border-radius: 4px; overflow-x: auto;">
+import messaging from '@react-native-firebase/messaging';
+import DeviceInfo from 'react-native-device-info';
+
+async function registerDevice(userId) {
+  // 1. Get FCM Token
+  const token = await messaging().getToken();
+  
+  // 2. Get Unique Device ID
+  const deviceId = await DeviceInfo.getUniqueId();
+  
+  // 3. Register with backend
+  await fetch('<span class="doc-api-url"></span>/device', {
+    method: 'POST',
+    body: JSON.stringify({
+      userId: userId,
+      token: token,
+      deviceId: deviceId,
+      platform: Platform.OS
+    })
+  });
+}</pre>
+                    </div>
+                </details>
+
+                <hr style="margin: 32px 0; border-color: var(--border);">
+
+                <h3>2. Send Notification</h3>
+                <p>Send a push notification to a specific user's registered devices.</p>
+
+                <div>
+                    <span class="endpoint-badge method-post">POST</span>
+                    <code id="doc-url-send">/send</code>
+                </div>
+
+                <h4>Request Body</h4>
+                <pre>{
+  "userId": "henry930@gmail.com",
+  "title": "Alert",
+  "message": "Your transfer is complete"
+}</pre>
+
+                <h4>Example (cURL)</h4>
+                <pre>curl -X POST <span class="doc-api-url"></span>/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "henry930@gmail.com",
+    "title": "Payment Received",
+    "message": "You have received 0.5 BTC"
+  }'</pre>
+            </div>
+        </div>
     </div>
 
     <script>
         // State
         let devices = [];
-        let globalEmailFilter = '';
+        const apiUrl = 'https://u4o3rayvl6.execute-api.us-east-1.amazonaws.com/dev';
 
-        // Initialize from localStorage
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('dashboardEmailFilter');
-            if (savedEmail) {
-                document.getElementById('global-email-filter').value = savedEmail;
-                globalEmailFilter = savedEmail;
+        // History State
+        let historyData = [];
+        let historyNextToken = null;
+        let isHistoryLoading = false;
+        let hasMoreHistory = true;
+
+        // Login Logic
+        const CREDENTIALS = {
+            user: 'dev',
+            pass: 'Titan1Europa2!@'
+        };
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-username').value;
+            const pass = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
+                // Success
+                sessionStorage.setItem('authToken', 'dummy-token');
+                showDashboard();
+                errorDiv.style.display = 'none';
+            } else {
+                // Error
+                errorDiv.style.display = 'block';
             }
-            updateRecipientDisplay(); // Initialize recipient display
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('authToken');
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('login-password').value = '';
+        }
+
+        function showDashboard() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('dashboard-content').classList.remove('hidden');
+
+            updateApiDocs();
+
+            // Initial load if on history tab
+            const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
+            if (activeTab.includes('history')) loadHistory(false);
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check session
+            if (sessionStorage.getItem('authToken')) {
+                showDashboard();
+            }
+
+            // Infinite Scroll Listener
+            window.addEventListener('scroll', () => {
+                const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
+                if (!activeTab.includes('history')) return;
+
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+                    if (hasMoreHistory && !isHistoryLoading) {
+                        loadHistory(true);
+                    }
+                }
+            });
         });
 
         // Global Filter Functions
         function applyGlobalFilter() {
-            const email = document.getElementById('global-email-filter').value.trim();
-            globalEmailFilter = email;
-            localStorage.setItem('dashboardEmailFilter', email);
-
-            // Update recipient display
-            updateRecipientDisplay();
-
-            // Reload current tab data
-            const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
-            if (activeTab.includes('devices')) loadDevices();
-            if (activeTab.includes('history')) loadHistory();
+            // This function is now deprecated as global filter is removed.
+            // Keeping it as a placeholder if the HTML still calls it.
+            console.warn("applyGlobalFilter is deprecated.");
         }
 
         function updateRecipientDisplay() {
-            const display = document.getElementById('recipient-display');
-            if (globalEmailFilter) {
-                display.textContent = globalEmailFilter;
-                display.style.color = '#2563eb';
-            } else {
-                display.textContent = 'Set email filter above';
-                display.style.color = '#6b7280';
-            }
+            // This function is now deprecated as global filter is removed.
+            // Keeping it as a placeholder if the HTML still calls it.
+            console.warn("updateRecipientDisplay is deprecated.");
         }
 
         function clearGlobalFilter() {
-            document.getElementById('global-email-filter').value = '';
-            globalEmailFilter = '';
-            localStorage.removeItem('dashboardEmailFilter');
-
-            // Update recipient display
-            updateRecipientDisplay();
-
-            // Reload current tab data
-            const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
-            if (activeTab.includes('devices')) loadDevices();
-            if (activeTab.includes('history')) loadHistory();
+            // This function is now deprecated as global filter is removed.
+            // Keeping it as a placeholder if the HTML still calls it.
+            console.warn("clearGlobalFilter is deprecated.");
         }
 
         // Tab Switching
@@ -328,32 +565,34 @@
             document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
             document.getElementById(`${tabName}-tab`).classList.remove('hidden');
 
-            // Update recipient display when switching to send tab
-            if (tabName === 'send') {
-                updateRecipientDisplay();
-            }
-
+            // Logic per tab
             if (tabName === 'devices') loadDevices();
-            if (tabName === 'history') loadHistory();
+            if (tabName === 'history' && historyData.length === 0) loadHistory(false);
+            if (tabName === 'apidocs') updateApiDocs();
         }
 
-        // API Helper
-        function getApiUrl() {
-            return document.getElementById('api-url').value.replace(/\/$/, '');
+        function updateApiDocs() {
+            const base = apiUrl;
+            document.querySelectorAll('.doc-api-url').forEach(el => el.textContent = base);
         }
 
         // Send Notification
+        function filterDevicesForSend(val) {
+            // Optional: could do autocomplete here if we had device list loaded
+            // For now, just a placeholder if needed
+        }
+
         async function sendNotification() {
             const btn = document.getElementById('send-btn');
             const resultDiv = document.getElementById('send-result');
-            const email = globalEmailFilter;
+
+            // NEW: Get recipient from local input
+            const email = document.getElementById('send-recipient').value.trim();
             const title = document.getElementById('message-title').value;
             const body = document.getElementById('message-body').value;
 
             if (!email) {
-                resultDiv.innerHTML = `<div style="color: #dc2626; padding: 10px; background: #fee2e2; border-radius: 4px;">
-                    ⚠️ Please set an email filter above before sending notifications.
-                </div>`;
+                alert('Please enter a recipient email');
                 return;
             }
 
@@ -367,7 +606,7 @@
             resultDiv.innerHTML = '';
 
             try {
-                const response = await fetch(`${getApiUrl()}/send`, {
+                const response = await fetch(`${apiUrl}/send`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -381,7 +620,7 @@
 
                 if (data.success) {
                     resultDiv.innerHTML = `<div style="color: green; padding: 10px; background: #d1fae5; border-radius: 4px;">
-                        ✅ Sent successfully! <br>
+                        ✅ Sent successfully to ${email}! <br>
                         Sent: ${data.results[0].sent ? 'Yes' : 'No'} <br>
                         Message: ${data.results[0].message || 'Delivered'}
                     </div>`;
@@ -404,7 +643,7 @@
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
 
             try {
-                const response = await fetch(`${getApiUrl()}/devices`);
+                const response = await fetch(`${apiUrl}/devices`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -418,20 +657,28 @@
             }
         }
 
+        // Filter Devices List (Local Tab)
+        function filterDevicesList() {
+            renderDevices(devices);
+        }
+
         function renderDevices(list) {
             const tbody = document.querySelector('#devices-table tbody');
+            const filterInput = document.getElementById('devices-filter');
+            // Check if filter exists (Devices tab might rely on having the input now)
+            const filterVal = filterInput ? filterInput.value.toLowerCase().trim() : '';
 
-            // Apply global email filter
+            // Apply local filter
             let filteredList = list;
-            if (globalEmailFilter) {
+            if (filterVal) {
                 filteredList = list.filter(device =>
-                    device.userId.toLowerCase().includes(globalEmailFilter.toLowerCase())
+                    device.userId.toLowerCase().includes(filterVal)
                 );
             }
 
             if (filteredList.length === 0) {
-                const message = globalEmailFilter
-                    ? `No devices found for "${globalEmailFilter}"`
+                const message = filterVal
+                    ? `No devices found for "${filterVal}"`
                     : 'No devices found';
                 tbody.innerHTML = `<tr><td colspan="5">${message}</td></tr>`;
                 return;
@@ -440,10 +687,7 @@
             tbody.innerHTML = filteredList.map(device => `
                 <tr>
                     <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <input type="text" value="${device.userId}" id="email-${device.deviceId}" style="width: 200px;">
-                            <button onclick="updateEmail('${device.userId}', '${device.deviceId}')" style="padding: 4px 8px; font-size: 12px;">Update</button>
-                        </div>
+                        <input type="text" value="${device.userId}" readonly style="border:none; bg:transparent;">
                     </td>
                     <td>${device.platform}</td>
                     <td style="font-family: monospace; font-size: 12px;">${device.deviceId}</td>
@@ -455,28 +699,12 @@
             `).join('');
         }
 
-        // Update Email (Re-map)
-        async function updateEmail(oldUserId, deviceId) {
-            const newUserId = document.getElementById(`email-${deviceId}`).value;
-            if (oldUserId === newUserId) return;
-
-            if (!confirm(`Are you sure you want to move this device from ${oldUserId} to ${newUserId}?`)) return;
-
-            // This is a hacky way to "update" - we delete the old one and let the user re-register, 
-            // OR ideally we'd have an update endpoint. 
-            // Since we don't have an update endpoint, we'll just alert the user for now that this requires re-registration logic
-            // But wait, we can't easily update the partition key (userId) in DynamoDB.
-            // We have to delete and re-create. But we don't have the token here to re-create.
-
-            alert("To change the email, you must delete this mapping and have the user log in with the new email on their device.");
-        }
-
         // Delete Device
         async function deleteDevice(userId, deviceId) {
             if (!confirm(`Delete device for ${userId}?`)) return;
 
             try {
-                const response = await fetch(`${getApiUrl()}/device`, {
+                const response = await fetch(`${apiUrl}/device`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, deviceId })
@@ -493,16 +721,30 @@
             }
         }
 
-        // Load History
-        async function loadHistory() {
+        // Load History (Infinite Scroll)
+        async function loadHistory(append = false) {
             const tbody = document.querySelector('#history-table tbody');
-            const filterEmail = document.getElementById('history-filter').value || globalEmailFilter;
+            const filterEmail = document.getElementById('history-filter').value; // Still local to history tab
 
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            if (isHistoryLoading) return;
+            isHistoryLoading = true;
 
-            let url = `${getApiUrl()}/notifications`;
+            if (!append) {
+                historyData = [];
+                historyNextToken = null;
+                hasMoreHistory = true;
+                tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            } else {
+                // Show loading indicator at bottom?
+                // For simplicity, just appending
+            }
+
+            let url = `${apiUrl}/notifications?limit=20`;
             if (filterEmail) {
-                url += `?userId=${encodeURIComponent(filterEmail)}`;
+                url += `&userId=${encodeURIComponent(filterEmail)}`;
+            }
+            if (historyNextToken) {
+                url += `&nextToken=${encodeURIComponent(historyNextToken)}`;
             }
 
             try {
@@ -510,12 +752,35 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    renderHistory(data.notifications || [], filterEmail);
+                    const newItems = data.notifications || [];
+
+                    if (append) {
+                        historyData = [...historyData, ...newItems];
+                    } else {
+                        historyData = newItems;
+                    }
+
+                    // Pagination logic
+                    if (data.lastEvaluatedKey) {
+                        historyNextToken = JSON.stringify(data.lastEvaluatedKey);
+                        hasMoreHistory = true;
+                    } else {
+                        historyNextToken = null;
+                        hasMoreHistory = false;
+                    }
+
+                    renderHistory(historyData, filterEmail);
                 } else {
                     throw new Error(data.message || 'Failed to load history');
                 }
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color: red;">Error: ${error.message}</td></tr>`;
+                if (!append) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="color: red;">Error: ${error.message}</td></tr>`;
+                } else {
+                    console.error('Pagination error:', error);
+                }
+            } finally {
+                isHistoryLoading = false;
             }
         }
 
@@ -529,10 +794,10 @@
                 return;
             }
 
-            // Sort by timestamp desc
-            list.sort((a, b) => b.timestamp - a.timestamp);
+            // Sort by timestamp desc (if not already sorted by backend)
+            // list.sort((a, b) => b.timestamp - a.timestamp);
 
-            tbody.innerHTML = list.map(item => `
+            const rows = list.map(item => `
                 <tr>
                     <td>${new Date(item.timestamp).toLocaleString()}</td>
                     <td>${item.userId}</td>
@@ -541,6 +806,12 @@
                     <td><span class="status active">Sent</span></td>
                 </tr>
             `).join('');
+
+            tbody.innerHTML = rows;
+
+            if (hasMoreHistory) {
+                tbody.innerHTML += `<tr><td colspan="5" style="text-align:center; color:#6b7280; font-style:italic;">Scroll for more...</td></tr>`;
+            }
         }
     </script>
 </body>
