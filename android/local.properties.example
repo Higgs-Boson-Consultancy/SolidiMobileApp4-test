@@ -1,0 +1,9 @@
+# Android Local Properties - EXAMPLE FILE
+# Copy this file to local.properties and configure for your local machine
+
+# Location of the Android SDK
+# This is auto-detected by Android Studio, or set it manually:
+sdk.dir=/path/to/your/Android/sdk
+
+# Node.js path (optional - auto-detected from PATH/nvm)
+# node.path=/path/to/node

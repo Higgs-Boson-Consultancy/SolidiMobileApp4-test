@@ -1,0 +1,44 @@
+# Project-wide Gradle settings - EXAMPLE FILE
+# Copy this file to gradle.properties and configure for your environment
+
+# Specifies the JVM arguments used for the daemon process.
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+# Gradle JVM version (optional - uncomment and set if needed)
+# org.gradle.java.home=/path/to/your/jdk
+
+# Init script for Node.js environment
+org.gradle.daemon=true
+org.gradle.configureondemand=false
+
+# AndroidX package structure
+android.useAndroidX=true
+# Automatically convert third-party libraries to use AndroidX
+android.enableJetifier=true
+
+# Use this property to specify which architecture you want to build.
+reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+ 
+# Use this property to enable support to the new architecture.
+newArchEnabled=false
+ 
+# Use this property to enable or disable the Hermes JS engine.
+hermesEnabled=true
+
+# Upload keystore configuration for Google Play
+# IMPORTANT: Set these as environment variables or in your local gradle.properties
+# DO NOT commit actual passwords to version control!
+# MYAPP_UPLOAD_STORE_FILE=your_keystore_file.keystore
+# MYAPP_UPLOAD_KEY_ALIAS=your_key_alias
+# MYAPP_UPLOAD_STORE_PASSWORD=your_store_password
+# MYAPP_UPLOAD_KEY_PASSWORD=your_key_password
+
+# Fix undefined BuildConfig in MainApplication.kt 
+android.defaults.buildfeatures.buildconfig=true
+
+# Node.js path for React Native CLI (optional - auto-detected from PATH)
+# react.native.node.path=/path/to/node
+
+# System environment variables for Node.js (optional - inherited from system)
+# systemProp.user.home=/your/home/directory
+# systemProp.PATH=/your/custom/path
