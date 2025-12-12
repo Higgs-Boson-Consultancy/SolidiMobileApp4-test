@@ -358,47 +358,76 @@ const Home = () => {
           .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
         console.log(`[GRAPH] 📊 Found ${recentTransactions.length} transactions in last 30 days`);
+        if (recentTransactions.length > 0) {
+          console.log('[GRAPH] 📝 Sample transactions:', recentTransactions.slice(0, 3).map(tx => ({
+            type: tx.type,
+            asset: tx.asset || tx.currency,
+            amount: tx.amount,
+            timestamp: tx.timestamp
+          })));
+        }
         
-        // Build balance snapshots going BACKWARDS from today
-        // Start with current balances and subtract transactions as we go back in time
+        // NEW APPROACH: Calculate balance at 30 days ago by reversing ALL transactions from that point
+        // Then replay forward day by day
         const dailyBalances = []; // Array of { timestamp, balances: {BTC: x, ETH: y, GBP: z} }
         
-        // Create snapshots for each day (30 days)
+        // Step 1: Calculate what the balance was 30 days ago
+        // Start with current balance and subtract all transactions from last 30 days
+        const balances30DaysAgo = { ...currentBalances };
+        
+        for (const tx of recentTransactions) {
+          const asset = tx.asset || tx.currency;
+          if (asset && balances30DaysAgo[asset] !== undefined) {
+            const amount = parseFloat(tx.amount) || 0;
+            
+            // Reverse the transaction to get balance 30 days ago
+            if (tx.type === 'DEPOSIT' || tx.type === 'BUY') {
+              balances30DaysAgo[asset] -= amount; // Remove the deposit/buy
+            } else if (tx.type === 'WITHDRAWAL' || tx.type === 'SELL') {
+              balances30DaysAgo[asset] += amount; // Add back the withdrawal/sell
+            }
+          }
+        }
+        
+        console.log('[GRAPH] 💰 Calculated balance 30 days ago:', balances30DaysAgo);
+        
+        // Step 2: Now replay FORWARD, day by day, applying transactions
+        let runningBalances = { ...balances30DaysAgo };
+        
         for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
-          const daysAgo = dayIndex; // 0 = today, 29 = 30 days ago
+          const daysAgo = 29 - dayIndex; // Start from 29 days ago, end at 0 (today)
           const dayTimestamp = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
-          const dayStart = dayTimestamp - (dayTimestamp % (24 * 60 * 60 * 1000)); // Start of day
+          const dayStart = dayTimestamp - (dayTimestamp % (24 * 60 * 60 * 1000));
+          const dayEnd = dayStart + (24 * 60 * 60 * 1000);
           
-          // Clone current balances
-          const balancesOnThisDay = { ...currentBalances };
-          
-          // Subtract all transactions that happened AFTER this day
+          // Apply all transactions that happened during this day
           for (const tx of recentTransactions) {
             const txTime = new Date(tx.timestamp).getTime();
-            if (txTime > dayStart) {
-              // This transaction happened after this day, so subtract its effect
+            if (txTime >= dayStart && txTime < dayEnd) {
               const asset = tx.asset || tx.currency;
-              if (asset && balancesOnThisDay[asset] !== undefined) {
+              if (asset && runningBalances[asset] !== undefined) {
                 const amount = parseFloat(tx.amount) || 0;
                 
-                // Reverse the transaction effect
+                // Apply the transaction
                 if (tx.type === 'DEPOSIT' || tx.type === 'BUY') {
-                  balancesOnThisDay[asset] -= amount; // Remove deposit/buy
+                  runningBalances[asset] += amount;
                 } else if (tx.type === 'WITHDRAWAL' || tx.type === 'SELL') {
-                  balancesOnThisDay[asset] += amount; // Add back withdrawal/sell
+                  runningBalances[asset] -= amount;
+                }
+                
+                if (dayIndex % 10 === 0) {
+                  console.log(`[GRAPH] Day ${dayIndex}: Applied ${tx.type} of ${amount} ${asset}`);
                 }
               }
             }
           }
           
+          // Save snapshot for this day (end of day balance)
           dailyBalances.push({
-            timestamp: dayStart / 1000, // Convert to seconds
-            balances: balancesOnThisDay
+            timestamp: dayEnd / 1000, // Convert to seconds
+            balances: { ...runningBalances } // Clone the balances
           });
         }
-        
-        // Reverse array so oldest day is first
-        dailyBalances.reverse();
         
         console.log(`[GRAPH] 📊 Created ${dailyBalances.length} daily balance snapshots`);
         
@@ -456,10 +485,21 @@ const Home = () => {
         
         console.log('[GRAPH] 📋 Generated', graphPoints.length, 'portfolio value points');
         if (graphPoints.length > 0) {
+          const values = graphPoints.map(p => p.value);
+          const minValue = Math.min(...values);
+          const maxValue = Math.max(...values);
+          const avgValue = values.reduce((sum, v) => sum + v, 0) / values.length;
+          const variation = maxValue - minValue;
+          
           console.log('[GRAPH] 📋 First point (30 days ago):', JSON.stringify(graphPoints[0]));
           console.log('[GRAPH] 📋 Last point (today):', JSON.stringify(graphPoints[graphPoints.length - 1]));
-          console.log('[GRAPH] 📊 Portfolio value range: £', Math.min(...graphPoints.map(p => p.value)).toFixed(2), 
-                      '→ £', Math.max(...graphPoints.map(p => p.value)).toFixed(2));
+          console.log(`[GRAPH] 📊 Portfolio value range: £${minValue.toFixed(2)} → £${maxValue.toFixed(2)}`);
+          console.log(`[GRAPH] 📊 Average value: £${avgValue.toFixed(2)}, Variation: £${variation.toFixed(2)} (${((variation / avgValue) * 100).toFixed(2)}%)`);
+          
+          if (variation < 1) {
+            console.log('[GRAPH] ⚠️ WARNING: Very low variation! Graph will appear nearly flat.');
+            console.log('[GRAPH] ⚠️ This is NORMAL if you have no recent transactions or stable holdings.');
+          }
         } else {
           console.log('[GRAPH] ⚠️ NO GRAPH POINTS GENERATED! Creating fallback flat line...');
           // Create a simple flat line showing current portfolio value
