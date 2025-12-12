@@ -1463,6 +1463,12 @@ const Home = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+      {/* DEBUG BANNER */}
+      <View style={{ backgroundColor: '#1F2937', padding: 10, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000 }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 10, fontFamily: 'monospace' }}>
+          🐛 DEBUG: isLoading={isLoading ? 'TRUE' : 'FALSE'} | graphData={graphData?.length || 0} pts | auth={appState?.user?.isAuthenticated ? 'YES' : 'NO'}
+        </Text>
+      </View>
       <ScrollView 
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -1511,7 +1517,10 @@ const Home = () => {
               lastPoint: graphData?.[graphData.length - 1]
             })}
             {!isLoading && (
-              <View style={[styles.chartContainer, { minHeight: 140, backgroundColor: '#F9FAFB', borderRadius: 12, paddingVertical: 10 }]}>
+              <View style={[styles.chartContainer, { minHeight: 140, backgroundColor: '#E5E7EB', borderRadius: 12, paddingVertical: 10, borderWidth: 2, borderColor: '#3B82F6' }]}>
+                <Text style={{ color: '#3B82F6', fontSize: 12, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
+                  CHART AREA (Loading: {isLoading ? 'YES' : 'NO'}, Data Points: {graphData?.length || 0})
+                </Text>
                 {graphData && graphData.length > 0 ? (
                   <SimpleChart 
                     data={graphData}
@@ -1524,8 +1533,9 @@ const Home = () => {
                     onPointSelected={handleGraphPointSelected}
                   />
                 ) : (
-                  <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ color: '#9CA3AF', fontSize: 14 }}>No chart data available</Text>
+                  <View style={{ height: 120, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEF3C7', borderRadius: 8 }}>
+                    <Text style={{ color: '#92400E', fontSize: 16, fontWeight: 'bold' }}>⚠️ No chart data available</Text>
+                    <Text style={{ color: '#78350F', fontSize: 12, marginTop: 4 }}>Debug: isLoading={isLoading.toString()}, points={graphData?.length || 0}</Text>
                   </View>
                 )}
               </View>
