@@ -1772,7 +1772,6 @@ let Transfer = ({ initialMode } = {}) => {
         <AddressBookModal
           visible={showAddressBookModal}
           onClose={() => setShowAddressBookModal(false)}
-          selectedAsset={selectedAsset}
           onAddressAdded={async (newAddress) => {
             log('New address added:', newAddress);
             // Force refresh the address book picker
