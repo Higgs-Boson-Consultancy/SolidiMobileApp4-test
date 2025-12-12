@@ -289,105 +289,169 @@ const Home = () => {
           setTransactions([]);
         }
 
-        // STEP 6: Generate graph data showing portfolio value over last 30 days
-        console.log('[GRAPH] 📊 STEP 6: Generating portfolio value graph for last 30 days...');
+        // STEP 6: Generate graph data using transaction history and historical prices
+        console.log('[GRAPH] 📊 STEP 6: Generating portfolio value graph based on transaction history...');
         
         const graphPoints = [];
         
-        // Get BTC balance
-        const btcBalanceStr = appState.getBalance('BTC');
-        const btcBalance = (btcBalanceStr !== '[loading]') ? parseFloat(btcBalanceStr) || 0 : 0;
-        console.log('[GRAPH] 💰 BTC Balance:', btcBalance);
-        
-        // Get GBP balance (constant)
-        const gbpBalanceStrForGraph = appState.getBalance('GBP');
-        const gbpBalanceForGraph = (gbpBalanceStrForGraph !== '[loading]') ? parseFloat(gbpBalanceStrForGraph) || 0 : 0;
-        console.log('[GRAPH] 💷 GBP Balance:', gbpBalanceForGraph);
-        
-        const btcMarketForGraph = 'BTC/GBP';
-        
-        // Load BTC historical prices
+        // Load ALL transactions (not just recent 5)
+        console.log('[GRAPH] 📥 Loading full transaction history...');
+        let allTransactions = [];
         try {
-          console.log('[GRAPH] 📥 Loading BTC historical prices...');
-          await appState.loadHistoricPrices({ market: btcMarketForGraph, period: '1M' });
-          console.log('[GRAPH] ✅ BTC historical prices loaded');
+          const transactionResponse = await appState.privateMethod({
+            httpMethod: 'POST',
+            apiRoute: 'transaction',
+            functionName: 'Home.graph.allTransactions'
+          });
+          
+          if (transactionResponse && !transactionResponse.error) {
+            const dataModel = new HistoryDataModel();
+            allTransactions = dataModel.loadTransactions(transactionResponse);
+            console.log(`[GRAPH] ✅ Loaded ${allTransactions.length} total transactions`);
+          } else {
+            console.log('[GRAPH] ⚠️ No transactions found');
+          }
         } catch (error) {
-          console.log('[GRAPH] ❌ Error loading BTC prices:', error.message);
+          console.log('[GRAPH] ❌ Error loading transactions:', error.message);
         }
         
-        // Get BTC historical prices
-        const btcHistoricPricesForGraph = appState.apiData?.historic_prices?.[btcMarketForGraph]?.['1M'];
+        // Load historical prices for ALL crypto assets
+        console.log('[GRAPH] 📥 Loading historical prices for all assets...');
+        const historicalPrices = {}; // { 'BTC/GBP': [prices...], 'ETH/GBP': [prices...], ... }
         
-        if (btcHistoricPricesForGraph && btcHistoricPricesForGraph.length >= 30) {
-          console.log('[GRAPH] 📊 BTC historic prices available:', btcHistoricPricesForGraph.length, 'data points');
-          
-          // Generate graph point for each of the last 30 days
-          for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
-            const daysAgo = 29 - dayIndex; // 29 days ago to today (0)
-            
-            // Get BTC price for this day
-            const btcPriceOnDay = btcHistoricPricesForGraph[daysAgo];
-            
-            // Validate price is a valid number
-            if (btcPriceOnDay !== undefined && !isNaN(btcPriceOnDay) && isFinite(btcPriceOnDay) && btcPriceOnDay > 0) {
-              const timestamp = Date.now() / 1000 - (daysAgo * 24 * 60 * 60);
-              
-              // Calculate portfolio value = GBP + (BTC balance × BTC price)
-              const portfolioValueOnDay = gbpBalanceForGraph + (btcBalance * btcPriceOnDay);
-              
-              console.log(`[GRAPH] 🔍 Day ${daysAgo}: BTC price = £${btcPriceOnDay.toFixed(2)}, BTC value = £${(btcBalance * btcPriceOnDay).toFixed(2)}, GBP = £${gbpBalanceForGraph.toFixed(2)}, Total = £${portfolioValueOnDay.toFixed(2)}`);
-              
-              graphPoints.push({
-                timestamp: Number(timestamp),
-                value: Number(portfolioValueOnDay)
-              });
-              
-              if (dayIndex % 10 === 0) {
-                console.log(`[GRAPH] Day ${daysAgo}: BTC price = £${btcPriceOnDay.toFixed(2)}, Portfolio value = £${portfolioValueOnDay.toFixed(2)}`);
-              }
+        for (const asset of assets) {
+          const market = `${asset.asset}/GBP`;
+          try {
+            await appState.loadHistoricPrices({ market, period: '1M' });
+            const prices = appState.apiData?.historic_prices?.[market]?.['1M'];
+            if (prices && prices.length > 0) {
+              historicalPrices[market] = prices;
+              console.log(`[GRAPH] ✅ Loaded ${prices.length} prices for ${market}`);
             } else {
-              console.log(`[GRAPH] ⚠️ Invalid BTC price for day ${daysAgo}:`, btcPriceOnDay);
+              console.log(`[GRAPH] ⚠️ No historical prices for ${market}`);
+            }
+          } catch (error) {
+            console.log(`[GRAPH] ❌ Error loading prices for ${market}:`, error.message);
+          }
+        }
+        
+        // Calculate balances for each day by replaying transactions
+        console.log('[GRAPH] 🔄 Calculating daily balances from transaction history...');
+        
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        
+        // Get current balances as starting point
+        const currentBalances = {};
+        currentBalances['GBP'] = parseFloat(appState.getBalance('GBP')) || 0;
+        for (const asset of assets) {
+          const balance = parseFloat(appState.getBalance(asset.asset)) || 0;
+          currentBalances[asset.asset] = balance;
+        }
+        console.log('[GRAPH] 💰 Current balances:', currentBalances);
+        
+        // Filter transactions from last 30 days and sort by timestamp (oldest first)
+        const recentTransactions = allTransactions
+          .filter(tx => {
+            const txTime = new Date(tx.timestamp).getTime();
+            return txTime >= thirtyDaysAgo;
+          })
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        
+        console.log(`[GRAPH] 📊 Found ${recentTransactions.length} transactions in last 30 days`);
+        
+        // Build balance snapshots going BACKWARDS from today
+        // Start with current balances and subtract transactions as we go back in time
+        const dailyBalances = []; // Array of { timestamp, balances: {BTC: x, ETH: y, GBP: z} }
+        
+        // Create snapshots for each day (30 days)
+        for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
+          const daysAgo = dayIndex; // 0 = today, 29 = 30 days ago
+          const dayTimestamp = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
+          const dayStart = dayTimestamp - (dayTimestamp % (24 * 60 * 60 * 1000)); // Start of day
+          
+          // Clone current balances
+          const balancesOnThisDay = { ...currentBalances };
+          
+          // Subtract all transactions that happened AFTER this day
+          for (const tx of recentTransactions) {
+            const txTime = new Date(tx.timestamp).getTime();
+            if (txTime > dayStart) {
+              // This transaction happened after this day, so subtract its effect
+              const asset = tx.asset || tx.currency;
+              if (asset && balancesOnThisDay[asset] !== undefined) {
+                const amount = parseFloat(tx.amount) || 0;
+                
+                // Reverse the transaction effect
+                if (tx.type === 'DEPOSIT' || tx.type === 'BUY') {
+                  balancesOnThisDay[asset] -= amount; // Remove deposit/buy
+                } else if (tx.type === 'WITHDRAWAL' || tx.type === 'SELL') {
+                  balancesOnThisDay[asset] += amount; // Add back withdrawal/sell
+                }
+              }
             }
           }
-        } else {
-          console.log('[GRAPH] ⚠️ Not enough BTC historical data. Available:', btcHistoricPricesForGraph?.length || 0);
-          console.log('[GRAPH]    btcHistoricPricesForGraph value:', btcHistoricPricesForGraph);
-          console.log('[GRAPH]    Creating fallback using current prices...');
           
-          // Fallback: use current price for all days if no historical data
-          const currentPriceData = priceData[btcMarketForGraph];
-          console.log('[GRAPH]    currentPriceData for', btcMarketForGraph, ':', currentPriceData);
+          dailyBalances.push({
+            timestamp: dayStart / 1000, // Convert to seconds
+            balances: balancesOnThisDay
+          });
+        }
+        
+        // Reverse array so oldest day is first
+        dailyBalances.reverse();
+        
+        console.log(`[GRAPH] 📊 Created ${dailyBalances.length} daily balance snapshots`);
+        
+        // Now calculate portfolio value for each day using historical prices
+        for (let dayIndex = 0; dayIndex < dailyBalances.length; dayIndex++) {
+          const snapshot = dailyBalances[dayIndex];
+          let portfolioValue = 0;
           
-          if (currentPriceData && currentPriceData.price) {
-            const currentPrice = parseFloat(currentPriceData.price);
-            const currentPortfolioValue = gbpBalanceForGraph + (btcBalance * currentPrice);
-            
-            console.log('[GRAPH] 📊 Fallback using current price: BTC=£', currentPrice.toFixed(2), ', Portfolio=£', currentPortfolioValue.toFixed(2));
-            
-            for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
-              const daysAgo = 29 - dayIndex;
-              const timestamp = Date.now() / 1000 - (daysAgo * 24 * 60 * 60);
+          // Add GBP balance (no conversion needed)
+          portfolioValue += snapshot.balances['GBP'] || 0;
+          
+          // Add crypto balances converted to GBP using historical prices
+          for (const asset of assets) {
+            const balance = snapshot.balances[asset.asset] || 0;
+            if (balance > 0) {
+              const market = `${asset.asset}/GBP`;
+              const prices = historicalPrices[market];
               
-              graphPoints.push({
-                timestamp: Number(timestamp),
-                value: Number(currentPortfolioValue)
-              });
+              if (prices && prices[dayIndex] !== undefined) {
+                const price = prices[dayIndex];
+                const value = balance * price;
+                portfolioValue += value;
+                
+                if (dayIndex % 10 === 0) {
+                  console.log(`[GRAPH] Day ${dayIndex}: ${asset.asset} balance=${balance.toFixed(4)}, price=£${price.toFixed(2)}, value=£${value.toFixed(2)}`);
+                }
+              }
             }
-            console.log('[GRAPH] ✅ Created', graphPoints.length, 'points using current price');
-          } else {
-            console.log('[GRAPH] ⚠️ No current price data available either. Using totalValue as flat line.');
-            // Last resort: create flat line with current total value
-            for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
-              const daysAgo = 29 - dayIndex;
-              const timestamp = Date.now() / 1000 - (daysAgo * 24 * 60 * 60);
-              
-              graphPoints.push({
-                timestamp: Number(timestamp),
-                value: Number(totalValue > 0 ? totalValue : 1000)
-              });
-            }
-            console.log('[GRAPH] ✅ Created', graphPoints.length, 'points showing £', (totalValue > 0 ? totalValue : 1000).toFixed(2));
           }
+          
+          graphPoints.push({
+            timestamp: Number(snapshot.timestamp),
+            value: Number(portfolioValue)
+          });
+          
+          if (dayIndex % 10 === 0) {
+            console.log(`[GRAPH] Day ${dayIndex}: Total portfolio value = £${portfolioValue.toFixed(2)}`);
+          }
+        }
+        
+        // Fallback: if no graph points generated, create flat line
+        if (graphPoints.length === 0) {
+          console.log('[GRAPH] ⚠️ No graph points generated. Creating fallback flat line...');
+          for (let dayIndex = 0; dayIndex < 30; dayIndex++) {
+            const daysAgo = 29 - dayIndex;
+            const timestamp = Date.now() / 1000 - (daysAgo * 24 * 60 * 60);
+            
+            graphPoints.push({
+              timestamp: Number(timestamp),
+              value: Number(totalValue > 0 ? totalValue : 1000)
+            });
+          }
+          console.log('[GRAPH] ✅ Created', graphPoints.length, 'points showing £', (totalValue > 0 ? totalValue : 1000).toFixed(2));
         }
         
         console.log('[GRAPH] 📋 Generated', graphPoints.length, 'portfolio value points');
@@ -1491,12 +1555,6 @@ const Home = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
-      {/* DEBUG BANNER */}
-      <View style={{ backgroundColor: '#1F2937', padding: 10, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000 }}>
-        <Text style={{ color: '#FFFFFF', fontSize: 10, fontFamily: 'monospace' }}>
-          🐛 DEBUG: isLoading={isLoading ? 'TRUE' : 'FALSE'} | graphData={graphData?.length || 0} pts | auth={appState?.user?.isAuthenticated ? 'YES' : 'NO'}
-        </Text>
-      </View>
       <ScrollView 
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -1545,10 +1603,7 @@ const Home = () => {
               lastPoint: graphData?.[graphData.length - 1]
             })}
             {!isLoading && (
-              <View style={[styles.chartContainer, { minHeight: 140, backgroundColor: '#E5E7EB', borderRadius: 12, paddingVertical: 10, borderWidth: 2, borderColor: '#3B82F6' }]}>
-                <Text style={{ color: '#3B82F6', fontSize: 12, fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
-                  CHART AREA (Loading: {isLoading ? 'YES' : 'NO'}, Data Points: {graphData?.length || 0})
-                </Text>
+              <View style={styles.chartContainer}>
                 {graphData && graphData.length > 0 ? (
                   <SimpleChart 
                     data={graphData}
@@ -1561,9 +1616,8 @@ const Home = () => {
                     onPointSelected={handleGraphPointSelected}
                   />
                 ) : (
-                  <View style={{ height: 120, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FEF3C7', borderRadius: 8 }}>
-                    <Text style={{ color: '#92400E', fontSize: 16, fontWeight: 'bold' }}>⚠️ No chart data available</Text>
-                    <Text style={{ color: '#78350F', fontSize: 12, marginTop: 4 }}>Debug: isLoading={isLoading.toString()}, points={graphData?.length || 0}</Text>
+                  <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#6B7280', fontSize: 14 }}>No chart data available</Text>
                   </View>
                 )}
               </View>
