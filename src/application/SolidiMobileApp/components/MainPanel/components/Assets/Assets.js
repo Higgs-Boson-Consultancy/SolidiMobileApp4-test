@@ -207,11 +207,15 @@ const Assets = () => {
       
       // Get ticker data for price checking
       const ticker = appState.getTicker ? appState.getTicker() : {};
+      console.log('💎 [ASSETS] 📊 FULL TICKER DATA:', JSON.stringify(ticker, null, 2));
       console.log('💎 [ASSETS] Ticker markets available:', Object.keys(ticker || {}));
       
       // Get currency list (tradeable/transferrable assets)
       const currencyList = appState.getCurrency ? appState.getCurrency() : [];
+      console.log('💎 [ASSETS] 💱 FULL CURRENCY LIST:', JSON.stringify(currencyList, null, 2));
       console.log('💎 [ASSETS] Currency list from /currency API:', currencyList);
+      console.log('💎 [ASSETS] Currency list type:', Array.isArray(currencyList) ? 'Array' : typeof currencyList);
+      console.log('💎 [ASSETS] Currency list length:', currencyList.length);
       
       // Filter assets based on:
       // 1. Has price in ticker (market exists)
@@ -219,13 +223,28 @@ const Assets = () => {
       const filteredAssets = cryptoAssets.filter(asset => {
         // Check 1: Is in currency list?
         // NOTE: currencyList contains market pairs like "BTC/GBP", not just "BTC"
+        // NOTE: Ticker API may use GBPX instead of GBP for some markets
         const market = `${asset}/GBP`;
-        const inCurrencyList = currencyList.length === 0 || currencyList.includes(market);
+        const marketX = `${asset}/GBPX`; // Alternative market name used by some APIs
+        
+        // Only apply currency filter if we have API data (array of market pairs)
+        // Default list is asset symbols ['BTC', 'ETH'], API returns market pairs ['BTC/GBP', 'ETH/GBP']
+        let inCurrencyList = true; // Default: don't filter
+        if (currencyList.length > 0 && currencyList[0] && currencyList[0].includes('/')) {
+          // API data detected (contains '/' like "BTC/GBP")
+          inCurrencyList = currencyList.includes(market) || currencyList.includes(marketX);
+          console.log(`💎 [ASSETS] ${asset}: Using API currency filter - market=${market} or ${marketX}, inList=${inCurrencyList}`);
+        } else {
+          // Default list or no data - don't filter by currency, just by price
+          console.log(`💎 [ASSETS] ${asset}: Skipping currency filter (using default list or no data)`);
+        }
         
         // Check 2: Has market price?
-        const hasPrice = ticker && ticker[market] && ticker[market].price && !ticker[market].error;
+        // Try both market names (GBP and GBPX)
+        const hasPrice = (ticker && ticker[market] && ticker[market].price && !ticker[market].error) ||
+                        (ticker && ticker[marketX] && ticker[marketX].price && !ticker[marketX].error);
         
-        console.log(`💎 [ASSETS] ${asset}: market=${market}, inCurrencyList=${inCurrencyList}, hasPrice=${hasPrice}`);
+        console.log(`💎 [ASSETS] ${asset}: market=${market}/${marketX}, inCurrencyList=${inCurrencyList}, hasPrice=${hasPrice}, KEEP=${inCurrencyList && hasPrice}`);
         
         // Keep asset only if it passes both checks
         return inCurrencyList && hasPrice;
@@ -485,7 +504,8 @@ const Assets = () => {
       // Get all prices from cache
       assetData.forEach((assetItem) => {
         const asset = assetItem.asset;
-        const market = `${asset}/GBP`;
+        // Note: Normalize market name to GBPX to match ticker API response
+        const market = `${asset}/GBPX`;
 
         try {
           // Get BUY price from AppState cache (Assets page shows buy prices)
@@ -536,8 +556,10 @@ const Assets = () => {
     try {
       console.log(`💰 Getting live price for ${asset} from /ticker API (cached)...`);
 
+      // Try both GBP and GBPX market names
       const marketKey = `${asset}/GBP`;
-      console.log(`🔍 Looking for market: ${marketKey}`);
+      const marketKeyX = `${asset}/GBPX`;
+      console.log(`🔍 Looking for market: ${marketKey} or ${marketKeyX}`);
       console.log(`📊 Available price markets:`, Object.keys(prices));
 
       // Log all available price data for debugging
@@ -547,9 +569,12 @@ const Assets = () => {
         console.log(`⚠️ No price data available at all`);
       }
 
-      if (prices[marketKey]) {
-        const priceData = prices[marketKey];
-        console.log(`📊 Price data for ${marketKey}:`, priceData);
+      // Try both market names
+      const priceData = prices[marketKey] || prices[marketKeyX];
+      const actualMarket = prices[marketKey] ? marketKey : marketKeyX;
+      
+      if (priceData) {
+        console.log(`📊 Price data for ${actualMarket}:`, priceData);
 
         // Check if we have a live price from the API
         if (priceData.price && priceData.price !== null) {

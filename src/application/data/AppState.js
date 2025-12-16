@@ -3637,7 +3637,17 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       // Get the list of available currencies for trading/transfer
       let defaultList = ['BTC', 'ETH', 'LTC', 'XRP', 'GBP', 'EUR', 'USD'];
       let currencies = this.state.apiData.currency;
-      if (_.isEmpty(currencies)) return defaultList;
+      
+      console.log('🔍 [GET-CURRENCY] Called getCurrency()');
+      console.log('🔍 [GET-CURRENCY] apiData.currency:', JSON.stringify(currencies));
+      console.log('🔍 [GET-CURRENCY] isEmpty?:', _.isEmpty(currencies));
+      console.log('🔍 [GET-CURRENCY] Will return:', _.isEmpty(currencies) ? 'DEFAULT LIST' : 'API DATA');
+      
+      if (_.isEmpty(currencies)) {
+        console.log('🔍 [GET-CURRENCY] Returning default:', defaultList);
+        return defaultList;
+      }
+      console.log('🔍 [GET-CURRENCY] Returning API data:', currencies);
       return currencies;
     }
 
@@ -3794,6 +3804,9 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
     this.getTicker = () => {
+      console.log('🎯 [GET-TICKER] Called getTicker()');
+      console.log('🎯 [GET-TICKER] apiData.ticker:', JSON.stringify(this.state.apiData.ticker));
+      console.log('🎯 [GET-TICKER] Number of markets:', Object.keys(this.state.apiData.ticker || {}).length);
       return this.state.apiData.ticker;
     }
 
@@ -3801,9 +3814,28 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     this.getTickerForMarket = (market) => {
       // Get the ticker price held in the appState.
       // Price is calculated as (bid + ask) / 2 in loadTicker
-      if (_.isUndefined(this.state.apiData.ticker[market])) return null;
       
-      const tickerData = this.state.apiData.ticker[market];
+      // Try both market names (GBP and GBPX)
+      let tickerData = this.state.apiData.ticker[market];
+      
+      // If market not found with GBP, try GBPX variant
+      if (_.isUndefined(tickerData) && market.endsWith('/GBP')) {
+        const marketX = market.replace('/GBP', '/GBPX');
+        tickerData = this.state.apiData.ticker[marketX];
+        if (tickerData) {
+          console.log(`[TICKER] Found ${marketX} instead of ${market}`);
+        }
+      }
+      // If market not found with GBPX, try GBP variant
+      else if (_.isUndefined(tickerData) && market.endsWith('/GBPX')) {
+        const marketGBP = market.replace('/GBPX', '/GBP');
+        tickerData = this.state.apiData.ticker[marketGBP];
+        if (tickerData) {
+          console.log(`[TICKER] Found ${marketGBP} instead of ${market}`);
+        }
+      }
+      
+      if (_.isUndefined(tickerData)) return null;
       
       // Check for error in ticker data (e.g., "Empty orderbook")
       if (tickerData.error) {
@@ -3855,8 +3887,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
       //this.state.loadingPrices = true;
       this.setState({ loadingPrices: true });
-      // Use production domain for public CSV files (not authentication-protected)
-      let domain = "www.solidi.co";
+      // Use development domain for public CSV files (not authentication-protected)
+      let domain = "t2.solidi.co";
       let remotemarket = market.replace("/", "-");
       let url = "https://" + domain + "/" + remotemarket + "-" + period + ".csv";
       console.log('[HIST_PRICE] 📥 Fetching URL:', url);
@@ -4843,15 +4875,16 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
           console.log('[CRYPTO-CACHE] ✅ Using existing ticker data from apiData.ticker');
           response = this.state.apiData.ticker;
         } else {
-          // SPECIAL: Use www.solidi.co for ticker endpoint only
-          console.log('[CRYPTO-CACHE] 🌐 Creating temporary API client with www.solidi.co for /ticker');
+          // SPECIAL: Use t2.solidi.co for ticker endpoint only
+          console.log('[CRYPTO-CACHE] 🌐 Creating temporary API client with t2.solidi.co for /ticker');
           const tickerApiClient = new SolidiRestAPIClientLibrary({
             userAgent: this.state.userAgent,
             apiKey: '',
             apiSecret: '',
-            domain: 'www.solidi.co',
+            domain: 't2.solidi.co',
             appStateRef: { current: this }
           });
+
 
           // Use public method for ticker
           console.log('[CRYPTO-CACHE] 🔓 Using PUBLIC method for /ticker');
@@ -4923,8 +4956,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
             console.log(`[CRYPTO-CACHE] Processing ${market} (${cryptoSymbol}):`, JSON.stringify(tickerData, null, 2));
 
-            // Skip if not a GBP pair
-            if (quoteCurrency !== baseCurrency) {
+            // Skip if not a GBP or GBPX pair (treat GBPX as GBP)
+            if (quoteCurrency !== baseCurrency && quoteCurrency !== 'GBPX') {
               console.log(`[CRYPTO-CACHE] Skipping ${market} - not a ${baseCurrency} pair`);
               continue;
             }

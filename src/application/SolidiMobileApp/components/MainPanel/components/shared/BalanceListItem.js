@@ -74,9 +74,12 @@ export const calculateGBPValue = (currency, amount, appState) => {
     console.log(`🔍 ${currency} is crypto, checking pre-calculated value...`);
     
     // NEW: Check if market exists for this asset
+    // Note: API may return GBPX instead of GBP, try both
     const market = `${currency}/GBP`;
+    const marketX = `${currency}/GBPX`;
     const tickerData = appState.getTicker ? appState.getTicker() : {};
-    const hasMarket = tickerData && tickerData[market] && tickerData[market].price && !tickerData[market].error;
+    const hasMarket = (tickerData && tickerData[market] && tickerData[market].price && !tickerData[market].error) ||
+                      (tickerData && tickerData[marketX] && tickerData[marketX].price && !tickerData[marketX].error);
     
     if (!hasMarket) {
       console.log(`⚠️ ${currency} has NO MARKET - returning null for special handling`);
