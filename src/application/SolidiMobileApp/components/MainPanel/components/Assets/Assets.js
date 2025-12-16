@@ -198,21 +198,54 @@ const Assets = () => {
       const cryptoAssets = assetsToUse.filter(asset => !excludedAssets.includes(asset));
 
       console.log('💎 [ASSETS] All assets before filtering:', assetsToUse);
-      console.log('💎 [ASSETS] Crypto assets (after filtering):', cryptoAssets);
+      console.log('💎 [ASSETS] Crypto assets (after excluding fiat):', cryptoAssets);
       console.log('💎 [ASSETS] 🚫 Excluded assets:', excludedAssets);
       console.log('💎 [ASSETS] Number of crypto assets:', cryptoAssets.length);
 
+      // NEW FILTERING: Filter by price availability and currency list
+      console.log('💎 [ASSETS] 🔍 Applying new filters: price availability + currency list...');
+      
+      // Get ticker data for price checking
+      const ticker = appState.getTicker ? appState.getTicker() : {};
+      console.log('💎 [ASSETS] Ticker markets available:', Object.keys(ticker || {}));
+      
+      // Get currency list (tradeable/transferrable assets)
+      const currencyList = appState.getCurrency ? appState.getCurrency() : [];
+      console.log('💎 [ASSETS] Currency list from /currency API:', currencyList);
+      
+      // Filter assets based on:
+      // 1. Has price in ticker (market exists)
+      // 2. Is in currency list (user can trade/transfer)
+      const filteredAssets = cryptoAssets.filter(asset => {
+        // Check 1: Is in currency list?
+        const inCurrencyList = currencyList.length === 0 || currencyList.includes(asset);
+        
+        // Check 2: Has market price?
+        const market = `${asset}/GBP`;
+        const hasPrice = ticker && ticker[market] && ticker[market].price && !ticker[market].error;
+        
+        console.log(`💎 [ASSETS] ${asset}: inCurrencyList=${inCurrencyList}, hasPrice=${hasPrice}`);
+        
+        // Keep asset only if it passes both checks
+        return inCurrencyList && hasPrice;
+      });
+      
+      console.log('💎 [ASSETS] ✅ Assets after filtering by price+currency:', filteredAssets);
+      console.log('💎 [ASSETS] 🚫 Filtered out (no price or not in currency list):', 
+        cryptoAssets.filter(a => !filteredAssets.includes(a)));
+
       // Check if filtering removed all assets
-      if (cryptoAssets.length === 0) {
+      if (filteredAssets.length === 0) {
         console.log('❌❌❌ [ASSETS] ALL ASSETS WERE FILTERED OUT!');
-        console.log('❌ [ASSETS] Original assets:', assetsToUse);
-        console.log('❌ [ASSETS] All were excluded (probably all fiat)');
+        console.log('❌ [ASSETS] Original crypto assets:', cryptoAssets);
+        console.log('❌ [ASSETS] All were excluded (no price or not in currency list)');
+        console.log('💎 [ASSETS] ⚠️ USING: ❌ FALLBACK LIST (all filtered)');
         console.log('💎'.repeat(60) + '\n');
         return getFallbackAssetList();
       }
 
       // Convert to asset objects with display names
-      const assetList = cryptoAssets.map(asset => ({
+      const assetList = filteredAssets.map(asset => ({
         asset: asset,
         name: getAssetDisplayName(asset)
       }));
