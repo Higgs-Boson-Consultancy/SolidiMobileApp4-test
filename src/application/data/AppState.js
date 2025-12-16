@@ -3610,8 +3610,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
         }
       }
 
-      let data = await this.state.publicMethod({
-        httpMethod: 'GET',
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
         apiRoute: 'currency',
         params: {},
       });
@@ -3643,8 +3643,8 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
 
 
     this.loadTicker = async () => {
-      let data = await this.state.publicMethod({
-        httpMethod: 'GET',
+      let data = await this.state.privateMethod({
+        httpMethod: 'POST',
         apiRoute: 'ticker',
         params: {},
       });

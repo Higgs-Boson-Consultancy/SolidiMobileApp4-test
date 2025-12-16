@@ -218,13 +218,14 @@ const Assets = () => {
       // 2. Is in currency list (user can trade/transfer)
       const filteredAssets = cryptoAssets.filter(asset => {
         // Check 1: Is in currency list?
-        const inCurrencyList = currencyList.length === 0 || currencyList.includes(asset);
+        // NOTE: currencyList contains market pairs like "BTC/GBP", not just "BTC"
+        const market = `${asset}/GBP`;
+        const inCurrencyList = currencyList.length === 0 || currencyList.includes(market);
         
         // Check 2: Has market price?
-        const market = `${asset}/GBP`;
         const hasPrice = ticker && ticker[market] && ticker[market].price && !ticker[market].error;
         
-        console.log(`💎 [ASSETS] ${asset}: inCurrencyList=${inCurrencyList}, hasPrice=${hasPrice}`);
+        console.log(`💎 [ASSETS] ${asset}: market=${market}, inCurrencyList=${inCurrencyList}, hasPrice=${hasPrice}`);
         
         // Keep asset only if it passes both checks
         return inCurrencyList && hasPrice;
