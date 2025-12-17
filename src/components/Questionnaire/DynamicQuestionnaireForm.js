@@ -888,25 +888,60 @@ const DynamicQuestionnaireForm = ({
   const handleNext = () => {
     console.log('🔄 [NEXT BUTTON] Next button clicked - running page-specific validation');
     
-    // Validate current page only (not the entire form)
+    // For restricted investor, validation already checked by canProceedToNext
+    // For other cases, do page-specific validation
     const validation = validateForm(true); // true = page-specific validation
     if (!validation.isValid) {
-      console.log('❌ [NEXT BUTTON] Page validation failed, showing errors');
-      // Allow user to see errors but still navigate - they can go back to fix
-      // Only block final submission, not page navigation
-      Alert.alert(
-        'Please Review Your Answers',
-        validation.errors.join('\n\n') + '\n\nYou can continue to review other sections or go back to make changes.',
-        [
-          { text: 'Go Back', style: 'cancel' },
-          { text: 'Continue Anyway', onPress: () => proceedToNextPage() }
-        ]
+      console.log('❌ [NEXT BUTTON] Page validation failed');
+      // Only show alert for non-restricted investor validation failures
+      const currentPageData = activeFormData.pages[currentPage];
+      const hasAccountPurpose = currentPageData?.questions?.some(q => q.id === 'accountpurpose');
+      const hasRestrictedQuestions = currentPageData?.questions?.some(q => 
+        q.id === 'prev12months' || q.id === 'next12months'
       );
+      
+      // Don't show alert for restricted investor questions - Next button is already disabled
+      if (!hasAccountPurpose && !hasRestrictedQuestions) {
+        Alert.alert(
+          'Please Review Your Answers',
+          validation.errors.join('\n\n') + '\n\nYou can continue to review other sections or go back to make changes.',
+          [
+            { text: 'Go Back', style: 'cancel' },
+            { text: 'Continue Anyway', onPress: () => proceedToNextPage() }
+          ]
+        );
+      }
       return;
     }
     
     console.log('✅ [NEXT BUTTON] Page validation passed, proceeding with navigation');
     proceedToNextPage();
+  };
+
+  // Check if user can proceed to next page (for disabling Next button)
+  const canProceedToNext = () => {
+    if (!activeFormData?.pages) return true;
+    
+    const currentPageData = activeFormData.pages[currentPage];
+    if (!currentPageData) return true;
+    
+    // Check if this page has restricted investor questions
+    const hasRestrictedQuestions = currentPageData.questions?.some(q => 
+      q.id === 'prev12months' || q.id === 'next12months'
+    );
+    
+    if (hasRestrictedQuestions && answers.accountpurpose === 'restricted') {
+      // For restricted investor, both questions must be 'yes'
+      const prev12months = answers['prev12months'];
+      const next12months = answers['next12months'];
+      
+      if (prev12months !== 'yes' || next12months !== 'yes') {
+        console.log('🚫 [NEXT BUTTON] Disabled - Restricted investor must answer Yes to both questions');
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   const proceedToNextPage = () => {
@@ -1045,6 +1080,7 @@ const DynamicQuestionnaireForm = ({
         <Button 
           mode="contained" 
           onPress={handleNext}
+          disabled={!canProceedToNext()}
           style={styles.navButton}
           icon={isLastPage() ? "check" : "arrow-right"}
           contentStyle={{ flexDirection: 'row-reverse' }}
