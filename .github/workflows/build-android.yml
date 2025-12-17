@@ -44,6 +44,22 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
         
+      - name: Debug - Check autolinking files
+        run: |
+          echo "Checking for autolinking files..."
+          ls -la node_modules/@react-native-community/ || echo "@react-native-community not found"
+          ls -la node_modules/@react-native/ || echo "@react-native not found"
+          if [ -f "node_modules/@react-native-community/cli-platform-android/native_modules.gradle" ]; then
+            echo "✓ Found @react-native-community/cli-platform-android/native_modules.gradle"
+          else
+            echo "✗ Missing @react-native-community/cli-platform-android/native_modules.gradle"
+          fi
+          if [ -f "node_modules/@react-native/community-cli-plugin/native_modules.gradle" ]; then
+            echo "✓ Found @react-native/community-cli-plugin/native_modules.gradle"
+          else
+            echo "✗ Missing @react-native/community-cli-plugin/native_modules.gradle"
+          fi
+        
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
