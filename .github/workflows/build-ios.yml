@@ -15,7 +15,7 @@ on:
 jobs:
   build-ios:
     name: Build iOS Application
-    runs-on: macos-13  # Use macOS 13 with Xcode 15 for Firebase compatibility
+    runs-on: macos-15  # Use macOS 15 (macOS-13 is now retired)
     timeout-minutes: 60  # Prevent hanging builds
     
     steps:
