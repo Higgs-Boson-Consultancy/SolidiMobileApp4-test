@@ -49,15 +49,28 @@ jobs:
           echo "Checking for autolinking files..."
           ls -la node_modules/@react-native-community/ || echo "@react-native-community not found"
           ls -la node_modules/@react-native/ || echo "@react-native not found"
+          
+          echo "Checking package list for cli-platform-android..."
+          npm list @react-native-community/cli-platform-android || echo "Not found"
+          
           if [ -f "node_modules/@react-native-community/cli-platform-android/native_modules.gradle" ]; then
             echo "✓ Found @react-native-community/cli-platform-android/native_modules.gradle"
           else
             echo "✗ Missing @react-native-community/cli-platform-android/native_modules.gradle"
+            if [ -d "node_modules/@react-native-community/cli-platform-android" ]; then
+              echo "But directory exists, contents:"
+              ls -la node_modules/@react-native-community/cli-platform-android/
+            fi
           fi
+          
           if [ -f "node_modules/@react-native/community-cli-plugin/native_modules.gradle" ]; then
             echo "✓ Found @react-native/community-cli-plugin/native_modules.gradle"
           else
             echo "✗ Missing @react-native/community-cli-plugin/native_modules.gradle"
+            if [ -d "node_modules/@react-native/community-cli-plugin" ]; then
+              echo "But directory exists, contents:"
+              ls -la node_modules/@react-native/community-cli-plugin/
+            fi
           fi
         
       - name: Cache Gradle
