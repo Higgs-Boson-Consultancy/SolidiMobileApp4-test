@@ -35,7 +35,10 @@ jobs:
           # Note: cache disabled because package-lock.json is in .gitignore
           
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: |
+          npm install --legacy-peer-deps
+          # Force reinstall cli-platform-android to ensure native_modules.gradle is present
+          npm install --force --legacy-peer-deps @react-native-community/cli-platform-android@12.3.7
         
       - name: Install CocoaPods dependencies
         run: |
