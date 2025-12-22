@@ -101,6 +101,9 @@ let AddressBookForm = ({
         console.log('✅ AddressBookForm: API client already initialized');
       }
 
+      // Currency data is now loaded and cached at login (Issue #79)
+      // No need to call loadCurrency() here - just use cached data
+
       // Use cached balance data to populate asset options
       // Balance data is loaded during authentication
       try {
@@ -838,6 +841,26 @@ let AddressBookForm = ({
         );
 
       case 3: // Asset
+        // If selectedAsset is provided (from Transfer page), skip asset selection
+        if (selectedAsset) {
+          return (
+            <View style={styles.stepContainer} testID="address-book-form-step-3">
+              <Text style={styles.stepQuestion}>Asset for withdrawal:</Text>
+
+              {/* Show locked asset badge */}
+              <View style={styles.lockedAssetContainer}>
+                <View style={styles.lockedAssetBadge}>
+                  <Text style={styles.lockedAssetIcon}>🔒</Text>
+                  <Text style={styles.lockedAssetText}>{selectedAsset.toUpperCase()} Only</Text>
+                </View>
+                <Text style={styles.lockedAssetHint}>
+                  Asset is locked to {selectedAsset.toUpperCase()} for this withdrawal address.
+                </Text>
+              </View>
+            </View>
+          );
+        }
+
         // Filter assets based on search query
         const filteredAssetOptions = assetOptions.filter(asset =>
           asset.label.toLowerCase().includes(assetSearchQuery.toLowerCase()) ||
@@ -1197,9 +1220,9 @@ let AddressBookForm = ({
         style={styles.stepContent}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={true}
-        nestedScrollEnabled={true}
+        nestedScrollEnabled={false}
       >
         {renderStep()}
       </ScrollView>
@@ -1473,6 +1496,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
+    color: colors.darkGray,
   },
   noResultsText: {
     textAlign: 'center',
@@ -1715,6 +1739,36 @@ const styles = StyleSheet.create({
     fontSize: normaliseFont(14),
     color: colors.primary,
     fontWeight: '600',
+  },
+  lockedAssetContainer: {
+    alignItems: 'center',
+    paddingVertical: scaledHeight(20),
+  },
+  lockedAssetBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scaledWidth(20),
+    paddingVertical: scaledHeight(12),
+    backgroundColor: '#e3f2fd',
+    borderRadius: scaledWidth(25),
+    borderWidth: 2,
+    borderColor: '#2196F3',
+    marginBottom: scaledHeight(12),
+  },
+  lockedAssetIcon: {
+    fontSize: normaliseFont(20),
+    marginRight: scaledWidth(8),
+  },
+  lockedAssetText: {
+    fontSize: normaliseFont(16),
+    color: '#1565C0',
+    fontWeight: '700',
+  },
+  lockedAssetHint: {
+    fontSize: normaliseFont(13),
+    color: colors.mediumGray,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 
