@@ -538,7 +538,7 @@
 				CODE_SIGN_ENTITLEMENTS = SolidiMobileApp4/SolidiMobileApp4.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = MWSWL2JBVG;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = SolidiMobileApp4/Info.plist;
@@ -549,7 +549,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.X;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -575,7 +575,7 @@
 				CODE_SIGN_ENTITLEMENTS = SolidiMobileApp4/SolidiMobileApp4.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = MWSWL2JBVG;
 				INFOPLIST_FILE = SolidiMobileApp4/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Solidi;
@@ -585,7 +585,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.X;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
