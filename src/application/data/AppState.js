@@ -3746,6 +3746,63 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       }
     }
 
+    // Load currency list from /v1/currency API
+    // This provides a comprehensive list of ALL supported currencies/assets
+    // Used by: Address Book for asset selection
+    this.loadCurrency = async () => {
+      console.log('🔄 [CURRENCY] Loading currency list from /v1/currency API...');
+
+      // Check if already cached
+      if (this.state.apiData.currency && this.state.cache?.timestamps?.currency) {
+        const cacheAge = Date.now() - this.state.cache.timestamps.currency;
+        const cacheAgeMinutes = Math.floor(cacheAge / 60000);
+        console.log(`✅ [CURRENCY] Using cached data (${cacheAgeMinutes} minutes old)`);
+        return this.state.apiData.currency;
+      }
+
+      let data = await this.state.publicMethod({
+        httpMethod: 'GET',
+        apiRoute: 'currency',
+        params: {},
+      });
+
+      if (data == 'DisplayedError') {
+        console.log('❌ [CURRENCY] Error loading currency list');
+        return;
+      }
+
+      /* Example data (expected format - array of currency codes or object):
+      ["BTC", "ETH", "LTC", "XRP", "GBP", "USD", "EUR", ...]
+      OR
+      {"BTC": {...}, "ETH": {...}, "GBP": {...}, ...}
+      */
+
+      console.log('✅ [CURRENCY] Currency list loaded from API');
+      console.log('📋 [CURRENCY] Response type:', Array.isArray(data) ? 'Array' : typeof data);
+      console.log('📋 [CURRENCY] Data:', JSON.stringify(data, null, 2));
+
+      // Save to apiData
+      let msg = "Currency list loaded from server.";
+      if (jd(data) === jd(this.state.apiData.currency)) {
+        log(msg + " No change.");
+      } else {
+        log(msg + " New data saved to appState. " + jd(data));
+        this.state.apiData.currency = data;
+      }
+
+      // Update cache timestamp
+      if (!this.state.cache) {
+        this.state.cache = { timestamps: {} };
+      }
+      if (!this.state.cache.timestamps) {
+        this.state.cache.timestamps = {};
+      }
+      this.state.cache.timestamps.currency = Date.now();
+      console.log('[CACHE] Currency data cached at:', new Date(this.state.cache.timestamps.currency).toISOString());
+
+      return data;
+    }
+
     this.getTicker = () => {
       console.log('🎯 [GET-TICKER] Called getTicker()');
       console.log('🎯 [GET-TICKER] apiData.ticker:', JSON.stringify(this.state.apiData.ticker));
@@ -4081,6 +4138,15 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       if (!this.state.balancesLoaded) {
         console.log('[REG-CHECK] Calling loadBalances() for the first time...');
         let balanceData = await this.loadBalances();
+        console.log('[REG-CHECK] Balance data loaded:', balanceData ? 'Success' : 'Failed');
+
+        // Load currency list (Issue #79 - cache currency data at login)
+        console.log('[REG-CHECK] Calling loadCurrency() to cache currency list...');
+        await this.loadCurrency();
+        console.log('[REG-CHECK] Currency data loaded and cached');
+
+        // Check if user has any balances
+        const hasBalances = balanceData && Object.keys(balanceData).length > 0;
         this.state.balancesLoaded = true;
         console.log('[REG-CHECK] ✅ User balances loaded and cached');
         console.log('[REG-CHECK] Balance data returned:', balanceData);
@@ -4700,32 +4766,59 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
     }
 
     this.getAvailableAssets = () => {
-      // Get list of ALL assets available for trading from the balance API
-      // Used in: Trade, Assets, AddressBook pages
-      // Returns ALL assets from /balance API response (including those with 0 balance)
+      // Get list of ALL available assets from the currency API
+      // Used in: AddressBook, Trade pages
+      // Returns ALL assets from /v1/currency API (or falls back to /v1/balance)
       console.log('\n' + '🔍'.repeat(60));
-      console.log('🔍 getAvailableAssets CALLED - FOR TRADING');
+      console.log('🔍 getAvailableAssets CALLED - FROM CURRENCY API');
       console.log('🔍 apiData exists?', !_.isUndefined(this.state.apiData));
+      console.log('🔍 Currency data exists?', !_.isUndefined(this.state.apiData.currency));
       console.log('🔍 Balance data exists?', !_.isUndefined(this.state.apiData.balance));
-      console.log('🔍 balancesLoaded flag:', this.state.balancesLoaded);
-      console.log('🔍 Full balance data:', JSON.stringify(this.state.apiData.balance, null, 2));
 
-      if (_.isUndefined(this.state.apiData.balance)) {
-        console.log('❌ getAvailableAssets: Balance data is UNDEFINED');
-        console.log('⚠️ getAvailableAssets: This means balance API was not called or failed');
+      // First try currency API data (preferred for address book)
+      if (!_.isUndefined(this.state.apiData.currency)) {
+        let currencyAssets;
+
+        // Handle both array and object formats
+        if (Array.isArray(this.state.apiData.currency)) {
+          // Currency API returns array of objects: [{code: "BTC", description: "Bitcoin", ...}, ...]
+          // Extract just the 'code' property from each object
+          currencyAssets = this.state.apiData.currency.map(item => {
+            if (typeof item === 'object' && item.code) {
+              return item.code;
+            }
+            return item; // Fallback if it's already a string
+          });
+        } else if (typeof this.state.apiData.currency === 'object') {
+          currencyAssets = Object.keys(this.state.apiData.currency);
+        } else {
+          console.log('❌ getAvailableAssets: Currency data has unexpected format');
+          currencyAssets = [];
+        }
+
+        console.log(`✅ getAvailableAssets: Found ${currencyAssets.length} assets from currency API`);
+        console.log(`✅ ALL AVAILABLE ASSETS:`, currencyAssets);
+        console.log(`📌 Source: /v1/currency API`);
         console.log('🔍'.repeat(60) + '\n');
-        return [];
+        log(`getAvailableAssets: Found ${currencyAssets.length} assets from currency API:`, currencyAssets);
+        return currencyAssets;
       }
 
-      // Return ALL assets from balance API (tradeable assets)
-      let allAssets = Object.keys(this.state.apiData.balance);
+      // Fallback to balance API if currency not loaded
+      if (!_.isUndefined(this.state.apiData.balance)) {
+        let allAssets = Object.keys(this.state.apiData.balance);
+        console.log(`⚠️ getAvailableAssets: Currency API not loaded, using fallback balance API`);
+        console.log(`⚠️ Found ${allAssets.length} assets from balance API:`, allAssets);
+        console.log(`📌 Source: /v1/balance API (fallback)`);
+        console.log('🔍'.repeat(60) + '\n');
+        log(`getAvailableAssets: Using fallback - ${allAssets.length} assets from balance:`, allAssets);
+        return allAssets;
+      }
 
-      console.log(`✅ getAvailableAssets: Found ${allAssets.length} total tradeable assets from balance API`);
-      console.log(`✅ ALL TRADEABLE ASSETS:`, allAssets);
-      console.log(`📌 Use Case: Trade, Assets, AddressBook pages`);
+      console.log('❌ getAvailableAssets: No currency or balance data available');
+      console.log('⚠️ getAvailableAssets: This means neither API was called or both failed');
       console.log('🔍'.repeat(60) + '\n');
-      log(`getAvailableAssets: Found ${allAssets.length} tradeable assets:`, allAssets);
-      return allAssets;
+      return [];
     }
 
     this.getOwnedAssets = () => {
@@ -6287,6 +6380,7 @@ _.isEmpty(appState.stashedState) = ${_.isEmpty(appState.stashedState)}
       getBaseAssets: this.getBaseAssets,
       getQuoteAssets: this.getQuoteAssets,
       loadTicker: this.loadTicker,
+      loadCurrency: this.loadCurrency,
       loadCoinGeckoPrices: this.loadCoinGeckoPrices,
       loadTickerWithCoinGecko: this.loadTickerWithCoinGecko,
       getTicker: this.getTicker,
