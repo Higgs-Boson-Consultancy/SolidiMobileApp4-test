@@ -17,6 +17,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          clean: true
+      
+      - name: Clean any cached iOS build artifacts
+        run: |
+          rm -rf ios/Podfile.lock
+          rm -rf ios/Pods
+          rm -rf ios/build
+          ls -la ios/ || true
         
       - name: Setup Git for private repo access
         env:
