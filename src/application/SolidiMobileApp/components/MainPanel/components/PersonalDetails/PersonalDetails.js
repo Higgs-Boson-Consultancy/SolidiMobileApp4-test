@@ -789,6 +789,7 @@ country
                       mode="outlined"
                       value={title || "Select Title"}
                       editable={false}
+                      pointerEvents="none"
                       right={<TextInput.Icon icon="chevron-down" />}
                       style={{ backgroundColor: 'transparent' }}
                     />
@@ -871,6 +872,7 @@ country
                       mode="outlined"
                       value={gender}
                       editable={false}
+                      pointerEvents="none"
                       right={<TextInput.Icon icon="chevron-down" />}
                       style={{ backgroundColor: 'transparent' }}
                     />
@@ -918,6 +920,7 @@ country
                       mode="outlined"
                       value={citizenshipOptionsList.find(c => c.value === citizenship)?.label || citizenship}
                       editable={false}
+                      pointerEvents="none"
                       right={<TextInput.Icon icon="chevron-down" />}
                       style={{ backgroundColor: 'transparent' }}
                     />
@@ -1078,6 +1081,7 @@ country
                         mode="outlined"
                         value={selectedAddress}
                         editable={false}
+                        pointerEvents="none"
                         right={<TextInput.Icon icon="chevron-down" />}
                         style={{ backgroundColor: 'transparent' }}
                       />
