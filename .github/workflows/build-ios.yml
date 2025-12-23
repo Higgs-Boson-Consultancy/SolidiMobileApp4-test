@@ -129,6 +129,7 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -archivePath $RUNNER_TEMP/SolidiMobileApp4-Debug.xcarchive \
+            -allowProvisioningUpdates \
             archive
       
       - name: Export Debug IPA for Device
