@@ -11,6 +11,12 @@ on:
       - main
       - release
   workflow_dispatch:  # Allow manual trigger
+    inputs:
+      build_for_device:
+        description: 'Build Debug IPA for device installation'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-ios:
@@ -101,7 +107,7 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/$PP_UUID.mobileprovision
           
       - name: Build iOS App (Debug)
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release')
+        if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release')) && github.event.inputs.build_for_device != 'true'
         run: |
           cd ios
           xcodebuild -workspace SolidiMobileApp4.xcworkspace \
@@ -113,6 +119,52 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             archive
+      
+      - name: Build iOS App (Debug for Device)
+        if: github.event.inputs.build_for_device == 'true'
+        run: |
+          cd ios
+          xcodebuild -workspace SolidiMobileApp4.xcworkspace \
+            -scheme SolidiMobileApp4 \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -archivePath $RUNNER_TEMP/SolidiMobileApp4-Debug.xcarchive \
+            archive
+      
+      - name: Export Debug IPA for Device
+        if: github.event.inputs.build_for_device == 'true'
+        run: |
+          cd ios
+          # Create export options for development
+          cat > $RUNNER_TEMP/ExportOptionsDebug.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>compileBitcode</key>
+              <false/>
+              <key>signingStyle</key>
+              <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+          
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/SolidiMobileApp4-Debug.xcarchive \
+            -exportPath $RUNNER_TEMP/debug-build \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptionsDebug.plist -allowProvisioningUpdates
+      
+      - name: Upload Debug IPA Artifact
+        if: github.event.inputs.build_for_device == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-ipa-${{ github.sha }}
+          path: ${{ runner.temp }}/debug-build/*.ipa
+          retention-days: 7
             
       - name: Build iOS App (Release)
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
