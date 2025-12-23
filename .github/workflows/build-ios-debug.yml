@@ -34,19 +34,11 @@ jobs:
         run: |
           npm install --legacy-peer-deps
           npm install --force --legacy-peer-deps @react-native-community/cli-platform-android@12.3.7
-        
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
 
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          # Clean install to avoid version conflicts
+          # Clean install to avoid version conflicts - remove cached files
           rm -f Podfile.lock
           rm -rf Pods
           
