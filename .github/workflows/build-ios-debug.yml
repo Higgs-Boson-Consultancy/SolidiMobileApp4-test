@@ -1,0 +1,201 @@
+name: Build iOS Debug for Device
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      device_name:
+        description: 'Device name (for reference)'
+        required: false
+        default: 'iPhone'
+
+jobs:
+  build-ios-debug:
+    name: Build iOS Debug Application
+    runs-on: macos-15
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Git for private repo access
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global url."https://${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://${GH_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: |
+          npm install --legacy-peer-deps
+          npm install --force --legacy-peer-deps @react-native-community/cli-platform-android@12.3.7
+        
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          for i in 1 2 3; do
+            if pod install --repo-update; then
+              echo "Pod install succeeded"
+              break
+            else
+              if [ $i -lt 3 ]; then
+                echo "Pod install failed, retrying in 10 seconds... (attempt $i/3)"
+                sleep 10
+              else
+                echo "Pod install failed after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
+            
+      - name: Import Development Code Signing Certificates
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_DEV_CERTIFICATE }}
+          P12_PASSWORD: ${{ secrets.IOS_DEV_CERTIFICATE_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_DEV_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/dev_certificate.p12
+          PP_PATH=$RUNNER_TEMP/dev_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          # Import certificate and provisioning profile from secrets
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+          
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          
+          # Apply provisioning profile with proper UUID filename
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          PP_UUID=$(grep -a -A 1 '<key>UUID</key>' $PP_PATH | grep '<string>' | sed 's|.*<string>||' | sed 's|</string>.*||')
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/$PP_UUID.mobileprovision
+          
+      - name: Build iOS App (Debug)
+        run: |
+          cd ios
+          xcodebuild -workspace SolidiMobileApp4.xcworkspace \
+            -scheme SolidiMobileApp4 \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -archivePath $RUNNER_TEMP/SolidiMobileApp4-Debug.xcarchive \
+            archive
+            
+      - name: Export IPA (Debug)
+        run: |
+          cd ios
+          
+          # Create export options plist for Debug/Development
+          cat > $RUNNER_TEMP/ExportOptionsDebug.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>teamID</key>
+              <string>YOUR_TEAM_ID</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>compileBitcode</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
+          
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/SolidiMobileApp4-Debug.xcarchive \
+            -exportPath $RUNNER_TEMP/build-debug \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptionsDebug.plist
+            
+      - name: Upload Debug IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-ipa-${{ github.sha }}
+          path: ${{ runner.temp }}/build-debug/*.ipa
+          retention-days: 7
+          
+      - name: Create Installation Instructions
+        run: |
+          cat > $RUNNER_TEMP/build-debug/INSTALL.md <<EOF
+          # iOS Debug Build Installation Instructions
+          
+          ## Installation via Xcode
+          
+          1. Connect your iPhone to your Mac
+          2. Download the IPA file from GitHub Actions artifacts
+          3. Open Xcode → Window → Devices and Simulators
+          4. Select your iPhone from the list
+          5. Click the "+" button under "Installed Apps"
+          6. Select the downloaded .ipa file
+          7. The app will be installed on your device
+          
+          ## Installation via Apple Configurator
+          
+          1. Download and install Apple Configurator 2 from the Mac App Store
+          2. Connect your iPhone
+          3. Select your device in Apple Configurator
+          4. Click "Add" → "Apps"
+          5. Select the downloaded .ipa file
+          
+          ## Over-the-Air Installation (Advanced)
+          
+          If you have a web server or use a service like Diawi:
+          1. Upload the .ipa file to your distribution service
+          2. Open the installation link on your iPhone
+          3. Trust the developer certificate in Settings → General → VPN & Device Management
+          
+          ## Build Information
+          
+          - **Branch**: ${{ github.ref_name }}
+          - **Commit**: ${{ github.sha }}
+          - **Build Date**: $(date)
+          - **Configuration**: Debug
+          - **Device**: ${{ github.event.inputs.device_name }}
+          
+          EOF
+          
+      - name: Upload Installation Instructions
+        uses: actions/upload-artifact@v4
+        with:
+          name: installation-instructions-${{ github.sha }}
+          path: ${{ runner.temp }}/build-debug/INSTALL.md
+          retention-days: 7
+          
+      - name: Upload Debug Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-build-logs-${{ github.sha }}
+          path: |
+            ~/Library/Logs/gym
+            ~/Library/Developer/Xcode/DerivedData
+          retention-days: 7
+          
+      - name: Clean up keychain and provisioning profile
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision || true
