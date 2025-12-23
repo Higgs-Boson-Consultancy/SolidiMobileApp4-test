@@ -95,4 +95,4 @@ buck-out/
 /scripts
 
 # built production files
-/distribution
+/distributionios/Podfile.lock
