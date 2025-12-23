@@ -322,7 +322,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# React Native build script\nset -e\n\n# Set Node.js binary path\nexport NODE_BINARY=\"/Users/henry/.nvm/versions/node/v22.20.0/bin/node\"\n\n# Disable Metro auto-start since we're running it manually\nexport RCT_NO_LAUNCH_PACKAGER=1\n\n# Run the React Native build script\n../node_modules/react-native/scripts/react-native-xcode.sh\n";
+			shellScript = "# React Native build script\nset -e\n\n# Set Node.js binary path\nexport NODE_BINARY=\"/Users/${USER}/.nvm/versions/node/v22.20.0/bin/node\"\n\n# Disable Metro auto-start since we're running it manually\nexport RCT_NO_LAUNCH_PACKAGER=1\n\n# Run the React Native build script\n../node_modules/react-native/scripts/react-native-xcode.sh\n";
 		};
 		5DC1EB404C242A6E2A91D902 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
